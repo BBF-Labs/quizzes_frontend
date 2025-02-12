@@ -40,3 +40,15 @@ export interface DashboardStats {
   scoreDistribution: { score: number; count: number }[]
 }
 
+export interface PackageOption {
+  id: string
+  title: string
+  description: string
+  price: number
+  type: 'course' | 'quiz' | 'special'
+  icon: JSX.Element
+  discount?: number
+}
+
+
+

@@ -103,7 +103,7 @@ const LandingPage = () => {
             animate="animate"
             variants={fadeIn}
           >
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 lg:mb-6">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl  font-bold mb-4 lg:mb-6">
               Make Your Learning{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-400">
                 Exceptional

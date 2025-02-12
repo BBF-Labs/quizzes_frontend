@@ -1,30 +1,25 @@
-"use clien"
-'use client';
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+"use clien";
+"use client";
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Search, Upload, File } from 'lucide-react';
+} from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Search, Upload, File } from "lucide-react";
 
 const UploadForm = () => {
-  const [uploadType, setUploadType] = useState('material');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [uploadType, setUploadType] = useState("material");
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -40,7 +35,7 @@ const UploadForm = () => {
         animate={{ opacity: 1, y: 0 }}
         className="container mx-auto max-w-2xl"
       >
-        <Card className="bg-gray-900/50 backdrop-blur-sm border-gray-800">
+        <Card className="bg-g backdrop-blur-sm border-gray-800">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl md:text-3xl font-bold mb-2">
               Upload Details
@@ -61,7 +56,9 @@ const UploadForm = () => {
               >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="link" id="link" />
-                  <Label htmlFor="link" className="text-gray-300">Link</Label>
+                  <Label htmlFor="link" className="text-gray-300">
+                    Link
+                  </Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="material" id="material" />
@@ -136,45 +133,44 @@ const UploadForm = () => {
             </div>
 
             {/* File Upload */}
-           {
-            uploadType  === "material" ? (
+            {uploadType === "material" ? (
               <div className="space-y-3">
-              <Label>Upload Material</Label>
-              <div className="flex items-center gap-4">
-                <Button
-                  variant="outline"
-                  className="border-gray-700 hover:bg-gray-800 w-full"
-                  onClick={() => document.getElementById('file-upload')?.click()}
-                >
-                  <File className="mr-2 h-5 w-5" />
-                  {selectedFile ? selectedFile.name : 'Choose File'}
-                </Button>
-                <input
-                  id="file-upload"
-                  type="file"
-                  className="hidden"
-                  onChange={handleFileChange}
-                />
+                <Label>Upload Material</Label>
+                <div className="flex items-center gap-4">
+                  <Button
+                    variant="outline"
+                    className="border-gray-700 hover:bg-gray-800 w-full"
+                    onClick={() =>
+                      document.getElementById("file-upload")?.click()
+                    }
+                  >
+                    <File className="mr-2 h-5 w-5" />
+                    {selectedFile ? selectedFile.name : "Choose File"}
+                  </Button>
+                  <input
+                    id="file-upload"
+                    type="file"
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+                </div>
+                {selectedFile && (
+                  <p className="text-sm text-gray-400">
+                    Selected: {selectedFile.name}
+                  </p>
+                )}
               </div>
-              {selectedFile && (
-                <p className="text-sm text-gray-400">
-                  Selected: {selectedFile.name}
-                </p>
-              )}
-            </div>
-            ) :
-            <input
-                  id="file-upload"
-                  type="file"
-                  className="hidden"
-                  onChange={handleFileChange}
-                />
-             
-
-           }
+            ) : (
+              <input
+                id="file-upload"
+                type="file"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+            )}
 
             {/* Submit Button */}
-            <Button 
+            <Button
               className="w-full bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-emerald-600 hover:to-blue-600"
               size="lg"
             >
