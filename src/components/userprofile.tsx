@@ -55,7 +55,9 @@ export function UserProfile({ name, email, credits = 0 }: UserProfileProps) {
           onMouseLeave={() => setIsHovered(false)}
         >
           <Avatar className="h-8 w-8 bg-gradient-to-r from-teal-500 to-blue-500">
-            <AvatarFallback>{initial}</AvatarFallback>
+            <AvatarFallback className="bg-brand-gradient">
+              {initial}
+            </AvatarFallback>
           </Avatar>
           <div
             className={`flex flex-col items-start overflow-hidden transition-all duration-300 ${

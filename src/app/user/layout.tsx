@@ -2,7 +2,7 @@ import { Header } from "@/components";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen text-foreground">
       <Header />
       <main>{children}</main>
     </div>
