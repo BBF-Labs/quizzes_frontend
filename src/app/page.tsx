@@ -286,7 +286,7 @@ export default function Page() {
                 Help others learn while earning credits.
               </p>
               <Link
-                href="/quiz/upload"
+                href="/user/quiz/upload"
                 className="inline-flex items-center justify-center whitespace-nowrap rounded-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 button-gradient h-12 px-4 py-3 text-xl"
               >
                 Upload Question Materials
