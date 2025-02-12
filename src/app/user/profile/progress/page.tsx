@@ -57,7 +57,7 @@ export default function ProgressPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-background text-foreground">
       <Header />
 
       <div className="max-w-6xl mx-auto px-4 pt-24 pb-8">

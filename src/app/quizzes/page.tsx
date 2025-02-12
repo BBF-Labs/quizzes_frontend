@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { Search } from "lucide-react";
-
-import { Button, Input, QuizCard, Header } from "@/components";
+import { Button, Input, LandingHeader, QuizCard } from "@/components";
 
 const quizzes = [
   {
@@ -100,8 +99,8 @@ export default function QuizzesPage() {
   );
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <Header />
+    <div className="min-h-screen bg-background text-foreground">
+      <LandingHeader />
 
       <div className="max-w-6xl mx-auto px-4 py-8 pt-24 relative">
         <div className="text-center mb-12">

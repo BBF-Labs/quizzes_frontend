@@ -18,7 +18,7 @@ function QuizCard({
   id: string | number;
 }) {
   return (
-    <Link href={`/quiz/${id}/`}>
+    <Link href={`/user/quiz/${id}/`}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}

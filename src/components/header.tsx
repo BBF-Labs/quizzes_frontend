@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { UserProfile } from "@/components/userprofile";
 import { ThemeToggle } from "@/components/theme-toggle";
+import Image from "next/image";
+import { logo } from "@/assets";
 
 export function Header() {
   return (
@@ -13,7 +15,7 @@ export function Header() {
             href="/"
             className="text-xl font-bold bg-gradient-to-r from-teal-500 to-blue-500 bg-clip-text text-transparent"
           >
-            BBF Quizzes
+            <Image height={100} width={100} src={logo} alt="BBF Logo" />
           </Link>
           <div className="flex items-center space-x-4">
             <ThemeToggle />

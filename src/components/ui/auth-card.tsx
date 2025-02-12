@@ -7,7 +7,7 @@ interface AuthCardProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export function AuthCard({ children, className, ...props }: AuthCardProps) {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-black p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
       <div
         className={cn(
           "w-full max-w-[400px] space-y-8 rounded-2xl bg-zinc-900/50 p-8 backdrop-blur-sm",

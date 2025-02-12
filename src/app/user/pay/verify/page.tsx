@@ -2,7 +2,6 @@
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle, XCircle, AlertCircle } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,11 +11,17 @@ import {
   CardDescription,
   CardFooter,
 } from "@/components";
+import { Suspense } from "react";
+
+let status: string | null;
+
+function Status() {
+  const searchParams = useSearchParams();
+  status = searchParams.get("status");
+  return <div>..finding</div>;
+}
 
 export default function PaymentVerificationPage() {
-  const searchParams = useSearchParams();
-  const status = searchParams.get("status");
-
   const getStatusContent = () => {
     switch (status) {
       case "success":
@@ -67,7 +72,10 @@ export default function PaymentVerificationPage() {
   } = getStatusContent();
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+    <div className="min-h-screen bg-background text-foreground flex items-center justify-center mt-24">
+      <Suspense>
+        <Status />
+      </Suspense>
       <div className="max-w-md w-full px-4">
         <Card className={`bg-card border-2 ${borderColor}`}>
           <CardHeader>

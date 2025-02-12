@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Clock, CheckCircle, XCircle } from "lucide-react";
 
@@ -58,6 +58,10 @@ export default function PaymentsPage() {
     },
     // Add more payment history items as needed
   ]);
+
+  useEffect(() => {
+    setPayments(payments);
+  }, [payments]);
 
   const getStatusIcon = (status: Payment["status"]) => {
     switch (status) {

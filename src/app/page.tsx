@@ -12,11 +12,11 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import {
-  ThemeToggle,
   QuizCard,
   PricingCard,
   FeatureCard,
   Stat,
+  LandingHeader,
 } from "@/components";
 
 // Data arrays for mapping
@@ -137,39 +137,7 @@ export default function Page() {
     <div className="min-h-screen bg-background text-foreground">
       <div className="fixed inset-0 bg-grid pointer-events-none" />
 
-      <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
-        <nav className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-6">
-            <Link
-              href="#features"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Features
-            </Link>
-            <Link
-              href="#pricing"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Pricing
-            </Link>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Link
-              href="/login"
-              className="inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 sm:h-9 sm:rounded-md sm:px-3 lg:h-11 lg:rounded-md lg:px-8 text-muted-foreground"
-            >
-              Log In
-            </Link>
-            <Link
-              href="/signup"
-              className="inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 button-gradient h-10 px-4 py-2 sm:h-9 sm:rounded-md sm:px-3 lg:h-11 lg:rounded-md lg:px-8"
-            >
-              Join Now
-            </Link>
-            <ThemeToggle />
-          </div>
-        </nav>
-      </header>
+      <LandingHeader />
 
       <main>
         <section className="min-h-screen flex items-center justify-center relative pt-20">
@@ -288,6 +256,15 @@ export default function Page() {
               {quizzes.map((quiz, index) => (
                 <QuizCard key={index} {...quiz} />
               ))}
+            </div>
+            <div className="w-full items-center flex justify-center mt-6">
+              <Link
+                href="/quizzes"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 button-gradient h-12 px-4 py-3 text-xl w-full md:w-1/4"
+              >
+                View all
+                <ArrowRight className="ml-2" />
+              </Link>
             </div>
           </div>
         </section>

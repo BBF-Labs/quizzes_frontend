@@ -17,6 +17,7 @@ import {
   Alert,
   AlertDescription,
   AlertTitle,
+  LandingHeader,
 } from "@/components";
 
 export default function PackagesPage() {
@@ -82,6 +83,7 @@ export default function PackagesPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <LandingHeader />
       <div className="max-w-6xl mx-auto px-4 pt-24 pb-8">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-teal-500 to-blue-500 bg-clip-text text-transparent">

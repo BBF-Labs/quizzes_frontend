@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import {
   Progress,
   Label,
-  Header,
   Button,
   QuizSettingsModal,
   Card,
@@ -157,6 +156,7 @@ export default function QuizPage() {
 
   const handleSave = () => {
     setSavedAnswers([...userAnswers]);
+    setUserAnswers([...savedAnswers]);
   };
 
   if (!quizQuestion || questions.length === 0) {
@@ -169,8 +169,7 @@ export default function QuizPage() {
 
   if (showResults) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
+      <div>
         <main className="container mx-auto max-w-6xl mt-24 p-4">
           <Card className="bg-card shadow-lg transition-transform transform hover:scale-105">
             <CardHeader>
@@ -223,8 +222,7 @@ export default function QuizPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
+    <div>
       <main className="container flex flex-col justify-center mx-auto max-w-6xl mt-24 p-4">
         <QuizSettingsModal
           isOpen={isSettingsModalOpen}

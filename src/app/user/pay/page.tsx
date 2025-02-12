@@ -4,11 +4,11 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { ArrowRight, Mail, Check } from "lucide-react";
-import { Button } from "@/components";
-import { Input } from "@/components";
-import { Label } from "@/components";
 import {
   Card,
+  Button,
+  Input,
+  Label,
   CardContent,
   CardDescription,
   CardHeader,
@@ -84,7 +84,7 @@ export default function PayPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background mt-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="space-y-8 mb-16">
           <motion.div

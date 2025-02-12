@@ -1,9 +1,25 @@
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components";
 import "./globals.css";
+//import { Metadata } from "next";
 import type React from "react";
 
 const inter = Inter({ subsets: ["latin"] });
+
+// export const metadata: Metadata = {
+//   title: "BBF Lab Quizzes",
+//   description: "Engage with interactive quizzes at BBF Lab to enhance your learning experience.",
+//   keywords: ["BBF Lab", "quizzes", "interactive learning", "education"],
+//   authors: [{
+//     name: "BBF Labs Team",
+//     url: "https://quizzess.theniitettey.live",
+//   }, {
+//     name: "Michael Perry Nii Tettey",
+//     url: "https://theniitettey.live",
+//   }],
+//   viewport: "width=device-width, initial-scale=1.0",
+//   robots: "index, follow"
+// }
 
 export default function RootLayout({
   children,

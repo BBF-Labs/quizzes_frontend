@@ -21,22 +21,22 @@ interface UserProfileProps {
 
 const menuItems = [
   {
-    href: "/profile",
+    href: "/user/profile",
     label: "Profile",
     icon: <User className="mr-2 h-4 w-4" />,
   },
   {
-    href: "/profile/payments",
+    href: "/user/profile/payments",
     label: "Payments",
     icon: <CreditCard className="mr-2 h-4 w-4" />,
   },
   {
-    href: "/profile/courses",
+    href: "/user/profile/courses",
     label: "Courses",
     icon: <BookOpen className="mr-2 h-4 w-4" />,
   },
   {
-    href: "/profile/progress",
+    href: "/user/profile/progress",
     label: "Quiz Progress",
     icon: <BarChart className="mr-2 h-4 w-4" />,
   },

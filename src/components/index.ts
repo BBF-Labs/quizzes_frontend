@@ -89,6 +89,7 @@ import {
 import { Slider } from "./ui/slider";
 
 import { Header } from "./header";
+import { LandingHeader } from "./landingHeader";
 
 export {
   ThemeProvider,
@@ -166,4 +167,5 @@ export {
   SelectSeparator,
   SelectScrollUpButton,
   SelectScrollDownButton,
+  LandingHeader,
 };

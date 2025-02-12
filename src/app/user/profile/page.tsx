@@ -16,7 +16,6 @@ import {
   DialogTrigger,
   Avatar,
   AvatarFallback,
-  Header,
 } from "@/components";
 
 export default function ProfilePage() {
@@ -50,9 +49,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <Header />
-
+    <div>
       <div className="max-w-2xl mx-auto px-4 pt-24 pb-8">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-teal-500 to-blue-500 bg-clip-text text-transparent">

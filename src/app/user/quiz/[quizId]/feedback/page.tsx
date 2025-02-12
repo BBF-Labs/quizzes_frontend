@@ -1,14 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Button,
-  Header,
-} from "@/components";
+import { Card, CardContent, CardHeader, CardTitle, Button } from "@/components";
 import { CheckCircle, XCircle } from "lucide-react";
 
 interface Question {
@@ -85,8 +78,7 @@ export default function FeedbackPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
+    <div>
       <main className="container mx-auto mt-24 p-4">
         <Card className="bg-card">
           <CardHeader>
@@ -113,12 +105,13 @@ export default function FeedbackPage() {
                     }`}
                   >
                     {option}
-                    {option === currentQuestion.correctAnswer && (
-                      <CheckCircle
-                        className="inline-block ml-2 text-green-500"
-                        size={16}
-                      />
-                    )}
+                    {option === currentQuestion.correctAnswer ||
+                      (isCorrect && (
+                        <CheckCircle
+                          className="inline-block ml-2 text-green-500"
+                          size={16}
+                        />
+                      ))}
                     {option === userAnswer?.answer &&
                       option !== currentQuestion.correctAnswer && (
                         <XCircle

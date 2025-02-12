@@ -8,7 +8,7 @@ import {
   Search,
   LinkIcon,
   File,
-  Image,
+  Image as UploadImg,
 } from "lucide-react";
 import {
   Label,
@@ -24,7 +24,6 @@ import {
   CardHeader,
   CardTitle,
   RadioGroup,
-  Header,
   RadioGroupItem,
 } from "@/components";
 
@@ -65,8 +64,7 @@ export default function UploadPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background py-12 px-4 sm:px-6 lg:px-8">
-      <Header />
+    <div>
       <div className="max-w-3xl mx-auto mt-24 space-y-8">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -212,7 +210,7 @@ export default function UploadPage() {
                         material ? (
                           <File className="h-5 w-5 text-muted-foreground" />
                         ) : (
-                          <Image className="h-5 w-5 text-muted-foreground" />
+                          <UploadImg className="h-5 w-5 text-muted-foreground" />
                         )
                       }
                       required
