@@ -34,7 +34,7 @@ export const metadata: Metadata = {
       "Explore a variety of interactive quizzes at BBF Lab designed to enhance your learning experience and test your knowledge.",
     images: [
       {
-        url: "/api/og/dynamic?title=Available%20Quizzes%20at%20BBF%20Lab&description=Explore%20a%20variety%20of%20interactive%20quizzes%20at%20BBF%20Lab%20designed%20to%20enhance%20your%20learning%20experience%20and%20test%20your%20knowledge.",
+        url: "/api/og/dynamic?title=Available%20Quizzes%20at%20BBF%20Lab&description=Explore%20a%20variety%20of%20interactive%20quizzes%20at%20BBF%20Lab%20designed%20to%20enhance%20your%20learning%20experience%20and%20test%20your%20knowledge",
         width: 800,
         height: 600,
         alt: "Available Quizzes at BBF Lab",
