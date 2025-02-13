@@ -1,6 +1,6 @@
 import { AppDispatch, setPaymentDetails } from "@/lib";
 import Config from "@/config";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 
 const createPayment =
   (paymentdata: any, accessToken: string) => async (dispatch: AppDispatch) => {
@@ -16,7 +16,7 @@ const createPayment =
         }
       );
 
-      if (response) {
+      if (response.data.authorization_url) {
         const payload = {
           packageId: paymentdata.packageId || "",
           amount: paymentdata.amount,
@@ -28,11 +28,16 @@ const createPayment =
         };
         localStorage.setItem("reference", response.data.reference);
         dispatch(setPaymentDetails(payload));
+        return response.data.authorization_url;
+      } else {
+        throw new Error("Try again, failed");
+      }
+    } catch (error: any) {
+      if (error instanceof AxiosError) {
+        throw new Error("Payment session could not be created");
       }
 
-      return response.data.authorization_url;
-    } catch (error: any) {
-      throw new Error(error.message);
+      throw new Error("Something went wrong");
     }
   };
 
@@ -53,7 +58,10 @@ const verifyPayment = (accessToken: string) => async () => {
       return response.data.transaction.status;
     }
   } catch (error: any) {
-    throw new Error(error.message);
+    if (error instanceof AxiosError) {
+      throw new Error("Couldn't verify payment");
+    }
+    throw new Error("Something went wrong");
   }
 };
 

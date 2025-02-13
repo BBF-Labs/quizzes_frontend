@@ -1,6 +1,6 @@
 import Config from "@/config";
 import { update, AppDispatch } from "@/lib";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 
 const createUser = async (user: any) => {
   try {
@@ -14,9 +14,16 @@ const createUser = async (user: any) => {
       }
     );
 
+    if (response.data.message === "Error creating user: User already exists") {
+      throw new Error("User Already exist");
+    }
+
     return response.data;
   } catch (error: any) {
-    throw new Error(error.message);
+    if (error instanceof AxiosError) {
+      throw new Error("Update Failed");
+    }
+    throw new Error("Something went wrong");
   }
 };
 
@@ -53,7 +60,10 @@ const updateUser =
         dispatch(update(payload));
       }
     } catch (error: any) {
-      throw new Error(error.message);
+      if (error instanceof AxiosError) {
+        throw new Error("Update Failed");
+      }
+      throw new Error("Something went wrong");
     }
   };
 

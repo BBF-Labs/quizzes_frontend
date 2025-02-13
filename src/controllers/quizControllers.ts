@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import Config from "@/config";
 import { AppDispatch, setQuiz } from "@/lib";
 import { FullQuiz } from "@/interfaces";
@@ -11,13 +11,16 @@ const getQuizzes = async () => {
       },
     });
 
-    if (quizDoc.data) {
+    if (quizDoc.data.quizzes) {
       return quizDoc.data.quizzes;
     }
 
     return [];
   } catch (error: any) {
-    throw new Error(error.message);
+    if (error instanceof AxiosError) {
+      throw new Error("Update Failed");
+    }
+    throw new Error("Couldn't fetch Quiz");
   }
 };
 
