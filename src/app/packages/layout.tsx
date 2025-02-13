@@ -1,66 +1,48 @@
-// import { Metadata } from "next";
-// import axios from "axios";
-// import Config from "@/config";
+import { Metadata } from "next";
+import type React from "react";
 
-// const packagesReq = await axios.get(`${Config.API_URL}/packages`);
+export const metadata: Metadata = {
+  title: "Pricing at BBF Labs",
+  description:
+    "Explore a variety of affordable and curated packages at BBF Lab, designed to cater to everyone's learning needs and enhance your educational journey.",
+  keywords: [
+    "BBF Lab",
+    "packages",
+    "affordable learning",
+    "curated packages",
+    "education",
+    "learning resources",
+    "skill development",
+  ],
+  authors: [
+    {
+      name: "BBF Labs Team",
+      url: "https://quizzess.theniitettey.live",
+    },
+    {
+      name: "Michael Perry Nii Tettey",
+      url: "https://theniitettey.live",
+    },
+  ],
+  viewport: "width=device-width, initial-scale=1.0",
+  robots: "index, follow",
+  openGraph: {
+    type: "website",
+    url: "https://quizzess.theniitettey.live/packages",
+    title: "Pricing at BBF Labs",
+    description:
+      "Explore a variety of affordable and curated packages at BBF Lab, designed to cater to everyone's learning needs and enhance your educational journey.",
+    images: [
+      {
+        url: "/api/og/dynamic?title=Pricing%20at%20BBF%20Labs&description=Explore%20a%20variety%20of%20affordable%20and%20curated%20packages%20at%20BBF%20Lab%2C%20designed%20to%20cater%20to%20everyone%27s%20learning%20needs%20and%20enhance%20your%20educational%20journey.",
+        width: 800,
+        height: 600,
+        alt: "Pricing at BBF Labs",
+      },
+    ],
+  },
+};
 
-// export async function generateMetadata(): Promise<Metadata> {
-//   const packages = packagesReq.data || "No packages available at the moment";
-
-//   const title = "BBF Quizzes | Packages";
-//   const description =
-//     "Get the best packages for your quizzes, carefully crafted by BBF Labs for students";
-
-//   return {
-//     title,
-//     description,
-//     openGraph: {
-//       title,
-//       description,
-//       url: `${Config.SITE_URL}/packages`,
-//       type: "website",
-//       images: [
-//         {
-//           url: `${Config.SITE_URL}/api/og/packages`,
-//           width: 800,
-//           height: 600,
-//           alt: "BBF Quizzes Packages",
-//         },
-//       ],
-//       siteName: "BBF Quizzes",
-//       ...packages,
-//     },
-//     twitter: {
-//       card: "summary_large_image",
-//       title,
-//       description,
-//       images: [`${Config.SITE_URL}/api/og/packages`],
-//     },
-//     robots: {
-//       index: true,
-//       follow: true,
-//       googleBot: {
-//         index: true,
-//         follow: true,
-//       },
-//     },
-//     authors: [
-//       {
-//         name: "Nii Tettey",
-//         url: "https://www.theniitettey.live",
-//       },
-//       {
-//         name: "BBF Labs Dev Team",
-//         url: "https://www.bbflabs.theniitettey.live",
-//       },
-//     ],
-//   };
-// }
-
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return <>{children}</>;
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return <div>{children}</div>;
 }

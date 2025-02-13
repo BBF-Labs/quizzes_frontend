@@ -1,65 +1,48 @@
-// import { Metadata } from "next";
-// import axios from "axios";
-// import Config from "@/config";
+import { Metadata } from "next";
+import type React from "react";
 
-// const quizzesReq = await axios.get(`${Config.API_URL}/quizzes`);
+export const metadata: Metadata = {
+  title: "Available Quizzes at BBF Lab",
+  description:
+    "Explore a variety of interactive quizzes at BBF Lab designed to enhance your learning experience and test your knowledge.",
+  keywords: [
+    "BBF Lab",
+    "quizzes",
+    "interactive learning",
+    "education",
+    "test your knowledge",
+    "learning tools",
+    "online quizzes",
+  ],
+  authors: [
+    {
+      name: "BBF Labs Team",
+      url: "https://quizzess.theniitettey.live",
+    },
+    {
+      name: "Michael Perry Nii Tettey",
+      url: "https://theniitettey.live",
+    },
+  ],
+  viewport: "width=device-width, initial-scale=1.0",
+  robots: "index, follow",
+  openGraph: {
+    type: "website",
+    url: "https://quizzess.theniitettey.live/quizzes",
+    title: "Available Quizzes at BBF Lab",
+    description:
+      "Explore a variety of interactive quizzes at BBF Lab designed to enhance your learning experience and test your knowledge.",
+    images: [
+      {
+        url: "/api/og/dynamic?title=Available%20Quizzes%20at%20BBF%20Lab&description=Explore%20a%20variety%20of%20interactive%20quizzes%20at%20BBF%20Lab%20designed%20to%20enhance%20your%20learning%20experience%20and%20test%20your%20knowledge.",
+        width: 800,
+        height: 600,
+        alt: "Available Quizzes at BBF Lab",
+      },
+    ],
+  },
+};
 
-// export async function generateMetadata(): Promise<Metadata> {
-//   const quizzes = quizzesReq.data || "No quizzes available";
-//   const title = "BBF Quizzes | Quizzes";
-//   const description =
-//     "Explore a variety of quizzes, carefully crafted by BBF Labs for students";
-
-//   return {
-//     title,
-//     description,
-//     openGraph: {
-//       title,
-//       description,
-//       url: `${Config.SITE_URL}/quizzes`,
-//       type: "website",
-//       images: [
-//         {
-//           url: `${Config.SITE_URL}/api/og/quizzes`,
-//           width: 800,
-//           height: 600,
-//           alt: "BBF Quizzes",
-//         },
-//       ],
-//       siteName: "BBF Quizzes",
-//       ...quizzes,
-//     },
-//     twitter: {
-//       card: "summary_large_image",
-//       title,
-//       description,
-//       images: [`${Config.SITE_URL}/api/quizzes`],
-//     },
-//     robots: {
-//       index: true,
-//       follow: true,
-//       googleBot: {
-//         index: true,
-//         follow: true,
-//       },
-//     },
-//     authors: [
-//       {
-//         name: "Nii Tettey",
-//         url: "https://www.theniitettey.live",
-//       },
-//       {
-//         name: "BBF Labs Dev Team",
-//         url: "https://www.bbflabs.theniitettey.live",
-//       },
-//     ],
-//   };
-// }
-
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return <>{children}</>;
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return <div>{children}</div>;
 }
