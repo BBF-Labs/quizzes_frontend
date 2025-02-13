@@ -7,7 +7,7 @@ import { authReducer, quizReducer, paymentReducer } from "../reducers";
 const PersistConfig = {
   key: "root",
   storage,
-  whitelist: ["auth"],
+  whitelist: ["auth", "quiz"],
 };
 
 const rootReducer = combineReducers({

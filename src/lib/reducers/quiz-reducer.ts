@@ -1,12 +1,14 @@
-import { IQuizState } from "@/interfaces";
+import { FullQuiz, IQuizState } from "@/interfaces";
+import { QuizSettings } from "@/interfaces/IQuizState";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 const initialState: IQuizState = {
-  questions: [],
+  quiz: null,
   currentQuestion: 0,
+  quizStateSettings: null,
   answers: [],
   currentTime: 0,
-  userSelectedQuestions: [],
+  userSelectedLectures: [],
   score: 0,
 };
 
@@ -14,10 +16,10 @@ const quizSlice = createSlice({
   name: "quiz",
   initialState,
   reducers: {
-    setQuestions(state, action: PayloadAction<IQuizState>) {
-      state.questions = action.payload.questions;
+    setQuiz(state, action: PayloadAction<FullQuiz>) {
+      state.quiz = action.payload;
     },
-    setCurrentQuestion(state, action: PayloadAction<number>) {
+    setCurrentQuizQuestion(state, action: PayloadAction<number>) {
       state.currentQuestion = action.payload;
     },
     setAnswers(state, action: PayloadAction<string[]>) {
@@ -26,22 +28,26 @@ const quizSlice = createSlice({
     setCurrentTime(state, action: PayloadAction<number>) {
       state.currentTime = action.payload;
     },
-    setUserSelectedQuestions(state, action: PayloadAction<IQuizState>) {
-      state.userSelectedQuestions = action.payload.userSelectedQuestions;
+    setUserSelectedLectures(state, action: PayloadAction<string[]>) {
+      state.userSelectedLectures = action.payload;
     },
     setScore(state, action: PayloadAction<number>) {
       state.score = action.payload;
+    },
+    setQuizStateSettings(state, action: PayloadAction<QuizSettings>) {
+      state.quizStateSettings = action.payload;
     },
   },
 });
 
 export const {
-  setQuestions,
-  setCurrentQuestion,
+  setQuiz,
+  setCurrentQuizQuestion,
   setAnswers,
   setCurrentTime,
-  setUserSelectedQuestions,
+  setUserSelectedLectures,
   setScore,
+  setQuizStateSettings,
 } = quizSlice.actions;
 
 export default quizSlice.reducer;

@@ -1,11 +1,12 @@
 import authReducer, { login, logout, update } from "./auth-reducer";
 import quizReducer, {
-  setQuestions,
-  setCurrentQuestion,
+  setQuiz,
+  setCurrentQuizQuestion,
   setAnswers,
   setCurrentTime,
-  setUserSelectedQuestions,
+  setUserSelectedLectures,
   setScore,
+  setQuizStateSettings,
 } from "./quiz-reducer";
 import paymentReducer, { setPaymentDetails } from "./payment-reducer";
 
@@ -15,12 +16,13 @@ export {
   logout,
   update,
   quizReducer,
-  setQuestions,
-  setCurrentQuestion,
+  setQuiz,
+  setCurrentQuizQuestion,
   setAnswers,
   setCurrentTime,
-  setUserSelectedQuestions,
+  setUserSelectedLectures,
   setScore,
   paymentReducer,
   setPaymentDetails,
+  setQuizStateSettings,
 };
