@@ -1,18 +1,13 @@
 import React from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface PaginationProps {
-  /** Current active page number */
   currentPage: number;
-  /** Total number of pages */
   totalPages: number;
-  /** Callback function when page changes */
   onPageChange: (page: number) => void;
-  /** Optional class name for additional styling */
   className?: string;
 }
-
-type PageItem = number | "...";
 
 const Pagination = ({
   currentPage,
@@ -20,82 +15,32 @@ const Pagination = ({
   onPageChange,
   className = "",
 }: PaginationProps) => {
-  const getPageNumbers = (): PageItem[] => {
-    const pages: PageItem[] = [];
-
-    if (totalPages <= 7) {
-      return Array.from({ length: totalPages }, (_, i) => i + 1);
-    }
-
-    // Always show first page
-    pages.push(1);
-
-    if (currentPage > 3) {
-      pages.push("...");
-    }
-
-    // Show pages around current page
-    for (
-      let i = Math.max(2, currentPage - 1);
-      i <= Math.min(totalPages - 1, currentPage + 1);
-      i++
-    ) {
-      pages.push(i);
-    }
-
-    if (currentPage < totalPages - 2) {
-      pages.push("...");
-    }
-
-    // Always show last page
-    if (totalPages > 1) {
-      pages.push(totalPages);
-    }
-
-    return pages;
-  };
-
   return (
     <div
-      className={`mt-8 flex justify-center items-center space-x-2 max-w-6xl ${className}`}
+      className={`mt-8 flex justify-center items-center space-x-2 ${className}`}
     >
       <Button
         variant="outline"
-        className="bg-zinc-800/50 border-zinc-700/50 text-white"
+        className="bg-zinc-800/50 border-zinc-700/50 text-white flex items-center"
         onClick={() => onPageChange(Math.max(1, currentPage - 1))}
         disabled={currentPage === 1}
+        aria-label="Previous Page"
       >
-        Previous
+        <ChevronLeft className="h-4 w-4" /> {/* Left arrow icon */}
       </Button>
 
-      {getPageNumbers().map((page, index) =>
-        page === "..." ? (
-          <span key={`ellipsis-${index}`} className="px-3 text-white">
-            {page}
-          </span>
-        ) : (
-          <Button
-            key={page}
-            variant={currentPage === page ? "default" : "outline"}
-            className={
-              currentPage === page
-                ? "bg-gradient-to-r from-teal-500 to-blue-500"
-                : "bg-zinc-800/50 border-zinc-700/50 text-white"
-            }
-            onClick={() => onPageChange(page)}
-          >
-            {page}
-          </Button>
-        )
-      )}
+      <span className="text-white">
+        Page {currentPage} of {totalPages}
+      </span>
 
       <Button
         variant="outline"
-        className="bg-zinc-800/50 border-zinc-700/50 text-white"
+        className="bg-zinc-800/50 border-zinc-700/50 text-white flex items-center"
         onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
         disabled={currentPage === totalPages}
+        aria-label="Next Page"
       >
-        Next
+        <ChevronRight className="h-4 w-4" />
       </Button>
     </div>
   );

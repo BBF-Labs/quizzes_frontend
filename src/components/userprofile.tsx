@@ -1,7 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { User, LogOut, CreditCard, BookOpen, BarChart } from "lucide-react";
+import {
+  User,
+  LogOut,
+  CreditCard,
+  BookOpen,
+  BarChart,
+  Clipboard,
+  DollarSign,
+  Grid,
+} from "lucide-react";
 import { useAppDispatch } from "@/hooks";
 import { logoutUser } from "@/controllers";
 import Link from "next/link";
@@ -14,6 +23,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  showToast,
 } from "@/components";
 interface UserProfileProps {
   name: string;
@@ -42,9 +52,24 @@ const menuItems = [
     label: "Quiz Progress",
     icon: <BarChart className="mr-2 h-4 w-4" />,
   },
+  {
+    href: "/quizzes",
+    label: "All Quizzes",
+    icon: <Clipboard className="mr-2 h-4 w-4" />,
+  },
+  {
+    href: "/user/pay",
+    label: "Make Payment",
+    icon: <DollarSign className="mr-2 h-4 w-4" />,
+  },
+  {
+    href: "/courses",
+    label: "All Courses",
+    icon: <Grid className="mr-2 h-4 w-4" />,
+  },
 ];
 
-export function UserProfile({ name, email, credits = 0 }: UserProfileProps) {
+export function UserProfile({ name, email, credits }: UserProfileProps) {
   const dispatch = useAppDispatch();
   const [isHovered, setIsHovered] = useState(false);
   const initial = name.charAt(0).toUpperCase();
@@ -82,7 +107,7 @@ export function UserProfile({ name, email, credits = 0 }: UserProfileProps) {
             Quiz Credits
           </span>
           <span className="px-2 py-1 text-sm font-medium rounded-full bg-gradient-to-r from-teal-500 to-blue-500">
-            {credits}
+            {credits || 0}
           </span>
         </div>
         <DropdownMenuSeparator className="bg-border" />
@@ -95,7 +120,12 @@ export function UserProfile({ name, email, credits = 0 }: UserProfileProps) {
           </DropdownMenuItem>
         ))}
         <DropdownMenuSeparator className="bg-border" />
-        <DropdownMenuItem onClick={() => dispatch(logoutUser())}>
+        <DropdownMenuItem
+          onClick={() => {
+            dispatch(logoutUser());
+            showToast("Logged Out Successfully", "success");
+          }}
+        >
           <div className="flex items-center cursor-pointer">
             <LogOut className="mr-2 h-4 w-4" />
             Logout

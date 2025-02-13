@@ -69,6 +69,7 @@ import { QuizCard } from "./quiz-card";
 import { PricingCard } from "./pricing-card";
 import { FeatureCard } from "./feature-card";
 import { Stat } from "./stat";
+import { showToast } from "./toaster";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -90,6 +91,18 @@ import { Slider } from "./ui/slider";
 import Pagination from "./pagination";
 import { Header } from "./header";
 import { LandingHeader } from "./landingHeader";
+import {
+  Sheet,
+  SheetPortal,
+  SheetOverlay,
+  SheetTrigger,
+  SheetClose,
+  SheetContent,
+  SheetHeader,
+  SheetFooter,
+  SheetTitle,
+  SheetDescription,
+} from "./ui/sheet";
 
 export {
   ThemeProvider,
@@ -169,4 +182,15 @@ export {
   SelectScrollDownButton,
   Pagination,
   LandingHeader,
+  Sheet,
+  SheetPortal,
+  SheetOverlay,
+  SheetTrigger,
+  SheetClose,
+  SheetContent,
+  SheetHeader,
+  SheetFooter,
+  SheetTitle,
+  SheetDescription,
+  showToast,
 };

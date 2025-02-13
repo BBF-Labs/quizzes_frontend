@@ -1,59 +1,66 @@
-"use client";
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
-  Select,
-  Input,
-  Button,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Label,
-  Slider,
   Dialog,
-  RadioGroup,
-  RadioGroupItem,
-  Switch,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
+  Button,
   Checkbox,
+  Input,
+  Label,
+  RadioGroup,
+  RadioGroupItem,
+  Slider,
+  Switch,
 } from "@/components";
-import {} from "@/components/ui/checkbox";
-import type { QuizSettings } from "@/types/quiz";
+import { RootState } from "@/lib";
+import { useSelector } from "react-redux";
+import { cn } from "@/lib/utils";
+
+interface QuizSettings {
+  lectures: string[];
+  showHints: boolean;
+  feedbackType: "during" | "after";
+  timer: number;
+  timerEnabled: boolean;
+  autoNext: boolean;
+  isLinear: boolean;
+  randomizeQuestions: boolean; // Added randomization option
+}
 
 interface QuizSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (settings: QuizSettings) => void;
+  initialSettings: QuizSettings;
 }
 
 export function QuizSettingsModal({
   isOpen,
   onClose,
   onSave,
+  initialSettings,
 }: QuizSettingsModalProps) {
-  const [settings, setSettings] = useState<QuizSettings>({
-    lectureNumber: "Lecture 1",
-    showHints: true,
-    feedbackType: "after",
-    timer: 600, // 10 minutes in seconds
-    timerEnabled: true,
-    autoNext: false,
-    isLinear: false, // New setting for linear quiz
-  });
-  const [useRangeSelector, setUseRangeSelector] = useState(true);
+  const { quizStateSettings } = useSelector((state: RootState) => state.quiz);
 
-  const lectureOptions = [
-    "Lecture 1",
-    "Lecture 2",
-    "Lecture 3",
-    "Lecture 4",
-    "Lecture 5",
-    "IA",
-    "QUIZ",
-  ];
+  // Initialize settings with initialSettings or fallback to quizStateSettings
+  const [settings, setSettings] = useState<QuizSettings>(
+    initialSettings ||
+      quizStateSettings || {
+        lectures: [],
+        showHints: true,
+        feedbackType: "after",
+        timer: 600,
+        timerEnabled: true,
+        autoNext: false,
+        isLinear: false,
+        randomizeQuestions: false,
+      }
+  );
+
+  const [useRangeSelector, setUseRangeSelector] = useState(true);
+  const [lectureOptions, setLectureOptions] = useState<string[]>([]);
 
   const handleSave = () => {
     onSave(settings);
@@ -61,55 +68,69 @@ export function QuizSettingsModal({
   };
 
   const handleTimeInput = (hours: number, minutes: number) => {
-    setSettings({ ...settings, timer: hours * 3600 + minutes * 60 });
+    setSettings((prev) => ({ ...prev, timer: hours * 3600 + minutes * 60 }));
   };
+
+  const toggleLecture = (lecture: string) => {
+    setSettings((prev) => ({
+      ...prev,
+      lectures: prev.lectures.includes(lecture)
+        ? prev.lectures.filter((l) => l !== lecture)
+        : [...prev.lectures, lecture],
+    }));
+  };
+
+  useEffect(() => {
+    // Assuming quizStateSettings has a property that contains lecture names
+    if (quizStateSettings && quizStateSettings.lectures) {
+      setLectureOptions(quizStateSettings.lectures);
+    }
+  }, [quizStateSettings]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px] border-2  border-teal-500">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Quiz Settings</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <div className="flex flex-row justify-between items-center gap-4">
-            <Label htmlFor="lectureSelect" className="text-right">
-              Lecture
-            </Label>
-            <Select
-              value={settings.lectureNumber}
-              onValueChange={(value) =>
-                setSettings({ ...settings, lectureNumber: value })
-              }
-            >
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select Lecture" />
-              </SelectTrigger>
-              <SelectContent>
-                {lectureOptions.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {option}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="space-y-2">
+            <Label>Select Lectures</Label>
+            <div className="grid grid-cols-3 gap-2">
+              {lectureOptions.map((lecture) => (
+                <div
+                  key={lecture}
+                  className={cn(
+                    "flex items-center justify-center p-2 rounded-md cursor-pointer transition-colors",
+                    settings.lectures.includes(lecture)
+                      ? "button-gradient"
+                      : "bg-secondary hover:button-gradient hover:opacity-30"
+                  )}
+                  onClick={() => toggleLecture(lecture)}
+                >
+                  {lecture}
+                </div>
+              ))}
+            </div>
           </div>
+
           <div className="flex items-center justify-between">
             <Label htmlFor="showHints">Show Hints</Label>
             <Switch
               id="showHints"
               checked={settings.showHints}
-              className={`${settings.showHints ? "button-gradient" : ""}`}
               onCheckedChange={(checked) =>
-                setSettings({ ...settings, showHints: checked })
+                setSettings((prev) => ({ ...prev, showHints: checked }))
               }
             />
           </div>
+
           <div className="space-y-2">
             <Label>Feedback Type</Label>
             <RadioGroup
               value={settings.feedbackType}
               onValueChange={(value: "during" | "after") => {
-                setSettings({ ...settings, feedbackType: value });
+                setSettings((prev) => ({ ...prev, feedbackType: value }));
               }}
             >
               <div className="flex items-center space-x-2">
@@ -122,27 +143,31 @@ export function QuizSettingsModal({
               </div>
             </RadioGroup>
           </div>
+
           <div className="flex items-center space-x-2">
             <Checkbox
               id="timerEnabled"
               checked={settings.timerEnabled}
-              className={`${settings.timerEnabled ? "button-gradient" : ""}`}
-              onCheckedChange={(checked) =>
-                setSettings({ ...settings, timerEnabled: checked as boolean })
+              onCheckedChange={
+                (checked) =>
+                  setSettings((prev) => ({
+                    ...prev,
+                    timerEnabled: checked as boolean,
+                  })) // Ensure checked is boolean
               }
             />
             <Label htmlFor="timerEnabled">Enable Timer</Label>
           </div>
+
           {settings.timerEnabled && (
             <div className="space-y-2">
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="useRangeSelector"
                   checked={useRangeSelector}
-                  className={`${useRangeSelector ? "button-gradient" : ""}`}
                   onCheckedChange={(checked) =>
                     setUseRangeSelector(checked as boolean)
-                  }
+                  } // Ensure checked is boolean
                 />
                 <Label htmlFor="useRangeSelector">Use Range Selector</Label>
               </div>
@@ -155,7 +180,7 @@ export function QuizSettingsModal({
                     step={1}
                     value={[settings.timer / 60]}
                     onValueChange={(value) =>
-                      setSettings({ ...settings, timer: value[0] * 60 })
+                      setSettings((prev) => ({ ...prev, timer: value[0] * 60 }))
                     }
                   />
                   <div className="text-center">
@@ -168,6 +193,7 @@ export function QuizSettingsModal({
                     type="number"
                     placeholder="Hours"
                     className="w-20"
+                    value={Math.floor(settings.timer / 3600)}
                     onChange={(e) =>
                       handleTimeInput(
                         Number(e.target.value),
@@ -179,6 +205,7 @@ export function QuizSettingsModal({
                     type="number"
                     placeholder="Minutes"
                     className="w-20"
+                    value={(settings.timer % 3600) / 60}
                     onChange={(e) =>
                       handleTimeInput(
                         Math.floor(settings.timer / 3600),
@@ -190,32 +217,59 @@ export function QuizSettingsModal({
               )}
             </div>
           )}
+
           <div className="flex items-center justify-between">
             <Label htmlFor="autoNext">Auto Next Question</Label>
             <Switch
               id="autoNext"
               checked={settings.autoNext}
-              className={`${settings.autoNext ? "button-gradient" : ""}`}
-              onCheckedChange={(checked) =>
-                setSettings({ ...settings, autoNext: checked })
+              onCheckedChange={
+                (checked) =>
+                  setSettings((prev) => ({
+                    ...prev,
+                    autoNext: checked as boolean,
+                  })) // Ensure checked is boolean
               }
             />
           </div>
+
           <div className="flex items-center justify-between">
             <Label htmlFor="isLinear">Linear Quiz</Label>
             <Switch
               id="isLinear"
-              className={`${settings.isLinear ? "button-gradient" : ""}`}
               checked={settings.isLinear}
+              onCheckedChange={
+                (checked) =>
+                  setSettings((prev) => ({
+                    ...prev,
+                    isLinear: checked as boolean,
+                  })) // Ensure checked is boolean
+              }
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <Label htmlFor="randomizeQuestions">Randomize Questions</Label>
+            <Switch
+              id="randomizeQuestions"
+              checked={settings.randomizeQuestions}
               onCheckedChange={(checked) =>
-                setSettings({ ...settings, isLinear: checked })
+                setSettings((prev) => ({
+                  ...prev,
+                  randomizeQuestions: checked as boolean, // Ensure checked is boolean
+                }))
               }
             />
           </div>
         </div>
-        <Button variant="gradient" onClick={handleSave}>
-          Save Settings
-        </Button>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button variant="gradient" onClick={handleSave}>
+            Save Settings
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

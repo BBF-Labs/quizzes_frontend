@@ -36,7 +36,7 @@ function QuizCard({
               {category}
             </span>
             <span className="px-2 py-1 text-xs font-medium rounded-full bg-secondary/10 text-secondary">
-              {duration}
+              {duration} mins
             </span>
           </div>
           <h3 className="text-xl font-semibold mb-2 group-hover:text-gradient-brand transition-all duration-300">
