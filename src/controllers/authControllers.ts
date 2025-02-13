@@ -24,7 +24,6 @@ const getUserInfo = async (accessToken: string) => {
 const loginUser =
   (username: string, password: string) => async (dispatch: AppDispatch) => {
     try {
-      console.log(url);
       const response = await axios.post<ILoginResponse>(
         `${url}/auth/login`,
         JSON.stringify({ username, password }),
