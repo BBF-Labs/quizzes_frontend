@@ -347,5 +347,3 @@ function QuizCard({
     </Link>
   );
 }
-
-export { QuizCard };
