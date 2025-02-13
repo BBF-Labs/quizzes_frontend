@@ -112,7 +112,7 @@ const quizzes = [
     duration: "45 mins",
     questions: 30,
     completions: 1234,
-    id: 1,
+    id: "",
   },
   {
     title: "Advanced Calculus",
@@ -120,7 +120,7 @@ const quizzes = [
     duration: "60 mins",
     questions: 40,
     completions: 856,
-    id: 2,
+    id: "",
   },
   {
     title: "World History: Modern Era",
@@ -128,7 +128,7 @@ const quizzes = [
     duration: "30 mins",
     questions: 25,
     completions: 2156,
-    id: 3,
+    id: "",
   },
 ];
 
