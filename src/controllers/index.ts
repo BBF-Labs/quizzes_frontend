@@ -2,6 +2,7 @@ import { loginUser, logoutUser, refreshToken } from "./authControllers";
 import { createUser, updateUser } from "./userController";
 import { getAllCourses } from "./coursesController";
 import { createPayment } from "./paymentControllers";
+import { getQuizzes } from "./quizControllers";
 
 export {
   loginUser,
@@ -11,4 +12,5 @@ export {
   updateUser,
   getAllCourses,
   createPayment,
+  getQuizzes,
 };

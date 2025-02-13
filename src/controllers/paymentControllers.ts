@@ -53,7 +53,7 @@ const verifyPayment = (accessToken: string) => async () => {
       return response.data.transaction.status;
     }
   } catch (error: any) {
-    console.log(error.message);
+    throw new Error(error.message);
   }
 };
 
