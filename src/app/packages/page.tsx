@@ -19,23 +19,27 @@ import {
   AlertTitle,
   LandingHeader,
 } from "@/components";
+import Link from "next/link";
 
 export default function PackagesPage() {
   const standardPackages = [
     {
       icon: Calendar,
+      id: "67ad57ba0628c9cc6546ab27",
       name: "Semester Access",
       price: 9,
       description: "Full access for the entire semester",
     },
     {
       icon: Clock,
+      id: "67ad57cc0628c9cc6546ab2d",
       name: "Weekly Access",
       price: 4,
       description: "Access for a full week",
     },
     {
       icon: Clock,
+      id: "67ad57ea0628c9cc6546ab33",
       name: "Daily Access",
       price: 1.5,
       description: "Daily access",
@@ -43,27 +47,44 @@ export default function PackagesPage() {
   ];
 
   const coursePackages = [
-    { icon: Book, name: "1 Credit Hour Course", price: 2 },
-    { icon: Book, name: "2 Credit Hours Course", price: 2.5 },
-    { icon: Book, name: "3 Credit Hours Course", price: 3 },
+    {
+      id: "67ad58830628c9cc6546ab39",
+      icon: Book,
+      name: "1 Credit Hour Course",
+      price: 2,
+    },
+    {
+      id: " 67ad58a00628c9cc6546ab3f",
+      icon: Book,
+      name: "2 Credit Hours Course",
+      price: 2.5,
+    },
+    {
+      id: "67ad58af0628c9cc6546ab45",
+      icon: Book,
+      name: "3 Credit Hours Course",
+      price: 3,
+    },
   ];
 
   const quizPackages = [
     {
       icon: FileText,
+      id: "67ad59370628c9cc6546ab57",
       name: "1 Credit Hour Quiz",
       price: 1.5,
       discount: "15% discount applied",
     },
     {
       icon: FileText,
+      id: "67ad59250628c9cc6546ab51",
       name: "2 Credit Hours Quiz",
       price: 2.25,
       discount: "15% discount applied",
     },
     {
       icon: FileText,
-      name: "3 Credit Hours Quiz",
+      id: "67ad58fe0628c9cc6546ab4b",
       price: 2.75,
       discount: "35% discount applied",
     },
@@ -75,7 +96,9 @@ export default function PackagesPage() {
     },
     {
       icon: FileText,
+      id: "67ad5adf0628c9cc6546ab64",
       name: "Bulk Quiz Purchase",
+      price: 5,
       description: "25% OFF when buying 5+ quizzes",
       example: "Example: 5 quizzes = 5 cedis → 3.75 cedis after discount",
     },
@@ -117,9 +140,11 @@ export default function PackagesPage() {
                     <p className="text-muted-foreground mt-2">
                       {pkg.description}
                     </p>
-                    <Button className="w-full mt-4 bg-gradient-to-r from-teal-500 to-blue-500 hover:from-teal-600 hover:to-blue-600">
-                      Select
-                    </Button>
+                    <Link href={`/user/pay?amount=${pkg.price}&id=${pkg.id}`}>
+                      <Button className="w-full mt-4 bg-gradient-to-r from-teal-500 to-blue-500 hover:from-teal-600 hover:to-blue-600">
+                        Select
+                      </Button>
+                    </Link>
                   </CardContent>
                 </Card>
               ))}
@@ -148,9 +173,11 @@ export default function PackagesPage() {
                     <p className="text-muted-foreground mt-2">
                       Access by Credit Hour
                     </p>
-                    <Button className="w-full mt-4 bg-gradient-to-r from-teal-500 to-blue-500 hover:from-teal-600 hover:to-blue-600">
-                      Select
-                    </Button>
+                    <Link href={`/user/pay?amount=${pkg.price}&id=${pkg.id}`}>
+                      <Button className="w-full mt-4 bg-gradient-to-r from-teal-500 to-blue-500 hover:from-teal-600 hover:to-blue-600">
+                        Select
+                      </Button>
+                    </Link>
                   </CardContent>
                 </Card>
               ))}
@@ -191,9 +218,13 @@ export default function PackagesPage() {
                         {pkg.example}
                       </p>
                     )}
-                    <Button className="w-full mt-4 bg-gradient-to-r from-teal-500 to-blue-500 hover:from-teal-600 hover:to-blue-600">
-                      Select
-                    </Button>
+                    <Link
+                      href={`/user/pay?amount=${pkg.price}&id=${pkg.id}&type=credits`}
+                    >
+                      <Button className="w-full mt-4 bg-gradient-to-r from-teal-500 to-blue-500 hover:from-teal-600 hover:to-blue-600">
+                        Select
+                      </Button>
+                    </Link>
                   </CardContent>
                 </Card>
               ))}

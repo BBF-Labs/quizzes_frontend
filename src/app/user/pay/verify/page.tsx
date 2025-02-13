@@ -1,6 +1,9 @@
 "use client";
-import { useSearchParams } from "next/navigation";
+
+import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useSelector } from "react-redux";
 import { CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,99 +14,174 @@ import {
   CardDescription,
   CardFooter,
 } from "@/components";
-import { Suspense } from "react";
+import { RootState } from "@/lib";
+import { verifyPayment } from "@/controllers/paymentControllers";
 
-let status: string | null;
+type PaymentStatus = "pending" | "success" | "failed";
 
-function Status() {
-  const searchParams = useSearchParams();
-  status = searchParams.get("status");
-  return <div>..finding</div>;
+interface StatusContent {
+  icon: React.JSX.Element;
+  title: string;
+  description: string;
+  buttonText: string;
+  buttonLink: string;
+  bgColor: string;
+  borderColor: string;
 }
 
-export default function PaymentVerificationPage() {
-  const getStatusContent = () => {
-    switch (status) {
-      case "success":
-        return {
-          icon: <CheckCircle className="h-16 w-16 text-green-500" />,
-          title: "Payment Successful",
-          description:
-            "Your payment has been processed successfully. Your quiz credits have been added to your account.",
-          buttonText: "Go to Dashboard",
-          buttonLink: "/dashboard",
-          bgColor: "bg-green-500/10",
-          borderColor: "border-green-500",
-        };
-      case "failed":
-        return {
-          icon: <XCircle className="h-16 w-16 text-red-500" />,
-          title: "Payment Failed",
-          description:
-            "We were unable to process your payment. Please try again or contact support if the problem persists.",
-          buttonText: "Try Again",
-          buttonLink: "/payment",
-          bgColor: "bg-red-500/10",
-          borderColor: "border-red-500",
-        };
-      case "pending":
-      default:
-        return {
-          icon: <AlertCircle className="h-16 w-16 text-yellow-500" />,
-          title: "Payment Pending",
-          description:
-            "Your payment is being processed. We'll update you once it's confirmed.",
-          buttonText: "Check Status",
-          buttonLink: "/profile",
-          bgColor: "bg-yellow-500/10",
-          borderColor: "border-yellow-500",
-        };
-    }
-  };
+const STATUS_CONTENTS: Record<PaymentStatus, StatusContent> = {
+  success: {
+    icon: <CheckCircle className="h-16 w-16 text-green-500" />,
+    title: "Payment Successful",
+    description: "Your payment has been processed successfully.",
+    buttonText: "Go to Quizzes",
+    buttonLink: "/quizzes",
+    bgColor: "bg-green-500/10",
+    borderColor: "border-green-500",
+  },
+  failed: {
+    icon: <XCircle className="h-16 w-16 text-red-500" />,
+    title: "Payment Failed",
+    description:
+      "We were unable to process your payment. Please try again or contact support if the problem persists.",
+    buttonText: "Try Again",
+    buttonLink: "/user/pay",
+    bgColor: "bg-red-500/10",
+    borderColor: "border-red-500",
+  },
+  pending: {
+    icon: <AlertCircle className="h-16 w-16 text-yellow-500" />,
+    title: "Payment Pending",
+    description:
+      "Your payment is being processed. We'll update you once it's confirmed.",
+    buttonText: "Check Status",
+    buttonLink: "/user/profile",
+    bgColor: "bg-yellow-500/10",
+    borderColor: "border-yellow-500",
+  },
+};
 
-  const {
-    icon,
-    title,
-    description,
-    buttonText,
-    buttonLink,
-    bgColor,
-    borderColor,
-  } = getStatusContent();
+const LoadingCard = () => (
+  <div className="min-h-screen bg-background text-foreground flex items-center justify-center mt-24">
+    <div className="max-w-md w-full px-4">
+      <Card className="bg-card border-2 border-zinc-500">
+        <CardHeader>
+          <CardTitle className="text-center text-foreground">
+            Loading payment status...
+          </CardTitle>
+        </CardHeader>
+      </Card>
+    </div>
+  </div>
+);
+
+function PaymentVerificationContent() {
+  const { credentials } = useSelector((state: RootState) => state.auth);
+  const [status, setStatus] = useState<PaymentStatus>("pending");
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchStatus = async (): Promise<PaymentStatus> => {
+      if (!credentials?.accessToken) {
+        setError("Authentication required");
+        return "pending";
+      }
+
+      try {
+        const result = await verifyPayment(credentials.accessToken);
+        if (!mounted) return "pending";
+
+        setError(null);
+        return result as unknown as PaymentStatus;
+      } catch (error: unknown) {
+        if (!mounted) return "pending";
+
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "An unknown error occurred during payment verification";
+
+        console.error("Payment verification failed:", errorMessage);
+        setError(errorMessage);
+        return "pending";
+      }
+    };
+
+    const updateStatus = async () => {
+      const urlStatus = searchParams.get("status");
+
+      if (urlStatus && urlStatus in STATUS_CONTENTS) {
+        setStatus(urlStatus as PaymentStatus);
+        setIsLoading(false);
+        return;
+      }
+
+      const fetchedStatus = await fetchStatus();
+      if (mounted) {
+        setStatus(fetchedStatus);
+        setIsLoading(false);
+      }
+    };
+
+    updateStatus();
+    return () => {
+      mounted = false;
+    };
+  }, [searchParams, credentials?.accessToken]);
+
+  if (isLoading) {
+    return <LoadingCard />;
+  }
+
+  const statusContent = STATUS_CONTENTS[status];
 
   return (
     <div className="min-h-screen bg-background text-foreground flex items-center justify-center mt-24">
-      <Suspense>
-        <Status />
-      </Suspense>
       <div className="max-w-md w-full px-4">
-        <Card className={`bg-card border-2 ${borderColor}`}>
+        <Card className={`bg-card border-2 ${statusContent.borderColor}`}>
           <CardHeader>
             <div
-              className={`flex justify-center mb-4 p-4 rounded-full ${bgColor} w-fit mx-auto`}
+              className={`flex justify-center mb-4 p-4 rounded-full ${statusContent.bgColor} w-fit mx-auto`}
             >
-              {icon}
+              {statusContent.icon}
             </div>
             <CardTitle className="text-center text-foreground">
-              {title}
+              {statusContent.title}
             </CardTitle>
             <CardDescription className="text-center text-zinc-400">
-              {description}
+              {statusContent.description}
             </CardDescription>
+            {error && (
+              <CardDescription className="text-center text-red-500 mt-2">
+                Error: {error}
+              </CardDescription>
+            )}
           </CardHeader>
-          <CardContent>
-            {/* Add any additional content here if needed */}
-          </CardContent>
+          <CardContent />
           <CardFooter className="flex justify-center">
             <Button
               asChild
               className="bg-gradient-to-r from-teal-500 to-blue-500 hover:from-teal-600 hover:to-blue-600 text-white"
             >
-              <Link href={buttonLink}>{buttonText}</Link>
+              <Link href={statusContent.buttonLink}>
+                {statusContent.buttonText}
+              </Link>
             </Button>
           </CardFooter>
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function PaymentVerificationPage() {
+  return (
+    <Suspense fallback={<LoadingCard />}>
+      <PaymentVerificationContent />
+    </Suspense>
   );
 }

@@ -89,13 +89,12 @@ export default function QuizPage() {
     timer: 600,
     timerEnabled: true,
     isLinear: false,
-    autoNext: false, // Ensure this is included in the settings
+    autoNext: false,
   });
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(true);
   const [savedAnswers, setSavedAnswers] = useState<string[]>([]);
 
   useEffect(() => {
-    // Simulating data fetching
     setQuizQuestion(mockQuizQuestion);
     setQuestions(mockQuestions);
   }, []);
@@ -256,12 +255,12 @@ export default function QuizPage() {
               <div className="flex items-center space-x-2 text-sm">
                 <div className="flex items-center">
                   <div className="w-3 h-3 bg-primary rounded-full mr-1"></div>
-                  <span>Answered: {userAnswers.filter(Boolean).length}</span>
+                  <span>{userAnswers.filter(Boolean).length}</span>
                 </div>
                 <div className="flex items-center">
-                  <div className="w-3 h-3 bg-gray-300 rounded-full mr-1"></div>
+                  <div className="w-3 h-3 border-2 border-brand-gradient rounded-full mr-1"></div>
                   <span>
-                    Unanswered:{" "}
+                    {" "}
                     {questions.length - userAnswers.filter(Boolean).length}
                   </span>
                 </div>

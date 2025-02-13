@@ -1,8 +1,11 @@
 "use client";
-
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useAppDispatch } from "@/hooks";
+
+import { useRouter } from "next/navigation";
+import { loginUser } from "@/controllers";
 
 import {
   Button,
@@ -13,13 +16,41 @@ import {
   LandingHeader,
 } from "@/components";
 export default function LoginPage() {
+  const dispatch = useAppDispatch();
   const [isLoading, setIsLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [formData, setFormData] = useState({
+    username: "",
+    password: "",
+  });
+
+  const router = useRouter();
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const [returnUrl, setReturnUrl] = useState("/quizzes");
+  useEffect(() => {
+    setReturnUrl(localStorage.getItem("returnUrl") || "/quizzes");
+    localStorage.removeItem("returnUrl");
+  }, []);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setIsLoading(true);
-    // Add your login logic here
-    setTimeout(() => setIsLoading(false), 1000);
+
+    try {
+      await dispatch(loginUser(formData.username, formData.password));
+      setIsLoading(false);
+      router.push(returnUrl);
+    } catch (error: any) {
+      setIsLoading(false);
+      console.error(error.message);
+    }
   }
 
   return (
@@ -43,6 +74,9 @@ export default function LoginPage() {
               <Input
                 id="username"
                 placeholder="Enter your username"
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
                 required
                 className="bg-zinc-800/50 border-zinc-700/50 text-white placeholder:text-zinc-400"
               />
@@ -55,6 +89,9 @@ export default function LoginPage() {
                 id="password"
                 type="password"
                 placeholder="••••••••"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
                 required
                 className="bg-zinc-800/50 border-zinc-700/50 text-white placeholder:text-zinc-400"
               />
@@ -63,7 +100,17 @@ export default function LoginPage() {
 
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <Checkbox id="remember" />
+              <Checkbox
+                id="remember"
+                checked={rememberMe}
+                onClick={() => {
+                  setRememberMe(!rememberMe);
+                  localStorage.setItem(
+                    "rememberMe",
+                    JSON.stringify(rememberMe)
+                  );
+                }}
+              />
               <label
                 htmlFor="remember"
                 className="text-sm font-medium leading-none text-white peer-disabled:cursor-not-allowed peer-disabled:opacity-70"

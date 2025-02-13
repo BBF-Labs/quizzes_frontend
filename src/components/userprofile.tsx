@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { User, LogOut, CreditCard, BookOpen, BarChart } from "lucide-react";
+import { useAppDispatch } from "@/hooks";
+import { logoutUser } from "@/controllers";
 import Link from "next/link";
 import {
   Button,
@@ -43,6 +45,7 @@ const menuItems = [
 ];
 
 export function UserProfile({ name, email, credits = 0 }: UserProfileProps) {
+  const dispatch = useAppDispatch();
   const [isHovered, setIsHovered] = useState(false);
   const initial = name.charAt(0).toUpperCase();
   return (
@@ -92,11 +95,11 @@ export function UserProfile({ name, email, credits = 0 }: UserProfileProps) {
           </DropdownMenuItem>
         ))}
         <DropdownMenuSeparator className="bg-border" />
-        <DropdownMenuItem>
-          <Link href="/">
+        <DropdownMenuItem onClick={() => dispatch(logoutUser())}>
+          <div className="flex items-center cursor-pointer">
             <LogOut className="mr-2 h-4 w-4" />
             Logout
-          </Link>
+          </div>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

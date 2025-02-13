@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Search } from "lucide-react";
-import { Button, Input, LandingHeader, QuizCard } from "@/components";
+import { Pagination, Input, LandingHeader, QuizCard } from "@/components";
 
 const quizzes = [
   {
@@ -133,41 +133,13 @@ export default function QuizzesPage() {
             <QuizCard key={index} {...quiz} />
           ))}
         </div>
-
-        {totalPages > 1 && (
-          <div className="mt-8 flex justify-center space-x-2">
-            <Button
-              variant="outline"
-              className="bg-zinc-800/50 border-zinc-700/50 text-white"
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-            >
-              Previous
-            </Button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <Button
-                key={page}
-                variant={currentPage === page ? "default" : "outline"}
-                className={
-                  currentPage === page
-                    ? "bg-gradient-to-r from-teal-500 to-blue-500"
-                    : "bg-zinc-800/50 border-zinc-700/50 text-white"
-                }
-                onClick={() => setCurrentPage(page)}
-              >
-                {page}
-              </Button>
-            ))}
-            <Button
-              variant="outline"
-              className="bg-zinc-800/50 border-zinc-700/50 text-white"
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-            >
-              Next
-            </Button>
-          </div>
-        )}
+      </div>
+      <div className="flex items-center justify-center pb-8">
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       </div>
     </div>
   );

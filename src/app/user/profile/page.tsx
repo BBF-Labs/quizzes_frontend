@@ -1,11 +1,14 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
+import { useSelector } from "react-redux";
+import { RootState } from "@/lib";
+import { useAppDispatch } from "@/hooks";
+import { updateUser } from "@/controllers";
+import { useState, useEffect } from "react";
 import { Save, Lock, Coins } from "lucide-react";
 import {
   Dialog,
-  Textarea,
   Input,
   Label,
   Button,
@@ -19,32 +22,67 @@ import {
 } from "@/components";
 
 export default function ProfilePage() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [profileData, setProfileData] = useState({
-    name: "Nii Tettey",
-    email: "admin@theniitettey.live",
-    username: "niitettey",
-    bio: "Software developer and educator",
-    location: "Accra, Ghana",
-    website: "https://theniitettey.live",
-  });
-
+  const dispatch = useAppDispatch();
+  const [isOpen, setIsOpen] = useState(false);
+  const { user, credentials } = useSelector((state: RootState) => state.auth);
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const [profileData, setProfileData] = useState({
+    name: "",
+    email: "",
+    username: "",
+  });
+
+  useEffect(() => {
+    setProfileData({
+      name: user.name,
+      email: user.email,
+      username: user.username,
+    });
+  }, [user]);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setIsLoading(true);
-    // Add your profile update logic here
+    try {
+      await dispatch(updateUser(profileData, credentials.accessToken));
+    } catch (error: any) {
+      console.error(error.message);
+    }
     setTimeout(() => setIsLoading(false), 1000);
   }
 
   async function onPasswordSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    // Add your password update logic here
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      console.error("Passwords do not match");
+      return;
+    }
+
+    if (passwordData.currentPassword !== user.password) {
+      console.error("Current password is incorrect");
+    }
+
+    if (
+      passwordData.newPassword.length != passwordData.confirmPassword.length ||
+      passwordData.newPassword.length < 8
+    ) {
+      console.error("Password must be at least 8 characters long");
+    }
+    try {
+      const payload = {
+        password: passwordData.newPassword,
+      };
+      await dispatch(updateUser(payload, credentials.accessToken));
+      setIsOpen(false);
+    } catch (error: any) {
+      console.error(error.message);
+    }
+
     console.log("Password update submitted", passwordData);
   }
 
@@ -72,7 +110,7 @@ export default function ProfilePage() {
           </div>
 
           <form onSubmit={onSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-white">
                   Full Name
@@ -107,32 +145,17 @@ export default function ProfilePage() {
                 <Input
                   id="username"
                   value={profileData.username}
-                  onChange={(e) =>
-                    setProfileData({ ...profileData, username: e.target.value })
-                  }
+                  disabled={true}
                   className="bg-zinc-800/50 border-zinc-700/50 text-white"
                 />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="bio" className="text-white">
-                Bio
-              </Label>
-              <Textarea
-                id="bio"
-                value={profileData.bio}
-                onChange={(e) =>
-                  setProfileData({ ...profileData, bio: e.target.value })
-                }
-                className="bg-zinc-800/50 border-zinc-700/50 text-white min-h-[100px]"
-              />
-            </div>
-
             <div className="flex justify-between items-center">
-              <Dialog>
+              <Dialog open={isOpen} onOpenChange={() => setIsOpen(!isOpen)}>
                 <DialogTrigger asChild>
                   <Button
                     variant="outline"
+                    onClick={() => setIsOpen(!isOpen)}
                     className="bg-zinc-800/50 border-zinc-700/50 text-white"
                   >
                     <Lock className="mr-2 h-4 w-4" />

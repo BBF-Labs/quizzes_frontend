@@ -87,7 +87,7 @@ import {
   DropdownMenuRadioGroup,
 } from "./ui/dropdown-menu";
 import { Slider } from "./ui/slider";
-
+import Pagination from "./pagination";
 import { Header } from "./header";
 import { LandingHeader } from "./landingHeader";
 
@@ -167,5 +167,6 @@ export {
   SelectSeparator,
   SelectScrollUpButton,
   SelectScrollDownButton,
+  Pagination,
   LandingHeader,
 };
