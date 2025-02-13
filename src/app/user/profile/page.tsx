@@ -19,6 +19,7 @@ import {
   DialogTrigger,
   Avatar,
   AvatarFallback,
+  showToast,
 } from "@/components";
 
 export default function ProfilePage() {
@@ -35,6 +36,7 @@ export default function ProfilePage() {
     name: "",
     email: "",
     username: "",
+    credits: "",
   });
 
   useEffect(() => {
@@ -42,6 +44,7 @@ export default function ProfilePage() {
       name: user.name,
       email: user.email,
       username: user.username,
+      credits: user.credits,
     });
   }, [user]);
 
@@ -50,8 +53,9 @@ export default function ProfilePage() {
     setIsLoading(true);
     try {
       await dispatch(updateUser(profileData, credentials.accessToken));
+      showToast("Profile updated", "success");
     } catch (error: any) {
-      console.error(error.message);
+      showToast(`${error.message}`, "error");
     }
     setTimeout(() => setIsLoading(false), 1000);
   }
@@ -59,31 +63,30 @@ export default function ProfilePage() {
   async function onPasswordSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      console.error("Passwords do not match");
+      showToast("Passwords don't match", "error");
       return;
     }
 
     if (passwordData.currentPassword !== user.password) {
-      console.error("Current password is incorrect");
+      showToast("Current password is incorrect", "error");
     }
 
     if (
       passwordData.newPassword.length != passwordData.confirmPassword.length ||
       passwordData.newPassword.length < 8
     ) {
-      console.error("Password must be at least 8 characters long");
+      showToast("Password must be at least 8 characters long", "error");
     }
     try {
       const payload = {
         password: passwordData.newPassword,
       };
       await dispatch(updateUser(payload, credentials.accessToken));
+      showToast("Password updated successfully", "success");
       setIsOpen(false);
     } catch (error: any) {
-      console.error(error.message);
+      showToast(`${error.message}`, "error");
     }
-
-    console.log("Password update submitted", passwordData);
   }
 
   return (
@@ -105,7 +108,7 @@ export default function ProfilePage() {
             </Avatar>
             <div className="flex items-center space-x-2 px-4 py-2 rounded-full bg-gradient-to-r from-teal-500 to-blue-500">
               <Coins className="h-5 w-5" />
-              <span className="font-medium">100 Credits</span>
+              <span className="font-medium">{profileData.credits || 0}</span>
             </div>
           </div>
 

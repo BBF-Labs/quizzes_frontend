@@ -14,6 +14,7 @@ import {
   Checkbox,
   AuthCard,
   LandingHeader,
+  showToast,
 } from "@/components";
 export default function LoginPage() {
   const dispatch = useAppDispatch();
@@ -46,10 +47,11 @@ export default function LoginPage() {
     try {
       await dispatch(loginUser(formData.username, formData.password));
       setIsLoading(false);
+      showToast("Login Successful!", "success");
       router.push(returnUrl);
     } catch (error: any) {
       setIsLoading(false);
-      console.error(error.message);
+      showToast(`${error.message}`, "error");
     }
   }
 

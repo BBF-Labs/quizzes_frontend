@@ -1,19 +1,65 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-
-import { Button, Input, Label, AuthCard, LandingHeader } from "@/components";
+import {
+  Button,
+  Input,
+  Label,
+  AuthCard,
+  LandingHeader,
+  showToast,
+} from "@/components";
+import { useRouter } from "next/navigation";
+import { createUser, loginUser } from "@/controllers";
+import { useAppDispatch } from "@/hooks";
 
 export default function SignUpPage() {
+  const dispatch = useAppDispatch();
   const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    fullName: "",
+    username: "",
+    email: "",
+    password: "",
+  });
+
+  const router = useRouter();
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const [returnUrl, setReturnUrl] = useState("/quizzes");
+  useEffect(() => {
+    setReturnUrl(localStorage.getItem("returnUrl") || "/quizzes");
+    localStorage.removeItem("returnUrl");
+  }, []);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setIsLoading(true);
-    // Add your signup logic here
-    setTimeout(() => setIsLoading(false), 1000);
+
+    try {
+      const data = {
+        name: formData.fullName,
+        username: formData.username,
+        password: formData.password,
+        email: formData.email,
+      };
+      await createUser(data);
+      setIsLoading(false);
+      showToast("Account created successfully!", "success");
+      await dispatch(loginUser(formData.username, formData.password));
+      router.push(returnUrl);
+    } catch (error: any) {
+      setIsLoading(false);
+      showToast(`${error.message}`, "error");
+    }
   }
 
   return (
@@ -31,13 +77,16 @@ export default function SignUpPage() {
         <form onSubmit={onSubmit} className="space-y-6">
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-white">
+              <Label htmlFor="fullName" className="text-white">
                 Full Name
               </Label>
               <Input
-                id="name"
+                id="fullName"
+                name="fullName"
                 placeholder="John Doe"
                 required
+                value={formData.fullName}
+                onChange={handleChange}
                 className="bg-zinc-800/50 border-zinc-700/50 text-white placeholder:text-zinc-400"
               />
             </div>
@@ -47,8 +96,11 @@ export default function SignUpPage() {
               </Label>
               <Input
                 id="username"
+                name="username"
                 placeholder="johndoe"
                 required
+                value={formData.username}
+                onChange={handleChange}
                 className="bg-zinc-800/50 border-zinc-700/50 text-white placeholder:text-zinc-400"
               />
             </div>
@@ -58,9 +110,12 @@ export default function SignUpPage() {
               </Label>
               <Input
                 id="email"
+                name="email"
                 type="email"
                 placeholder="john@example.com"
                 required
+                value={formData.email}
+                onChange={handleChange}
                 className="bg-zinc-800/50 border-zinc-700/50 text-white placeholder:text-zinc-400"
               />
             </div>
@@ -70,9 +125,12 @@ export default function SignUpPage() {
               </Label>
               <Input
                 id="password"
+                name="password"
                 type="password"
                 placeholder="••••••••"
                 required
+                value={formData.password}
+                onChange={handleChange}
                 className="bg-zinc-800/50 border-zinc-700/50 text-white placeholder:text-zinc-400"
               />
             </div>

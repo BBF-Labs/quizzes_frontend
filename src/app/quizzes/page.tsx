@@ -1,91 +1,105 @@
 "use client";
 
-import { useState } from "react";
-import { Search } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Search, Loader } from "lucide-react";
 import { Pagination, Input, LandingHeader, QuizCard } from "@/components";
+import { getQuizzes, getAllCourses } from "@/controllers";
 
-const quizzes = [
-  {
-    id: 1,
-    category: "Economics",
-    title: "Introduction to Economics",
-    duration: "45 mins",
-    questions: 30,
-    completions: 1234,
-  },
-  {
-    id: 2,
-    category: "Mathematics",
-    title: "Advanced Calculus",
-    duration: "60 mins",
-    questions: 40,
-    completions: 856,
-  },
-  {
-    id: 3,
-    category: "History",
-    title: "World History: Modern Era",
-    duration: "50 mins",
-    questions: 25,
-    completions: 2156,
-  },
-  // Add 6 more quizzes for demonstration
-  {
-    id: 4,
-    category: "Economics",
-    title: "Microeconomics Fundamentals",
-    duration: "40 mins",
-    questions: 35,
-    completions: 987,
-  },
-  {
-    id: 5,
-    category: "Mathematics",
-    title: "Linear Algebra",
-    duration: "55 mins",
-    questions: 30,
-    completions: 754,
-  },
-  {
-    id: 6,
-    category: "History",
-    title: "Ancient Civilizations",
-    duration: "45 mins",
-    questions: 28,
-    completions: 1543,
-  },
-  {
-    id: 7,
-    category: "Economics",
-    title: "International Trade",
-    duration: "50 mins",
-    questions: 32,
-    completions: 678,
-  },
-  {
-    id: 8,
-    category: "Mathematics",
-    title: "Statistics Basics",
-    duration: "45 mins",
-    questions: 35,
-    completions: 1123,
-  },
-  {
-    id: 9,
-    category: "History",
-    title: "World War II",
-    duration: "60 mins",
-    questions: 40,
-    completions: 1876,
-  },
-];
+interface Quiz {
+  title: string;
+  category: string;
+  duration: string;
+  questions: number;
+  completions: number;
+  id: string | number;
+}
+interface Course {
+  code: string;
+  _id: string;
+  title: string;
+  about: string;
+  numberOfLectures?: number;
+  approvedQuestionsCount: number;
+  semester: number;
+  creditHours?: number;
+  isDeleted?: boolean;
+}
 
 export default function QuizzesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 9;
+  const [quizzesData, setQuizzesData] = useState<Quiz[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true); // Loading state
 
-  const filteredQuizzes = quizzes.filter(
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const response = await getAllCourses();
+        setCourses(response);
+      } catch (error) {
+        console.error("Error fetching courses:", error);
+      }
+    };
+
+    fetchCourses();
+  }, []);
+
+  useEffect(() => {
+    const fetchQuizzes = async () => {
+      setLoading(true);
+      try {
+        const response = await getQuizzes();
+
+        const getQuizDetails = (quiz: any) => {
+          const timePerQuestion = 35;
+          const totalQuestions = quiz.quizQuestions.reduce(
+            (acc: any, quizQuestion: any) => {
+              return (
+                acc +
+                (quizQuestion.questions ? quizQuestion.questions.length : 0)
+              );
+            },
+            0
+          );
+          const totalDuration = parseInt(
+            `${(totalQuestions * timePerQuestion) / 60}`
+          );
+          return {
+            totalQuestions,
+            totalDuration,
+          };
+        };
+
+        const mappedQuizzes = response.map((quiz: any) => {
+          const course = courses.find((course) => quiz.courseId === course._id);
+          const { totalQuestions, totalDuration } = getQuizDetails(quiz);
+
+          return {
+            title: course?.title || "Unknown Title",
+            category: course?.code.split(" ")[0] || "Unknown Category",
+            duration: totalDuration,
+            questions: totalQuestions,
+            completions: quiz.completions || 0,
+            id: quiz.courseId,
+          };
+        });
+
+        setQuizzesData(mappedQuizzes);
+      } catch (error) {
+        console.error("Error fetching quizzes:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (courses.length > 0) {
+      fetchQuizzes();
+    }
+  }, [courses]);
+
+  const filteredQuizzes = quizzesData.filter(
     (quiz) =>
       quiz.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       quiz.category.toLowerCase().includes(searchQuery.toLowerCase())
@@ -128,11 +142,20 @@ export default function QuizzesPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {paginatedQuizzes.map((quiz, index) => (
-            <QuizCard key={index} {...quiz} />
-          ))}
-        </div>
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader className="animate-spin h-8 w-8 text-teal-500" />
+            <span className="ml-2 text-lg text-zinc-400">
+              Loading quizzes...
+            </span>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-14">
+            {paginatedQuizzes.map((quiz, index) => (
+              <QuizCard key={index} {...quiz} />
+            ))}
+          </div>
+        )}
       </div>
       <div className="flex items-center justify-center pb-8">
         <Pagination

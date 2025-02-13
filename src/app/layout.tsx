@@ -1,6 +1,10 @@
+"use client";
 import { Inter } from "next/font/google";
+import { Toaster } from "react-hot-toast";
 import { ThemeProvider } from "@/components";
 import "./globals.css";
+import { Provider } from "react-redux";
+import { store } from "@/lib";
 //import { Metadata } from "next";
 import type React from "react";
 
@@ -29,14 +33,17 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-        </ThemeProvider>
+        <Provider store={store}>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <Toaster />
+            {children}
+          </ThemeProvider>
+        </Provider>
       </body>
     </html>
   );

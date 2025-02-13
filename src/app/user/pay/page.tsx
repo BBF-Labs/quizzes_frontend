@@ -21,6 +21,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
+  showToast,
 } from "@/components";
 import { useRouter } from "next/navigation";
 import type { RootState } from "@/lib";
@@ -188,22 +189,31 @@ function PayPageContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (amount && id) {
-      const data = {
-        amount: amount,
-        packageId: id,
-      };
-      const res = await dispatch(createPayment(data, credentials.accessToken));
+    try {
+      if (amount && id) {
+        const data = {
+          amount: amount,
+          packageId: id,
+        };
+        const res = await dispatch(
+          createPayment(data, credentials.accessToken)
+        );
+        showToast("Redirecting...", "success");
+        router.push(res);
+      } else {
+        const data = {
+          packageId: selectedPackage ? selectedPackage : "",
+          amount: getSelectedPackageAmount(),
+        };
 
-      router.push(res);
-    } else {
-      const data = {
-        packageId: selectedPackage ? selectedPackage : "",
-        amount: getSelectedPackageAmount(),
-      };
-
-      const res = await dispatch(createPayment(data, credentials.accessToken));
-      router.push(res);
+        const res = await dispatch(
+          createPayment(data, credentials.accessToken)
+        );
+        showToast("Redirecting...", "success");
+        router.push(res);
+      }
+    } catch (error: any) {
+      showToast(`${error.message},`, "error");
     }
   };
 
