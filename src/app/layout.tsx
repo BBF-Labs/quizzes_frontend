@@ -1,6 +1,7 @@
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/react";
 import { AuthWrapper } from "@/components/wrappers";
 import type React from "react";
 
@@ -62,7 +63,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <AuthWrapper>{children}</AuthWrapper>
+        <AuthWrapper>
+          {children}
+          <Analytics />
+        </AuthWrapper>
       </body>
     </html>
   );
