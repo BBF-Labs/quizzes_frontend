@@ -105,7 +105,7 @@ export function QuizSettingsModal({
     return (
       <div className="space-y-2">
         <Label>Select Lecture Range</Label>
-        <div className="flex space-x-2">
+        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
           <Select
             value={lectureRange.start.toString()}
             onValueChange={(value) =>
@@ -116,7 +116,7 @@ export function QuizSettingsModal({
               }))
             }
           >
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="Start Lecture" />
             </SelectTrigger>
             <SelectContent>
@@ -127,7 +127,7 @@ export function QuizSettingsModal({
               ))}
             </SelectContent>
           </Select>
-          <span className="self-center">to</span>
+          <span className="self-center hidden sm:inline">to</span>
           <Select
             value={lectureRange.end.toString()}
             onValueChange={(value) =>
@@ -138,7 +138,7 @@ export function QuizSettingsModal({
               }))
             }
           >
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="End Lecture" />
             </SelectTrigger>
             <SelectContent>
@@ -156,11 +156,11 @@ export function QuizSettingsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] w-full max-w-[95vw] overflow-y-auto max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Quiz Settings</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
+        <div className="grid gap-4 py-4 px-2 sm:px-4">
           <LectureRangeSelector />
 
           <div className="flex items-center justify-between">
@@ -193,7 +193,7 @@ export function QuizSettingsModal({
             </RadioGroup>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center justify-between">
             <Checkbox
               id="timerEnabled"
               checked={settings.timerEnabled}
@@ -236,31 +236,37 @@ export function QuizSettingsModal({
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center space-x-2">
-                  <Input
-                    type="number"
-                    placeholder="Hours"
-                    className="w-20"
-                    value={Math.floor(settings.timer / 3600)}
-                    onChange={(e) =>
-                      handleTimeInput(
-                        Number(e.target.value),
-                        (settings.timer % 3600) / 60
-                      )
-                    }
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Minutes"
-                    className="w-20"
-                    value={(settings.timer % 3600) / 60}
-                    onChange={(e) =>
-                      handleTimeInput(
-                        Math.floor(settings.timer / 3600),
-                        Number(e.target.value)
-                      )
-                    }
-                  />
+                <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      type="number"
+                      placeholder="Hours"
+                      className="w-20"
+                      value={Math.floor(settings.timer / 3600)}
+                      onChange={(e) =>
+                        handleTimeInput(
+                          Number(e.target.value),
+                          (settings.timer % 3600) / 60
+                        )
+                      }
+                    />
+                    <span>hours</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      type="number"
+                      placeholder="Minutes"
+                      className="w-20"
+                      value={(settings.timer % 3600) / 60}
+                      onChange={(e) =>
+                        handleTimeInput(
+                          Math.floor(settings.timer / 3600),
+                          Number(e.target.value)
+                        )
+                      }
+                    />
+                    <span>minutes</span>
+                  </div>
                 </div>
               )}
             </div>
@@ -302,11 +308,19 @@ export function QuizSettingsModal({
             />
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+        <DialogFooter className="flex-col sm:flex-row space-y-2 sm:space-y-0">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="w-full sm:w-auto"
+          >
             Cancel
           </Button>
-          <Button variant="gradient" onClick={handleSave}>
+          <Button
+            variant="gradient"
+            onClick={handleSave}
+            className="w-full sm:w-auto"
+          >
             Save Settings
           </Button>
         </DialogFooter>
