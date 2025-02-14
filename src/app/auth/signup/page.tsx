@@ -47,14 +47,16 @@ export default function SignUpPage() {
     try {
       const data = {
         name: formData.fullName,
-        username: formData.username,
+        username: formData.username.trim().toLowerCase(),
         password: formData.password,
-        email: formData.email,
+        email: formData.email.trim().toLowerCase(),
       };
       await createUser(data);
       setIsLoading(false);
       showToast("Account created successfully!", "success");
-      await dispatch(loginUser(formData.username, formData.password));
+      await dispatch(
+        loginUser(formData.username.trim().toLowerCase(), formData.password)
+      );
       router.push(returnUrl);
     } catch (error: any) {
       setIsLoading(false);

@@ -45,7 +45,9 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      await dispatch(loginUser(formData.username, formData.password));
+      await dispatch(
+        loginUser(formData.username.trim().toLowerCase(), formData.password)
+      );
       setIsLoading(false);
       showToast("Login Successful!", "success");
       router.push(returnUrl);
