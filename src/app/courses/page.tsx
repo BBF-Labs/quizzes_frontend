@@ -114,7 +114,7 @@ export default function HomeCoursesPage() {
           <span className="ml-2 text-lg text-zinc-400">Loading courses...</span>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-14 mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-4 mx-auto">
           {paginatedCourses.map((course) => {
             const hasQuiz = quizzes.some(
               (quiz) => quiz.courseId === course._id
