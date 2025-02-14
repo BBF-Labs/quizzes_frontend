@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import {
   Dialog,
@@ -14,9 +16,15 @@ import {
   Slider,
   Switch,
 } from "@/components";
-import { RootState } from "@/lib";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { RootState } from "@/lib";
 import { useSelector } from "react-redux";
-import { cn } from "@/lib/utils";
 
 interface QuizSettings {
   lectures: string[];
@@ -26,7 +34,14 @@ interface QuizSettings {
   timerEnabled: boolean;
   autoNext: boolean;
   isLinear: boolean;
-  randomizeQuestions: boolean; // Added randomization option
+  randomizeQuestions: boolean;
+  lectureRange: { start: number; end: number };
+}
+
+interface LectureRange {
+  name: string;
+  start: number;
+  end: number;
 }
 
 interface QuizSettingsModalProps {
@@ -34,6 +49,7 @@ interface QuizSettingsModalProps {
   onClose: () => void;
   onSave: (settings: QuizSettings) => void;
   initialSettings: QuizSettings;
+  lectureRanges: LectureRange[];
 }
 
 export function QuizSettingsModal({
@@ -41,10 +57,10 @@ export function QuizSettingsModal({
   onClose,
   onSave,
   initialSettings,
+  lectureRanges,
 }: QuizSettingsModalProps) {
   const { quizStateSettings } = useSelector((state: RootState) => state.quiz);
 
-  // Initialize settings with initialSettings or fallback to quizStateSettings
   const [settings, setSettings] = useState<QuizSettings>(
     initialSettings ||
       quizStateSettings || {
@@ -56,14 +72,15 @@ export function QuizSettingsModal({
         autoNext: false,
         isLinear: false,
         randomizeQuestions: false,
+        lectureRange: { start: 0, end: 0 },
       }
   );
 
   const [useRangeSelector, setUseRangeSelector] = useState(true);
-  const [lectureOptions, setLectureOptions] = useState<string[]>([]);
+  const [lectureRange, setLectureRange] = useState(settings.lectureRange);
 
   const handleSave = () => {
-    onSave(settings);
+    onSave({ ...settings, lectureRange });
     onClose();
   };
 
@@ -71,21 +88,71 @@ export function QuizSettingsModal({
     setSettings((prev) => ({ ...prev, timer: hours * 3600 + minutes * 60 }));
   };
 
-  const toggleLecture = (lecture: string) => {
-    setSettings((prev) => ({
-      ...prev,
-      lectures: prev.lectures.includes(lecture)
-        ? prev.lectures.filter((l) => l !== lecture)
-        : [...prev.lectures, lecture],
-    }));
-  };
+  // const toggleLecture = (lecture: string) => {
+  //   setSettings((prev) => ({
+  //     ...prev,
+  //     lectures: prev.lectures.includes(lecture)
+  //       ? prev.lectures.filter((l) => l !== lecture)
+  //       : [...prev.lectures, lecture],
+  //   }));
+  // };
 
   useEffect(() => {
-    // Assuming quizStateSettings has a property that contains lecture names
-    if (quizStateSettings && quizStateSettings.lectures) {
-      setLectureOptions(quizStateSettings.lectures);
-    }
-  }, [quizStateSettings]);
+    setLectureRange(initialSettings.lectureRange);
+  }, [initialSettings]);
+
+  const LectureRangeSelector = () => {
+    return (
+      <div className="space-y-2">
+        <Label>Select Lecture Range</Label>
+        <div className="flex space-x-2">
+          <Select
+            value={lectureRange.start.toString()}
+            onValueChange={(value) =>
+              setLectureRange((prev) => ({
+                ...prev,
+                start: Number.parseInt(value),
+                end: Math.max(prev.end, Number.parseInt(value)),
+              }))
+            }
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Start Lecture" />
+            </SelectTrigger>
+            <SelectContent>
+              {lectureRanges.map((lecture, index) => (
+                <SelectItem key={index} value={lecture.start.toString()}>
+                  {lecture.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <span className="self-center">to</span>
+          <Select
+            value={lectureRange.end.toString()}
+            onValueChange={(value) =>
+              setLectureRange((prev) => ({
+                ...prev,
+                end: Number.parseInt(value),
+                start: Math.min(prev.start, Number.parseInt(value)),
+              }))
+            }
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="End Lecture" />
+            </SelectTrigger>
+            <SelectContent>
+              {lectureRanges.map((lecture, index) => (
+                <SelectItem key={index} value={lecture.end.toString()}>
+                  {lecture.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -94,25 +161,7 @@ export function QuizSettingsModal({
           <DialogTitle>Quiz Settings</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <div className="space-y-2">
-            <Label>Select Lectures</Label>
-            <div className="grid grid-cols-3 gap-2">
-              {lectureOptions.map((lecture) => (
-                <div
-                  key={lecture}
-                  className={cn(
-                    "flex items-center justify-center p-2 rounded-md cursor-pointer transition-colors",
-                    settings.lectures.includes(lecture)
-                      ? "button-gradient"
-                      : "bg-secondary hover:button-gradient hover:opacity-30"
-                  )}
-                  onClick={() => toggleLecture(lecture)}
-                >
-                  {lecture}
-                </div>
-              ))}
-            </div>
-          </div>
+          <LectureRangeSelector />
 
           <div className="flex items-center justify-between">
             <Label htmlFor="showHints">Show Hints</Label>
@@ -148,12 +197,11 @@ export function QuizSettingsModal({
             <Checkbox
               id="timerEnabled"
               checked={settings.timerEnabled}
-              onCheckedChange={
-                (checked) =>
-                  setSettings((prev) => ({
-                    ...prev,
-                    timerEnabled: checked as boolean,
-                  })) // Ensure checked is boolean
+              onCheckedChange={(checked) =>
+                setSettings((prev) => ({
+                  ...prev,
+                  timerEnabled: checked === true,
+                }))
               }
             />
             <Label htmlFor="timerEnabled">Enable Timer</Label>
@@ -166,8 +214,8 @@ export function QuizSettingsModal({
                   id="useRangeSelector"
                   checked={useRangeSelector}
                   onCheckedChange={(checked) =>
-                    setUseRangeSelector(checked as boolean)
-                  } // Ensure checked is boolean
+                    setUseRangeSelector(checked === true)
+                  }
                 />
                 <Label htmlFor="useRangeSelector">Use Range Selector</Label>
               </div>
@@ -223,12 +271,8 @@ export function QuizSettingsModal({
             <Switch
               id="autoNext"
               checked={settings.autoNext}
-              onCheckedChange={
-                (checked) =>
-                  setSettings((prev) => ({
-                    ...prev,
-                    autoNext: checked as boolean,
-                  })) // Ensure checked is boolean
+              onCheckedChange={(checked) =>
+                setSettings((prev) => ({ ...prev, autoNext: checked === true }))
               }
             />
           </div>
@@ -238,12 +282,8 @@ export function QuizSettingsModal({
             <Switch
               id="isLinear"
               checked={settings.isLinear}
-              onCheckedChange={
-                (checked) =>
-                  setSettings((prev) => ({
-                    ...prev,
-                    isLinear: checked as boolean,
-                  })) // Ensure checked is boolean
+              onCheckedChange={(checked) =>
+                setSettings((prev) => ({ ...prev, isLinear: checked === true }))
               }
             />
           </div>
@@ -256,7 +296,7 @@ export function QuizSettingsModal({
               onCheckedChange={(checked) =>
                 setSettings((prev) => ({
                   ...prev,
-                  randomizeQuestions: checked as boolean, // Ensure checked is boolean
+                  randomizeQuestions: checked === true,
                 }))
               }
             />

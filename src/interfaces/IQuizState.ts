@@ -25,7 +25,8 @@ interface QuizSettings {
   timerEnabled: boolean;
   autoNext: boolean;
   isLinear: boolean;
-  randomizeQuestions: boolean; // Added randomization option
+  randomizeQuestions: boolean;
+  // startLecture: number;
 }
 interface IQuizState {
   quiz: FullQuiz | null;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   Button,
@@ -28,13 +28,14 @@ import {
   Clock,
   HelpCircle,
   Settings,
+  Loader2,
 } from "lucide-react";
 import { setCurrentQuizQuestion, setQuizStateSettings } from "@/lib";
 import { useAppDispatch } from "@/hooks";
 import { useSelector } from "react-redux";
-import { RootState } from "@/lib";
+import type { RootState } from "@/lib";
 import { fetchFullQuiz } from "@/controllers/quizControllers";
-import { FullQuiz } from "@/interfaces";
+import type { FullQuiz } from "@/interfaces";
 
 // Define types for quiz settings and questions
 type QuizSettings = {
@@ -45,15 +46,16 @@ type QuizSettings = {
   timerEnabled: boolean;
   isLinear: boolean;
   autoNext: boolean;
-  randomizeQuestions: boolean; // Added randomization option
+  randomizeQuestions: boolean;
+  lectureRange: { start: number; end: number };
 };
 
 interface QuizQuestion {
-  _id?: string; // Added _id for each question
-  question: string; // Corrected type from "string" to string
-  options: string[]; // Changed to string array
-  answer: string; // Corrected type from "string" to string
-  type: string; // Corrected type from "string" to string
+  _id: string;
+  question: string;
+  options: string[];
+  answer: string;
+  type: string;
   explanation?: string;
   lectureNumber: string;
   hint?: string;
@@ -65,6 +67,12 @@ interface LectureRange {
   end: number;
 }
 
+interface Lecture {
+  name: string;
+  questions: string[];
+  _id: string;
+}
+
 export default function QuizPage() {
   const router = useRouter();
   const { quizId } = useParams();
@@ -73,11 +81,12 @@ export default function QuizPage() {
   const quizIdStr = Array.isArray(quizId) ? quizId[0] : quizId;
   const { credentials } = useSelector((state: RootState) => state.auth);
 
+  const [allQuestions, setAllQuestions] = useState<QuizQuestion[]>([]);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [userAnswers, setUserAnswers] = useState<string[]>([]);
   const [showResults, setShowResults] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(600); // 10 minutes in seconds
+  const [timeLeft, setTimeLeft] = useState(600);
   const [showHint, setShowHint] = useState(false);
   const [quizSettings, setQuizSettings] = useState<QuizSettings>({
     lectures: [],
@@ -88,11 +97,13 @@ export default function QuizPage() {
     isLinear: false,
     autoNext: false,
     randomizeQuestions: false,
+    lectureRange: { start: 0, end: 0 },
   });
 
   const [isQuizSettingsModalOpen, setIsQuizSettingsModalOpen] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [lectureRanges, setLectureRanges] = useState<LectureRange[]>([]);
+  const autoNextTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const fetchQuizData = async () => {
@@ -107,35 +118,37 @@ export default function QuizPage() {
           return;
         }
 
-        const fetchedQuestions =
-          (quizData.quizQuestions!.flatMap(
-            (lecture: any) => lecture.questions
-          ) as unknown as QuizQuestion[]) || [];
-
-        // Create lecture ranges dynamically based on fetched questions
+        const lectures = quizData.quizQuestions as unknown as Lecture[];
+        const fetchedQuestions: QuizQuestion[] = [];
         const ranges: LectureRange[] = [];
         let currentIndex = 0;
 
-        quizData.quizQuestions!.forEach((lecture: any) => {
+        lectures.forEach((lecture) => {
           const questionsInLecture = lecture.questions.length;
-          const lectureName = lecture.name.startsWith("Lecture")
-            ? lecture.name
-            : lecture.name.replace("Lecture ", ""); // Remove "Lecture" prefix if not in the format
-
           ranges.push({
-            name: lectureName,
+            name: lecture.name,
             start: currentIndex,
             end: currentIndex + questionsInLecture - 1,
           });
+
+          // Assuming the questions array in each lecture contains full question objects
+          lecture.questions.forEach((question: any) => {
+            fetchedQuestions.push({
+              ...question,
+              lectureNumber: lecture.name,
+            });
+          });
+
           currentIndex += questionsInLecture;
         });
 
-        // Set the questions and quiz settings
+        setAllQuestions(fetchedQuestions);
         setQuestions(fetchedQuestions);
         setLectureRanges(ranges);
         setQuizSettings((prev) => ({
           ...prev,
           lectures: ranges.map((lecture) => lecture.name),
+          lectureRange: { start: 0, end: fetchedQuestions.length - 1 },
         }));
         setIsLoading(false);
         showToast("Quiz loaded successfully!", "success");
@@ -157,13 +170,49 @@ export default function QuizPage() {
     }
   }, [timeLeft, showResults, quizSettings.timerEnabled]);
 
+  const handleSaveSettings = (settings: QuizSettings) => {
+    setQuizSettings(settings);
+    dispatch(setQuizStateSettings(settings));
+    setTimeLeft(settings.timer);
+    resetQuiz(settings);
+    setIsQuizSettingsModalOpen(false);
+  };
+
   const handleAnswer = (answer: string) => {
     const newAnswers = [...userAnswers];
     newAnswers[currentQuestion] = answer;
     setUserAnswers(newAnswers);
 
+    if (quizSettings.feedbackType === "during") {
+      const isCorrect =
+        answer.toLowerCase() ===
+        questions[currentQuestion].answer.toLowerCase();
+      showFeedback(isCorrect);
+    }
+
     if (quizSettings.autoNext) {
-      nextQuestion();
+      // Clear any existing timeout
+      if (autoNextTimeoutRef.current) {
+        clearTimeout(autoNextTimeoutRef.current);
+      }
+
+      // Set a new timeout, but don't auto-advance for fill-in questions
+      if (questions[currentQuestion].type !== "fill-in") {
+        autoNextTimeoutRef.current = setTimeout(() => {
+          nextQuestion();
+        }, 1500); // 1.5 seconds delay
+      }
+    }
+  };
+
+  const showFeedback = (isCorrect: boolean) => {
+    const feedbackElement = document.getElementById("feedback");
+    if (feedbackElement) {
+      feedbackElement.textContent = isCorrect
+        ? "Correct!"
+        : "Incorrect. Try again.";
+      feedbackElement.className = isCorrect ? "text-green-500" : "text-red-500";
+      feedbackElement.style.display = "block";
     }
   };
 
@@ -174,6 +223,11 @@ export default function QuizPage() {
       setShowHint(false);
     } else {
       setShowResults(true);
+    }
+
+    // Clear the timeout when moving to the next question
+    if (autoNextTimeoutRef.current) {
+      clearTimeout(autoNextTimeoutRef.current);
     }
   };
 
@@ -198,35 +252,6 @@ export default function QuizPage() {
     return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
   };
 
-  const handleSaveSettings = (settings: QuizSettings) => {
-    settings.lectures = lectureRanges.map((lecture) => lecture.name);
-    setQuizSettings(settings);
-    dispatch(setQuizStateSettings(settings));
-    setTimeLeft(settings.timer);
-    if (settings.randomizeQuestions) {
-      setQuestions(shuffleArray(questions));
-    }
-    setIsQuizSettingsModalOpen(false);
-  };
-
-  const QuizProgress = () => (
-    <div className="space-y-2">
-      <h3 className="font-semibold text-lg">Quiz Progress</h3>
-      <Progress
-        value={(currentQuestion / questions.length) * 100}
-        className="w-full"
-      />
-      <div className="flex justify-between text-sm text-muted-foreground">
-        <span>
-          Question {currentQuestion + 1} of {questions.length}
-        </span>
-        <span>
-          {Math.round((currentQuestion / questions.length) * 100)}% Complete
-        </span>
-      </div>
-    </div>
-  );
-
   const shuffleArray = (array: QuizQuestion[]) => {
     for (let i = array.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -235,20 +260,37 @@ export default function QuizPage() {
     return array;
   };
 
-  const resetQuiz = () => {
+  const resetQuiz = (settings: QuizSettings = quizSettings) => {
     setCurrentQuestion(0);
     setUserAnswers([]);
     setShowResults(false);
-    setTimeLeft(quizSettings.timer);
+    setTimeLeft(settings.timer);
+
+    const filteredQuestions = allQuestions.filter(
+      (_, index) =>
+        index >= settings.lectureRange.start &&
+        index <= settings.lectureRange.end
+    );
+
+    setQuestions(
+      settings.randomizeQuestions
+        ? shuffleArray([...filteredQuestions])
+        : filteredQuestions
+    );
   };
 
-  const getFormattedLectureName = (lectureName: string) => {
-    const match = lectureName.match(/Lecture \d+/);
-    return match ? lectureName : lectureName.split(" ")[1];
+  const getFormattedLectureName = (lectureName: string | undefined) => {
+    if (!lectureName) return "Unknown Lecture";
+    return lectureName;
   };
 
   if (isLoading) {
-    return <div className="text-center">Loading quiz...</div>;
+    return (
+      <div className="flex flex-col items-center justify-center h-screen">
+        <Loader2 className="h-8 w-8 animate-spin mb-4" />
+        <p className="text-lg font-semibold">Fetching quiz...</p>
+      </div>
+    );
   }
 
   if (showResults) {
@@ -286,7 +328,7 @@ export default function QuizPage() {
               </p>
             </div>
           ))}
-          <Button onClick={resetQuiz} className="mt-4">
+          <Button onClick={() => resetQuiz()} className="mt-4">
             Retake Quiz
           </Button>
         </CardContent>
@@ -299,7 +341,11 @@ export default function QuizPage() {
       <Card className="mb-6">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>
-            {getFormattedLectureName(quizSettings.lectures[currentQuestion])}
+            {questions.length > currentQuestion
+              ? getFormattedLectureName(
+                  questions[currentQuestion].lectureNumber
+                )
+              : "Unknown Lecture"}
           </CardTitle>
           <div className="flex items-center space-x-2">
             {quizSettings.timerEnabled && (
@@ -326,9 +372,10 @@ export default function QuizPage() {
                 isOpen={isQuizSettingsModalOpen}
                 initialSettings={quizSettings}
                 onSave={handleSaveSettings}
+                lectureRanges={lectureRanges}
               />
             </Dialog>
-            <Button onClick={resetQuiz}>Reset Quiz</Button>
+            <Button onClick={() => resetQuiz()}>Reset Quiz</Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -343,12 +390,18 @@ export default function QuizPage() {
             </SheetTrigger>
             <SheetContent side="left" className="w-[300px] sm:w-[400px]">
               <SheetTitle className="hidden">x</SheetTitle>
-              <QuizProgress />
+              <QuizProgress
+                currentQuestion={currentQuestion}
+                totalQuestions={questions.length}
+              />
             </SheetContent>
           </Sheet>
 
           <div className="hidden md:block mb-6">
-            <QuizProgress />
+            <QuizProgress
+              currentQuestion={currentQuestion}
+              totalQuestions={questions.length}
+            />
           </div>
 
           <div className="space-y-4">
@@ -380,15 +433,14 @@ export default function QuizPage() {
                     value={userAnswers[currentQuestion] || ""}
                     onValueChange={handleAnswer}
                   >
-                    {questions[currentQuestion].options.map((option, index) => (
-                      <Label
-                        key={index}
-                        className="flex items-center space-x-2 p-4 rounded-lg border cursor-pointer hover:bg-muted"
-                      >
-                        <RadioGroupItem value={option} id={`option-${index}`} />
-                        <span>{option}</span>
-                      </Label>
-                    ))}
+                    <Label className="flex items-center space-x-2 p-4 rounded-lg border cursor-pointer hover:bg-muted">
+                      <RadioGroupItem value="true" id="true" />
+                      <span>True</span>
+                    </Label>
+                    <Label className="flex items-center space-x-2 p-4 rounded-lg border cursor-pointer hover:bg-muted">
+                      <RadioGroupItem value="false" id="false" />
+                      <span>False</span>
+                    </Label>
                   </RadioGroup>
                 )}
 
@@ -400,6 +452,12 @@ export default function QuizPage() {
                     placeholder="Type your answer here"
                   />
                 )}
+
+                <div
+                  id="feedback"
+                  style={{ display: "none" }}
+                  className="mt-2 font-semibold"
+                ></div>
 
                 {quizSettings.showHints &&
                   showHint &&
@@ -431,7 +489,14 @@ export default function QuizPage() {
                       {showHint ? "Hide Hint" : "Show Hint"}
                     </Button>
                   )}
-                  <Button variant="gradient" onClick={nextQuestion}>
+                  <Button
+                    variant="gradient"
+                    onClick={nextQuestion}
+                    disabled={
+                      quizSettings.autoNext &&
+                      questions[currentQuestion].type !== "fill-in"
+                    }
+                  >
                     {currentQuestion === questions.length - 1
                       ? "Finish"
                       : "Next"}
@@ -447,3 +512,27 @@ export default function QuizPage() {
     </div>
   );
 }
+
+const QuizProgress = ({
+  currentQuestion,
+  totalQuestions,
+}: {
+  currentQuestion: number;
+  totalQuestions: number;
+}) => (
+  <div className="space-y-2">
+    <h3 className="font-semibold text-lg">Quiz Progress</h3>
+    <Progress
+      value={(currentQuestion / totalQuestions) * 100}
+      className="w-full"
+    />
+    <div className="flex justify-between text-sm text-muted-foreground">
+      <span>
+        Question {currentQuestion + 1} of {totalQuestions}
+      </span>
+      <span>
+        {Math.round((currentQuestion / totalQuestions) * 100)}% Complete
+      </span>
+    </div>
+  </div>
+);
