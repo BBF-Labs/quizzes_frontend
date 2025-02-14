@@ -34,13 +34,13 @@ export function LandingHeader() {
           <Image height={100} width={100} src={logo} alt="BBF Logo" />
           <div className="hidden md:flex md:flex-row md:gap-6 md:items-start md:justify-center">
             <Link
-              href="#features"
+              href="/#features"
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               Features
             </Link>
             <Link
-              href="#pricing"
+              href="/packages"
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               Pricing
