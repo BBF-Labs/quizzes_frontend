@@ -1,7 +1,7 @@
 import axios, { AxiosError } from "axios";
 import Config from "@/config";
-import { AppDispatch, setQuiz } from "@/lib";
-import { FullQuiz } from "@/interfaces";
+import { AppDispatch, setQuiz, update } from "@/lib";
+import { FullQuiz, IUser } from "@/interfaces";
 
 const getQuizzes = async () => {
   try {
@@ -24,9 +24,25 @@ const getQuizzes = async () => {
   }
 };
 
+const getUserInfo = async (accessToken: string) => {
+  try {
+    const response = await axios.get(`${Config.API_URL}/user/profile`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    return response.data.user;
+  } catch (error: any) {
+    throw new Error(error.message);
+  }
+};
+
 interface QuizResponse {
   message: string;
   fullQuizQuestions: FullQuiz;
+  user: Partial<IUser | any>;
 }
 const fetchFullQuiz =
   (courseId: string, accessToken: string) => async (dispatch: AppDispatch) => {
@@ -40,6 +56,28 @@ const fetchFullQuiz =
           },
         }
       );
+
+      if (!quizData.data.fullQuizQuestions) {
+        const user = await getUserInfo(accessToken);
+
+        const payload = {
+          isAuthenticated: true,
+          credentials: {
+            accessToken: accessToken,
+            refreshToken: "",
+          },
+          user: {
+            email: user.email,
+            name: user.name,
+            password: "",
+            credits: user.quizCredits,
+            username: user.username,
+            role: user.role,
+          },
+        };
+
+        dispatch(update(payload));
+      }
 
       if (quizData.data.fullQuizQuestions) {
         const payload = quizData.data.fullQuizQuestions;

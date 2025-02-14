@@ -67,10 +67,6 @@ export default function ProfilePage() {
       return;
     }
 
-    if (passwordData.currentPassword !== user.password) {
-      showToast("Current password is incorrect", "error");
-    }
-
     if (
       passwordData.newPassword.length != passwordData.confirmPassword.length ||
       passwordData.newPassword.length < 8
@@ -85,7 +81,11 @@ export default function ProfilePage() {
       showToast("Password updated successfully", "success");
       setIsOpen(false);
     } catch (error: any) {
-      showToast(`${error.message}`, "error");
+      if (error.message === "Update Failed") {
+        showToast("Error, Try again", "error");
+      } else {
+        showToast("Something went wrong", "error");
+      }
     }
   }
 

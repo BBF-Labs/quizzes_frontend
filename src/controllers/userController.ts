@@ -51,7 +51,7 @@ const updateUser =
           user: {
             email: response.data.user.email,
             name: response.data.user.name,
-            password: response.data.user.password,
+            password: "",
             credits: response.data.user.quizCredits,
             username: response.data.user.username,
             role: response.data.user.role,
