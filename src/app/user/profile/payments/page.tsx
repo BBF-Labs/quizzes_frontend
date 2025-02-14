@@ -85,7 +85,7 @@ export default function PaymentsPage() {
             asChild
             className="bg-gradient-to-r from-teal-500 to-blue-500 hover:from-teal-600 hover:to-blue-600"
           >
-            <Link href="/payment">Make a Payment</Link>
+            <Link href="/user/pay">Make a Payment</Link>
           </Button>
         </div>
 
