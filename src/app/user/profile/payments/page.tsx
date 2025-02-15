@@ -176,10 +176,10 @@ export default function PaymentsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-foreground hidden md:contents">
+                    <TableHead className="text-foreground hidden md:block">
                       Date
                     </TableHead>
-                    <TableHead className="text-foreground hidden md:contents">
+                    <TableHead className="text-foreground hidden md:block">
                       Description
                     </TableHead>
                     <TableHead className="text-foreground">Amount</TableHead>
@@ -190,12 +190,12 @@ export default function PaymentsPage() {
                 <TableBody>
                   {payments.map((payment) => (
                     <TableRow key={payment._id}>
-                      <TableCell className="text-muted-foreground hidden md:contents">
+                      <TableCell className="text-muted-foreground hidden md:block">
                         {formatDistance(new Date(payment.date), new Date(), {
                           addSuffix: true,
                         })}
                       </TableCell>
-                      <TableCell className="text-muted-foreground hidden md:contents">
+                      <TableCell className="text-muted-foreground hidden md:block">
                         {payment.description}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
