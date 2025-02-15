@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { BookOpen, Loader } from "lucide-react";
 import { getAllCourses, getQuizzes } from "@/controllers"; // Import getQuizzes
@@ -123,40 +124,48 @@ export default function HomeCoursesPage() {
                 (quiz) => quiz.courseId === course._id
               ); // Check if the course has quizzes
               return (
-                <Card key={course._id} className="bg-zinc-900 border-zinc-800">
-                  <div className="aspect-video w-full overflow-hidden bg-gradient-to-br from-teal-500 to-blue-600 p-6 flex items-center justify-center rounded-t-lg">
-                    <h2 className="text-2xl font-bold text-white text-center group-hover:scale-105 transition-transform duration-300 flex-wrap">
-                      {course.code}
-                    </h2>
-                  </div>
-                  <CardHeader>
-                    <CardTitle>{course.title}</CardTitle>
-                    <CardDescription>{course.about}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center text-zinc-400">
-                        <BookOpen className="h-4 w-4 mr-1" />
-                        <span>{course.numberOfLectures} Quizzes</span>
-                      </div>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                  key={course._id}
+                  className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-card to-card/50 border border-border/50 hover:border-primary/50 transition-all duration-300"
+                >
+                  <Card>
+                    <div className="aspect-video w-full overflow-hidden bg-gradient-to-br from-teal-500 to-blue-600 p-6 flex items-center justify-center rounded-t-lg">
+                      <h2 className="text-2xl font-bold text-white text-center group-hover:scale-105 transition-transform duration-300 flex-wrap">
+                        {course.code}
+                      </h2>
                     </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button
-                      className={`inline-flex items-center justify-center whitespace-nowrap rounded-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 button-gradient h-12 px-4 py-3 w-full text-black hover:text-white ${
-                        !hasQuiz ? "opacity-50 cursor-not-allowed" : ""
-                      }`}
-                      disabled={!hasQuiz}
-                    >
-                      <Link
-                        href={`/user/quiz/${course._id}`}
-                        className="w-full"
+                    <CardHeader className="text-muted-foreground">
+                      <CardTitle>{course.title}</CardTitle>
+                      <CardDescription>{course.about}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center text-primary">
+                          <BookOpen className="h-4 w-4 mr-1" />
+                          <span>{course.numberOfLectures} Quizzes</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                    <CardFooter>
+                      <Button
+                        className={`inline-flex items-center justify-center whitespace-nowrap rounded-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 button-gradient h-12 px-4 py-3 w-full text-black hover:text-white ${
+                          !hasQuiz ? "opacity-50 cursor-not-allowed" : ""
+                        }`}
+                        disabled={!hasQuiz}
                       >
-                        Take Course Quiz
-                      </Link>
-                    </Button>
-                  </CardFooter>
-                </Card>
+                        <Link
+                          href={`/user/quiz/${course._id}`}
+                          className="w-full"
+                        >
+                          Take Course Quiz
+                        </Link>
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                </motion.div>
               );
             })}
           </div>
