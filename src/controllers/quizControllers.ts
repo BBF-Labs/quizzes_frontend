@@ -2,6 +2,7 @@ import axios, { AxiosError } from "axios";
 import Config from "@/config";
 import { AppDispatch, setQuiz, update } from "@/lib";
 import { FullQuiz, IUser } from "@/interfaces";
+import { sessionSet } from "@/lib/reducers";
 
 const getQuizzes = async () => {
   try {
@@ -82,14 +83,39 @@ const fetchFullQuiz =
       if (quizData.data.fullQuizQuestions) {
         const payload = quizData.data.fullQuizQuestions;
         dispatch(setQuiz(payload));
+        const user = await getUserInfo(accessToken);
+
+        const userPayload = {
+          isAuthenticated: true,
+          credentials: {
+            accessToken: accessToken,
+            refreshToken: "",
+          },
+          user: {
+            email: user.email,
+            name: user.name,
+            password: "",
+            credits: user.quizCredits,
+            username: user.username,
+            role: user.role,
+          },
+        };
+
+        dispatch(update(userPayload));
         return payload;
       }
     } catch (error: any) {
-      if (error.message === "Request failed with status code 500") {
-        return null;
-      } else {
-        throw new Error("Something went wrong");
+      if (error instanceof AxiosError) {
+        if (
+          error.response?.data.message ===
+          "Error validating token: Multiple sessions detected. Please login again."
+        ) {
+          dispatch(sessionSet());
+          return;
+        }
+        throw new Error(error.response?.data.message);
       }
+      throw new Error("Something went wrong");
     }
   };
 

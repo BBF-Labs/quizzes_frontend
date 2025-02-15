@@ -1,5 +1,6 @@
 import Config from "@/config";
 import { update, AppDispatch } from "@/lib";
+import { sessionSet } from "@/lib/reducers";
 import axios, { AxiosError } from "axios";
 
 const createUser = async (user: any) => {
@@ -14,14 +15,16 @@ const createUser = async (user: any) => {
       }
     );
 
-    if (response.data.message === "Error creating user: User already exists") {
-      throw new Error("User Already exist");
-    }
-
     return response.data;
   } catch (error: any) {
     if (error instanceof AxiosError) {
-      throw new Error("Update Failed");
+      if (
+        error.response?.data.message ===
+        "Error creating user: User already exists"
+      ) {
+        throw new Error("User Already exist");
+      }
+      throw new Error("Couldn't create User");
     }
     throw new Error("Something went wrong");
   }
@@ -61,7 +64,16 @@ const updateUser =
       }
     } catch (error: any) {
       if (error instanceof AxiosError) {
-        throw new Error("Update Failed");
+        if (error instanceof AxiosError) {
+          if (
+            error.response?.data.message ==
+            "Error validating token: Multiple sessions detected. Please login again."
+          ) {
+            dispatch(sessionSet());
+            return;
+          }
+          throw new Error("Update failed");
+        }
       }
       throw new Error("Something went wrong");
     }

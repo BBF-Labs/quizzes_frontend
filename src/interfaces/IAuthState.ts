@@ -9,6 +9,7 @@ interface IUser {
 
 interface IAuthState {
   isAuthenticated: boolean;
+  hasMultipleSessions: boolean;
   credentials: {
     accessToken: string;
     refreshToken: string;

@@ -3,6 +3,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 const intialState: IAuthState = {
   isAuthenticated: false,
+  hasMultipleSessions: false,
   credentials: {
     accessToken: "",
     refreshToken: "",
@@ -25,9 +26,11 @@ const authSlice = createSlice({
       state.isAuthenticated = true;
       state.credentials = action.payload.credentials;
       state.user = action.payload.user;
+      state.hasMultipleSessions = false;
     },
     logout(state) {
       state.isAuthenticated = false;
+      state.hasMultipleSessions = false;
       state.credentials = {
         accessToken: "",
         refreshToken: "",
@@ -41,14 +44,18 @@ const authSlice = createSlice({
         role: "",
       };
     },
-    update(state, action: PayloadAction<IAuthState>) {
-      state.user = action.payload.user;
-      state.credentials = action.payload.credentials;
+    update(state, action: PayloadAction<Partial<IAuthState>>) {
+      state.user = action.payload.user!;
+      state.credentials = action.payload.credentials!;
       state.isAuthenticated = true;
+      state.hasMultipleSessions = false;
+    },
+    sessionSet(state) {
+      state.hasMultipleSessions = true;
     },
   },
 });
 
-export const { login, logout, update } = authSlice.actions;
+export const { login, logout, update, sessionSet } = authSlice.actions;
 
 export default authSlice.reducer;

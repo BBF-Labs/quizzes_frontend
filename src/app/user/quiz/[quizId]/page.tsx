@@ -112,12 +112,6 @@ export default function QuizPage() {
           fetchFullQuiz(quizIdStr!, credentials.accessToken)
         )) as FullQuiz;
 
-        if (!quizData) {
-          showToast("You don't have Access to this quiz", "error");
-          router.push("/quizzes");
-          return;
-        }
-
         const lectures = quizData.quizQuestions as unknown as Lecture[];
         const fetchedQuestions: QuizQuestion[] = [];
         const ranges: LectureRange[] = [];
@@ -131,7 +125,6 @@ export default function QuizPage() {
             end: currentIndex + questionsInLecture - 1,
           });
 
-          // Assuming the questions array in each lecture contains full question objects
           lecture.questions.forEach((question: any) => {
             fetchedQuestions.push({
               ...question,
@@ -154,7 +147,15 @@ export default function QuizPage() {
         showToast("Quiz loaded successfully!", "success");
       } catch (error: any) {
         setIsLoading(false);
-        showToast(`Failed to load quiz: ${error.message}`, "error");
+        if (
+          error.message ===
+          "Error: Error validating user quiz access: User  does not have access to this quiz"
+        ) {
+          showToast("You do not have access to this quiz", "error");
+          router.push("/quizzes");
+        } else {
+          showToast(error.message, "error");
+        }
       }
     };
 

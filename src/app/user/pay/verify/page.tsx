@@ -4,7 +4,7 @@ import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useSelector } from "react-redux";
-import { CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { CheckCircle, XCircle, AlertCircle, Loader } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,7 +15,8 @@ import {
   CardFooter,
 } from "@/components";
 import { RootState } from "@/lib";
-import { verifyPayment } from "@/controllers/paymentControllers";
+import { verifyPayment } from "@/controllers";
+import { useAppDispatch } from "@/hooks";
 
 type PaymentStatus = "pending" | "success" | "failed";
 
@@ -64,18 +65,18 @@ const STATUS_CONTENTS: Record<PaymentStatus, StatusContent> = {
 const LoadingCard = () => (
   <div className="min-h-screen bg-background text-foreground flex items-center justify-center mt-24">
     <div className="max-w-md w-full px-4">
-      <Card className="bg-card border-2 border-zinc-500">
-        <CardHeader>
-          <CardTitle className="text-center text-foreground">
-            Loading payment status...
-          </CardTitle>
-        </CardHeader>
-      </Card>
+      <div className="flex items-center justify-center py-8">
+        <Loader className="animate-spin h-8 w-8 text-teal-500" />
+        <span className="ml-2 text-lg text-zinc-400">
+          Loading payment status...
+        </span>
+      </div>
     </div>
   </div>
 );
 
 function PaymentVerificationContent() {
+  const dispatch = useAppDispatch();
   const { credentials } = useSelector((state: RootState) => state.auth);
   const [status, setStatus] = useState<PaymentStatus>("pending");
   const [isLoading, setIsLoading] = useState(true);
@@ -92,11 +93,16 @@ function PaymentVerificationContent() {
       }
 
       try {
-        const result = await verifyPayment(credentials.accessToken);
+        let result = await dispatch(verifyPayment(credentials.accessToken));
+
+        if (result.isValid) {
+          setError(null);
+          return (result = "success" as PaymentStatus);
+        }
         if (!mounted) return "pending";
 
         setError(null);
-        return result as unknown as PaymentStatus;
+        return result.transaction.status as unknown as PaymentStatus;
       } catch (error: unknown) {
         if (!mounted) return "pending";
 
@@ -131,7 +137,7 @@ function PaymentVerificationContent() {
     return () => {
       mounted = false;
     };
-  }, [searchParams, credentials?.accessToken]);
+  }, [searchParams, credentials.accessToken, dispatch]);
 
   if (isLoading) {
     return <LoadingCard />;

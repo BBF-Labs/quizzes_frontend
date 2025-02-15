@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   User,
   LogOut,
@@ -25,6 +25,7 @@ import {
   DropdownMenuTrigger,
   showToast,
 } from "@/components";
+import { logout } from "@/lib";
 interface UserProfileProps {
   name: string;
   email: string;
@@ -73,6 +74,24 @@ export function UserProfile({ name, email, credits }: UserProfileProps) {
   const dispatch = useAppDispatch();
   const [isHovered, setIsHovered] = useState(false);
   const initial = name.charAt(0).toUpperCase();
+
+  useEffect(() => {
+    const tokenExpiry = localStorage.getItem("aExpBff");
+
+    if (!tokenExpiry) {
+      dispatch(logout());
+    }
+
+    if (tokenExpiry) {
+      const expiryDate = new Date(tokenExpiry);
+      const currentDate = new Date();
+
+      if (currentDate > expiryDate) {
+        dispatch(logout());
+        localStorage.removeItem("aExpBff");
+      }
+    }
+  }, [dispatch]);
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

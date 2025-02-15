@@ -1,6 +1,6 @@
 import { ILoginResponse } from "@/interfaces";
 import { logout, login, AppDispatch } from "@/lib";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import qs from "qs";
 import Config from "@/config";
 
@@ -24,7 +24,7 @@ const getUserInfo = async (accessToken: string) => {
 const loginUser =
   (username: string, password: string) => async (dispatch: AppDispatch) => {
     try {
-      const response = await axios.post<ILoginResponse>(
+      const response = await axios.post<ILoginResponse | any>(
         `${url}/auth/login`,
         JSON.stringify({ username, password }),
         {
@@ -34,11 +34,15 @@ const loginUser =
         }
       );
 
-      if (response) {
+      if (response.data.accessToken) {
         const user = await getUserInfo(response.data.accessToken);
+
+        const expiryTime = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+        localStorage.setItem("aExpBff", expiryTime);
 
         const payload = {
           isAuthenticated: true,
+          hasMultipleSessions: false,
           credentials: {
             accessToken: response.data.accessToken,
             refreshToken: response.data.refreshToken,
@@ -52,11 +56,13 @@ const loginUser =
             role: user.role,
           },
         };
-
         dispatch(login(payload));
       }
     } catch (error: any) {
-      throw new Error(error.message);
+      if (error instanceof AxiosError) {
+        throw new Error(error.response?.data.message);
+      }
+      throw new Error(error);
     }
   };
 

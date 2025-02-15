@@ -1,4 +1,4 @@
-import authReducer, { login, logout, update } from "./auth-reducer";
+import authReducer, { login, logout, update, sessionSet } from "./auth-reducer";
 import quizReducer, {
   setQuiz,
   setCurrentQuizQuestion,
@@ -25,4 +25,5 @@ export {
   paymentReducer,
   setPaymentDetails,
   setQuizStateSettings,
+  sessionSet,
 };

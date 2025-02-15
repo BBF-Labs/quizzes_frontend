@@ -1,12 +1,14 @@
 "use client";
 import React, { useEffect } from "react";
-import { RootState } from "@/lib";
+import { logout, RootState } from "@/lib";
 import { useSelector, Provider } from "react-redux";
-import { Header } from "@/components";
+import { Header, showToast } from "@/components";
 import { usePathname, useRouter } from "next/navigation";
 import { store } from "@/lib";
+import { useAppDispatch } from "@/hooks";
 
 const AuthLayout = ({ children }: { children: React.ReactNode }) => {
+  const dispatch = useAppDispatch();
   const returnUrl = usePathname();
   const router = useRouter();
   const auth = useSelector((state: RootState) => state.auth);
@@ -16,7 +18,20 @@ const AuthLayout = ({ children }: { children: React.ReactNode }) => {
       localStorage.setItem("returnUrl", returnUrl);
       router.push("/auth/login");
     }
-  }, [auth.isAuthenticated, router, returnUrl]);
+
+    if (auth.hasMultipleSessions) {
+      localStorage.setItem("returnUrl", returnUrl);
+      dispatch(logout());
+      showToast("Multiple sessions detected", "error");
+      router.push("/auth/login");
+    }
+  }, [
+    auth.isAuthenticated,
+    router,
+    returnUrl,
+    auth.hasMultipleSessions,
+    dispatch,
+  ]);
 
   return <>{children}</>;
 };
