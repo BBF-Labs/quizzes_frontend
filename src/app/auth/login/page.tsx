@@ -46,7 +46,10 @@ export default function LoginPage() {
 
     try {
       await dispatch(
-        loginUser(formData.username.trim().toLowerCase(), formData.password)
+        loginUser(
+          formData.username.trim().replace(" ", "").toLowerCase(),
+          formData.password
+        )
       );
       setIsLoading(false);
       showToast("Login Successful!", "success");

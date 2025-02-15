@@ -46,8 +46,8 @@ export default function SignUpPage() {
 
     try {
       const data = {
-        name: formData.fullName,
-        username: formData.username.trim().toLowerCase(),
+        name: formData.fullName.trim(),
+        username: formData.username.trim().replace(" ", "").toLowerCase(),
         password: formData.password,
         email: formData.email.trim().toLowerCase(),
       };
@@ -114,7 +114,7 @@ export default function SignUpPage() {
                 id="email"
                 name="email"
                 type="email"
-                placeholder="john@example.com"
+                placeholder="example@theniitettey.live"
                 required
                 value={formData.email}
                 onChange={handleChange}
