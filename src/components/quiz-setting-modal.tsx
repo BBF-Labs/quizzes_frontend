@@ -156,7 +156,7 @@ export function QuizSettingsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px] w-full max-w-[95vw] overflow-y-auto max-h-[90vh] rounded-xl">
+      <DialogContent className="sm:max-w-[425px] w-full max-w-[95vw] max-h-[90vh] rounded-xl">
         <DialogHeader>
           <DialogTitle>Quiz Settings</DialogTitle>
         </DialogHeader>

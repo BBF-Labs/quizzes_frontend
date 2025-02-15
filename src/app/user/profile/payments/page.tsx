@@ -217,9 +217,9 @@ export default function PaymentsPage() {
                           }}
                           className={`inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
                             payment.status === "success"
-                              ? "opacity-50   pointer-events-none"
-                              : ""
-                          }button-gradient h-10 px-4 py-2 sm:h-9 sm:rounded-md sm:px-3 lg:h-11 lg:rounded-md lg:px-8`}
+                              ? "opacity-10 pointer-events-none bg-[linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,121,45,1) 66%, rgba(0,212,255,1) 100%)]"
+                              : "button-gradient"
+                          } h-10 px-4 py-2 sm:h-9 sm:rounded-md sm:px-3 lg:h-11 lg:rounded-md lg:px-8`}
                           href={`${
                             payment.status !== "success" &&
                             payment.package !== "Custom"
@@ -230,7 +230,9 @@ export default function PaymentsPage() {
                               : "#"
                           }`}
                         >
-                          Complete
+                          {payment.status !== "success"
+                            ? "Completed"
+                            : "Success"}
                         </Link>
                       </TableCell>
                     </TableRow>
