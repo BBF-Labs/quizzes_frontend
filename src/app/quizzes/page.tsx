@@ -53,19 +53,20 @@ export default function QuizzesPage() {
         const response = await getQuizzes();
 
         const getQuizDetails = (quiz: any) => {
-          const timePerQuestion = 35;
+          const timePerQuestion = 30;
+
           const totalQuestions = quiz.quizQuestions.reduce(
-            (acc: any, quizQuestion: any) => {
-              return (
-                acc +
-                (quizQuestion.questions ? quizQuestion.questions.length : 0)
-              );
+            (acc: number, quizQuestion: any) => {
+              const uniqueQuestions = new Set(quizQuestion.questions || []);
+              return acc + uniqueQuestions.size;
             },
             0
           );
-          const totalDuration = parseInt(
-            `${(totalQuestions * timePerQuestion) / 60}`
+
+          const totalDuration = Math.floor(
+            (totalQuestions * timePerQuestion) / 60
           );
+
           return {
             totalQuestions,
             totalDuration,
@@ -86,6 +87,7 @@ export default function QuizzesPage() {
               questions: totalQuestions,
               completions: quiz.completions || 0,
               id: quiz.courseId,
+              createdAt: quiz.createdAt, // Add this line
             };
           })
           .sort((a: any, b: any) => {
@@ -96,7 +98,7 @@ export default function QuizzesPage() {
               return 0;
             }
 
-            return dateA.getTime() - dateB.getTime();
+            return dateB.getTime() - dateA.getTime();
           });
 
         setQuizzesData(mappedQuizzes);
