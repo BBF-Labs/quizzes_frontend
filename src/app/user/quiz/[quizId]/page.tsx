@@ -312,12 +312,12 @@ export default function QuizPage() {
             <div key={index} className="mb-4 p-4 bg-muted rounded-lg">
               <p className="font-semibold">{question.question}</p>
               <p className="text-muted-foreground">
-                Your answer: {userAnswers[index]}
+                Your answer: {userAnswers[index] || "No answer provided"}
               </p>
               <p
                 className={
-                  userAnswers[index]?.toLowerCase() ===
-                  question.answer?.toLowerCase()
+                  (userAnswers[index]?.toLowerCase() || "") ===
+                  question.answer.toLowerCase()
                     ? "text-green-500"
                     : "text-red-500"
                 }
