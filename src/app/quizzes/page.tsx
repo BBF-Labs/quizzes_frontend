@@ -72,19 +72,32 @@ export default function QuizzesPage() {
           };
         };
 
-        const mappedQuizzes = response.map((quiz: any) => {
-          const course = courses.find((course) => quiz.courseId === course._id);
-          const { totalQuestions, totalDuration } = getQuizDetails(quiz);
+        const mappedQuizzes = response
+          .map((quiz: any) => {
+            const course = courses.find(
+              (course) => quiz.courseId === course._id
+            );
+            const { totalQuestions, totalDuration } = getQuizDetails(quiz);
 
-          return {
-            title: course?.title || "Unknown Title",
-            category: course?.code.split(" ")[0] || "Unknown Category",
-            duration: totalDuration,
-            questions: totalQuestions,
-            completions: quiz.completions || 0,
-            id: quiz.courseId,
-          };
-        });
+            return {
+              title: course?.title || "Unknown Title",
+              category: course?.code.split(" ")[0] || "Unknown Category",
+              duration: totalDuration,
+              questions: totalQuestions,
+              completions: quiz.completions || 0,
+              id: quiz.courseId,
+            };
+          })
+          .sort((a: any, b: any) => {
+            const dateA = new Date(a.createdAt);
+            const dateB = new Date(b.createdAt);
+
+            if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) {
+              return 0;
+            }
+
+            return dateA.getTime() - dateB.getTime();
+          });
 
         setQuizzesData(mappedQuizzes);
       } catch (error) {
