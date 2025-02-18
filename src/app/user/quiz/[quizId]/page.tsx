@@ -243,7 +243,8 @@ export default function QuizPage() {
   const calculateScore = () => {
     return userAnswers.filter(
       (answer, index) =>
-        answer.toLowerCase() === questions[index]?.answer?.toLowerCase()
+        (answer?.toLowerCase() || "No answer provided") ===
+        questions[index]?.answer?.toLowerCase()
     ).length;
   };
 
