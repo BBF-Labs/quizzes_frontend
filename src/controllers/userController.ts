@@ -24,7 +24,7 @@ const createUser = async (user: any) => {
       ) {
         throw new Error("User Already exist");
       }
-      throw new Error(error.message.split(":")[1]);
+      throw new Error("Couldn't create, try again");
     }
     throw new Error("Something went wrong");
   }
