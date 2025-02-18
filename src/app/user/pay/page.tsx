@@ -84,8 +84,10 @@ const Packages = [
       "Full semester access",
       "All course materials",
       "Progress tracking",
-      "Basic support",
+      "Priority support",
+      "Custom study plans",
     ],
+    highlighted: true,
   },
   {
     id: "67ad57cc0628c9cc6546ab2d",
@@ -97,10 +99,8 @@ const Packages = [
       "7-day full access",
       "All course materials",
       "Progress tracking",
-      "Priority support",
-      "Custom study plans",
+      "Basic support",
     ],
-    highlighted: true,
   },
   {
     id: "67ad57ea0628c9cc6546ab33",
