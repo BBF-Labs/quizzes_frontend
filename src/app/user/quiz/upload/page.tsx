@@ -30,6 +30,7 @@ import {
   RadioGroupItem,
   Progress,
 } from "@/components";
+import Link from "next/link";
 
 // Mock data for courses (replace with actual data fetching in production)
 const courses = [
@@ -93,7 +94,7 @@ export default function UploadPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-background/80 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-b from-background to-background/80 py-12 px-4 mt-24 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto space-y-8">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -327,14 +328,16 @@ export default function UploadPage() {
                     </>
                   )}
                 </Button>
-                <Button
-                  variant="outline"
-                  className="flex-1 sm:flex-none"
-                  type="button"
-                >
-                  Contact Admin
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
+                <Link href="https://wa.me/233208860872?text=Hi%20Admin%20%40%20BBF%20Labs%2C%0A%0AI%20hope%20you%27re%20doing%20well.%20I%20am%20currently%20trying%20to%20access%20my%20course%20on%20the%20platform%2C%20but%20it%20seems%20that%20my%20course%20isn%27t%20listed%20or%20available.%20Could%20you%20please%20assist%20in%20adding%20it%20or%20provide%20guidance%20on%20how%20to%20proceed%3F%0A%0AThank%20you%20for%20your%20help%21%0A%0ABest%20regards%2C%0A%5BYour%20Name%5D">
+                  <Button
+                    variant="outline"
+                    className="flex-1 sm:flex-none"
+                    type="button"
+                  >
+                    Contact Admin
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
               </div>
             </motion.form>
           </CardContent>
