@@ -310,7 +310,10 @@ export default function QuizPage() {
           />
           {questions.map((question, index) => (
             <div key={index} className="mb-4 p-4 bg-muted rounded-lg">
-              <div className="font-semibold">{question.question}</div>
+              <div
+                className="font-semibold"
+                dangerouslySetInnerHTML={{ __html: question.question }}
+              />
               <div className="text-muted-foreground">
                 Your answer: {userAnswers[index] || "No answer provided"}
               </div>
@@ -321,12 +324,14 @@ export default function QuizPage() {
                     ? "text-green-500"
                     : "text-red-500"
                 }
-              >
-                Correct answer: {question.answer}
-              </div>
-              <p className="text-sm text-muted-foreground mt-2">
-                {question.explanation}
-              </p>
+                dangerouslySetInnerHTML={{
+                  __html: `Correct answer: ${question.answer}`,
+                }}
+              ></div>
+              <p
+                className="text-sm text-muted-foreground mt-2"
+                dangerouslySetInnerHTML={{ __html: question.explanation || "" }}
+              ></p>
             </div>
           ))}
           <Button onClick={() => resetQuiz()} className="mt-4">
@@ -408,9 +413,12 @@ export default function QuizPage() {
           <div className="space-y-4">
             {questions[currentQuestion] ? (
               <>
-                <div className="text-xl font-semibold mb-2">
-                  {questions[currentQuestion].question}
-                </div>
+                <div
+                  className="text-xl font-semibold mb-2"
+                  dangerouslySetInnerHTML={{
+                    __html: questions[currentQuestion].question,
+                  }}
+                ></div>
 
                 {questions[currentQuestion].type === "mcq" && (
                   <RadioGroup
@@ -423,7 +431,7 @@ export default function QuizPage() {
                         className="flex items-center space-x-2 p-4 rounded-lg border cursor-pointer hover:bg-muted"
                       >
                         <RadioGroupItem value={option} id={`option-${index}`} />
-                        <div>{option}</div>
+                        <div dangerouslySetInnerHTML={{ __html: option }}></div>
                       </Label>
                     ))}
                   </RadioGroup>
