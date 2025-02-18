@@ -31,11 +31,11 @@ import { useAppDispatch } from "@/hooks";
 
 const standardPackages = [
   {
-    id: "67ad57ba0628c9cc6546ab27",
-    name: "Semester Access",
-    price: 9,
-    period: "/semester",
-    description: "Perfect for dedicated students",
+    id: "67ad57cc0628c9cc6546ab2d",
+    name: "Pro Weekly",
+    price: 4,
+    period: "/week",
+    description: "Most popular for exam prep",
     features: [
       "Full semester access",
       "All course materials",
@@ -44,11 +44,11 @@ const standardPackages = [
     ],
   },
   {
-    id: "67ad57cc0628c9cc6546ab2d",
-    name: "Pro Weekly",
-    price: 4,
-    period: "/week",
-    description: "Most popular for exam prep",
+    id: "67ad57ba0628c9cc6546ab27",
+    name: "Semester Access",
+    price: 9,
+    period: "/semester",
+    description: "Perfect for dedicated students",
     features: [
       "7-day full access",
       "All course materials",
@@ -152,8 +152,8 @@ const Packages = [
 
 function PayPageContent() {
   const dispatch = useAppDispatch();
-  const { credentials } = useSelector((state: RootState) => state.auth);
-  const [email, setEmail] = useState("");
+  const { credentials, user } = useSelector((state: RootState) => state.auth);
+  const [email, setEmail] = useState(user.email || "");
   const [customAmount, setCustomAmount] = useState("");
   const [isCustomAmount, setIsCustomAmount] = useState(false);
   const [customAmountInput, setCustomAmountInput] = useState("");
