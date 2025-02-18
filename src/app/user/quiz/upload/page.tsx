@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight,
@@ -12,6 +12,7 @@ import {
   File,
   UploadIcon as UploadImg,
   X,
+  Loader,
 } from "lucide-react";
 import {
   Label,
@@ -29,72 +30,167 @@ import {
   RadioGroup,
   RadioGroupItem,
   Progress,
+  showToast,
 } from "@/components";
 import Link from "next/link";
+import { getAllCourses } from "@/controllers";
+import Config from "@/config";
 
-// Mock data for courses (replace with actual data fetching in production)
-const courses = [
-  { id: "math101", name: "Mathematics 101" },
-  { id: "phys201", name: "Physics 201" },
-  { id: "chem301", name: "Chemistry 301" },
-];
+interface Course {
+  _id: string;
+  code: string;
+  title: string;
+}
+
+const baseUrl = Config.API_URL;
 
 export default function UploadPage() {
-  const [uploadType, setUploadType] = useState<"link" | "material">("link");
-  const [course, setCourse] = useState("");
+  const [uploadType, setUploadType] = useState<"link" | "file">("link");
+  const [courseId, setCourseId] = useState("");
   const [title, setTitle] = useState("");
-  const [lectureType, setLectureType] = useState("");
+  const [courseType, setCourseType] = useState("");
   const [lectureNumber, setLectureNumber] = useState("");
-  const [material, setMaterial] = useState<File | null>(null);
+  const [file, setFile] = useState<File | null>(null);
   const [link, setLink] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [isLoadingCourses, setIsLoadingCourses] = useState(true);
 
-  const filteredCourses = courses.filter((c) =>
-    c.name.toLowerCase().includes(searchTerm.toLowerCase())
+  useEffect(() => {
+    const fetchCourses = async () => {
+      setIsLoadingCourses(true);
+      try {
+        const coursesResponse = await getAllCourses();
+        setCourses(coursesResponse);
+      } catch (error) {
+        console.error("Error fetching courses:", error);
+        showToast("Failed to load courses", "error");
+      } finally {
+        setIsLoadingCourses(false);
+      }
+    };
+
+    fetchCourses();
+  }, []);
+
+  const filteredCourses = courses.filter(
+    (c) =>
+      c.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.code.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
-  };
+  }, []);
 
-  const handleDragLeave = (e: React.DragEvent) => {
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-  };
+  }, []);
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      setMaterial(file);
-      setUploadType("material");
+    const droppedFile = e.dataTransfer.files[0];
+    if (droppedFile) {
+      setFile(droppedFile);
+      setUploadType("file");
+      showToast("File added successfully", "success");
     }
-  };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsUploading(true);
 
-    // Simulate upload progress
-    for (let i = 0; i <= 100; i += 10) {
-      await new Promise((resolve) => setTimeout(resolve, 200));
-      setUploadProgress(i);
+    const questionRefType =
+      courseType === "lecture" ? lectureNumber : courseType.toUpperCase();
+
+    const formData = new FormData();
+    formData.append("courseId", courseId);
+    formData.append("title", title);
+    formData.append("questionRefType", questionRefType);
+
+    const body: any = {
+      title: title,
+      courseId: courseId,
+      questionRefType: questionRefType,
+    };
+
+    if (uploadType === "file" && file) {
+      formData.append("file", file);
+    } else if (uploadType === "link") {
+      body.link = link;
     }
 
-    // Reset after upload
-    setTimeout(() => {
+    try {
+      let response;
+      if (uploadType === "file") {
+        response = await fetch(`${baseUrl}/materials/upload`, {
+          method: "POST",
+          body: formData,
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          },
+        });
+      } else {
+        response = await fetch(`${baseUrl}/materials/li/upload`, {
+          method: "POST",
+          body: JSON.stringify(body),
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          },
+        });
+      }
+
+      const data = await response.json();
+
+      if (response.ok) {
+        showToast(
+          `${uploadType === "file" ? "File" : "Link"} uploaded successfully`,
+          "success"
+        );
+        // Reset form or navigate away
+      } else {
+        showToast("Failed: " + (data.message || "Upload failed"), "error");
+      }
+    } catch (error: any) {
+      showToast(error.message, "error");
+    } finally {
       setIsUploading(false);
       setUploadProgress(0);
-    }, 500);
+    }
   };
 
+  const isFormValid = () => {
+    return (
+      courseId &&
+      title &&
+      courseType &&
+      ((uploadType === "link" && link) || (uploadType === "file" && file)) &&
+      (courseType !== "lecture" || lectureNumber) &&
+      !isLoadingCourses
+    );
+  };
+
+  if (isUploading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader className="animate-spin h-8 w-8 text-teal-500" />
+        <span className="ml-2 text-lg text-zinc-400">
+          Uploading your material...
+        </span>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-background/80 py-12 px-4 mt-24 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-b from-background to-background/80 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto space-y-8">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -111,9 +207,11 @@ export default function UploadPage() {
           </p>
         </motion.div>
 
-        <Card className="backdrop-blur-sm bg-card/50">
+        <Card className="backdrop-blur-sm bg-card/50 shadow-lg">
           <CardHeader>
-            <CardTitle className="text-2xl">Upload Details</CardTitle>
+            <CardTitle className="text-2xl font-semibold">
+              Upload Details
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <motion.form
@@ -125,24 +223,24 @@ export default function UploadPage() {
             >
               <div className="grid gap-6 sm:grid-cols-2">
                 <div className="sm:col-span-2">
-                  <Label className="text-base">Upload Type</Label>
+                  <Label className="text-base font-medium">Upload Type</Label>
                   <RadioGroup
                     defaultValue="link"
                     onValueChange={(value) =>
-                      setUploadType(value as "link" | "material")
+                      setUploadType(value as "link" | "file")
                     }
                     className="flex flex-wrap gap-4 mt-2"
                   >
                     <div className="flex items-center">
                       <RadioGroupItem value="link" id="link" />
-                      <Label htmlFor="link" className="ml-2">
+                      <Label htmlFor="link" className="ml-2 cursor-pointer">
                         Link
                       </Label>
                     </div>
                     <div className="flex items-center">
-                      <RadioGroupItem value="material" id="material" />
-                      <Label htmlFor="material" className="ml-2">
-                        Material (docs, slides, img)
+                      <RadioGroupItem value="file" id="file" />
+                      <Label htmlFor="file" className="ml-2 cursor-pointer">
+                        File Upload
                       </Label>
                     </div>
                   </RadioGroup>
@@ -164,17 +262,23 @@ export default function UploadPage() {
                 </div>
 
                 <div className="sm:col-span-2">
-                  <Label htmlFor="course">Select Course</Label>
-                  <Select value={course} onValueChange={setCourse}>
+                  <Label htmlFor="courseId">Select Course</Label>
+                  <Select value={courseId} onValueChange={setCourseId}>
                     <SelectTrigger className="mt-1">
                       <SelectValue placeholder="Select a course" />
                     </SelectTrigger>
                     <SelectContent>
-                      {filteredCourses.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name}
+                      {isLoadingCourses ? (
+                        <SelectItem value="loading" disabled>
+                          Loading courses...
                         </SelectItem>
-                      ))}
+                      ) : (
+                        filteredCourses.map((c) => (
+                          <SelectItem key={c._id} value={c._id}>
+                            {c.code} - {c.title}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -191,9 +295,9 @@ export default function UploadPage() {
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="lecture-type">Type</Label>
-                  <Select value={lectureType} onValueChange={setLectureType}>
+                <div className="sm:col-span-2">
+                  <Label htmlFor="courseType">Type</Label>
+                  <Select value={courseType} onValueChange={setCourseType}>
                     <SelectTrigger className="mt-1">
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
@@ -205,11 +309,11 @@ export default function UploadPage() {
                   </Select>
                 </div>
 
-                {lectureType === "lecture" && (
-                  <div>
-                    <Label htmlFor="lecture-number">Lecture Number</Label>
+                {courseType === "lecture" && (
+                  <div className="sm:col-span-2">
+                    <Label htmlFor="lectureNumber">Lecture Number</Label>
                     <Input
-                      id="lecture-number"
+                      id="lectureNumber"
                       type="number"
                       value={lectureNumber}
                       onChange={(e) => setLectureNumber(e.target.value)}
@@ -239,7 +343,7 @@ export default function UploadPage() {
                     </div>
                   ) : (
                     <div>
-                      <Label htmlFor="material">Upload Material</Label>
+                      <Label htmlFor="file">Upload File</Label>
                       <div
                         className={`mt-1 relative rounded-lg border-2 border-dashed p-6 transition-colors ${
                           isDragging
@@ -250,16 +354,19 @@ export default function UploadPage() {
                         onDragLeave={handleDragLeave}
                         onDrop={handleDrop}
                       >
-                        {material ? (
+                        {file ? (
                           <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-2">
                               <File className="h-8 w-8 text-primary" />
-                              <span className="text-sm">{material.name}</span>
+                              <span className="text-sm">{file.name}</span>
                             </div>
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => setMaterial(null)}
+                              onClick={() => {
+                                setFile(null);
+                                showToast("File removed", "success");
+                              }}
                             >
                               <X className="h-4 w-4" />
                             </Button>
@@ -277,9 +384,16 @@ export default function UploadPage() {
                                   id="file-upload"
                                   type="file"
                                   className="sr-only"
-                                  onChange={(e) =>
-                                    setMaterial(e.target.files?.[0] || null)
-                                  }
+                                  onChange={(e) => {
+                                    const selectedFile = e.target.files?.[0];
+                                    if (selectedFile) {
+                                      setFile(selectedFile);
+                                      showToast(
+                                        "File added successfully",
+                                        "success"
+                                      );
+                                    }
+                                  }}
                                   accept=".doc,.docx,.pdf,.ppt,.pptx,.jpg,.jpeg,.png"
                                 />
                               </label>
@@ -297,7 +411,7 @@ export default function UploadPage() {
               </div>
 
               <AnimatePresence>
-                {isUploading && (
+                {uploadProgress > 0 && (
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -316,11 +430,14 @@ export default function UploadPage() {
                 <Button
                   type="submit"
                   className="flex-1"
-                  disabled={isUploading}
+                  disabled={!isFormValid() || isUploading}
                   variant="gradient"
                 >
                   {isUploading ? (
-                    "Uploading..."
+                    <>
+                      <Loader className="mr-2 h-4 w-4 animate-spin" />
+                      Uploading...
+                    </>
                   ) : (
                     <>
                       Upload
@@ -328,7 +445,10 @@ export default function UploadPage() {
                     </>
                   )}
                 </Button>
-                <Link href="https://wa.me/233208860872?text=Hi%20Admin%20%40%20BBF%20Labs%2C%0A%0AI%20hope%20you%27re%20doing%20well.%20I%20am%20currently%20trying%20to%20access%20my%20course%20on%20the%20platform%2C%20but%20it%20seems%20that%20my%20course%20isn%27t%20listed%20or%20available.%20Could%20you%20please%20assist%20in%20adding%20it%20or%20provide%20guidance%20on%20how%20to%20proceed%3F%0A%0AThank%20you%20for%20your%20help%21%0A%0ABest%20regards%2C%0A%5BYour%20Name%5D">
+                <Link
+                  target="_blank"
+                  href="https://wa.me/233208860872?text=Hi%20Admin%20%40%20BBF%20Labs%2C%0A%0AI%20hope%20you%27re%20doing%20well.%20I%20am%20currently%20trying%20to%20access%20my%20course%20on%20the%20platform%2C%20but%20it%20seems%20that%20my%20course%20isn%27t%20listed%20or%20available.%20Could%20you%20please%20assist%20in%20adding%20it%20or%20provide%20guidance%20on%20how%20to%20proceed%3F%0A%0AThank%20you%20for%20your%20help%21%0A%0ABest%20regards%2C%0A%5BYour%20Name%5D"
+                >
                   <Button
                     variant="outline"
                     className="flex-1 sm:flex-none"
