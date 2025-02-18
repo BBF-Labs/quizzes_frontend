@@ -1,14 +1,17 @@
 "use client";
 
+import type React from "react";
+
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight,
   Upload,
   Search,
   LinkIcon,
   File,
-  Image as UploadImg,
+  UploadIcon as UploadImg,
+  X,
 } from "lucide-react";
 import {
   Label,
@@ -25,6 +28,7 @@ import {
   CardTitle,
   RadioGroup,
   RadioGroupItem,
+  Progress,
 } from "@/components";
 
 // Mock data for courses (replace with actual data fetching in production)
@@ -32,7 +36,6 @@ const courses = [
   { id: "math101", name: "Mathematics 101" },
   { id: "phys201", name: "Physics 201" },
   { id: "chem301", name: "Chemistry 301" },
-  // Add more courses as needed
 ];
 
 export default function UploadPage() {
@@ -44,43 +47,72 @@ export default function UploadPage() {
   const [material, setMaterial] = useState<File | null>(null);
   const [link, setLink] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
 
   const filteredCourses = courses.filter((c) =>
     c.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    // Handle upload logic here
-    console.log("Upload attempt", {
-      uploadType,
-      course,
-      title,
-      lectureType,
-      lectureNumber,
-      material,
-      link,
-    });
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      setMaterial(file);
+      setUploadType("material");
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsUploading(true);
+
+    // Simulate upload progress
+    for (let i = 0; i <= 100; i += 10) {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      setUploadProgress(i);
+    }
+
+    // Reset after upload
+    setTimeout(() => {
+      setIsUploading(false);
+      setUploadProgress(0);
+    }, 500);
   };
 
   return (
-    <div>
-      <div className="max-w-3xl mx-auto mt-24 space-y-8">
+    <div className="min-h-screen bg-gradient-to-b from-background to-background/80 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto space-y-8">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
+          className="text-center space-y-4"
         >
-          <h2 className="text-center text-3xl font-extrabold">
+          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl bg-gradient-to-r from-primary via-blue-500 to-violet-500 bg-clip-text text-transparent">
             Upload Learning Material
-          </h2>
-          <p className="mt-2 text-center text-sm text-muted-foreground">
-            Contribute to our quiz database and help others learn
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Share your knowledge and help others learn. Upload lecture
+            materials, quizzes, or study resources.
           </p>
         </motion.div>
-        <Card>
+
+        <Card className="backdrop-blur-sm bg-card/50">
           <CardHeader>
-            <CardTitle>Upload Details</CardTitle>
+            <CardTitle className="text-2xl">Upload Details</CardTitle>
           </CardHeader>
           <CardContent>
             <motion.form
@@ -90,48 +122,50 @@ export default function UploadPage() {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.1, duration: 0.5 }}
             >
-              <div className="space-y-4">
-                <div>
-                  <Label>Upload Type</Label>
+              <div className="grid gap-6 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <Label className="text-base">Upload Type</Label>
                   <RadioGroup
                     defaultValue="link"
                     onValueChange={(value) =>
                       setUploadType(value as "link" | "material")
                     }
-                    className="flex space-x-4"
+                    className="flex flex-wrap gap-4 mt-2"
                   >
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center">
                       <RadioGroupItem value="link" id="link" />
-                      <Label htmlFor="link">Link</Label>
+                      <Label htmlFor="link" className="ml-2">
+                        Link
+                      </Label>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center">
                       <RadioGroupItem value="material" id="material" />
-                      <Label htmlFor="material">
+                      <Label htmlFor="material" className="ml-2">
                         Material (docs, slides, img)
                       </Label>
                     </div>
                   </RadioGroup>
                 </div>
 
-                <div>
+                <div className="sm:col-span-2">
                   <Label htmlFor="course-search">Search Course</Label>
-                  <div className="relative">
+                  <div className="relative mt-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="course-search"
                       type="text"
                       placeholder="Search for a course"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pr-10"
+                      className="pl-10"
                     />
-                    <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   </div>
                 </div>
 
-                <div>
+                <div className="sm:col-span-2">
                   <Label htmlFor="course">Select Course</Label>
                   <Select value={course} onValueChange={setCourse}>
-                    <SelectTrigger>
+                    <SelectTrigger className="mt-1">
                       <SelectValue placeholder="Select a course" />
                     </SelectTrigger>
                     <SelectContent>
@@ -144,13 +178,14 @@ export default function UploadPage() {
                   </Select>
                 </div>
 
-                <div>
+                <div className="sm:col-span-2">
                   <Label htmlFor="title">Title</Label>
                   <Input
                     id="title"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="Enter a title for your material"
+                    className="mt-1"
                     required
                   />
                 </div>
@@ -158,7 +193,7 @@ export default function UploadPage() {
                 <div>
                   <Label htmlFor="lecture-type">Type</Label>
                   <Select value={lectureType} onValueChange={setLectureType}>
-                    <SelectTrigger>
+                    <SelectTrigger className="mt-1">
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -178,61 +213,132 @@ export default function UploadPage() {
                       value={lectureNumber}
                       onChange={(e) => setLectureNumber(e.target.value)}
                       placeholder="Enter lecture number"
+                      className="mt-1"
                       required
                     />
                   </div>
                 )}
 
-                {uploadType === "link" ? (
-                  <div>
-                    <Label htmlFor="link">Link</Label>
-                    <Input
-                      id="link"
-                      type="url"
-                      value={link}
-                      onChange={(e) => setLink(e.target.value)}
-                      placeholder="Enter material link"
-                      icon={
-                        <LinkIcon className="h-5 w-5 text-muted-foreground" />
-                      }
-                      required
-                    />
-                  </div>
-                ) : (
-                  <div>
-                    <Label htmlFor="material">Upload Material</Label>
-                    <Input
-                      id="material"
-                      type="file"
-                      onChange={(e) => setMaterial(e.target.files?.[0] || null)}
-                      accept=".doc,.docx,.pdf,.ppt,.pptx,.jpg,.jpeg,.png"
-                      icon={
-                        material ? (
-                          <File className="h-5 w-5 text-muted-foreground" />
+                <div className="sm:col-span-2">
+                  {uploadType === "link" ? (
+                    <div>
+                      <Label htmlFor="link">Link</Label>
+                      <div className="relative mt-1">
+                        <LinkIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="link"
+                          type="url"
+                          value={link}
+                          onChange={(e) => setLink(e.target.value)}
+                          placeholder="Enter material link"
+                          className="pl-10"
+                          required
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <Label htmlFor="material">Upload Material</Label>
+                      <div
+                        className={`mt-1 relative rounded-lg border-2 border-dashed p-6 transition-colors ${
+                          isDragging
+                            ? "border-primary bg-primary/10"
+                            : "border-muted-foreground/25"
+                        }`}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                      >
+                        {material ? (
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              <File className="h-8 w-8 text-primary" />
+                              <span className="text-sm">{material.name}</span>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setMaterial(null)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
                         ) : (
-                          <UploadImg className="h-5 w-5 text-muted-foreground" />
-                        )
-                      }
-                      required
-                    />
-                  </div>
-                )}
+                          <div className="text-center">
+                            <UploadImg className="mx-auto h-12 w-12 text-muted-foreground" />
+                            <div className="mt-4 flex text-sm leading-6 text-muted-foreground">
+                              <label
+                                htmlFor="file-upload"
+                                className="relative cursor-pointer rounded-md font-semibold text-primary hover:text-primary/80"
+                              >
+                                <span>Upload a file</span>
+                                <Input
+                                  id="file-upload"
+                                  type="file"
+                                  className="sr-only"
+                                  onChange={(e) =>
+                                    setMaterial(e.target.files?.[0] || null)
+                                  }
+                                  accept=".doc,.docx,.pdf,.ppt,.pptx,.jpg,.jpeg,.png"
+                                />
+                              </label>
+                              <p className="pl-1">or drag and drop</p>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              PDF, DOC, PPT, or images up to 10MB
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <Button type="submit" className="w-full" variant="gradient">
-                Upload
-                <Upload className="ml-2 h-5 w-5" />
-              </Button>
+              <AnimatePresence>
+                {isUploading && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="space-y-2"
+                  >
+                    <Progress value={uploadProgress} />
+                    <p className="text-sm text-center text-muted-foreground">
+                      Uploading... {uploadProgress}%
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                <Button
+                  type="submit"
+                  className="flex-1"
+                  disabled={isUploading}
+                  variant="gradient"
+                >
+                  {isUploading ? (
+                    "Uploading..."
+                  ) : (
+                    <>
+                      Upload
+                      <Upload className="ml-2 h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 sm:flex-none"
+                  type="button"
+                >
+                  Contact Admin
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
             </motion.form>
           </CardContent>
         </Card>
-
-        <div className="text-center mt-8">
-          <Button variant="outline" className="inline-flex items-center">
-            Contact Admin
-            <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
-        </div>
       </div>
     </div>
   );
