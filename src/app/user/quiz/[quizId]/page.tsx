@@ -344,7 +344,7 @@ export default function QuizPage() {
   }
 
   return (
-    <div className="container mx-auto p-4 max-w-4xl mt-24">
+    <div className="container mx-auto p-4 max-w-4xl mt-24 overflow-x-auto overflow-y-auto">
       <Card className="mb-6">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>
