@@ -225,7 +225,7 @@ export default function UploadPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-background/80 py-12 px-4 sm:px-6 lg:px-8 mt-24">
+    <div className="min-h-screen bg-background py-12 px-4 sm:px-6 lg:px-8 pt-24">
       <div className="max-w-4xl mx-auto space-y-8">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
