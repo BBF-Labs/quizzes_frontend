@@ -320,7 +320,7 @@ export default function QuizPage() {
               <div
                 className={
                   (userAnswers[index]?.toLowerCase() || "") ===
-                  question.answer.toLowerCase()
+                  (question.answer?.toLowerCase() || "")
                     ? "text-green-500"
                     : "text-red-500"
                 }
