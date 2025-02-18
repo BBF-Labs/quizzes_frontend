@@ -75,6 +75,19 @@ const standardPackages = [
 
 const Packages = [
   {
+    id: "67ad57cc0628c9cc6546ab2d",
+    name: "Pro Weekly",
+    price: 4,
+    period: "/week",
+    description: "Most popular for exam prep",
+    features: [
+      "7-day full access",
+      "All course materials",
+      "Progress tracking",
+      "Basic support",
+    ],
+  },
+  {
     id: "67ad57ba0628c9cc6546ab27",
     name: "Semester Access",
     price: 9,
@@ -88,19 +101,6 @@ const Packages = [
       "Custom study plans",
     ],
     highlighted: true,
-  },
-  {
-    id: "67ad57cc0628c9cc6546ab2d",
-    name: "Pro Weekly",
-    price: 4,
-    period: "/week",
-    description: "Most popular for exam prep",
-    features: [
-      "7-day full access",
-      "All course materials",
-      "Progress tracking",
-      "Basic support",
-    ],
   },
   {
     id: "67ad57ea0628c9cc6546ab33",
