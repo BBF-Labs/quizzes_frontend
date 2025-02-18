@@ -79,7 +79,7 @@ const Packages = [
     name: "Pro Weekly",
     price: 4,
     period: "/week",
-    description: "Most popular for exam prep",
+    description: "Perfect for dedicated students",
     features: [
       "7-day full access",
       "All course materials",
@@ -92,7 +92,7 @@ const Packages = [
     name: "Semester Access",
     price: 9,
     period: "/semester",
-    description: "Perfect for dedicated students",
+    description: "Most popular for exam prep",
     features: [
       "Full semester access",
       "All course materials",
