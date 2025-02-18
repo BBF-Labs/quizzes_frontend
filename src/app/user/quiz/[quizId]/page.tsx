@@ -310,11 +310,11 @@ export default function QuizPage() {
           />
           {questions.map((question, index) => (
             <div key={index} className="mb-4 p-4 bg-muted rounded-lg">
-              <p className="font-semibold">{question.question}</p>
-              <p className="text-muted-foreground">
+              <div className="font-semibold">{question.question}</div>
+              <div className="text-muted-foreground">
                 Your answer: {userAnswers[index] || "No answer provided"}
-              </p>
-              <p
+              </div>
+              <div
                 className={
                   (userAnswers[index]?.toLowerCase() || "") ===
                   question.answer.toLowerCase()
@@ -323,7 +323,7 @@ export default function QuizPage() {
                 }
               >
                 Correct answer: {question.answer}
-              </p>
+              </div>
               <p className="text-sm text-muted-foreground mt-2">
                 {question.explanation}
               </p>
@@ -408,9 +408,9 @@ export default function QuizPage() {
           <div className="space-y-4">
             {questions[currentQuestion] ? (
               <>
-                <h2 className="text-xl font-semibold mb-2">
+                <div className="text-xl font-semibold mb-2">
                   {questions[currentQuestion].question}
-                </h2>
+                </div>
 
                 {questions[currentQuestion].type === "mcq" && (
                   <RadioGroup
@@ -423,7 +423,7 @@ export default function QuizPage() {
                         className="flex items-center space-x-2 p-4 rounded-lg border cursor-pointer hover:bg-muted"
                       >
                         <RadioGroupItem value={option} id={`option-${index}`} />
-                        <span>{option}</span>
+                        <div>{option}</div>
                       </Label>
                     ))}
                   </RadioGroup>
