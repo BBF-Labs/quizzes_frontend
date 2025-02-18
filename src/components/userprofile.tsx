@@ -10,6 +10,7 @@ import {
   Clipboard,
   DollarSign,
   Grid,
+  UploadCloud,
 } from "lucide-react";
 import { useAppDispatch } from "@/hooks";
 import { logoutUser } from "@/controllers";
@@ -57,6 +58,11 @@ const menuItems = [
     href: "/quizzes",
     label: "All Quizzes",
     icon: <Clipboard className="mr-2 h-4 w-4" />,
+  },
+  {
+    href: "/user/quiz/upload",
+    label: "Upload Material",
+    icon: <UploadCloud className="mr-2 h-4 w-4" />,
   },
   {
     href: "/user/pay",

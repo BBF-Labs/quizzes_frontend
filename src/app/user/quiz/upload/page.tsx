@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-
+import axios, { AxiosError } from "axios";
 import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -35,6 +35,8 @@ import {
 import Link from "next/link";
 import { getAllCourses } from "@/controllers";
 import Config from "@/config";
+import { useSelector } from "react-redux";
+import { RootState } from "@/lib";
 
 interface Course {
   _id: string;
@@ -45,6 +47,7 @@ interface Course {
 const baseUrl = Config.API_URL;
 
 export default function UploadPage() {
+  const { credentials } = useSelector((state: RootState) => state.auth);
   const [uploadType, setUploadType] = useState<"link" | "file">("link");
   const [courseId, setCourseId] = useState("");
   const [title, setTitle] = useState("");
@@ -78,9 +81,24 @@ export default function UploadPage() {
 
   const filteredCourses = courses.filter(
     (c) =>
-      c.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.code.toLowerCase().includes(searchTerm.toLowerCase())
+      c.title
+        .trim()
+        .replace(" ", "")
+        .toLowerCase()
+        .includes(searchTerm.trim().replace(" ", "").toLowerCase()) ||
+      c.code
+        .trim()
+        .replace(" ", "")
+        .toLowerCase()
+        .includes(searchTerm.trim().replace(" ", "").toLowerCase())
   );
+
+  // Auto-select course when there's only one search result
+  useEffect(() => {
+    if (filteredCourses.length === 1) {
+      setCourseId(filteredCourses[0]._id);
+    }
+  }, [filteredCourses]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -103,6 +121,62 @@ export default function UploadPage() {
     }
   }, []);
 
+  const uploadMaterial = async (
+    formData: FormData | object,
+    uploadType: "file" | "link"
+  ) => {
+    const accessToken = credentials.accessToken;
+    if (!accessToken) {
+      showToast("Authentication token not found", "error");
+      return;
+    }
+
+    try {
+      const url =
+        uploadType === "file"
+          ? `${baseUrl}/materials/upload`
+          : `${baseUrl}/materials/li/upload`;
+      const config = {
+        headers: {
+          "Content-Type":
+            uploadType === "file" ? "multipart/form-data" : "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        onUploadProgress: (progressEvent: any) => {
+          const percentCompleted = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+          setUploadProgress(percentCompleted);
+        },
+      };
+
+      const response = await axios.post(url, formData, config);
+
+      if (response) {
+        showToast(
+          `${uploadType === "file" ? "File" : "Link"} uploaded successfully`,
+          "success"
+        );
+
+        setTitle("");
+        setLink("");
+        setFile(null);
+        setCourseType("");
+        setLectureNumber("");
+        setSearchTerm("");
+      }
+    } catch (error: any) {
+      if (error instanceof AxiosError) {
+        showToast(error.response?.data?.message || "Try again", "error");
+      } else {
+        showToast("Something went wrong", "error");
+      }
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsUploading(true);
@@ -110,60 +184,21 @@ export default function UploadPage() {
     const questionRefType =
       courseType === "lecture" ? lectureNumber : courseType.toUpperCase();
 
-    const formData = new FormData();
-    formData.append("courseId", courseId);
-    formData.append("title", title);
-    formData.append("questionRefType", questionRefType);
-
-    const body: any = {
-      title: title,
-      courseId: courseId,
-      questionRefType: questionRefType,
-    };
-
     if (uploadType === "file" && file) {
+      const formData = new FormData();
+      formData.append("courseId", courseId);
+      formData.append("title", title);
+      formData.append("questionRefType", questionRefType);
       formData.append("file", file);
+      await uploadMaterial(formData, "file");
     } else if (uploadType === "link") {
-      body.link = link;
-    }
-
-    try {
-      let response;
-      if (uploadType === "file") {
-        response = await fetch(`${baseUrl}/materials/upload`, {
-          method: "POST",
-          body: formData,
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-          },
-        });
-      } else {
-        response = await fetch(`${baseUrl}/materials/li/upload`, {
-          method: "POST",
-          body: JSON.stringify(body),
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-          },
-        });
-      }
-
-      const data = await response.json();
-
-      if (response.ok) {
-        showToast(
-          `${uploadType === "file" ? "File" : "Link"} uploaded successfully`,
-          "success"
-        );
-        // Reset form or navigate away
-      } else {
-        showToast("Failed: " + (data.message || "Upload failed"), "error");
-      }
-    } catch (error: any) {
-      showToast(error.message, "error");
-    } finally {
-      setIsUploading(false);
-      setUploadProgress(0);
+      const body = {
+        title: title,
+        courseId: courseId,
+        questionRefType: questionRefType,
+        link: link,
+      };
+      await uploadMaterial(body, "link");
     }
   };
 
@@ -190,7 +225,7 @@ export default function UploadPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-background/80 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background py-12 px-4 sm:px-6 lg:px-8 pt-24">
       <div className="max-w-4xl mx-auto space-y-8">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -198,7 +233,7 @@ export default function UploadPage() {
           transition={{ duration: 0.5 }}
           className="text-center space-y-4"
         >
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl bg-gradient-to-r from-primary via-blue-500 to-violet-500 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl text-gradient-brand">
             Upload Learning Material
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -379,7 +414,9 @@ export default function UploadPage() {
                                 htmlFor="file-upload"
                                 className="relative cursor-pointer rounded-md font-semibold text-primary hover:text-primary/80"
                               >
-                                <span>Upload a file</span>
+                                <span className="text-center">
+                                  Upload a file
+                                </span>
                                 <Input
                                   id="file-upload"
                                   type="file"
@@ -394,7 +431,7 @@ export default function UploadPage() {
                                       );
                                     }
                                   }}
-                                  accept=".doc,.docx,.pdf,.ppt,.pptx,.jpg,.jpeg,.png"
+                                  accept=".doc,.docx,.pdf,.ppt,.pptx,.jpg,.jpeg,.png,.json,.txt"
                                 />
                               </label>
                               <p className="pl-1">or drag and drop</p>
