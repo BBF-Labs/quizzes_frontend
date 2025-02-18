@@ -28,7 +28,7 @@ import {
   Clock,
   HelpCircle,
   Settings,
-  Loader2,
+  Loader,
 } from "lucide-react";
 import { setCurrentQuizQuestion, setQuizStateSettings } from "@/lib";
 import { useAppDispatch } from "@/hooks";
@@ -288,9 +288,9 @@ export default function QuizPage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen">
-        <Loader2 className="h-8 w-8 animate-spin mb-4" />
-        <p className="text-lg font-semibold">Fetching quiz...</p>
+      <div className="flex items-center justify-center py-8">
+        <Loader className="animate-spin h-8 w-8 text-teal-500" />
+        <span className="ml-2 text-lg text-zinc-400">Fetching quiz...</span>
       </div>
     );
   }
