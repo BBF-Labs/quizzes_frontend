@@ -191,6 +191,7 @@ function PayPageContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      setIsLoading(true);
       if (amount && id) {
         const data = {
           amount: amount,
@@ -199,7 +200,6 @@ function PayPageContent() {
         const res = await dispatch(
           createPayment(data, credentials.accessToken)
         );
-        setIsLoading(true);
         showToast("Redirecting...", "success");
         router.push(res);
       } else {
@@ -211,7 +211,6 @@ function PayPageContent() {
         const res = await dispatch(
           createPayment(data, credentials.accessToken)
         );
-        setIsLoading(true);
         showToast("Redirecting...", "success");
         router.push(res);
       }
