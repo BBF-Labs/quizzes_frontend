@@ -154,6 +154,7 @@ function PayPageContent() {
   const dispatch = useAppDispatch();
   const { credentials, user } = useSelector((state: RootState) => state.auth);
   const [email, setEmail] = useState(user.email || "");
+  const [isLoading, setIsLoading] = useState(false);
   const [customAmount, setCustomAmount] = useState("");
   const [isCustomAmount, setIsCustomAmount] = useState(false);
   const [customAmountInput, setCustomAmountInput] = useState("");
@@ -198,6 +199,7 @@ function PayPageContent() {
         const res = await dispatch(
           createPayment(data, credentials.accessToken)
         );
+        setIsLoading(true);
         showToast("Redirecting...", "success");
         router.push(res);
       } else {
@@ -209,11 +211,13 @@ function PayPageContent() {
         const res = await dispatch(
           createPayment(data, credentials.accessToken)
         );
+        setIsLoading(true);
         showToast("Redirecting...", "success");
         router.push(res);
       }
     } catch (error: any) {
       showToast(`${error.message},`, "error");
+      setIsLoading(false);
     }
   };
 
@@ -293,6 +297,7 @@ function PayPageContent() {
                   type="button"
                   className="w-full"
                   variant="gradient"
+                  disabled={isLoading}
                   onClick={handleSubmit}
                 >
                   Pay Now
@@ -499,7 +504,12 @@ function PayPageContent() {
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full" variant="gradient">
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full"
+                  variant="gradient"
+                >
                   Pay Now
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>

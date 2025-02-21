@@ -149,7 +149,7 @@ export default function QuizPage() {
         setIsLoading(false);
         if (
           error.message ===
-          "Error: Error validating user quiz access: User  does not have access to this quiz"
+          "Error: Error validating user quiz access: User does not have access to this quiz"
         ) {
           showToast("You do not have access to this quiz", "error");
           router.push("/quizzes");
