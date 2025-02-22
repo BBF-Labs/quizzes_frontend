@@ -359,6 +359,7 @@ export default function QuizPage() {
       setQuizSettings(quizSettings);
       showToast("Saved progress loaded!", "success");
     }
+    setIsQuizSettingsModalOpen(false);
     setShowContinueModal(false);
   };
 
