@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { formatDistanceToNow } from "date-fns";
 import { useParams, useRouter } from "next/navigation";
 import {
   Button,
@@ -8,7 +9,6 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  Dialog,
   Sheet,
   SheetContent,
   SheetTrigger,
@@ -21,6 +21,12 @@ import {
   QuizSettingsModal,
   SheetTitle,
   showToast,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from "@/components";
 import {
   AlertCircle,
@@ -29,6 +35,7 @@ import {
   HelpCircle,
   Settings,
   Loader,
+  Save,
 } from "lucide-react";
 import { setCurrentQuizQuestion, setQuizStateSettings } from "@/lib";
 import { useAppDispatch } from "@/hooks";
@@ -37,7 +44,6 @@ import type { RootState } from "@/lib";
 import { fetchFullQuiz } from "@/controllers/quizControllers";
 import type { FullQuiz } from "@/interfaces";
 
-// Define types for quiz settings and questions
 type QuizSettings = {
   lectures: string[];
   showHints: boolean;
@@ -104,6 +110,11 @@ export default function QuizPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [lectureRanges, setLectureRanges] = useState<LectureRange[]>([]);
   const autoNextTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [feedback, setFeedback] = useState<string | null>(null);
+  const [showContinueModal, setShowContinueModal] = useState(false);
+  const [showLastSaved, setShowLastSaved] = useState<boolean>(false);
+  const [savedProgress, setSavedProgress] = useState<any>(null);
 
   useEffect(() => {
     const fetchQuizData = async () => {
@@ -145,6 +156,16 @@ export default function QuizPage() {
         }));
         setIsLoading(false);
         showToast("Quiz loaded successfully!", "success");
+
+        // Check for saved progress
+        const savedProgressString = localStorage.getItem(
+          `quizProgress_${quizIdStr}`
+        );
+        if (savedProgressString) {
+          const parsedProgress = JSON.parse(savedProgressString);
+          setSavedProgress(parsedProgress);
+          setShowContinueModal(true);
+        }
       } catch (error: any) {
         setIsLoading(false);
         if (
@@ -179,6 +200,26 @@ export default function QuizPage() {
     setIsQuizSettingsModalOpen(false);
   };
 
+  const saveProgress = useCallback(
+    (isPage?: boolean) => {
+      const progress = {
+        currentQuestion,
+        userAnswers,
+        timeLeft,
+        quizSettings,
+      };
+      localStorage.setItem(
+        `quizProgress_${quizIdStr}`,
+        JSON.stringify(progress)
+      );
+      setLastSaved(new Date());
+      if (!isPage) {
+        showToast("Progress saved successfully!", "success");
+      }
+    },
+    [currentQuestion, userAnswers, timeLeft, quizSettings, quizIdStr]
+  );
+
   const handleAnswer = (answer: string) => {
     const newAnswers = [...userAnswers];
     newAnswers[currentQuestion] = answer;
@@ -188,45 +229,40 @@ export default function QuizPage() {
       const isCorrect =
         answer.toLowerCase() ===
         questions[currentQuestion].answer.toLowerCase();
-      showFeedback(isCorrect);
+      setFeedback(isCorrect ? "Correct!" : "Incorrect. Try again.");
     }
 
     if (quizSettings.autoNext) {
-      // Clear any existing timeout
       if (autoNextTimeoutRef.current) {
         clearTimeout(autoNextTimeoutRef.current);
       }
 
-      // Set a new timeout, but don't auto-advance for fill-in questions
       if (questions[currentQuestion].type !== "fill-in") {
         autoNextTimeoutRef.current = setTimeout(() => {
           nextQuestion();
-        }, 1500); // 1.5 seconds delay
+        }, 1500);
       }
     }
+
+    // Save progress after each answer
+    saveProgress(true);
   };
 
-  const showFeedback = (isCorrect: boolean) => {
-    const feedbackElement = document.getElementById("feedback");
-    if (feedbackElement) {
-      feedbackElement.textContent = isCorrect
-        ? "Correct!"
-        : "Incorrect. Try again.";
-      feedbackElement.className = isCorrect ? "text-green-500" : "text-red-500";
-      feedbackElement.style.display = "block";
-    }
-  };
+  const handleSaveClick = useCallback(() => {
+    saveProgress();
+    setShowLastSaved(true);
+  }, [saveProgress]);
 
   const nextQuestion = () => {
     if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
       dispatch(setCurrentQuizQuestion(currentQuestion + 1));
       setShowHint(false);
+      setFeedback(null); // Clear feedback when moving to the next question
     } else {
       setShowResults(true);
     }
 
-    // Clear the timeout when moving to the next question
     if (autoNextTimeoutRef.current) {
       clearTimeout(autoNextTimeoutRef.current);
     }
@@ -237,6 +273,7 @@ export default function QuizPage() {
       setCurrentQuestion(currentQuestion - 1);
       dispatch(setCurrentQuizQuestion(currentQuestion - 1));
       setShowHint(false);
+      setFeedback(null); // Clear feedback when moving to the previous question
     }
   };
 
@@ -267,6 +304,7 @@ export default function QuizPage() {
     setUserAnswers([]);
     setShowResults(false);
     setTimeLeft(settings.timer);
+    setFeedback(null);
 
     const filteredQuestions = allQuestions.filter(
       (_, index) =>
@@ -279,11 +317,56 @@ export default function QuizPage() {
         ? shuffleArray([...filteredQuestions])
         : filteredQuestions
     );
+
+    // Clear saved progress
+    localStorage.removeItem(`quizProgress_${quizIdStr}`);
+    setSavedProgress(null);
   };
 
   const getFormattedLectureName = (lectureName: string | undefined) => {
     if (!lectureName) return "Unknown Lecture";
     return lectureName;
+  };
+
+  useEffect(() => {
+    const autoSaveInterval = setInterval(() => {
+      if (!showResults) {
+        saveProgress(false);
+        setShowLastSaved(true);
+      }
+    }, 5 * 60 * 1000);
+
+    return () => clearInterval(autoSaveInterval);
+  }, [saveProgress, showResults]);
+
+  useEffect(() => {
+    if (showLastSaved) {
+      const timer = setTimeout(() => {
+        setShowLastSaved(false);
+      }, 2000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [showLastSaved]);
+
+  const loadSavedProgress = () => {
+    if (savedProgress) {
+      const { currentQuestion, userAnswers, timeLeft, quizSettings } =
+        savedProgress;
+      setCurrentQuestion(currentQuestion);
+      setUserAnswers(userAnswers);
+      setTimeLeft(timeLeft);
+      setQuizSettings(quizSettings);
+      showToast("Saved progress loaded!", "success");
+    }
+    setShowContinueModal(false);
+  };
+
+  const discardSavedProgress = () => {
+    localStorage.removeItem(`quizProgress_${quizIdStr}`);
+    setSavedProgress(null);
+    setShowContinueModal(false);
+    showToast("Saved progress discarded.", "success");
   };
 
   if (isLoading) {
@@ -385,9 +468,21 @@ export default function QuizPage() {
               />
             </Dialog>
             <Button onClick={() => resetQuiz()}>Reset Quiz</Button>
+            <Button onClick={handleSaveClick}>
+              <Save className="h-4 w-4 md:mr-2" />
+              <p className="hidden md:contents">Save Progress</p>
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
+          {lastSaved && showLastSaved && (
+            <p className="text-sm text-muted-foreground mb-4">
+              Last saved:{" "}
+              {lastSaved
+                ? formatDistanceToNow(lastSaved, { addSuffix: true })
+                : "never"}
+            </p>
+          )}
           <Sheet>
             <SheetTrigger asChild>
               <Button
@@ -465,11 +560,17 @@ export default function QuizPage() {
                   />
                 )}
 
-                <div
-                  id="feedback"
-                  style={{ display: "none" }}
-                  className="mt-2 font-semibold"
-                ></div>
+                {feedback && (
+                  <div
+                    className={`mt-2 font-semibold ${
+                      feedback === "Correct!"
+                        ? "text-green-500"
+                        : "text-red-500"
+                    }`}
+                  >
+                    {feedback}
+                  </div>
+                )}
 
                 {quizSettings.showHints &&
                   showHint &&
@@ -521,6 +622,25 @@ export default function QuizPage() {
           </div>
         </CardContent>
       </Card>
+      <Dialog open={showContinueModal} onOpenChange={setShowContinueModal}>
+        <DialogContent className="rounded-lg max-w-[85vw] md:max-w-[35vw]">
+          <DialogHeader>
+            <DialogTitle>Continue Saved Progress?</DialogTitle>
+            <DialogDescription>
+              It looks like you have saved progress. Would you like to continue
+              from where you stopped?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex flex-col-reverse gap-2 md:flex-row ">
+            <Button variant="secondary" onClick={discardSavedProgress}>
+              Start New
+            </Button>
+            <Button variant="gradient" onClick={loadSavedProgress}>
+              Continue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
