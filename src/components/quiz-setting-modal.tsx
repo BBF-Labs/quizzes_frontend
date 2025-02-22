@@ -116,7 +116,7 @@ export function QuizSettingsModal({
               }))
             }
           >
-            <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectTrigger className="w-full sm:w-[10.5rem] lg:w-[13rem]">
               <SelectValue placeholder="Start Lecture" />
             </SelectTrigger>
             <SelectContent>
@@ -138,7 +138,7 @@ export function QuizSettingsModal({
               }))
             }
           >
-            <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectTrigger className="w-full sm:w-[10.5rem] lg:w-[13rem]">
               <SelectValue placeholder="End Lecture" />
             </SelectTrigger>
             <SelectContent>
@@ -156,7 +156,7 @@ export function QuizSettingsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[425px] w-full sm:max-w-[35vw] max-h-[90vh] rounded-xl">
+      <DialogContent className="max-w-[450px] w-full md:max-w-[57vw] lg:max-w-[35vw] max-h-[90vh] rounded-xl">
         <DialogHeader>
           <DialogTitle>Quiz Settings</DialogTitle>
         </DialogHeader>
