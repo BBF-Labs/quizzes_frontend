@@ -357,6 +357,18 @@ export default function QuizPage() {
       setUserAnswers(userAnswers);
       setTimeLeft(timeLeft);
       setQuizSettings(quizSettings);
+      const filteredQuestions = allQuestions.filter(
+        (_, index) =>
+          index >= quizSettings.lectureRange.start &&
+          index <= quizSettings.lectureRange.end
+      );
+
+      setQuestions(
+        quizSettings.randomizeQuestions
+          ? shuffleArray([...filteredQuestions])
+          : filteredQuestions
+      );
+
       showToast("Saved progress loaded!", "success");
     }
     setIsQuizSettingsModalOpen(false);
