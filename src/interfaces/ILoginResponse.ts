@@ -8,4 +8,4 @@ interface ILoginResponse {
   };
 }
 
-export default ILoginResponse;
+export type { ILoginResponse };
