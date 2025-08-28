@@ -1,48 +1,30 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { formatDistanceToNow } from "date-fns";
 import { useParams, useRouter } from "next/navigation";
 import {
   Button,
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-  RadioGroup,
-  RadioGroupItem,
-  DialogTrigger,
-  Progress,
-  Input,
-  Label,
-  QuizSettingsModal,
-  SheetTitle,
-  showToast,
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
   DialogFooter,
+  showToast,
 } from "@/components";
-import {
-  AlertCircle,
-  CheckCircle,
-  Clock,
-  HelpCircle,
-  Settings,
-  Loader,
-  Save,
-} from "lucide-react";
+import { Loader, Save, RotateCcw, BarChart3 } from "lucide-react";
 import { setCurrentQuizQuestion, setQuizStateSettings } from "@/lib";
 import { useAppDispatch } from "@/hooks";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/lib";
 import { fetchFullQuiz } from "@/controllers/quizControllers";
 import type { FullQuiz } from "@/interfaces";
+import { FloatingAIWidget } from "@/components/ui/floating-ai-widget";
+import { QuizQuestionCard } from "@/components/QuizQuestionCard";
+import { QuizResultsCard } from "@/components/QuizResultsCard";
+import { QuizSettingsModal } from "@/components/QuizSettingsModal";
 
 type QuizSettings = {
   lectures: string[];
@@ -67,18 +49,6 @@ interface QuizQuestion {
   hint?: string;
 }
 
-interface LectureRange {
-  name: string;
-  start: number;
-  end: number;
-}
-
-interface Lecture {
-  name: string;
-  questions: string[];
-  _id: string;
-}
-
 export default function QuizPage() {
   const router = useRouter();
   const { quizId } = useParams();
@@ -87,7 +57,6 @@ export default function QuizPage() {
   const quizIdStr = Array.isArray(quizId) ? quizId[0] : quizId;
   const { credentials } = useSelector((state: RootState) => state.auth);
 
-  const [allQuestions, setAllQuestions] = useState<QuizQuestion[]>([]);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [userAnswers, setUserAnswers] = useState<string[]>([]);
@@ -108,13 +77,13 @@ export default function QuizPage() {
 
   const [isQuizSettingsModalOpen, setIsQuizSettingsModalOpen] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
-  const [lectureRanges, setLectureRanges] = useState<LectureRange[]>([]);
   const autoNextTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [showContinueModal, setShowContinueModal] = useState(false);
   const [showLastSaved, setShowLastSaved] = useState<boolean>(false);
   const [savedProgress, setSavedProgress] = useState<any>(null);
+  const [showProgressModal, setShowProgressModal] = useState(false);
+  const [quizData, setQuizData] = useState<FullQuiz | null>(null);
 
   useEffect(() => {
     const fetchQuizData = async () => {
@@ -123,37 +92,37 @@ export default function QuizPage() {
           fetchFullQuiz(quizIdStr!, credentials.accessToken)
         )) as FullQuiz;
 
-        const lectures = quizData.quizQuestions as unknown as Lecture[];
-        const fetchedQuestions: QuizQuestion[] = [];
-        const ranges: LectureRange[] = [];
-        let currentIndex = 0;
+        setQuizData(quizData);
 
-        lectures.forEach((lecture) => {
-          const questionsInLecture = lecture.questions.length;
-          ranges.push({
-            name: lecture.name,
-            start: currentIndex,
-            end: currentIndex + questionsInLecture - 1,
-          });
+        // Process quiz questions from the FullQuiz structure
+        if (quizData.quizQuestions) {
+          const processedQuestions: QuizQuestion[] = [];
+          const lectureNames: string[] = [];
 
-          lecture.questions.forEach((question: any) => {
-            fetchedQuestions.push({
-              ...question,
-              lectureNumber: lecture.name,
+          quizData.quizQuestions.forEach((lecture, lectureIndex) => {
+            lectureNames.push(lecture.name);
+            lecture.questions.forEach((question: any, questionIndex) => {
+              processedQuestions.push({
+                _id: `${lectureIndex}-${questionIndex}`,
+                question: question.question,
+                options: question.options || [],
+                answer: question.answer,
+                type: question.type,
+                explanation: question.explanation,
+                lectureNumber: lecture.name,
+                hint: question.hint,
+              });
             });
           });
 
-          currentIndex += questionsInLecture;
-        });
+          setQuestions(processedQuestions);
+          setQuizSettings((prev) => ({
+            ...prev,
+            lectures: lectureNames,
+            lectureRange: { start: 0, end: processedQuestions.length - 1 },
+          }));
+        }
 
-        setAllQuestions(fetchedQuestions);
-        setQuestions(fetchedQuestions);
-        setLectureRanges(ranges);
-        setQuizSettings((prev) => ({
-          ...prev,
-          lectures: ranges.map((lecture) => lecture.name),
-          lectureRange: { start: 0, end: fetchedQuestions.length - 1 },
-        }));
         setIsLoading(false);
         showToast("Quiz loaded successfully!", "success");
 
@@ -187,15 +156,35 @@ export default function QuizPage() {
     if (timeLeft > 0 && !showResults && quizSettings.timerEnabled) {
       const timerId = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
       return () => clearTimeout(timerId);
-    } else if (timeLeft === 0 && !showResults) {
+    } else if (timeLeft === 0 && !showResults && quizSettings.timerEnabled) {
       setShowResults(true);
+      showToast("Time's up! Quiz completed.", "success");
     }
   }, [timeLeft, showResults, quizSettings.timerEnabled]);
+
+  // Handle timer settings changes
+  useEffect(() => {
+    if (quizSettings.timerEnabled) {
+      setTimeLeft(quizSettings.timer);
+    }
+  }, [quizSettings.timerEnabled, quizSettings.timer]);
+
+  // Initialize timer when component mounts and settings are loaded
+  useEffect(() => {
+    if (!isLoading && quizSettings.timerEnabled) {
+      setTimeLeft(quizSettings.timer);
+    }
+  }, [isLoading, quizSettings.timerEnabled, quizSettings.timer]);
 
   const handleSaveSettings = (settings: QuizSettings) => {
     setQuizSettings(settings);
     dispatch(setQuizStateSettings(settings));
-    setTimeLeft(settings.timer);
+
+    // Initialize timer if enabled
+    if (settings.timerEnabled) {
+      setTimeLeft(settings.timer);
+    }
+
     resetQuiz(settings);
     setIsQuizSettingsModalOpen(false);
   };
@@ -212,7 +201,6 @@ export default function QuizPage() {
         `quizProgress_${quizIdStr}`,
         JSON.stringify(progress)
       );
-      setLastSaved(new Date());
       if (!isPage) {
         showToast("Progress saved successfully!", "success");
       }
@@ -258,7 +246,7 @@ export default function QuizPage() {
       setCurrentQuestion(currentQuestion + 1);
       dispatch(setCurrentQuizQuestion(currentQuestion + 1));
       setShowHint(false);
-      setFeedback(null); // Clear feedback when moving to the next question
+      setFeedback(null);
     } else {
       setShowResults(true);
     }
@@ -273,7 +261,7 @@ export default function QuizPage() {
       setCurrentQuestion(currentQuestion - 1);
       dispatch(setCurrentQuizQuestion(currentQuestion - 1));
       setShowHint(false);
-      setFeedback(null); // Clear feedback when moving to the previous question
+      setFeedback(null);
     }
   };
 
@@ -306,11 +294,35 @@ export default function QuizPage() {
     setTimeLeft(settings.timer);
     setFeedback(null);
 
-    const filteredQuestions = allQuestions.filter(
-      (_, index) =>
-        index >= settings.lectureRange.start &&
-        index <= settings.lectureRange.end
-    );
+    // Fix: Handle lecture range properly - if start and end are the same, include all questions from that lecture
+    let filteredQuestions: QuizQuestion[];
+
+    if (settings.lectureRange.start === settings.lectureRange.end) {
+      // If start and end are the same, get all questions from that lecture index
+      const lectureIndex = settings.lectureRange.start;
+      const lectureName = settings.lectures[lectureIndex];
+
+      if (lectureName) {
+        // Filter questions by lecture name instead of index range
+        filteredQuestions = questions.filter(
+          (question) => question.lectureNumber === lectureName
+        );
+      } else {
+        // Fallback to original logic if lecture name not found
+        filteredQuestions = questions.filter(
+          (_, index) =>
+            index >= settings.lectureRange.start &&
+            index <= settings.lectureRange.end
+        );
+      }
+    } else {
+      // Original logic for different start/end values
+      filteredQuestions = questions.filter(
+        (_, index) =>
+          index >= settings.lectureRange.start &&
+          index <= settings.lectureRange.end
+      );
+    }
 
     setQuestions(
       settings.randomizeQuestions
@@ -318,14 +330,8 @@ export default function QuizPage() {
         : filteredQuestions
     );
 
-    // Clear saved progress
     localStorage.removeItem(`quizProgress_${quizIdStr}`);
     setSavedProgress(null);
-  };
-
-  const getFormattedLectureName = (lectureName: string | undefined) => {
-    if (!lectureName) return "Unknown Lecture";
-    return lectureName;
   };
 
   useEffect(() => {
@@ -357,11 +363,36 @@ export default function QuizPage() {
       setUserAnswers(userAnswers);
       setTimeLeft(timeLeft);
       setQuizSettings(quizSettings);
-      const filteredQuestions = allQuestions.filter(
-        (_, index) =>
-          index >= quizSettings.lectureRange.start &&
-          index <= quizSettings.lectureRange.end
-      );
+
+      // Fix: Use the same lecture range logic as resetQuiz
+      let filteredQuestions: QuizQuestion[];
+
+      if (quizSettings.lectureRange.start === quizSettings.lectureRange.end) {
+        // If start and end are the same, get all questions from that lecture index
+        const lectureIndex = quizSettings.lectureRange.start;
+        const lectureName = quizSettings.lectures[lectureIndex];
+
+        if (lectureName) {
+          // Filter questions by lecture name instead of index range
+          filteredQuestions = questions.filter(
+            (question) => question.lectureNumber === lectureName
+          );
+        } else {
+          // Fallback to original logic if lecture name not found
+          filteredQuestions = questions.filter(
+            (_, index) =>
+              index >= quizSettings.lectureRange.start &&
+              index <= quizSettings.lectureRange.end
+          );
+        }
+      } else {
+        // Original logic for different start/end values
+        filteredQuestions = questions.filter(
+          (_, index) =>
+            index >= quizSettings.lectureRange.start &&
+            index <= quizSettings.lectureRange.end
+        );
+      }
 
       setQuestions(
         quizSettings.randomizeQuestions
@@ -384,259 +415,159 @@ export default function QuizPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader className="animate-spin h-8 w-8 text-teal-500" />
-        <span className="ml-2 text-lg text-zinc-400">
-          Fetching quiz and verifying eligibility...
-        </span>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="border-0 shadow-lg bg-card border-border p-8">
+          <div className="flex flex-col items-center space-y-4">
+            <Loader className="animate-spin h-12 w-12 text-primary" />
+            <div className="text-center">
+              <h2 className="text-xl font-semibold text-foreground mb-2">
+                Loading Quiz
+              </h2>
+              <p className="text-muted-foreground">
+                Fetching quiz and verifying eligibility...
+              </p>
+            </div>
+          </div>
+        </Card>
       </div>
     );
   }
 
   if (showResults) {
     return (
-      <Card className="max-w-2xl mx-auto mt-24">
-        <CardHeader>
-          <CardTitle>Quiz Results</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-lg mb-4 overflow-y-auto">
-            You scored {calculateScore()} out of {questions.length}
-          </p>
-          <Progress
-            value={(calculateScore() / questions.length) * 100}
-            className="mb-6"
-          />
-          {questions.map((question, index) => (
-            <div key={index} className="mb-4 p-4 bg-muted rounded-lg">
-              <div
-                className="font-semibold"
-                dangerouslySetInnerHTML={{ __html: question.question }}
-              />
-              <div className="text-muted-foreground">
-                Your answer: {userAnswers[index] || "No answer provided"}
-              </div>
-              <div
-                className={
-                  (userAnswers[index]?.toLowerCase() || "") ===
-                  (question.answer?.toLowerCase() || "")
-                    ? "text-green-500"
-                    : "text-red-500"
-                }
-                dangerouslySetInnerHTML={{
-                  __html: `Correct answer: ${question.answer}`,
-                }}
-              ></div>
-              <p
-                className="text-sm text-muted-foreground mt-2"
-                dangerouslySetInnerHTML={{ __html: question.explanation || "" }}
-              ></p>
-            </div>
-          ))}
-          <Button onClick={() => resetQuiz()} className="mt-4">
-            Retake Quiz
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="min-h-screen bg-background py-8">
+        <QuizResultsCard
+          score={calculateScore()}
+          totalQuestions={questions.length}
+          questions={questions}
+          userAnswers={userAnswers}
+          onRetake={() => resetQuiz()}
+        />
+      </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-4 max-w-4xl mt-24 overflow-x-auto overflow-y-auto">
-      <Card className="mb-6">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>
-            {questions.length > currentQuestion
-              ? getFormattedLectureName(
-                  questions[currentQuestion].lectureNumber
-                )
-              : "Unknown Lecture"}
-          </CardTitle>
-          <div className="flex items-center space-x-2">
-            {quizSettings.timerEnabled && (
-              <div className="flex items-center space-x-1 bg-primary text-primary px-2 py-1 rounded button-gradient">
-                <Clock className="h-4 w-4" />
-                <span>{formatTime(timeLeft)}</span>
-              </div>
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      {/* Main Quiz Content - Focused on the question */}
+      <div className="w-full max-w-6xl px-4">
+        {questions[currentQuestion] ? (
+          <QuizQuestionCard
+            question={questions[currentQuestion]}
+            currentQuestion={currentQuestion}
+            totalQuestions={questions.length}
+            userAnswer={userAnswers[currentQuestion] || ""}
+            onAnswer={handleAnswer}
+            feedback={feedback}
+            showHint={showHint}
+            onToggleHint={() => setShowHint(!showHint)}
+            showHints={quizSettings.showHints}
+            onPrevious={prevQuestion}
+            onNext={nextQuestion}
+            canGoPrevious={currentQuestion > 0 && !quizSettings.isLinear}
+            canGoNext={Boolean(
+              userAnswers[currentQuestion] &&
+                userAnswers[currentQuestion].trim() !== ""
             )}
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() =>
-                    setIsQuizSettingsModalOpen(!isQuizSettingsModalOpen)
+            onOpenSettings={() => setIsQuizSettingsModalOpen(true)}
+            onSaveProgress={handleSaveClick}
+            timerEnabled={quizSettings.timerEnabled}
+            timeLeft={timeLeft}
+            formatTime={formatTime}
+            onShowProgress={() => setShowProgressModal(true)}
+          />
+        ) : (
+          <Card className="border-0 shadow-lg bg-card border-border flex items-center justify-center">
+            <CardContent className="p-12 text-center">
+              <div className="text-6xl mb-4">🤔</div>
+              <p className="text-lg text-muted-foreground">
+                No question available.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {/* Progress Modal */}
+      <Dialog open={showProgressModal} onOpenChange={setShowProgressModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-primary" />
+              Quiz Progress
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Progress Stats */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-3 bg-primary/10 rounded-lg text-center">
+                <div className="text-2xl font-bold text-primary">
+                  {Math.round(((currentQuestion + 1) / questions.length) * 100)}
+                  %
+                </div>
+                <div className="text-xs text-muted-foreground">Complete</div>
+              </div>
+              <div className="p-3 bg-secondary/10 rounded-lg text-center">
+                <div className="text-2xl font-bold text-secondary">
+                  {questions.length - currentQuestion - 1}
+                </div>
+                <div className="text-xs text-muted-foreground">Remaining</div>
+              </div>
+            </div>
+
+            {/* Quick Stats */}
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Answered:</span>
+                <span className="font-medium">
+                  {
+                    userAnswers.filter(
+                      (answer) => answer && answer.trim() !== ""
+                    ).length
                   }
-                >
-                  <Settings className="h-4 w-4" />
-                  <span className="sr-only">Open settings</span>
-                </Button>
-              </DialogTrigger>
-              <QuizSettingsModal
-                onClose={() => setIsQuizSettingsModalOpen(false)}
-                isOpen={isQuizSettingsModalOpen}
-                initialSettings={quizSettings}
-                onSave={handleSaveSettings}
-                lectureRanges={lectureRanges}
-              />
-            </Dialog>
-            <Button onClick={() => resetQuiz()}>Reset Quiz</Button>
-            <Button onClick={handleSaveClick}>
-              <Save className="h-4 w-4 md:mr-2" />
-              <p className="hidden md:contents">Save Progress</p>
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {lastSaved && showLastSaved && (
-            <p className="text-sm text-muted-foreground mb-4">
-              Last saved:{" "}
-              {lastSaved
-                ? formatDistanceToNow(lastSaved, { addSuffix: true })
-                : "never"}
-            </p>
-          )}
-          <Sheet>
-            <SheetTrigger asChild>
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Correct:</span>
+                <span className="font-medium text-green-600">
+                  {
+                    userAnswers.filter(
+                      (answer, index) =>
+                        answer &&
+                        answer.toLowerCase() ===
+                          questions[index]?.answer?.toLowerCase()
+                    ).length
+                  }
+                </span>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-2 pt-2">
               <Button
                 variant="outline"
-                className="mb-4 md:hidden hover:button-gradient"
+                onClick={handleSaveClick}
+                className="flex-1"
               >
-                Show Progress
+                <Save className="h-4 w-4 mr-2" />
+                Save Progress
               </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-[300px] sm:w-[400px]">
-              <SheetTitle className="hidden">x</SheetTitle>
-              <QuizProgress
-                currentQuestion={currentQuestion}
-                totalQuestions={questions.length}
-              />
-            </SheetContent>
-          </Sheet>
-
-          <div className="hidden md:block mb-6">
-            <QuizProgress
-              currentQuestion={currentQuestion}
-              totalQuestions={questions.length}
-            />
+              <Button
+                variant="outline"
+                onClick={() => resetQuiz()}
+                className="flex-1"
+              >
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Reset Quiz
+              </Button>
+            </div>
           </div>
+        </DialogContent>
+      </Dialog>
 
-          <div className="space-y-4">
-            {questions[currentQuestion] ? (
-              <>
-                <div
-                  className="text-xl font-semibold mb-2"
-                  dangerouslySetInnerHTML={{
-                    __html: questions[currentQuestion].question,
-                  }}
-                ></div>
-
-                {questions[currentQuestion].type === "mcq" && (
-                  <RadioGroup
-                    value={userAnswers[currentQuestion] || ""}
-                    onValueChange={handleAnswer}
-                  >
-                    {questions[currentQuestion].options.map((option, index) => (
-                      <Label
-                        key={index}
-                        className="flex items-center space-x-2 p-4 rounded-lg border cursor-pointer hover:bg-muted"
-                      >
-                        <RadioGroupItem value={option} id={`option-${index}`} />
-                        <div dangerouslySetInnerHTML={{ __html: option }}></div>
-                      </Label>
-                    ))}
-                  </RadioGroup>
-                )}
-
-                {questions[currentQuestion].type === "true-false" && (
-                  <RadioGroup
-                    value={userAnswers[currentQuestion] || ""}
-                    onValueChange={handleAnswer}
-                  >
-                    <Label className="flex items-center space-x-2 p-4 rounded-lg border cursor-pointer hover:bg-muted">
-                      <RadioGroupItem value="true" id="true" />
-                      <span>True</span>
-                    </Label>
-                    <Label className="flex items-center space-x-2 p-4 rounded-lg border cursor-pointer hover:bg-muted">
-                      <RadioGroupItem value="false" id="false" />
-                      <span>False</span>
-                    </Label>
-                  </RadioGroup>
-                )}
-
-                {questions[currentQuestion].type === "fill-in" && (
-                  <Input
-                    type="text"
-                    value={userAnswers[currentQuestion] || ""}
-                    onChange={(e) => handleAnswer(e.target.value)}
-                    placeholder="Type your answer here"
-                  />
-                )}
-
-                {feedback && (
-                  <div
-                    className={`mt-2 font-semibold ${
-                      feedback === "Correct!"
-                        ? "text-green-500"
-                        : "text-red-500"
-                    }`}
-                  >
-                    {feedback}
-                  </div>
-                )}
-
-                {quizSettings.showHints &&
-                  showHint &&
-                  questions[currentQuestion].hint && (
-                    <div className="mt-4 p-4 bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 rounded-lg">
-                      <AlertCircle className="inline mr-2" />
-                      Hint: {questions[currentQuestion].hint}
-                    </div>
-                  )}
-
-                <div className="flex justify-between mt-6">
-                  <Button
-                    variant="outline"
-                    onClick={prevQuestion}
-                    disabled={quizSettings.isLinear || currentQuestion === 0}
-                  >
-                    Previous
-                  </Button>
-                  {quizSettings.showHints && (
-                    <Button
-                      onClick={() => setShowHint(!showHint)}
-                      variant={`${!showHint ? "outline" : "destructive"}`}
-                    >
-                      {showHint ? (
-                        <CheckCircle className="mr-2" />
-                      ) : (
-                        <HelpCircle className="mr-2" />
-                      )}
-                      {showHint ? "Hide Hint" : "Show Hint"}
-                    </Button>
-                  )}
-                  <Button
-                    variant="gradient"
-                    onClick={nextQuestion}
-                    disabled={
-                      quizSettings.autoNext &&
-                      questions[currentQuestion].type !== "fill-in"
-                    }
-                  >
-                    {currentQuestion === questions.length - 1
-                      ? "Finish"
-                      : "Next"}
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <div className="text-center">No question available.</div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      {/* Continue Modal */}
       <Dialog open={showContinueModal} onOpenChange={setShowContinueModal}>
-        <DialogContent className="rounded-lg max-w-[85vw] md:max-w-[35vw]">
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Continue Saved Progress?</DialogTitle>
             <DialogDescription>
@@ -644,40 +575,31 @@ export default function QuizPage() {
               from where you stopped?
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="flex flex-col-reverse gap-2 md:flex-row ">
-            <Button variant="secondary" onClick={discardSavedProgress}>
+          <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row">
+            <Button variant="outline" onClick={discardSavedProgress}>
               Start New
             </Button>
-            <Button variant="gradient" onClick={loadSavedProgress}>
-              Continue
-            </Button>
+            <Button onClick={loadSavedProgress}>Continue</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Quiz Settings Modal */}
+      <QuizSettingsModal
+        isOpen={isQuizSettingsModalOpen}
+        onClose={() => setIsQuizSettingsModalOpen(false)}
+        settings={quizSettings}
+        onSave={handleSaveSettings}
+        availableLectures={quizSettings.lectures}
+        quizData={quizData}
+      />
+
+      {/* AI Widget */}
+      <FloatingAIWidget
+        contextType="question"
+        contextId={questions[currentQuestion]._id}
+        className="z-40"
+      />
     </div>
   );
 }
-
-const QuizProgress = ({
-  currentQuestion,
-  totalQuestions,
-}: {
-  currentQuestion: number;
-  totalQuestions: number;
-}) => (
-  <div className="space-y-2">
-    <h3 className="font-semibold text-lg">Quiz Progress</h3>
-    <Progress
-      value={(currentQuestion / totalQuestions) * 100}
-      className="w-full"
-    />
-    <div className="flex justify-between text-sm text-muted-foreground">
-      <span>
-        Question {currentQuestion + 1} of {totalQuestions}
-      </span>
-      <span>
-        {Math.round((currentQuestion / totalQuestions) * 100)}% Complete
-      </span>
-    </div>
-  </div>
-);

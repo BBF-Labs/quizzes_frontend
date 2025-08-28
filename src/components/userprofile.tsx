@@ -6,11 +6,11 @@ import {
   LogOut,
   CreditCard,
   BookOpen,
-  BarChart,
   Clipboard,
   DollarSign,
   Grid,
   UploadCloud,
+  ScrollText,
 } from "lucide-react";
 import { useAppDispatch } from "@/hooks";
 import { logoutUser } from "@/controllers";
@@ -45,19 +45,14 @@ const menuItems = [
     icon: <CreditCard className="mr-2 h-4 w-4" />,
   },
   {
-    href: "/user/profile/courses",
-    label: "Courses",
-    icon: <BookOpen className="mr-2 h-4 w-4" />,
-  },
-  {
-    href: "/user/profile/progress",
-    label: "Quiz Progress",
-    icon: <BarChart className="mr-2 h-4 w-4" />,
-  },
-  {
     href: "/quizzes",
     label: "All Quizzes",
     icon: <Clipboard className="mr-2 h-4 w-4" />,
+  },
+  {
+    href: "/user/personal-quizzes",
+    label: "Personal Quizzes",
+    icon: <ScrollText className="mr-2 h-4 w-4" />,
   },
   {
     href: "/user/quiz/upload",
@@ -73,6 +68,11 @@ const menuItems = [
     href: "/courses",
     label: "All Courses",
     icon: <Grid className="mr-2 h-4 w-4" />,
+  },
+  {
+    href: "/user/flashcards",
+    label: "Flashcards",
+    icon: <BookOpen className="mr-2 h-4 w-4" />,
   },
 ];
 
