@@ -99,11 +99,11 @@ export default function QuizPage() {
           const processedQuestions: QuizQuestion[] = [];
           const lectureNames: string[] = [];
 
-          quizData.quizQuestions.forEach((lecture, lectureIndex) => {
+          quizData.quizQuestions.forEach((lecture) => {
             lectureNames.push(lecture.name);
-            lecture.questions.forEach((question: any, questionIndex) => {
+            lecture.questions.forEach((question: any) => {
               processedQuestions.push({
-                _id: question._id || `${lectureIndex}-${questionIndex}`, // Preserve original ID if available
+                _id: question._id,
                 question: question.question,
                 options: question.options || [],
                 answer: question.answer,
