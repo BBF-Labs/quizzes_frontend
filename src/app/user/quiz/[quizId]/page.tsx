@@ -103,7 +103,7 @@ export default function QuizPage() {
             lectureNames.push(lecture.name);
             lecture.questions.forEach((question: any, questionIndex) => {
               processedQuestions.push({
-                _id: `${lectureIndex}-${questionIndex}`,
+                _id: question._id || `${lectureIndex}-${questionIndex}`, // Preserve original ID if available
                 question: question.question,
                 options: question.options || [],
                 answer: question.answer,

@@ -342,8 +342,8 @@ export default function TakePersonalQuizPage() {
 
         {/* Floating AI Widget */}
         <FloatingAIWidget
-          contextId={quizId as string}
-          contextType="question"
+          contextId={`Quiz: ${quiz.title} | Course: ${quiz.courseId.title} | Questions: ${quiz.questions.length} | Description: ${quiz.description} | Question: ${quiz.questions[currentQuestion].question} | Answer: ${quiz.questions[currentQuestion].answer} | Type: ${quiz.questions[currentQuestion].type} | Hint: ${quiz.questions[currentQuestion].hint} | Explanation: ${quiz.questions[currentQuestion].explanation} | Lecture Number: ${quiz.questions[currentQuestion].lectureNumber}`}
+          contextType="general"
           className="fixed bottom-6 right-6 z-40"
         />
 
@@ -554,8 +554,8 @@ export default function TakePersonalQuizPage() {
 
         {/* Floating AI Widget */}
         <FloatingAIWidget
-          contextId={`Quiz: ${quiz.title} | Course: ${quiz.courseId.title} | Questions: ${quiz.questions.length} | Description: ${quiz.description}`}
           contextType="general"
+          contextId={`Quiz: ${quiz.title} | Course: ${quiz.courseId.title} | Questions: ${quiz.questions.length} | Description: ${quiz.description}`}
         />
 
         {/* Settings Modal */}
