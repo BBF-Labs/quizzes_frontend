@@ -70,16 +70,13 @@ export default function CourseFlashcardsPage() {
       );
 
       const courseFlashcards = response.data.flashcards;
-      console.log(courseFlashcards);
       setFlashcards(courseFlashcards);
 
       // Load course info from the first flashcard's courseId
       if (courseFlashcards.length > 0) {
         const firstCard = courseFlashcards[0];
-        console.log(firstCard);
         if (firstCard.courseId) {
           const courseData = firstCard.courseId as any;
-          console.log("courseData", courseData);
           setCourse({
             _id: courseData._id,
             code: courseData.code,

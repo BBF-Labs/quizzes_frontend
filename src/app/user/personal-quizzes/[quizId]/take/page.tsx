@@ -189,7 +189,6 @@ export default function TakePersonalQuizPage() {
   };
 
   const finishQuiz = () => {
-    const totalQuestions = quiz?.questions.length || 0;
     let correctAnswersCount = 0;
 
     quiz?.questions.forEach((question, index) => {
@@ -215,17 +214,6 @@ export default function TakePersonalQuizPage() {
 
     // Store the raw count, not the percentage
     setScore(correctAnswersCount);
-
-    console.log(
-      `Quiz completed: ${correctAnswersCount}/${totalQuestions} correct (${Math.round(
-        (correctAnswersCount / totalQuestions) * 100
-      )}%)`
-    );
-    console.log("User answers:", answers);
-    console.log(
-      "Correct answers:",
-      quiz?.questions.map((q) => q.answer)
-    );
 
     setQuizCompleted(true);
     setIsTakingQuiz(false);

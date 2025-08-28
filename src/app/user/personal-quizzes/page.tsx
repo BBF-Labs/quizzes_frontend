@@ -966,7 +966,10 @@ export default function PersonalQuizzesPage() {
                                 Our current AI model works best with text files
                                 (.txt) and may be slower with other formats. PDF
                                 processing is limited and may not extract all
-                                content properly.
+                                content properly.{" "}
+                                <strong>
+                                  Note: Our model cannot read images in files.
+                                </strong>
                               </p>
                             </div>
                           </div>
@@ -1057,6 +1060,32 @@ export default function PersonalQuizzesPage() {
                             : ""}
                         </span>
                       </div>
+                    </div>
+
+                    {/* Question Count Input for Selected Material */}
+                    <div className="mt-4">
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Question Count
+                      </label>
+                      <Input
+                        type="number"
+                        min="1"
+                        max="20"
+                        value={questionCount}
+                        onChange={(e) =>
+                          setQuestionCount(
+                            Math.min(
+                              20,
+                              Math.max(1, parseInt(e.target.value) || 1)
+                            )
+                          )
+                        }
+                        className="border-border focus:border-primary"
+                        placeholder="Number of questions (1-20)"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Maximum 20 questions allowed
+                      </p>
                     </div>
                   </div>
                 )}

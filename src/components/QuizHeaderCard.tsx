@@ -1,10 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Clock, Save, Settings, RotateCcw, CheckCircle } from "lucide-react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Badge } from "./ui/badge";
+import { Clock, Target, RotateCcw, BarChart3 } from "lucide-react";
 
 interface QuizHeaderCardProps {
   lectureName: string;
@@ -53,7 +52,8 @@ export function QuizHeaderCard({
                 </span>
                 <span>•</span>
                 <span>
-                  {Math.round(((currentQuestion + 1) / totalQuestions) * 100)}% Complete
+                  {Math.round(((currentQuestion + 1) / totalQuestions) * 100)}%
+                  Complete
                 </span>
               </div>
             </div>
@@ -63,7 +63,9 @@ export function QuizHeaderCard({
               {timerEnabled && (
                 <div className="flex items-center space-x-2 bg-gradient-to-r from-red-500 to-pink-500 text-white px-4 py-2 rounded-full shadow-lg">
                   <Clock className="h-4 w-4" />
-                  <span className="font-mono font-bold">{formatTime(timeLeft)}</span>
+                  <span className="font-mono font-bold">
+                    {formatTime(timeLeft)}
+                  </span>
                 </div>
               )}
 
@@ -76,7 +78,7 @@ export function QuizHeaderCard({
                   className="hover:bg-teal-50 hover:border-teal-200 dark:hover:bg-teal-900/20 dark:hover:border-teal-700"
                   title="Quiz Settings"
                 >
-                  <Settings className="h-4 w-4" />
+                  <Target className="h-4 w-4" />
                 </Button>
 
                 <Button
@@ -92,7 +94,7 @@ export function QuizHeaderCard({
                   onClick={onSaveClick}
                   className="bg-gradient-to-r from-teal-500 to-blue-500 hover:from-teal-600 hover:to-blue-600 text-white shadow-lg"
                 >
-                  <Save className="h-4 w-4 mr-2" />
+                  <BarChart3 className="h-4 w-4 mr-2" />
                   Save Progress
                 </Button>
               </div>
@@ -105,7 +107,7 @@ export function QuizHeaderCard({
           {lastSaved && showLastSaved && (
             <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
               <p className="text-sm text-green-700 dark:text-green-300 flex items-center">
-                <CheckCircle className="h-4 w-4 mr-2" />
+                <BarChart3 className="h-4 w-4 mr-2" />
                 Progress saved successfully!
               </p>
             </div>

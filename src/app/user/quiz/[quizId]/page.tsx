@@ -49,18 +49,6 @@ interface QuizQuestion {
   hint?: string;
 }
 
-interface LectureRange {
-  name: string;
-  start: number;
-  end: number;
-}
-
-interface Lecture {
-  name: string;
-  questions: string[];
-  _id: string;
-}
-
 export default function QuizPage() {
   const router = useRouter();
   const { quizId } = useParams();
@@ -69,7 +57,6 @@ export default function QuizPage() {
   const quizIdStr = Array.isArray(quizId) ? quizId[0] : quizId;
   const { credentials } = useSelector((state: RootState) => state.auth);
 
-  const [allQuestions, setAllQuestions] = useState<QuizQuestion[]>([]);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [userAnswers, setUserAnswers] = useState<string[]>([]);
@@ -105,39 +92,37 @@ export default function QuizPage() {
           fetchFullQuiz(quizIdStr!, credentials.accessToken)
         )) as FullQuiz;
 
-        console.log(quizData);
         setQuizData(quizData);
 
-        const lectures = quizData.quizQuestions as unknown as Lecture[];
-        const fetchedQuestions: QuizQuestion[] = [];
-        const ranges: LectureRange[] = [];
-        let currentIndex = 0;
+        // Process quiz questions from the FullQuiz structure
+        if (quizData.quizQuestions) {
+          const processedQuestions: QuizQuestion[] = [];
+          const lectureNames: string[] = [];
 
-        lectures.forEach((lecture) => {
-          const questionsInLecture = lecture.questions.length;
-          ranges.push({
-            name: lecture.name,
-            start: currentIndex,
-            end: currentIndex + questionsInLecture - 1,
-          });
-
-          lecture.questions.forEach((question: any) => {
-            fetchedQuestions.push({
-              ...question,
-              lectureNumber: lecture.name,
+          quizData.quizQuestions.forEach((lecture, lectureIndex) => {
+            lectureNames.push(lecture.name);
+            lecture.questions.forEach((question: any, questionIndex) => {
+              processedQuestions.push({
+                _id: `${lectureIndex}-${questionIndex}`,
+                question: question.question,
+                options: question.options || [],
+                answer: question.answer,
+                type: question.type,
+                explanation: question.explanation,
+                lectureNumber: lecture.name,
+                hint: question.hint,
+              });
             });
           });
 
-          currentIndex += questionsInLecture;
-        });
+          setQuestions(processedQuestions);
+          setQuizSettings((prev) => ({
+            ...prev,
+            lectures: lectureNames,
+            lectureRange: { start: 0, end: processedQuestions.length - 1 },
+          }));
+        }
 
-        setAllQuestions(fetchedQuestions);
-        setQuestions(fetchedQuestions);
-        setQuizSettings((prev) => ({
-          ...prev,
-          lectures: ranges.map((lecture) => lecture.name),
-          lectureRange: { start: 0, end: fetchedQuestions.length - 1 },
-        }));
         setIsLoading(false);
         showToast("Quiz loaded successfully!", "success");
 
@@ -319,12 +304,12 @@ export default function QuizPage() {
 
       if (lectureName) {
         // Filter questions by lecture name instead of index range
-        filteredQuestions = allQuestions.filter(
+        filteredQuestions = questions.filter(
           (question) => question.lectureNumber === lectureName
         );
       } else {
         // Fallback to original logic if lecture name not found
-        filteredQuestions = allQuestions.filter(
+        filteredQuestions = questions.filter(
           (_, index) =>
             index >= settings.lectureRange.start &&
             index <= settings.lectureRange.end
@@ -332,7 +317,7 @@ export default function QuizPage() {
       }
     } else {
       // Original logic for different start/end values
-      filteredQuestions = allQuestions.filter(
+      filteredQuestions = questions.filter(
         (_, index) =>
           index >= settings.lectureRange.start &&
           index <= settings.lectureRange.end
@@ -389,12 +374,12 @@ export default function QuizPage() {
 
         if (lectureName) {
           // Filter questions by lecture name instead of index range
-          filteredQuestions = allQuestions.filter(
+          filteredQuestions = questions.filter(
             (question) => question.lectureNumber === lectureName
           );
         } else {
           // Fallback to original logic if lecture name not found
-          filteredQuestions = allQuestions.filter(
+          filteredQuestions = questions.filter(
             (_, index) =>
               index >= quizSettings.lectureRange.start &&
               index <= quizSettings.lectureRange.end
@@ -402,7 +387,7 @@ export default function QuizPage() {
         }
       } else {
         // Original logic for different start/end values
-        filteredQuestions = allQuestions.filter(
+        filteredQuestions = questions.filter(
           (_, index) =>
             index >= quizSettings.lectureRange.start &&
             index <= quizSettings.lectureRange.end
