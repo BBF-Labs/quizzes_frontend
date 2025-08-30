@@ -13,11 +13,13 @@ import {
   Target,
   Sparkles,
   TrendingUp,
+  Hourglass,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Progress } from "./ui/progress";
 import { showToast } from "./toaster";
+import { formatDistanceToNow } from "date-fns";
 
 interface FlashcardData {
   _id: string;
@@ -89,21 +91,13 @@ export function FlashcardCard({
           reviewCount: flashcard.reviewCount + 1,
         });
 
-        showToast({
-          title: "Mastery Updated!",
-          description: `Mastery level updated to ${newLevel}%`,
-          type: "success",
-        });
+        showToast("Mastery Updated!", "success");
       }
     } catch (error) {
       console.error("Failed to update mastery level:", error);
       setMasteryLevel(flashcard.masteryLevel); // Revert on error
 
-      showToast({
-        title: "Update Failed",
-        description: "Failed to update mastery level. Please try again.",
-        type: "error",
-      });
+      showToast("Update Failed", "error");
     } finally {
       setIsUpdating(false);
     }
@@ -113,19 +107,11 @@ export function FlashcardCard({
     try {
       if (onShare) {
         await onShare(flashcard._id);
-        showToast({
-          title: "Flashcard Shared!",
-          description: "Flashcard has been shared successfully",
-          type: "success",
-        });
+        showToast("Flashcard Shared!", "success");
       }
     } catch (error) {
       console.error("Failed to share flashcard:", error);
-      showToast({
-        title: "Share Failed",
-        description: "Failed to share flashcard. Please try again.",
-        type: "error",
-      });
+      showToast("Share Failed", "error");
     }
   };
 
@@ -134,19 +120,11 @@ export function FlashcardCard({
       try {
         if (onDelete) {
           await onDelete(flashcard._id);
-          showToast({
-            title: "Flashcard Deleted!",
-            description: "Flashcard has been deleted successfully",
-            type: "success",
-          });
+          showToast("Flashcard Deleted!", "success");
         }
       } catch (error) {
         console.error("Failed to delete flashcard:", error);
-        showToast({
-          title: "Delete Failed",
-          description: "Failed to delete flashcard. Please try again.",
-          type: "error",
-        });
+        showToast("Delete Failed", "error");
       }
     }
   };
@@ -210,10 +188,23 @@ export function FlashcardCard({
             height: 100%;
             -webkit-backface-visibility: hidden;
             backface-visibility: hidden;
+            transform-style: preserve-3d;
           }
           
           .flip-card-back {
             transform: rotateY(180deg);
+          }
+          
+          .flip-card-front {
+            transform: rotateY(0deg);
+          }
+          
+          .flip-card-flipped .flip-card-front {
+            visibility: hidden;
+          }
+          
+          .flip-card-flipped .flip-card-back {
+            visibility: visible;
           }
           
           .gradient-primary {
@@ -263,7 +254,6 @@ export function FlashcardCard({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="h-full gradient-primary relative overflow-hidden rounded-3xl shadow-elevated hover:shadow-glow transition-all duration-300 cursor-pointer group"
-              onClick={handleFlip}
             >
               {/* Difficulty Badge */}
               <div className="absolute top-6 right-6 z-10">
@@ -304,7 +294,10 @@ export function FlashcardCard({
 
                   <div className="space-y-4">
                     <p className="text-white/80 text-sm font-medium">
-                      Click to reveal answer
+                      Click anywhere on the card to reveal answer
+                    </p>
+                    <p className="text-white/60 text-xs">
+                      Use the mastery buttons on the back to track your progress
                     </p>
 
                     {/* Tags */}
@@ -328,6 +321,12 @@ export function FlashcardCard({
                   </div>
                 </div>
               </div>
+
+              {/* Clickable overlay for flipping */}
+              <div
+                className="absolute inset-0 z-20 cursor-pointer"
+                onClick={handleFlip}
+              />
             </motion.div>
           </div>
 
@@ -338,25 +337,16 @@ export function FlashcardCard({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3 }}
-              onClick={(e) => {
-                // Only flip if clicking on the background, not on interactive elements
-                if (e.target === e.currentTarget) {
-                  handleFlip();
-                }
-              }}
             >
               {/* Flip Back Button - Top Left */}
-              <div className="absolute top-4 left-4 z-10">
+              <div className="absolute top-4 left-4 z-30">
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleFlip();
-                  }}
-                  className="bg-white/90 backdrop-blur-sm border-gray-300 hover:bg-white hover:border-gray-400 rounded-full shadow-lg transition-all duration-200 hover:scale-105"
+                  onClick={handleFlip}
+                  className="bg-secondary/90 backdrop-blur-sm border-gray-300 hover:bg-white hover:border-gray-400 rounded-full shadow-lg transition-all duration-200 hover:scale-105 text-primary"
                 >
-                  <Target className="w-4 h-4 mr-2 text-gray-600" />
+                  <Target className="w-4 h-4 mr-2 text-gray-400" />
                   Flip Back
                 </Button>
               </div>
@@ -397,8 +387,8 @@ export function FlashcardCard({
                   </div>
                 </div>
 
-                {/* Mastery Level Controls - Enhanced spacing */}
-                <div className="mb-5 bg-white/60 backdrop-blur-sm rounded-2xl p-5 border border-white/50 shadow-lg">
+                {/* Mastery Level Controls - Enhanced spacing with higher z-index */}
+                <div className="mb-5 bg-white/60 backdrop-blur-sm rounded-2xl p-5 border border-white/50 shadow-lg relative z-30">
                   <div className="flex items-center justify-between mb-4">
                     <span className="text-sm font-semibold text-gray-700">
                       Mastery Level
@@ -418,6 +408,9 @@ export function FlashcardCard({
                       </span>
                     </div>
                   </div>
+                  <p className="text-xs text-gray-600 mb-3 text-center">
+                    Click the buttons below to adjust your mastery level
+                  </p>
 
                   <div className="mb-4">
                     <Progress
@@ -440,10 +433,7 @@ export function FlashcardCard({
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        updateMasteryLevel(-10);
-                      }}
+                      onClick={() => updateMasteryLevel(-10)}
                       disabled={isUpdating}
                       className="border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 rounded-full transition-all duration-200 hover:scale-105 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2"
                     >
@@ -453,10 +443,7 @@ export function FlashcardCard({
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        updateMasteryLevel(10);
-                      }}
+                      onClick={() => updateMasteryLevel(10)}
                       disabled={isUpdating}
                       className="border-emerald-200 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-300 rounded-full transition-all duration-200 hover:scale-105 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2"
                     >
@@ -464,6 +451,12 @@ export function FlashcardCard({
                       {isUpdating ? "Updating..." : "Easier"}
                     </Button>
                   </div>
+                  {isUpdating && (
+                    <p className="text-xs text-blue-600 text-center mt-2">
+                      <Hourglass className="w-4 h-4 mr-2" />
+                      Updating mastery level...
+                    </p>
+                  )}
                 </div>
 
                 {/* Stats - Enhanced with more space */}
@@ -479,11 +472,9 @@ export function FlashcardCard({
                         </p>
                         <span className="font-semibold text-sm">
                           {flashcard.lastReviewed
-                            ? `${Math.floor(
-                                (Date.now() -
-                                  new Date(flashcard.lastReviewed).getTime()) /
-                                  (1000 * 60 * 60 * 24)
-                              )}d ago`
+                            ? formatDistanceToNow(
+                                new Date(flashcard.lastReviewed)
+                              )
                             : "Never"}
                         </span>
                       </div>
@@ -504,17 +495,14 @@ export function FlashcardCard({
                   </div>
                 </div>
 
-                {/* Actions - Centered without flip back button */}
-                <div className="flex items-center justify-center mt-auto">
+                {/* Actions - Centered without flip back button with higher z-index */}
+                <div className="flex items-center justify-center mt-auto relative z-30">
                   {showActions && (
                     <div className="flex gap-3">
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleShare();
-                        }}
+                        onClick={() => handleShare()}
                         className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-full bg-white/80 backdrop-blur-sm border border-emerald-200 transition-all duration-200 hover:scale-105 hover:shadow-md px-4 py-2"
                       >
                         <Share2 className="w-4 h-4 mr-2" />
@@ -523,10 +511,7 @@ export function FlashcardCard({
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete();
-                        }}
+                        onClick={() => handleDelete()}
                         className="text-red-600 hover:text-red-700 hover:bg-red-50 rounded-full bg-white/80 backdrop-blur-sm border border-red-200 transition-all duration-200 hover:scale-105 hover:shadow-md px-4 py-2"
                       >
                         <Trash2 className="w-4 h-4 mr-2" />
@@ -536,6 +521,16 @@ export function FlashcardCard({
                   )}
                 </div>
               </div>
+
+              {/* Clickable overlay for flipping - positioned behind interactive elements and excluding mastery controls area */}
+              <div
+                className="absolute inset-0 cursor-pointer"
+                style={{
+                  clipPath:
+                    "polygon(0% 0%, 100% 0%, 100% 60%, 0% 60%), polygon(0% 85%, 100% 85%, 100% 100%, 0% 100%)",
+                }}
+                onClick={handleFlip}
+              />
             </motion.div>
           </div>
         </div>

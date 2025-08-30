@@ -119,7 +119,7 @@ export default function QuizPage() {
           setQuizSettings((prev) => ({
             ...prev,
             lectures: lectureNames,
-            lectureRange: { start: 0, end: processedQuestions.length - 1 },
+            lectureRange: { start: 0, end: lectureNames.length - 1 },
           }));
         }
 
@@ -294,34 +294,32 @@ export default function QuizPage() {
     setTimeLeft(settings.timer);
     setFeedback(null);
 
-    // Fix: Handle lecture range properly - if start and end are the same, include all questions from that lecture
-    let filteredQuestions: QuizQuestion[];
+    // Fix: Properly filter questions by lecture range
+    let filteredQuestions: QuizQuestion[] = [];
 
-    if (settings.lectureRange.start === settings.lectureRange.end) {
-      // If start and end are the same, get all questions from that lecture index
-      const lectureIndex = settings.lectureRange.start;
-      const lectureName = settings.lectures[lectureIndex];
-
-      if (lectureName) {
-        // Filter questions by lecture name instead of index range
-        filteredQuestions = questions.filter(
-          (question) => question.lectureNumber === lectureName
-        );
-      } else {
-        // Fallback to original logic if lecture name not found
-        filteredQuestions = questions.filter(
-          (_, index) =>
-            index >= settings.lectureRange.start &&
-            index <= settings.lectureRange.end
-        );
-      }
-    } else {
-      // Original logic for different start/end values
-      filteredQuestions = questions.filter(
-        (_, index) =>
-          index >= settings.lectureRange.start &&
-          index <= settings.lectureRange.end
+    if (settings.lectures.length > 0) {
+      const startLectureIndex = Math.min(
+        settings.lectureRange.start,
+        settings.lectureRange.end
       );
+      const endLectureIndex = Math.max(
+        settings.lectureRange.start,
+        settings.lectureRange.end
+      );
+
+      // Get the lecture names for the selected range
+      const selectedLectureNames = settings.lectures.slice(
+        startLectureIndex,
+        endLectureIndex + 1
+      );
+
+      // Filter questions by lecture names
+      filteredQuestions = questions.filter((question) =>
+        selectedLectureNames.includes(question.lectureNumber)
+      );
+    } else {
+      // Fallback to all questions if no lectures available
+      filteredQuestions = [...questions];
     }
 
     setQuestions(
@@ -365,33 +363,31 @@ export default function QuizPage() {
       setQuizSettings(quizSettings);
 
       // Fix: Use the same lecture range logic as resetQuiz
-      let filteredQuestions: QuizQuestion[];
+      let filteredQuestions: QuizQuestion[] = [];
 
-      if (quizSettings.lectureRange.start === quizSettings.lectureRange.end) {
-        // If start and end are the same, get all questions from that lecture index
-        const lectureIndex = quizSettings.lectureRange.start;
-        const lectureName = quizSettings.lectures[lectureIndex];
-
-        if (lectureName) {
-          // Filter questions by lecture name instead of index range
-          filteredQuestions = questions.filter(
-            (question) => question.lectureNumber === lectureName
-          );
-        } else {
-          // Fallback to original logic if lecture name not found
-          filteredQuestions = questions.filter(
-            (_, index) =>
-              index >= quizSettings.lectureRange.start &&
-              index <= quizSettings.lectureRange.end
-          );
-        }
-      } else {
-        // Original logic for different start/end values
-        filteredQuestions = questions.filter(
-          (_, index) =>
-            index >= quizSettings.lectureRange.start &&
-            index <= quizSettings.lectureRange.end
+      if (quizSettings.lectures.length > 0) {
+        const startLectureIndex = Math.min(
+          quizSettings.lectureRange.start,
+          quizSettings.lectureRange.end
         );
+        const endLectureIndex = Math.max(
+          quizSettings.lectureRange.start,
+          quizSettings.lectureRange.end
+        );
+
+        // Get the lecture names for the selected range
+        const selectedLectureNames = quizSettings.lectures.slice(
+          startLectureIndex,
+          endLectureIndex + 1
+        );
+
+        // Filter questions by lecture names
+        filteredQuestions = questions.filter((question) =>
+          selectedLectureNames.includes(question.lectureNumber)
+        );
+      } else {
+        // Fallback to all questions if no lectures available
+        filteredQuestions = [...questions];
       }
 
       setQuestions(
@@ -465,10 +461,7 @@ export default function QuizPage() {
             onPrevious={prevQuestion}
             onNext={nextQuestion}
             canGoPrevious={currentQuestion > 0 && !quizSettings.isLinear}
-            canGoNext={Boolean(
-              userAnswers[currentQuestion] &&
-                userAnswers[currentQuestion].trim() !== ""
-            )}
+            canGoNext={true}
             onOpenSettings={() => setIsQuizSettingsModalOpen(true)}
             onSaveProgress={handleSaveClick}
             timerEnabled={quizSettings.timerEnabled}
