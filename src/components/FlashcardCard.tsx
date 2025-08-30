@@ -174,7 +174,7 @@ export function FlashcardCard({
             width: 100%;
             height: 100%;
             text-align: center;
-            transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             transform-style: preserve-3d;
           }
           
@@ -189,22 +189,29 @@ export function FlashcardCard({
             -webkit-backface-visibility: hidden;
             backface-visibility: hidden;
             transform-style: preserve-3d;
+            transition: opacity 0.3s ease;
           }
           
           .flip-card-back {
             transform: rotateY(180deg);
+            opacity: 0;
+            pointer-events: none;
           }
           
           .flip-card-front {
             transform: rotateY(0deg);
+            opacity: 1;
+            pointer-events: auto;
           }
           
           .flip-card-flipped .flip-card-front {
-            visibility: hidden;
+            opacity: 0;
+            pointer-events: none;
           }
           
           .flip-card-flipped .flip-card-back {
-            visibility: visible;
+            opacity: 1;
+            pointer-events: auto;
           }
           
           .gradient-primary {
@@ -251,7 +258,7 @@ export function FlashcardCard({
           {/* Front Side */}
           <div className="flip-card-front">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 1, y: 0 }}
               animate={{ opacity: 1, y: 0 }}
               className="h-full gradient-primary relative overflow-hidden rounded-3xl shadow-elevated hover:shadow-glow transition-all duration-300 cursor-pointer group"
             >
@@ -334,9 +341,9 @@ export function FlashcardCard({
           <div className="flip-card-back">
             <motion.div
               className="h-full back-gradient border border-gray-200 shadow-elevated relative overflow-hidden rounded-3xl"
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 1 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.2 }}
             >
               {/* Flip Back Button - Top Left */}
               <div className="absolute top-4 left-4 z-30">
