@@ -123,11 +123,6 @@ export default function CourseFlashcardsPage() {
 
   const handleFlashcardUpdate = async (updated: IFlashcard) => {
     try {
-      console.log(
-        "Frontend: Updating flashcard with data:",
-        JSON.stringify(updated, null, 2)
-      );
-
       // Sync to backend first
       const response = await axios.put(
         `${Config.API_URL}/flashcards/${updated._id}`,
@@ -138,8 +133,6 @@ export default function CourseFlashcardsPage() {
           },
         }
       );
-
-      console.log("Frontend: Backend response:", response.data);
 
       // Update local state with the response from backend (ensures consistency)
       const backendUpdatedFlashcard = response.data.flashcard;
@@ -158,10 +151,6 @@ export default function CourseFlashcardsPage() {
         lastSyncTime: new Date(),
         pendingChanges: Math.max(0, prev.pendingChanges - 1),
       }));
-
-      console.log(
-        "Frontend: Local state updated with backend data and refreshed from server"
-      );
     } catch (error) {
       console.error("Frontend: Failed to sync flashcard update:", error);
       // Increment pending changes on failure
