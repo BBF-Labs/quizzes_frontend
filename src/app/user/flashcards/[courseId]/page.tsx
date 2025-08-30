@@ -17,7 +17,6 @@ import { Button } from "../../../../components/ui/button";
 import { FloatingAIWidget } from "../../../../components/ui/floating-ai-widget";
 import { FlashcardCard } from "../../../../components/FlashcardCard";
 
-import { flashcardService } from "../../../../lib/services/flashcardService";
 import { IFlashcard } from "../../../../interfaces";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib";
@@ -52,7 +51,9 @@ export default function CourseFlashcardsPage() {
   // Load course and flashcards
   useEffect(() => {
     loadCourseAndFlashcards();
-    startAutoSave();
+    const cleanup = startAutoSave();
+
+    return cleanup;
   }, [courseId]);
 
   const loadCourseAndFlashcards = async () => {
@@ -93,12 +94,97 @@ export default function CourseFlashcardsPage() {
   };
 
   const startAutoSave = () => {
-    flashcardService.startAutoSave(30000, credentials.accessToken); // Auto-save every 30 seconds
+    // Set up auto-save every 30 seconds
+    const autoSaveInterval = setInterval(async () => {
+      await syncFlashcards();
+    }, 30000);
+
+    // Cleanup interval on component unmount
+    return () => clearInterval(autoSaveInterval);
   };
 
-  const handleFlashcardDelete = (id: string) => {
-    setFlashcards((prev) => prev.filter((card) => card._id !== id));
-    loadCourseAndFlashcards(); // Refresh stats
+  const handleFlashcardDelete = async (id: string) => {
+    try {
+      // Delete from backend first
+      await axios.delete(`${Config.API_URL}/flashcards/${id}`, {
+        headers: {
+          Authorization: `Bearer ${credentials.accessToken}`,
+        },
+      });
+
+      // Update local state
+      setFlashcards((prev) => prev.filter((card) => card._id !== id));
+    } catch (error) {
+      console.error("Failed to delete flashcard:", error);
+      // Refresh from server on failure
+      loadCourseAndFlashcards();
+    }
+  };
+
+  const handleFlashcardUpdate = async (updated: IFlashcard) => {
+    try {
+      // Sync to backend first
+      const response = await axios.put(
+        `${Config.API_URL}/flashcards/${updated._id}`,
+        updated,
+        {
+          headers: {
+            Authorization: `Bearer ${credentials.accessToken}`,
+          },
+        }
+      );
+
+      // Update local state with the response from backend (ensures consistency)
+      const backendUpdatedFlashcard = response.data.flashcard;
+      setFlashcards((prev) =>
+        prev.map((card) =>
+          card._id === updated._id ? backendUpdatedFlashcard : card
+        )
+      );
+
+      // Force a refresh from the backend to ensure we have the latest data
+      await syncFlashcards();
+
+      // Update sync status
+      setSyncStatus((prev) => ({
+        ...prev,
+        lastSyncTime: new Date(),
+        pendingChanges: Math.max(0, prev.pendingChanges - 1),
+      }));
+    } catch (error) {
+      console.error("Frontend: Failed to sync flashcard update:", error);
+      // Increment pending changes on failure
+      setSyncStatus((prev) => ({
+        ...prev,
+        pendingChanges: prev.pendingChanges + 1,
+      }));
+    }
+  };
+
+  const syncFlashcards = async () => {
+    try {
+      // Get all flashcards that need syncing
+      const response = await axios.get(
+        `${Config.API_URL}/flashcards/course/${courseId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${credentials.accessToken}`,
+          },
+        }
+      );
+
+      const serverFlashcards = response.data.flashcards;
+      setFlashcards(serverFlashcards);
+
+      // Update sync status
+      setSyncStatus((prev) => ({
+        ...prev,
+        lastSyncTime: new Date(),
+        pendingChanges: 0,
+      }));
+    } catch (error) {
+      console.error("Failed to sync flashcards:", error);
+    }
   };
 
   const nextFlashcard = () => {
@@ -117,9 +203,7 @@ export default function CourseFlashcardsPage() {
 
   const forceSync = async () => {
     try {
-      await flashcardService.forceSync(credentials.accessToken);
-      const status = flashcardService.getSyncStatus();
-      setSyncStatus(status);
+      await syncFlashcards();
     } catch (error) {
       console.error("Failed to force sync:", error);
     }
@@ -236,7 +320,11 @@ export default function CourseFlashcardsPage() {
                 size="sm"
                 className="border-border hover:bg-muted"
               >
-                <RefreshCw className="w-4 h-4 mr-2" />
+                <RefreshCw
+                  className={`w-4 h-4 mr-2 ${
+                    syncStatus.pendingChanges > 0 ? "animate-spin" : ""
+                  }`}
+                />
                 Sync
               </Button>
             </div>
@@ -283,6 +371,7 @@ export default function CourseFlashcardsPage() {
                 <FlashcardCard
                   flashcard={flashcards[currentIndex]}
                   onDelete={handleFlashcardDelete}
+                  onUpdate={(updated) => handleFlashcardUpdate(updated as any)}
                   showActions={false}
                 />
               </motion.div>
