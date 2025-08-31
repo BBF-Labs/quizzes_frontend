@@ -439,7 +439,7 @@ export default function QuizPage() {
   if (!quizData) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Card className="shadow-2xl bg-white/90 border border-blue-100 rounded-3xl p-10 max-w-md w-full">
+        <Card className="shadow-2xl border border-blue-100 rounded-3xl p-10 max-w-md w-full">
           <div className="flex flex-col items-center space-y-6">
             <div className="relative">
               <span className="absolute -top-2 -right-2 w-6 h-6 bg-yellow-300 rounded-full flex items-center justify-center animate-bounce z-10">
