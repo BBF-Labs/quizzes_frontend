@@ -453,7 +453,7 @@ export default function QuizPage() {
               <h2 className="text-2xl font-bold text-primary mb-2 drop-shadow">
                 Access Required
               </h2>
-              <p className="text-base text-gray-600 mb-4">
+              <p className="text-base text-primary mb-4">
                 You do not have access to this quiz.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center mt-2">
