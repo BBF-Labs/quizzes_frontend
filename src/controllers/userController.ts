@@ -18,13 +18,7 @@ const createUser = async (user: any) => {
     return response.data;
   } catch (error: any) {
     if (error instanceof AxiosError) {
-      if (
-        error.response?.data.message ===
-        "Error creating user: Username or email already taken"
-      ) {
-        throw new Error("Username or email already taken");
-      }
-      throw new Error("Couldn't create, try again");
+      throw new Error("Username or email already taken");
     }
     throw new Error("Something went wrong");
   }
