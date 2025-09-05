@@ -53,7 +53,6 @@
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "confetti",
     "js.debugger.nextJs.config.created.client": "true",
     "js.debugger.nextJs.config.created.server": "true",
     "last_opened_file_path": "/Users/admin/Projects/Work/BBF/quizzes_frontend",
@@ -130,7 +129,7 @@
       <option name="presentableId" value="Default" />
       <updated>1756406275398</updated>
       <workItem from="1756406276570" duration="6634000" />
-      <workItem from="1757030198076" duration="970000" />
+      <workItem from="1757030198076" duration="1369000" />
     </task>
     <task id="LOCAL-00001" summary="Confetti Animation &amp; Sound Cue Added">
       <option name="closed" value="true" />

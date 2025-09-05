@@ -27,8 +27,6 @@ import { QuizResultsCard } from "@/components/QuizResultsCard";
 import { QuizSettingsModal } from "@/components/QuizSettingsModal";
 import confetti from "canvas-confetti";
 
-const correctAudioCue = new Audio("sounds/confetti_audio_cue.mp3");
-
 type QuizSettings = {
   lectures: string[];
   showHints: boolean;
@@ -87,6 +85,17 @@ export default function QuizPage() {
   const [savedProgress, setSavedProgress] = useState<any>(null);
   const [showProgressModal, setShowProgressModal] = useState(false);
   const [quizData, setQuizData] = useState<FullQuiz | null>(null);
+
+  // refs for audio (safe for SSR)
+  const correctAudioCue = useRef<HTMLAudioElement | null>(null);
+  // const incorrectAudioCue = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      correctAudioCue.current = new Audio("/sounds/correct.mp3");
+      // incorrectAudioCue.current = new Audio("/sounds/incorrect.mp3");
+    }
+  }, []);
 
   useEffect(() => {
     const fetchQuizData = async () => {
@@ -224,11 +233,13 @@ export default function QuizPage() {
       setFeedback(isCorrect ? "Correct!" : "Incorrect. Try again.");
 
       if (isCorrect) {
-         {/* Play audio */}
-        correctAudioCue.currentTime = 0;
-        correctAudioCue.play();
+        //  Play audio safely
+        if (correctAudioCue.current) {
+          correctAudioCue.current.currentTime = 0;
+          correctAudioCue.current.play();
+        }
 
-        {/* Fireworks animation */}
+        // Fireworks animation
         const duration = 5 * 1000;
         const animationEnd = Date.now() + duration;
         const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
@@ -238,10 +249,7 @@ export default function QuizPage() {
 
         const interval = window.setInterval(() => {
           const timeLeft = animationEnd - Date.now();
-
-          if (timeLeft <= 0) {
-            return clearInterval(interval);
-          }
+          if (timeLeft <= 0) return clearInterval(interval);
 
           const particleCount = 50 * (timeLeft / duration);
           confetti({
@@ -256,9 +264,11 @@ export default function QuizPage() {
           });
         }, 250);
       } else {
-        {/* Incorrect audio cue */}
-        //incorrectSound.currentTime = 0;
-        //incorrectSound.play();
+        {/* incorrect cue */}
+        // if (incorrectAudioCue.current) {
+        //   incorrectAudioCue.current.currentTime = 0;
+        //   incorrectAudioCue.current.play();
+        // }
       }
     }
 
