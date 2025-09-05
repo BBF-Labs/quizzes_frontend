@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
@@ -14,8 +14,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { Clock, Target, BookOpen, Eye, Zap, Settings } from "lucide-react";
+import {
+  Clock,
+  Target,
+  BookOpen,
+  Eye,
+  Zap,
+  Settings,
+  Info,
+  AlertTriangle,
+} from "lucide-react";
 import { FullQuiz } from "@/interfaces/IQuizState";
+import { showToast } from "./toaster";
 
 interface QuizSettings {
   lectures: string[];
@@ -48,7 +58,52 @@ export function QuizSettingsModal({
 }: QuizSettingsModalProps) {
   const [localSettings, setLocalSettings] = useState<QuizSettings>(settings);
 
+  // Auto-update end range when start range changes to prevent invalid ranges
+  const handleStartLectureChange = (value: string) => {
+    const startIndex = parseInt(value);
+    setLocalSettings((prev) => {
+      const newEndIndex = Math.max(startIndex, prev.lectureRange.end);
+      return {
+        ...prev,
+        lectureRange: {
+          start: startIndex,
+          end: newEndIndex,
+        },
+      };
+    });
+  };
+
+  // Initialize end range to last lecture if not set
+  useEffect(() => {
+    if (availableLectures && availableLectures.length > 0) {
+      const lastLectureIndex = availableLectures.length - 1;
+      // Only auto-adjust if the current range is invalid
+      if (
+        localSettings.lectureRange.start > localSettings.lectureRange.end ||
+        localSettings.lectureRange.end >= availableLectures.length
+      ) {
+        setLocalSettings((prev) => ({
+          ...prev,
+          lectureRange: {
+            start: Math.min(prev.lectureRange.start, lastLectureIndex),
+            end: lastLectureIndex,
+          },
+        }));
+      }
+    }
+  }, [availableLectures]);
+
   const handleSave = () => {
+    // Validate lecture range before saving
+    if (availableLectures && availableLectures.length > 0) {
+      const { start, end } = localSettings.lectureRange;
+      if (start > end || start < 0 || end >= availableLectures.length) {
+        // Don't save invalid ranges
+        showToast("Invalid lecture range", "error");
+        return;
+      }
+    }
+
     onSave(localSettings);
     onClose();
   };
@@ -56,6 +111,21 @@ export function QuizSettingsModal({
   const handleReset = () => {
     setLocalSettings(settings);
   };
+
+  // Check if lecture range is valid
+  const isLectureRangeValid =
+    availableLectures && availableLectures.length > 0
+      ? localSettings.lectureRange.start <= localSettings.lectureRange.end &&
+        localSettings.lectureRange.start >= 0 &&
+        localSettings.lectureRange.end < availableLectures.length
+      : true;
+
+  // Check if end range was auto-adjusted
+  const wasEndRangeAdjusted =
+    availableLectures &&
+    availableLectures.length > 0 &&
+    localSettings.lectureRange.end === availableLectures.length - 1 &&
+    localSettings.lectureRange.start < localSettings.lectureRange.end;
 
   if (!isOpen) return null;
 
@@ -277,6 +347,11 @@ export function QuizSettingsModal({
                   Lecture Range
                 </h3>
               </div>
+              <p className="text-xs text-muted-foreground">
+                Select the range of lectures to include in your quiz. The end
+                lecture will only be automatically adjusted if you select an
+                invalid range (e.g., start &gt; end).
+              </p>
               {availableLectures && availableLectures.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="space-y-2">
@@ -288,15 +363,7 @@ export function QuizSettingsModal({
                     </Label>
                     <Select
                       value={localSettings.lectureRange.start.toString()}
-                      onValueChange={(value) =>
-                        setLocalSettings((prev) => ({
-                          ...prev,
-                          lectureRange: {
-                            ...prev.lectureRange,
-                            start: parseInt(value),
-                          },
-                        }))
-                      }
+                      onValueChange={handleStartLectureChange}
                     >
                       <SelectTrigger className="bg-background border-border text-foreground h-8 text-sm">
                         <SelectValue placeholder="Select start lecture" />
@@ -359,7 +426,11 @@ export function QuizSettingsModal({
                   </p>
                 </div>
               )}
-              <p className="text-xs text-muted-foreground">
+              <p
+                className={`text-xs ${
+                  isLectureRangeValid ? "text-muted-foreground" : "text-red-500"
+                }`}
+              >
                 Total questions in range:{" "}
                 {quizData &&
                 quizData.quizQuestions &&
@@ -392,9 +463,7 @@ export function QuizSettingsModal({
                           ", "
                         )} (${totalQuestions} questions)`;
                       }
-                      return `${startIndex + 1} to ${
-                        endIndex + 1
-                      } (0 questions)`;
+                      return "Invalid range";
                     })()
                   : availableLectures && availableLectures.length > 0
                   ? (() => {
@@ -413,16 +482,24 @@ export function QuizSettingsModal({
                           endIndex - startIndex + 1
                         } lectures)`;
                       }
-                      return `${startIndex + 1} to ${endIndex + 1} (${
-                        endIndex - startIndex + 1
-                      } lectures)`;
+                      return "Invalid range";
                     })()
-                  : `${
-                      localSettings.lectureRange.end -
-                      localSettings.lectureRange.start +
-                      1
-                    } questions`}
+                  : "No lectures available"}
               </p>
+              {!isLectureRangeValid && (
+                <p className="text-xs text-red-500 bg-red-50 p-2 rounded border border-red-200">
+                  <AlertTriangle className="w-4 h-4 mr-2 text-red-500" />
+                  Invalid lecture range. Please select a valid start and end
+                  lecture.
+                </p>
+              )}
+              {wasEndRangeAdjusted && (
+                <p className="text-xs text-blue-600 bg-blue-50 p-2 rounded border border-blue-200">
+                  <Info className="w-4 h-4 mr-2 text-blue-500" />
+                  End lecture automatically adjusted to include all available
+                  lectures in the range.
+                </p>
+              )}
             </div>
           </CardContent>
 
@@ -444,7 +521,12 @@ export function QuizSettingsModal({
             </Button>
             <Button
               onClick={handleSave}
-              className="bg-gradient-to-br from-teal-500 to-blue-600 hover:from-teal-600 hover:to-blue-700 text-white text-sm px-3 py-1.5"
+              disabled={!isLectureRangeValid}
+              className={`text-sm px-3 py-1.5 ${
+                isLectureRangeValid
+                  ? "bg-gradient-to-br from-teal-500 to-blue-600 hover:from-teal-600 hover:to-blue-700 text-white"
+                  : "bg-gray-400 cursor-not-allowed text-gray-200"
+              }`}
             >
               <Zap className="h-3 w-3 mr-2" />
               Apply Settings
