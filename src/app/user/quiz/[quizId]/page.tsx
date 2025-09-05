@@ -256,6 +256,7 @@ export default function QuizPage() {
           });
         }, 250);
       } else {
+        {/* Incorrect audio cue */}
         //incorrectSound.currentTime = 0;
         //incorrectSound.play();
       }
