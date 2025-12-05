@@ -29,14 +29,14 @@ export function QuizProgressCard({
       transition={{ duration: 0.3, ease: "easeOut" }}
       className="w-full"
     >
-      <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">
+      <Card className="border-0 shadow-lg bg-white dark:bg-gray-800">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg font-bold text-gray-900 dark:text-white">
               Quiz Progress
             </CardTitle>
             {timerEnabled && timeLeft !== undefined && formatTime && (
-              <div className="flex items-center space-x-2 bg-gradient-to-r from-red-500 to-pink-500 text-white px-3 py-2 rounded-full shadow-lg">
+              <div className="flex items-center space-x-2 bg-red-500 text-white px-3 py-2 rounded-full shadow-lg">
                 <span className="text-sm font-bold">⏰</span>
                 <span className="font-mono font-bold text-sm">
                   {formatTime(timeLeft)}
@@ -54,7 +54,7 @@ export function QuizProgressCard({
                 className="h-3 w-full bg-gray-200 dark:bg-gray-700"
               />
               <div
-                className="absolute inset-0 bg-gradient-to-r from-teal-500 to-blue-500 rounded-full transition-all duration-500 ease-out"
+                className="absolute inset-0 bg-teal-500 rounded-full transition-all duration-500 ease-out"
                 style={{
                   width: `${progressPercentage}%`,
                   clipPath: "inset(0 0 0 0)",

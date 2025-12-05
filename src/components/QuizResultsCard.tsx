@@ -42,9 +42,9 @@ export function QuizResultsCard({
       transition={{ duration: 0.5, ease: "easeOut" }}
       className="w-full max-w-4xl mx-auto"
     >
-      <Card className="border-0 shadow-2xl bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 overflow-hidden">
+      <Card className="border-0 shadow-2xl bg-white dark:bg-gray-800 overflow-hidden">
         {/* Header */}
-        <CardHeader className="text-center pb-6 bg-gradient-to-r from-teal-500 to-blue-500 text-white">
+        <CardHeader className="text-center pb-6 bg-teal-500 text-white">
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
@@ -176,7 +176,7 @@ export function QuizResultsCard({
           >
             <Button
               onClick={onRetake}
-              className="bg-gradient-to-r from-teal-500 to-blue-500 hover:from-teal-600 hover:to-blue-600 text-white px-8 py-3 text-lg shadow-lg"
+              className="bg-teal-500 hover:bg-teal-600 text-white px-8 py-3 text-lg shadow-lg"
             >
               <RotateCcw className="mr-2 h-5 w-5" />
               Retake Quiz

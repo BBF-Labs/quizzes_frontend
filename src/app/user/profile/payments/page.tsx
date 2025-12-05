@@ -144,12 +144,12 @@ export default function PaymentsPage() {
     <div className="min-h-screen bg-background text-foreground">
       <div className="max-w-6xl mx-auto px-4 pt-24 pb-8">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-teal-500 to-blue-500 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold text-teal-500">
             Payment History
           </h1>
           <Button
             asChild
-            className="bg-gradient-to-r from-teal-500 to-blue-500 hover:from-teal-600 hover:to-blue-600 text-primary"
+            className="bg-teal-500 hover:bg-teal-600 text-white"
           >
             <Link href="/user/pay">Make a Payment</Link>
           </Button>

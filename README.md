@@ -1,21 +1,217 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# BBF Lab Quizzes 📚
 
-## Getting Started
+<div align="center">
 
-First, run the development server:
+![BBF Lab Quizzes](https://quizzess.theniitettey.live/api/og)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+**An interactive quiz platform designed for university students to enhance their learning experience**
+
+[![Next.js](https://img.shields.io/badge/Next.js-16.0.7-black?logo=next.js)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19.2.1-61DAFB?logo=react)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?logo=typescript)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-06B6D4?logo=tailwindcss)](https://tailwindcss.com/)
+
+[Live Demo](https://quizzess.theniitettey.live) · [Report Bug](https://github.com/BBF-Labs/quizzes_frontend/issues) · [Request Feature](https://github.com/BBF-Labs/quizzes_frontend/issues)
+
+</div>
+
+---
+
+## ✨ Overview
+
+BBF Lab Quizzes is a comprehensive quiz platform tailored for Ghanaian university students. It provides lecture-specific quizzes, flashcards, and assessments to help students master their coursework and improve exam performance.
+
+### 🎯 Key Features
+
+- **📝 Lecture-Specific Quizzes** - Practice with questions tailored to your exact lecture content
+- **📊 Progress Tracking** - Monitor your improvement with detailed analytics
+- **⚡ Instant Feedback** - Get immediate results and explanations after each quiz
+- **🎴 Flashcards** - Create and study flashcards for better retention
+- **🎨 Personal Quizzes** - Generate custom quizzes with AI assistance
+- **⏱️ Custom Timers** - Set your own pace with customizable quiz durations
+- **📱 Responsive Design** - Study seamlessly on desktop, tablet, or mobile
+- **🌙 Dark Mode** - Easy on the eyes with theme support
+
+### 🏫 Supported Universities
+
+- University of Ghana (UG)
+- Ashesi University
+- University of Cape Coast (UCC)
+- *More coming soon...*
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) (v18 or higher)
+- [pnpm](https://pnpm.io/) (recommended) or npm/yarn
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/BBF-Labs/quizzes_frontend.git
+   cd quizzes_frontend
+   ```
+
+2. **Install dependencies**
+   ```bash
+   pnpm install
+   ```
+
+3. **Set up environment variables**
+   
+   Create a `.env.local` file in the root directory:
+   ```env
+   NEXT_PUBLIC_API_URL=your_api_url_here
+   NEXT_PUBLIC_SITE_URL=http://localhost:3000
+   ```
+
+4. **Start the development server**
+   ```bash
+   pnpm dev
+   ```
+
+5. **Open your browser**
+   
+   Navigate to [http://localhost:3000](http://localhost:3000)
+
+---
+
+## 📁 Project Structure
+
+```
+quizzes_frontend/
+├── public/                 # Static assets
+├── src/
+│   ├── app/               # Next.js App Router pages
+│   │   ├── api/           # API routes (OG image generation)
+│   │   ├── auth/          # Authentication pages (login, signup)
+│   │   ├── courses/       # Course listing page
+│   │   ├── packages/      # Subscription packages page
+│   │   ├── quizzes/       # Quiz listing page
+│   │   └── user/          # User dashboard
+│   │       ├── flashcards/       # Flashcard management
+│   │       ├── pay/              # Payment flow
+│   │       ├── personal-quizzes/ # AI-generated quizzes
+│   │       ├── profile/          # User profile
+│   │       └── quiz/             # Quiz taking interface
+│   ├── assets/            # Images and static assets
+│   ├── components/        # Reusable UI components
+│   │   ├── ui/            # Base UI components (shadcn/ui)
+│   │   └── wrappers/      # Layout wrappers
+│   ├── config/            # App configuration
+│   ├── controllers/       # API request handlers
+│   ├── hooks/             # Custom React hooks
+│   ├── interfaces/        # TypeScript interfaces
+│   ├── lib/               # Utilities and state management
+│   │   ├── reducers/      # Redux reducers
+│   │   ├── services/      # API services
+│   │   ├── store/         # Redux store configuration
+│   │   └── utils/         # Utility functions
+│   └── types/             # TypeScript type definitions
+├── tailwind.config.ts     # Tailwind CSS configuration
+├── tsconfig.json          # TypeScript configuration
+└── package.json           # Project dependencies
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🛠️ Tech Stack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Frontend
+| Technology | Purpose |
+|------------|---------|
+| [Next.js 16](https://nextjs.org/) | React framework with App Router |
+| [React 19](https://react.dev/) | UI library |
+| [TypeScript](https://www.typescriptlang.org/) | Type safety |
+| [Tailwind CSS](https://tailwindcss.com/) | Utility-first CSS |
+| [Framer Motion](https://www.framer.com/motion/) | Animations |
+| [Radix UI](https://www.radix-ui.com/) | Accessible UI primitives |
+
+### State Management
+| Technology | Purpose |
+|------------|---------|
+| [Redux Toolkit](https://redux-toolkit.js.org/) | Global state management |
+| [Redux Persist](https://github.com/rt2zz/redux-persist) | State persistence |
+| [React Redux](https://react-redux.js.org/) | React bindings for Redux |
+
+### Additional Libraries
+| Library | Purpose |
+|---------|---------|
+| [Axios](https://axios-http.com/) | HTTP client |
+| [React Hot Toast](https://react-hot-toast.com/) | Toast notifications |
+| [React Markdown](https://github.com/remarkjs/react-markdown) | Markdown rendering |
+| [Lucide React](https://lucide.dev/) | Icon library |
+| [date-fns](https://date-fns.org/) | Date utilities |
+
+---
+
+## 📜 Available Scripts
+
+| Command | Description |
+|---------|-------------|
+| `pnpm dev` | Start development server with Turbopack |
+| `pnpm build` | Build for production |
+| `pnpm start` | Start production server |
+| `pnpm lint` | Run ESLint |
+
+---
+
+## 💳 Pricing Plans
+
+| Plan | Price | Features |
+|------|-------|----------|
+| **Starter** | Free | 2 free quiz accesses, Basic course coverage |
+| **Semester** | ₵9.00/month | Unlimited quizzes, Progress tracking, Offline access |
+| **Quiz Credits** | ₵1.00/100 | Pay as you go, Full feature access |
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+This project is proprietary software owned by BBF Labs.
+
+---
+
+## 👥 Team
+
+<div align="center">
+
+**BBF Labs Team**
+
+Created with ❤️ for Ghanaian university students
+
+[Michael Perry Nii Tettey](https://theniitettey.live)
+
+</div>
+
+---
+
+## 📬 Contact
+
+- **Website**: [quizzess.theniitettey.live](https://quizzess.theniitettey.live)
+- **Twitter**: [@BBFLabs](https://twitter.com/BBFLabs)
+- **Email**: Contact through the website
+
+---
+
+<div align="center">
+
+**⭐ Star this repo if you find it helpful!**
+
+</div>

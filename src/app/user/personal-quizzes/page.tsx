@@ -393,7 +393,7 @@ export default function PersonalQuizzesPage() {
         <div className="text-center">
           <div className="relative">
             <BookOpen className="w-16 h-16 text-primary mx-auto mb-4 animate-pulse" />
-            <div className="absolute inset-0 bg-gradient-to-r from-primary to-secondary rounded-full blur-xl opacity-20 animate-pulse" />
+            <div className="absolute inset-0 bg-primary rounded-full blur-xl opacity-20 animate-pulse" />
           </div>
           <p className="text-muted-foreground text-lg">
             Loading your personal quizzes...
@@ -411,10 +411,10 @@ export default function PersonalQuizzesPage() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-xl">
+                <div className="p-2 bg-primary/20 rounded-xl">
                   <BookOpen className="w-8 h-8 text-primary" />
                 </div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-teal-500 to-blue-500 bg-clip-text text-transparent">
+                <h1 className="text-4xl font-bold text-teal-500">
                   My Personal Quizzes
                 </h1>
               </div>
@@ -440,11 +440,11 @@ export default function PersonalQuizzesPage() {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-card to-card/50 border border-border/50 hover:border-primary/50 transition-all duration-300"
+                className="group relative overflow-hidden rounded-xl bg-card border border-border/50 hover:border-primary/50 transition-all duration-300"
               >
                 <div className="p-6">
                   <div className="flex items-center gap-3">
-                    <div className="p-3 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-xl">
+                    <div className="p-3 bg-primary/20 rounded-xl">
                       <BookOpen className="w-6 h-6 text-primary" />
                     </div>
                     <div>
@@ -463,11 +463,11 @@ export default function PersonalQuizzesPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-card to-card/50 border border-border/50 hover:border-primary/50 transition-all duration-300"
+                className="group relative overflow-hidden rounded-xl bg-card border border-border/50 hover:border-primary/50 transition-all duration-300"
               >
                 <div className="p-6">
                   <div className="flex items-center gap-3">
-                    <div className="p-3 bg-gradient-to-br from-emerald-500/20 to-green-500/20 rounded-xl">
+                    <div className="p-3 bg-emerald-500/20 rounded-xl">
                       <Target className="w-6 h-6 text-emerald-600" />
                     </div>
                     <div>
@@ -489,11 +489,11 @@ export default function PersonalQuizzesPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-card to-card/50 border border-border/50 hover:border-primary/50 transition-all duration-300"
+                className="group relative overflow-hidden rounded-xl bg-card border border-border/50 hover:border-primary/50 transition-all duration-300"
               >
                 <div className="p-6">
                   <div className="flex items-center gap-3">
-                    <div className="p-3 bg-gradient-to-br from-amber-500/20 to-yellow-500/20 rounded-xl">
+                    <div className="p-3 bg-amber-500/20 rounded-xl">
                       <Play className="w-6 h-6 text-amber-600" />
                     </div>
                     <div>
@@ -515,11 +515,11 @@ export default function PersonalQuizzesPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-card to-card/50 border border-border/50 hover:border-primary/50 transition-all duration-300"
+                className="group relative overflow-hidden rounded-xl bg-card border border-border/50 hover:border-primary/50 transition-all duration-300"
               >
                 <div className="p-6">
                   <div className="flex items-center gap-3">
-                    <div className="p-3 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-xl">
+                    <div className="p-3 bg-purple-500/20 rounded-xl">
                       <Star className="w-6 h-6 text-purple-600" />
                     </div>
                     <div>
@@ -549,7 +549,7 @@ export default function PersonalQuizzesPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-card to-card/50 border border-border/50 hover:border-primary/50 transition-all duration-300 p-6"
+                className="group relative overflow-hidden rounded-xl bg-card border border-border/50 hover:border-primary/50 transition-all duration-300 p-6"
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
@@ -699,7 +699,7 @@ export default function PersonalQuizzesPage() {
           <div className="text-center py-12">
             <div className="relative mb-6">
               <BookOpen className="w-20 h-20 text-muted-foreground mx-auto" />
-              <div className="absolute inset-0 bg-gradient-to-r from-primary to-secondary rounded-full blur-2xl opacity-20" />
+              <div className="absolute inset-0 bg-primary rounded-full blur-2xl opacity-20" />
             </div>
             <h3 className="text-xl font-medium text-foreground mb-2">
               No personal quizzes yet
@@ -729,13 +729,13 @@ export default function PersonalQuizzesPage() {
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="group relative rounded-2xl bg-gradient-to-br from-card to-card/50 border border-border/50 shadow-2xl max-w-4xl w-full max-h-[80vh]"
+              className="group relative rounded-2xl bg-card border border-border/50 shadow-2xl max-w-4xl w-full max-h-[80vh]"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="p-6 border-b border-border/30">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg">
+                    <div className="p-2 bg-primary/20 rounded-lg">
                       <Plus className="w-6 h-6 text-primary" />
                     </div>
                     <h2 className="text-2xl font-bold text-foreground">
@@ -757,7 +757,7 @@ export default function PersonalQuizzesPage() {
                 </p>
 
                 {/* Experimental Feature Banner */}
-                <div className="p-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg">
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
                   <div className="flex items-center gap-2">
                     <div className="p-1 bg-amber-500 rounded-full">
                       <span className="text-xs text-white font-bold">AI</span>
@@ -999,7 +999,7 @@ export default function PersonalQuizzesPage() {
 
                     <div className="p-4 border-2 border-primary bg-primary/5 rounded-xl">
                       <div className="flex items-center gap-3 mb-3">
-                        <div className="p-2 bg-gradient-to-br from-primary to-secondary rounded-lg">
+                        <div className="p-2 bg-primary rounded-lg">
                           <FileText className="w-6 h-6 text-primary" />
                         </div>
                         <div className="flex-1">
@@ -1161,7 +1161,7 @@ export default function PersonalQuizzesPage() {
                           <div className="flex items-center gap-3">
                             <div className="flex-shrink-0">
                               {selectedMaterial === material._id ? (
-                                <div className="p-1 bg-gradient-to-br from-primary to-secondary rounded-full">
+                                <div className="p-1 bg-primary rounded-full">
                                   <CheckCircle className="w-5 h-5 text-white" />
                                 </div>
                               ) : (

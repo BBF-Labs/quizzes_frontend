@@ -109,7 +109,7 @@ export default function PackagesPage() {
       <LandingHeader />
       <div className="max-w-6xl mx-auto px-4 pt-24 pb-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-teal-500 to-blue-500 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold mb-2 text-teal-500">
             BBF Labs Pricing Structure
           </h1>
           <p className="text-foreground">
@@ -141,7 +141,7 @@ export default function PackagesPage() {
                       {pkg.description}
                     </p>
                     <Link href={`/user/pay?amount=${pkg.price}&id=${pkg.id}`}>
-                      <Button className="w-full mt-4 bg-gradient-to-r from-teal-500 to-blue-500 hover:from-teal-600 hover:to-blue-600">
+                      <Button className="w-full mt-4 bg-teal-500 hover:bg-teal-600 text-white">
                         Select
                       </Button>
                     </Link>
@@ -174,7 +174,7 @@ export default function PackagesPage() {
                       Access by Credit Hour
                     </p>
                     <Link href={`/user/pay?amount=${pkg.price}&id=${pkg.id}`}>
-                      <Button className="w-full mt-4 bg-gradient-to-r from-teal-500 to-blue-500 hover:from-teal-600 hover:to-blue-600">
+                      <Button className="w-full mt-4 bg-teal-500 hover:bg-teal-600 text-white">
                         Select
                       </Button>
                     </Link>
@@ -221,7 +221,7 @@ export default function PackagesPage() {
                     <Link
                       href={`/user/pay?amount=${pkg.price}&id=${pkg.id}&type=credits`}
                     >
-                      <Button className="w-full mt-4 bg-gradient-to-r from-teal-500 to-blue-500 hover:from-teal-600 hover:to-blue-600">
+                      <Button className="w-full mt-4 bg-teal-500 hover:bg-teal-600 text-white">
                         Select
                       </Button>
                     </Link>
