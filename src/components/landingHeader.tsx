@@ -43,7 +43,7 @@ export function LandingHeader() {
     <header 
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled 
-          ? "border-b border-border/50 bg-background/80 backdrop-blur-xl shadow-sm" 
+          ? "border-b border-border bg-background/95 backdrop-blur-xl shadow-sm" 
           : "bg-transparent border-transparent"
       }`}
     >
@@ -58,7 +58,7 @@ export function LandingHeader() {
               className={`text-sm font-medium transition-colors ${
                 isScrolled 
                   ? "text-muted-foreground hover:text-foreground" 
-                  : "text-white/80 hover:text-white"
+                  : "text-white/90 hover:text-white"
               }`}
             >
               Features
@@ -68,7 +68,7 @@ export function LandingHeader() {
               className={`text-sm font-medium transition-colors ${
                 isScrolled 
                   ? "text-muted-foreground hover:text-foreground" 
-                  : "text-white/80 hover:text-white"
+                  : "text-white/90 hover:text-white"
               }`}
             >
               Pricing
@@ -81,7 +81,7 @@ export function LandingHeader() {
               <Link
                 href="/auth/login"
                 className={`inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 sm:h-9 sm:rounded-md sm:px-3 lg:h-11 lg:rounded-md lg:px-8 ${
-                  isScrolled ? "text-muted-foreground" : "text-white/80 hover:text-white hover:bg-white/10"
+                  isScrolled ? "text-muted-foreground hover:text-foreground" : "text-gray-800 dark:text-white/90 hover:text-teal-500 hover:dark:text-white hover:bg-white/10"
                 }`}
               >
                 Log In
@@ -90,7 +90,7 @@ export function LandingHeader() {
                 href="/auth/signup"
                 className={`inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 sm:h-9 sm:rounded-md sm:px-3 lg:h-11 lg:rounded-md lg:px-8 ${
                   isScrolled 
-                    ? "button-gradient" 
+                    ? "bg-teal-500 text-white hover:bg-teal-600" 
                     : "bg-white text-gray-900 hover:bg-white/90"
                 }`}
               >
