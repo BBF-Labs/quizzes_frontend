@@ -87,32 +87,21 @@
   }
 
   .bg-gradient-brand {
-    background: linear-gradient(to right, rgb(16 185 129), rgb(59 130 246));
+    background: rgb(16 185 129);
   }
 
   .text-gradient-brand {
-    background: linear-gradient(to right, rgb(16 185 129), rgb(59 130 246));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: rgb(16 185 129);
   }
 
   .card-highlight {
-    background: linear-gradient(
-      165deg,
-      rgb(var(--card)) 0%,
-      rgba(59, 130, 246, 0.1) 100%
-    );
+    background: rgb(var(--card));
     border: 1px solid rgba(59, 130, 246, 0.2);
     backdrop-filter: blur(20px);
   }
 
   .card-normal {
-    background: linear-gradient(
-      165deg,
-      rgb(var(--card)) 0%,
-      rgba(16, 185, 129, 0.05) 100%
-    );
+    background: rgb(var(--card));
     border: 1px solid rgba(16, 185, 129, 0.1);
     backdrop-filter: blur(20px);
   }
@@ -120,7 +109,7 @@
 
 @layer components {
   .button-gradient {
-    background: linear-gradient(to right, rgb(16 185 129), rgb(59 130 246));
+    background: rgb(16 185 129);
     color: white;
     transition: all 0.2s ease;
   }
@@ -128,7 +117,7 @@
   .button-gradient:hover {
     opacity: 0.95;
     transform: translateY(-1px);
-    box-shadow: 0 8px 24px -4px rgba(59, 130, 246, 0.25);
+    box-shadow: 0 8px 24px -4px rgba(16, 185, 129, 0.25);
   }
 
   .pricing-card {
@@ -167,7 +156,7 @@
     content: "";
     position: absolute;
     inset: -2px;
-    background: linear-gradient(45deg, rgb(16 185 129), rgb(59 130 246));
+    background: rgb(16 185 129);
     border-radius: calc(var(--radius) + 2px);
     z-index: -1;
     opacity: 0.5;

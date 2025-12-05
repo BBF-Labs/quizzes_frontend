@@ -29,14 +29,14 @@ function PricingCard({
         backdrop-blur-xl border border-transparent
         ${
           highlighted
-            ? "bg-gradient-to-br from-primary/10 to-secondary/10 shadow-xl shadow-secondary/10"
-            : "bg-gradient-to-br from-background to-background/80 shadow-lg"
+            ? "bg-primary/10 shadow-xl shadow-secondary/10"
+            : "bg-background shadow-lg"
         }
         hover:shadow-2xl hover:shadow-secondary/10
       `}
     >
       {highlighted && (
-        <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-sm font-medium bg-gradient-brand">
+        <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-sm font-medium bg-teal-500 text-white">
           Most Popular
         </div>
       )}
@@ -45,7 +45,7 @@ function PricingCard({
         <p className="text-muted-foreground">{description}</p>
       </div>
       <div className="mb-8">
-        <span className="text-5xl font-bold text-gradient-brand">{price}</span>
+        <span className="text-5xl font-bold text-teal-500">{price}</span>
         <span className="text-muted-foreground ml-2">{period}</span>
       </div>
       <ul className="space-y-4 mb-8">

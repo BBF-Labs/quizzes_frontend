@@ -147,7 +147,7 @@ export function FloatingAIWidget({
           >
             <Button
               onClick={toggleWidget}
-              className="w-14 h-14 rounded-full shadow-lg bg-gradient-to-r from-teal-500 to-blue-600 hover:from-teal-600 hover:to-blue-700 text-white"
+              className="w-14 h-14 rounded-full shadow-lg bg-teal-500 hover:bg-teal-600 text-white"
             >
               <MessageCircle className="w-6 h-6" />
             </Button>
@@ -165,7 +165,7 @@ export function FloatingAIWidget({
             className="w-96 bg-background border border-border rounded-lg shadow-2xl overflow-hidden"
           >
             {/* Header */}
-            <div className="bg-gradient-to-r from-teal-500 to-blue-600 p-4 text-white">
+            <div className="bg-teal-500 p-4 text-white">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Bot className="w-5 h-5" />
@@ -228,7 +228,7 @@ export function FloatingAIWidget({
                       <div key={index} className="space-y-3">
                         {/* User Question */}
                         <div className="flex justify-end">
-                          <div className="bg-gradient-to-r from-teal-500 to-blue-600 text-white px-3 py-2 rounded-lg max-w-[80%] text-sm">
+                          <div className="bg-teal-500 text-white px-3 py-2 rounded-lg max-w-[80%] text-sm">
                             {item.question}
                           </div>
                         </div>

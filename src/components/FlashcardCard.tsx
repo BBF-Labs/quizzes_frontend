@@ -71,9 +71,9 @@ export function FlashcardCard({
   };
 
   const getMasteryGradient = (level: number) => {
-    if (level >= 80) return "from-emerald-500 to-green-500";
-    if (level >= 60) return "from-amber-500 to-yellow-500";
-    return "from-red-500 to-pink-500";
+    if (level >= 80) return "bg-emerald-500";
+    if (level >= 60) return "bg-amber-500";
+    return "bg-red-500";
   };
 
   const updateMasteryLevel = async (change: number) => {
@@ -375,7 +375,7 @@ export function FlashcardCard({
                 <div className="flex items-center justify-center mb-5">
                   <div className="text-center max-w-md">
                     <div className="relative mb-5">
-                      <div className="w-14 h-14 bg-gradient-to-br from-teal-500 to-blue-600 rounded-full flex items-center justify-center mx-auto shadow-lg animate-pulse-glow">
+                      <div className="w-14 h-14 bg-teal-500 rounded-full flex items-center justify-center mx-auto shadow-lg animate-pulse-glow">
                         <Target className="w-7 h-7 text-white" />
                       </div>
                       <div className="absolute -top-1 -right-1 w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center animate-bounce">
@@ -402,7 +402,7 @@ export function FlashcardCard({
                     </span>
                     <div className="flex items-center gap-2">
                       <div
-                        className={`w-4 h-4 rounded-full bg-gradient-to-r ${getMasteryGradient(
+                        className={`w-4 h-4 rounded-full ${getMasteryGradient(
                           masteryLevel
                         )}`}
                       ></div>

@@ -65,7 +65,7 @@ export default function LoginPage() {
       <LandingHeader />
       <AuthCard>
         <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-teal-500 to-blue-500 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold tracking-tight text-teal-500">
             Sign in to BBF Quizzes
           </h1>
           <p className="text-sm text-white">
@@ -135,7 +135,7 @@ export default function LoginPage() {
 
           <Button
             type="submit"
-            className="w-full bg-gradient-to-r from-teal-500 to-blue-500 hover:from-teal-600 hover:to-blue-600 text-white font-semibold text-base"
+            className="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold text-base"
             disabled={isLoading}
           >
             Sign in
