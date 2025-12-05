@@ -4,33 +4,34 @@
 
 @layer base {
   :root {
-    --background: 240, 100%, 98%;
-    --foreground: 240, 10%, 20%;
+    /* Light mode - Professional slate/teal palette */
+    --background: 210 20% 98%;
+    --foreground: 220 20% 15%;
 
-    --card: 240, 100%, 100%;
-    --card-foreground: 240, 10%, 20%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 20% 15%;
 
-    --popover: 240, 100%, 100%;
-    --popover-foreground: 240, 10%, 20%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 20% 15%;
 
-    --primary: 176, 100%, 50%;
-    --primary-foreground: 255, 255, 255;
+    --primary: 168 80% 40%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210, 100%, 50%;
-    --secondary-foreground: 255, 255, 255;
+    --secondary: 210 15% 96%;
+    --secondary-foreground: 220 20% 25%;
 
-    --muted: 240, 10%, 95%;
-    --muted-foreground: 240, 10%, 20%;
+    --muted: 210 15% 94%;
+    --muted-foreground: 220 10% 45%;
 
-    --accent: 189, 74%, 42%;
-    --accent-foreground: 173, 100%, 39%;
+    --accent: 168 80% 40%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0, 100%, 50%;
-    --destructive-foreground: 255, 255, 255;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 240, 10%, 80%;
-    --input: 240, 10%, 90%;
-    --ring: 176, 100%, 50%;
+    --border: 220 15% 88%;
+    --input: 220 15% 92%;
+    --ring: 168 80% 40%;
 
     --radius: 0.75rem;
   }
@@ -72,16 +73,16 @@
   .bg-grid {
     background-image: radial-gradient(
       circle at 1px 1px,
-      rgb(var(--primary) / 0.03) 1px,
+      hsl(168 80% 40% / 0.08) 1px,
       transparent 0
     );
-    background-size: 20px 20px;
+    background-size: 24px 24px;
   }
 
   .dark .bg-grid {
     background-image: radial-gradient(
       circle at 1px 1px,
-      rgb(var(--primary) / 0.1) 1px,
+      hsl(168 80% 40% / 0.15) 1px,
       transparent 0
     );
   }
@@ -95,13 +96,23 @@
   }
 
   .card-highlight {
-    background: rgb(var(--card));
+    background: hsl(var(--card));
+    border: 1px solid hsl(168 80% 40% / 0.3);
+    box-shadow: 0 4px 20px -4px hsl(168 80% 40% / 0.1);
+  }
+
+  .dark .card-highlight {
     border: 1px solid rgba(59, 130, 246, 0.2);
     backdrop-filter: blur(20px);
   }
 
   .card-normal {
-    background: rgb(var(--card));
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    box-shadow: 0 1px 3px hsl(220 20% 15% / 0.05);
+  }
+
+  .dark .card-normal {
     border: 1px solid rgba(16, 185, 129, 0.1);
     backdrop-filter: blur(20px);
   }
