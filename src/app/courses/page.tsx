@@ -87,7 +87,7 @@ export default function HomeCoursesPage() {
       <LandingHeader />
       <div className="max-w-6xl mx-auto px-4 py-8 pt-24 relative">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-teal-500 to-blue-500 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold mb-4 text-teal-500">
             Available Courses
           </h1>
           <p className="text-lg text-zinc-400 mb-8">
@@ -129,10 +129,10 @@ export default function HomeCoursesPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5 }}
                   key={course._id}
-                  className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-card to-card/50 border border-border/50 hover:border-primary/50 transition-all duration-300"
+                  className="group relative overflow-hidden rounded-xl bg-card border border-border/50 hover:border-primary/50 transition-all duration-300"
                 >
                   <Card>
-                    <div className="aspect-video w-full overflow-hidden bg-gradient-to-br from-teal-500 to-blue-600 p-6 flex items-center justify-center rounded-t-lg">
+                    <div className="aspect-video w-full overflow-hidden bg-teal-500 p-6 flex items-center justify-center rounded-t-lg">
                       <h2 className="text-2xl font-bold text-white text-center group-hover:scale-105 transition-transform duration-300 flex-wrap">
                         {course.code}
                       </h2>

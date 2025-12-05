@@ -171,7 +171,7 @@ function PaymentVerificationContent() {
           <CardFooter className="flex justify-center">
             <Button
               asChild
-              className="bg-gradient-to-r from-teal-500 to-blue-500 hover:from-teal-600 hover:to-blue-600 text-white"
+              className="bg-teal-500 hover:bg-teal-600 text-white"
             >
               <Link href={statusContent.buttonLink}>
                 {statusContent.buttonText}

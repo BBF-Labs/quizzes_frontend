@@ -225,7 +225,7 @@ export default function CourseFlashcardsPage() {
         <div className="text-center">
           <div className="relative">
             <Brain className="w-16 h-16 text-primary mx-auto mb-4 animate-pulse" />
-            <div className="absolute inset-0 bg-gradient-to-r from-primary to-secondary rounded-full blur-xl opacity-20 animate-pulse" />
+            <div className="absolute inset-0 bg-primary rounded-full blur-xl opacity-20 animate-pulse" />
           </div>
           <p className="text-muted-foreground text-lg">
             Loading course flashcards...
@@ -257,7 +257,7 @@ export default function CourseFlashcardsPage() {
           <div className="text-center py-12">
             <div className="relative mb-6">
               <Brain className="w-20 h-20 text-muted-foreground mx-auto" />
-              <div className="absolute inset-0 bg-gradient-to-r from-primary to-secondary rounded-full blur-2xl opacity-20" />
+              <div className="absolute inset-0 bg-primary rounded-full blur-2xl opacity-20" />
             </div>
             <h3 className="text-xl font-medium text-foreground mb-2">
               No flashcards for this course yet
@@ -294,10 +294,10 @@ export default function CourseFlashcardsPage() {
                 Back to Flashcards
               </Button>
               <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-xl">
+                <div className="p-2 bg-primary/20 rounded-xl">
                   <BookOpen className="w-8 h-8 text-primary" />
                 </div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-teal-500 to-blue-500 bg-clip-text text-transparent">
+                <h1 className="text-4xl font-bold text-teal-500">
                   {course.code}: {course.title}
                 </h1>
               </div>

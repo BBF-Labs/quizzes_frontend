@@ -101,8 +101,8 @@ export function QuizCard({
       whileHover={{ y: -5 }}
       className="group bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-xl transition-all duration-300"
     >
-      {/* Header with gradient */}
-      <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-600">
+      {/* Header */}
+      <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-blue-50 dark:bg-gray-700">
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 line-clamp-2">
@@ -246,7 +246,7 @@ export function QuizCard({
       </div>
 
       {/* Hover effect overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+      <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
     </motion.div>
   );
 }

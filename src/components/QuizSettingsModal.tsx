@@ -146,7 +146,7 @@ export function QuizSettingsModal({
         onClick={(e) => e.stopPropagation()}
       >
         <Card className="border-0 shadow-2xl bg-card border-border rounded-2xl">
-          <CardHeader className="bg-gradient-to-br from-teal-500 to-blue-600 text-white rounded-t-2xl">
+          <CardHeader className="bg-teal-500 text-white rounded-t-2xl">
             <CardTitle className="text-xl font-bold flex items-center gap-3">
               <Settings className="h-5 w-5" />
               Quiz Settings
@@ -524,7 +524,7 @@ export function QuizSettingsModal({
               disabled={!isLectureRangeValid}
               className={`text-sm px-3 py-1.5 ${
                 isLectureRangeValid
-                  ? "bg-gradient-to-br from-teal-500 to-blue-600 hover:from-teal-600 hover:to-blue-700 text-white"
+                  ? "bg-teal-500 hover:bg-teal-600 text-white"
                   : "bg-gray-400 cursor-not-allowed text-gray-200"
               }`}
             >

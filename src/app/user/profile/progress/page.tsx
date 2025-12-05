@@ -62,7 +62,7 @@ export default function ProgressPage() {
 
       <div className="max-w-6xl mx-auto px-4 pt-24 pb-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-teal-500 to-blue-500 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold mb-2 text-teal-500">
             Quiz Progress
           </h1>
           <p className="text-zinc-400">
@@ -109,7 +109,7 @@ export default function ProgressPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-2xl font-bold bg-gradient-to-r from-teal-500 to-blue-500 bg-clip-text text-transparent">
+                    <div className="text-2xl font-bold text-teal-500">
                       {quiz.score}%
                     </div>
                     <div className="text-sm text-zinc-400">{quiz.date}</div>

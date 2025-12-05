@@ -249,7 +249,7 @@ export default function TakePersonalQuizPage() {
         <div className="text-center">
           <div className="relative">
             <BookOpen className="w-16 h-16 text-primary mx-auto mb-4 animate-pulse" />
-            <div className="absolute inset-0 bg-gradient-to-r from-primary to-secondary rounded-full blur-xl opacity-20 animate-pulse" />
+            <div className="absolute inset-0 bg-primary rounded-full blur-xl opacity-20 animate-pulse" />
           </div>
           <p className="text-muted-foreground text-lg">Loading quiz...</p>
         </div>
@@ -321,7 +321,7 @@ export default function TakePersonalQuizPage() {
                 <div className="mt-6 text-center">
                   <Button
                     onClick={finishQuiz}
-                    className="bg-gradient-to-br from-teal-500 to-blue-600 hover:from-teal-600 hover:to-blue-700 text-white px-8 py-3 text-lg font-semibold rounded-full shadow-lg transition-all duration-200 hover:scale-105"
+                    className="bg-teal-500 hover:bg-teal-600 text-white px-8 py-3 text-lg font-semibold rounded-full shadow-lg transition-all duration-200 hover:scale-105"
                   >
                     Finish Quiz
                   </Button>
@@ -433,7 +433,7 @@ export default function TakePersonalQuizPage() {
           </div>
 
           <div className="text-center">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-teal-500 to-blue-500 bg-clip-text text-transparent mb-4">
+            <h1 className="text-4xl font-bold text-teal-500 mb-4">
               {quiz.title}
             </h1>
             <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
@@ -444,7 +444,7 @@ export default function TakePersonalQuizPage() {
 
         {/* Quiz Info */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="p-6 bg-gradient-to-br from-card to-card/50 border border-border/50 rounded-xl">
+          <div className="p-6 bg-card border border-border/50 rounded-xl">
             <div className="flex items-center gap-3 mb-3">
               <BookOpen className="w-6 h-6 text-primary" />
               <span className="font-medium">Course</span>
@@ -454,7 +454,7 @@ export default function TakePersonalQuizPage() {
             </p>
           </div>
 
-          <div className="p-6 bg-gradient-to-br from-card to-card/50 border border-border/50 rounded-xl">
+          <div className="p-6 bg-card border border-border/50 rounded-xl">
             <div className="flex items-center gap-3 mb-3">
               <BarChart3 className="w-6 h-6 text-primary" />
               <span className="font-medium">Questions</span>
@@ -464,7 +464,7 @@ export default function TakePersonalQuizPage() {
             </p>
           </div>
 
-          <div className="p-6 bg-gradient-to-br from-card to-card/50 border border-border/50 rounded-xl">
+          <div className="p-6 bg-card border border-border/50 rounded-xl">
             <div className="flex items-center gap-3 mb-3">
               <Clock className="w-6 h-6 text-primary" />
               <span className="font-medium">Time Limit</span>
@@ -477,7 +477,7 @@ export default function TakePersonalQuizPage() {
 
         {/* Quiz Settings */}
         <div className="mb-8">
-          <div className="p-6 bg-gradient-to-br from-card to-card/50 border border-border/50 rounded-xl">
+          <div className="p-6 bg-card border border-border/50 rounded-xl">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-foreground">
                 Quiz Settings
