@@ -428,7 +428,7 @@ export default function Page() {
                             className="w-24 h-24 sm:w-32 sm:h-32 object-contain drop-shadow-xl rounded-xl"
                           />
                           <div className="text-center mt-3">
-                            <h2 className="text-lg sm:text-xl font-bold text-white">
+                            <h2 className="text-lg sm:text-xl font-bold text-gray-500 dark:text-white">
                               {carouselSlides[currentSlide].schoolName}
                             </h2>
                           </div>
@@ -463,7 +463,7 @@ export default function Page() {
                             className="w-48 h-48 md:w-64 md:h-64 lg:w-72 lg:h-72 object-contain drop-shadow-2xl rounded-2xl"
                           />
                           <div className="text-center mt-6">
-                            <h2 className="text-2xl md:text-3xl font-bold text-white">
+                            <h2 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">
                               {carouselSlides[currentSlide].schoolName}
                             </h2>
                           </div>
@@ -526,118 +526,288 @@ export default function Page() {
           </motion.div> */}
         </section>
 
-        <section id="features" className="min-h-screen py-32 relative">
+        {/* Stats Section */}
+        <section className="py-20 bg-muted/50 dark:bg-zinc-900/50 border-y border-border">
           <div className="container mx-auto px-4">
-            <h2 className="text-4xl md:text-5xl font-bold text-center mb-20">
-              What You&apos;ll <span className="text-teal-500">Get</span>
-            </h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
+              {stats.map((stat, index) => (
+                <Stat key={index} number={stat.number} label={stat.label} index={index} />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Features Section */}
+        <section id="features" className="py-24 lg:py-32 relative overflow-hidden bg-background">
+          {/* Background decorative elements */}
+          <div className="absolute top-0 left-0 w-72 h-72 bg-teal-500/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-teal-500/5 rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
+          
+          <div className="container mx-auto px-4 relative z-10">
+            {/* Section Header */}
+            <div className="text-center max-w-3xl mx-auto mb-16">
+              <motion.span 
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="inline-block px-4 py-1.5 rounded-full bg-teal-500/10 text-teal-600 dark:text-teal-500 text-sm font-semibold mb-4"
+              >
+                Why Choose Us
+              </motion.span>
+              <motion.h2 
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.1 }}
+                className="text-4xl md:text-5xl font-bold mb-6 text-foreground"
+              >
+                Everything You Need to{" "}
+                <span className="text-teal-600 dark:text-teal-500">Excel</span>
+              </motion.h2>
+              <motion.p 
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.2 }}
+                className="text-lg text-muted-foreground"
+              >
+                Powerful features designed to help you master your coursework and achieve academic success.
+              </motion.p>
+            </div>
+            
+            {/* Features Grid */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
               {features.map((feature, index) => (
                 <FeatureCard
                   key={index}
                   icon={feature.icon}
                   title={feature.title}
                   description={feature.description}
+                  index={index}
                 />
               ))}
             </div>
           </div>
         </section>
 
-        <section id="pricing" className="min-h-screen py-32 relative">
-          <div className="container px-4 md:px-6">
-            <div className="text-center mb-20">
-              <h2 className="text-4xl md:text-5xl font-bold mb-4">
-                Simple <span className="text-teal-500">Pricing</span>
-              </h2>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                Choose the perfect plan for your learning journey. All plans
-                include access to our core features.
-              </p>
-            </div>
-            <div>
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
-                {pricingPlans.map((plan, index) => (
-                  <PricingCard key={index} {...plan} />
-                ))}
-              </div>
-              <motion.div
+        {/* Pricing Section */}
+        <section id="pricing" className="py-24 lg:py-32 relative bg-muted/30 dark:bg-zinc-900/30">
+          {/* Background Pattern */}
+          <div className="absolute inset-0 opacity-30 dark:opacity-30">
+            <div className="absolute top-20 left-10 w-2 h-2 bg-teal-500 rounded-full" />
+            <div className="absolute top-40 right-20 w-3 h-3 bg-teal-500/50 rounded-full" />
+            <div className="absolute bottom-32 left-1/4 w-2 h-2 bg-teal-500/30 rounded-full" />
+            <div className="absolute bottom-20 right-1/3 w-4 h-4 bg-teal-500/20 rounded-full" />
+          </div>
+          
+          <div className="container px-4 md:px-6 relative z-10">
+            {/* Section Header */}
+            <div className="text-center max-w-3xl mx-auto mb-16">
+              <motion.span 
                 initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.4 }}
-                className="flex flex-col sm:flex-row gap-4 justify-center"
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="inline-block px-4 py-1.5 rounded-full bg-teal-500/10 text-teal-600 dark:text-teal-500 text-sm font-semibold mb-4"
               >
+                Pricing Plans
+              </motion.span>
+              <motion.h2 
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.1 }}
+                className="text-4xl md:text-5xl font-bold mb-6 text-foreground"
+              >
+                Simple, Transparent{" "}
+                <span className="text-teal-600 dark:text-teal-500">Pricing</span>
+              </motion.h2>
+              <motion.p 
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.2 }}
+                className="text-lg text-muted-foreground"
+              >
+                Choose the perfect plan for your learning journey. No hidden fees, cancel anytime.
+              </motion.p>
+            </div>
+            
+            {/* Pricing Cards */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto items-start">
+              {pricingPlans.map((plan, index) => (
+                <PricingCard key={index} {...plan} index={index} />
+              ))}
+            </div>
+            
+            {/* View All Packages Button */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              className="flex justify-center mt-12"
+            >
+              <Link
+                href="/packages"
+                className="inline-flex items-center gap-2 px-8 py-3 rounded-full border-2 border-teal-500 text-teal-600 dark:text-teal-500 font-semibold hover:bg-teal-500 hover:text-white transition-all duration-300"
+              >
+                View All Packages
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Quizzes Section */}
+        <section id="quizzes" className="py-24 lg:py-32 relative overflow-hidden bg-background">
+          {/* Background decorative elements */}
+          <div className="absolute top-1/2 left-0 w-64 h-64 bg-teal-500/5 rounded-full blur-3xl -translate-x-1/2" />
+          <div className="absolute top-1/4 right-0 w-80 h-80 bg-teal-500/5 rounded-full blur-3xl translate-x-1/2" />
+          
+          <div className="container px-4 md:px-6 relative z-10">
+            {/* Section Header */}
+            <div className="text-center max-w-3xl mx-auto mb-16">
+              <motion.span 
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="inline-block px-4 py-1.5 rounded-full bg-teal-500/10 text-teal-600 dark:text-teal-500 text-sm font-semibold mb-4"
+              >
+                Popular Quizzes
+              </motion.span>
+              <motion.h2 
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.1 }}
+                className="text-4xl md:text-5xl font-bold mb-6 text-foreground"
+              >
+                Start Your{" "}
+                <span className="text-teal-600 dark:text-teal-500">Learning</span> Journey
+              </motion.h2>
+              <motion.p 
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.2 }}
+                className="text-lg text-muted-foreground"
+              >
+                Explore our collection of carefully crafted quizzes designed by educators and students alike.
+              </motion.p>
+            </div>
+            
+            {/* Quiz Cards Grid */}
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+              {quizzes.map((quiz, index) => (
+                <QuizCard key={index} {...quiz} index={index} />
+              ))}
+            </div>
+            
+            {/* View All Button */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="flex justify-center mt-12"
+            >
+              <Link
+                href="/quizzes"
+                className="group inline-flex items-center gap-2 px-8 py-4 rounded-full bg-teal-500 text-white font-semibold hover:bg-teal-600 transition-all duration-300 shadow-lg shadow-teal-500/25 hover:shadow-xl hover:shadow-teal-500/30"
+              >
+                Explore All Quizzes
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Upload CTA Section */}
+        <section
+          id="upload"
+          className="py-24 lg:py-32 relative bg-muted/50 dark:bg-zinc-900/50 border-y border-border overflow-hidden"
+        >
+          {/* Background decorative elements */}
+          <div className="absolute top-0 right-0 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2" />
+          <div className="absolute bottom-0 left-0 w-72 h-72 bg-teal-500/10 rounded-full blur-3xl -translate-x-1/2 translate-y-1/2" />
+          
+          <div className="container px-4 md:px-6 relative z-10">
+            <div className="max-w-4xl mx-auto">
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+                className="text-center"
+              >
+                {/* Icon */}
+                <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-teal-500 text-white mb-8 shadow-lg shadow-teal-500/30">
+                  <Upload className="w-10 h-10" />
+                </div>
+                
+                {/* Heading */}
+                <h2 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">
+                  Have Questions to <span className="text-teal-600 dark:text-teal-500">Share?</span>
+                </h2>
+                
+                {/* Description */}
+                <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
+                  Contribute to our growing quiz database by uploading your own questions. 
+                  Help fellow students learn while earning credits for your contributions.
+                </p>
+                
+                {/* Features badges */}
+                <div className="flex flex-wrap justify-center gap-3 mb-10">
+                  {["Earn Credits", "Help Others", "Build Community", "Share Knowledge"].map((badge, index) => (
+                    <span 
+                      key={index}
+                      className="px-4 py-2 rounded-full bg-teal-500/10 text-teal-600 dark:text-teal-500 text-sm font-medium border border-teal-500/20"
+                    >
+                      {badge}
+                    </span>
+                  ))}
+                </div>
+                
+                {/* CTA Button */}
                 <Link
-                  className="inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 button-gradient h-12 px-4 py-3 mt-4"
-                  href="/packages"
+                  href="/user/quiz/upload"
+                  className="group inline-flex items-center gap-3 px-8 py-4 rounded-full bg-teal-500 text-white font-semibold text-lg hover:bg-teal-600 transition-all duration-300 shadow-lg shadow-teal-500/25 hover:shadow-xl hover:shadow-teal-500/30"
                 >
-                  View Pricing
+                  Start Contributing
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </motion.div>
             </div>
           </div>
         </section>
 
-        <section id="quizzes" className="py-32 relative">
+        {/* Footer */}
+        <footer className="pt-12 pb-8 border-t border-border bg-background">
           <div className="container px-4 md:px-6">
-            <div className="text-center mb-20">
-              <h2 className="text-4xl md:text-5xl font-bold mb-4">
-                Available <span className="text-teal-500">Quizzes</span>
-              </h2>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                Explore our collection of carefully crafted quizzes designed to
-                enhance your learning experience.
-              </p>
-            </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {quizzes.map((quiz, index) => (
-                <QuizCard key={index} {...quiz} />
-              ))}
-            </div>
-            <div className="w-full items-center flex justify-center mt-6">
-              <Link
-                href="/quizzes"
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 button-gradient h-12 px-4 py-3 text-xl w-full md:w-1/4"
-              >
-                View all
-                <ArrowRight className="ml-2" />
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        <section
-          id="upload"
-          className="py-32 relative bg-gradient-to-br from-primary/5 to-secondary/5"
-        >
-          <div className="container px-4 md:px-6">
-            <div className="max-w-3xl mx-auto text-center">
-              <div className="inline-block p-3 rounded-full bg-primary/10 text-primary mb-8">
-                <Upload className="w-8 h-8" />
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="text-muted-foreground text-sm">
+                © 2025 BBF Labs. All rights reserved.
               </div>
-              <h2 className="text-4xl md:text-5xl font-bold mb-4">
-                Have Questions to Share?
-              </h2>
-              <p className="text-xl text-muted-foreground mb-8">
-                Contribute to our quiz database by uploading your own questions.
-                Help others learn while earning credits.
-              </p>
-              <Link
-                href="/user/quiz/upload"
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 button-gradient h-12 px-4 py-3 text-xl"
-              >
-                Upload Question Materials
-                <ArrowRight className="ml-2" />
-              </Link>
+              <div className="flex items-center gap-6">
+                <Link href="/packages" className="text-muted-foreground hover:text-teal-600 dark:hover:text-teal-500 text-sm transition-colors">
+                  Pricing
+                </Link>
+                <Link href="/quizzes" className="text-muted-foreground hover:text-teal-600 dark:hover:text-teal-500 text-sm transition-colors">
+                  Quizzes
+                </Link>
+                <Link href="/courses" className="text-muted-foreground hover:text-teal-600 dark:hover:text-teal-500 text-sm transition-colors">
+                  Courses
+                </Link>
+              </div>
             </div>
           </div>
-        </section>
+        </footer>
       </main>
     </div>
   );
 }
 
-import { BookOpen, Users } from "lucide-react";
+import { BookOpen, Users, Clock as ClockIcon, ChevronRight as ChevronRightIcon } from "lucide-react";
 
 function QuizCard({
   title,
@@ -645,50 +815,71 @@ function QuizCard({
   duration,
   questions,
   completions,
+  index = 0,
 }: {
   title: string;
   category: string;
   duration: string;
   questions: number;
   completions: number;
+  index?: number;
 }) {
   return (
     <Link href={`/quizzes`}>
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="group relative overflow-hidden rounded-xl bg-card border border-border/50 hover:border-primary/50 transition-all duration-300"
+        viewport={{ once: true, margin: "-50px" }}
+        transition={{ duration: 0.5, delay: index * 0.1 }}
+        className="group relative overflow-hidden rounded-2xl bg-card border border-border hover:border-teal-500/50 transition-all duration-300 shadow-sm hover:shadow-xl dark:shadow-none dark:hover:shadow-lg dark:hover:shadow-teal-500/5"
       >
-        <div className="aspect-video w-full overflow-hidden bg-teal-500 p-6 flex items-center justify-center">
-          <h2 className="text-2xl font-bold text-white text-center group-hover:scale-105 transition-transform duration-300 flex-wrap">
-            {title}
-          </h2>
-        </div>
-        <div className="p-6">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="px-2 py-1 text-xs font-medium rounded-full bg-primary/10 text-primary">
-              {category}
-            </span>
-            <span className="px-2 py-1 text-xs font-medium rounded-full bg-secondary/10 text-secondary">
-              {duration} mins
-            </span>
+        {/* Card Header with Category Color */}
+        <div className="relative bg-teal-500 p-6 pb-12">
+          {/* Decorative pattern */}
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-4 right-4 w-20 h-20 border border-white rounded-full" />
+            <div className="absolute -bottom-8 -left-8 w-32 h-32 border border-white rounded-full" />
           </div>
-          <h3 className="text-xl font-semibold mb-2 group-hover:text-teal-500 transition-all duration-300">
+          
+          {/* Category Badge */}
+          <span className="relative inline-block px-3 py-1 rounded-full bg-white/20 text-white text-xs font-semibold mb-3">
+            {category}
+          </span>
+          
+          {/* Title */}
+          <h3 className="relative text-xl font-bold text-white line-clamp-2 group-hover:translate-x-1 transition-transform duration-300">
             {title}
           </h3>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <BookOpen className="w-4 h-4" />
-              {questions} questions
+        </div>
+        
+        {/* Card Body */}
+        <div className="p-6 pt-4 -mt-4 bg-card rounded-t-2xl relative">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-3 gap-4 mb-4">
+            <div className="text-center p-3 rounded-xl bg-muted/50">
+              <ClockIcon className="w-4 h-4 mx-auto mb-1 text-teal-600 dark:text-teal-500" />
+              <span className="text-xs text-muted-foreground block">{duration}</span>
             </div>
-            <div className="flex items-center gap-1">
-              <Users className="w-4 h-4" />
-              {completions} completions
+            <div className="text-center p-3 rounded-xl bg-muted/50">
+              <BookOpen className="w-4 h-4 mx-auto mb-1 text-teal-600 dark:text-teal-500" />
+              <span className="text-xs text-muted-foreground block">{questions} Q&apos;s</span>
+            </div>
+            <div className="text-center p-3 rounded-xl bg-muted/50">
+              <Users className="w-4 h-4 mx-auto mb-1 text-teal-600 dark:text-teal-500" />
+              <span className="text-xs text-muted-foreground block">{completions.toLocaleString()}</span>
+            </div>
+          </div>
+          
+          {/* CTA */}
+          <div className="flex items-center justify-between pt-4 border-t border-border">
+            <span className="text-sm font-medium text-muted-foreground group-hover:text-teal-600 dark:group-hover:text-teal-500 transition-colors">
+              Start Quiz
+            </span>
+            <div className="w-8 h-8 rounded-full bg-teal-500/10 flex items-center justify-center group-hover:bg-teal-500 transition-colors">
+              <ChevronRightIcon className="w-4 h-4 text-teal-600 dark:text-teal-500 group-hover:text-white transition-colors" />
             </div>
           </div>
         </div>
-        <div className="absolute inset-0 bg-teal-500 opacity-0 group-hover:opacity-5 transition-opacity duration-300" />
       </motion.div>
     </Link>
   );
