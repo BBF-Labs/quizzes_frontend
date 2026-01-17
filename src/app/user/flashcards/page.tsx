@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import {
@@ -145,25 +145,13 @@ export default function FlashcardsPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadedMaterialId, setUploadedMaterialId] = useState<string | null>(
-    null
+    null,
   );
   const [selectedMaterialPreview, setSelectedMaterialPreview] = useState<
     string | null
   >(null);
 
-  // Load flashcards, materials and stats
-  useEffect(() => {
-    loadFlashcards();
-    loadMaterials();
-    loadCourses();
-    loadStats();
-    startAutoSave();
-  }, []);
-
-  // Group flashcards by course when flashcards change
-  useEffect(() => {
-    groupFlashcardsByCourse();
-  }, [flashcards, courses]);
+  // Effects moved below function declarations to satisfy lint rules
 
   // Scroll to top of modal when material is selected
   useEffect(() => {
@@ -181,7 +169,7 @@ export default function FlashcardsPage() {
       const exactMatch = courses.find(
         (course) =>
           course.code.toLowerCase() === courseSearchTerm.toLowerCase() ||
-          course.title.toLowerCase() === courseSearchTerm.toLowerCase()
+          course.title.toLowerCase() === courseSearchTerm.toLowerCase(),
       );
 
       if (exactMatch && selectedUploadCourse !== exactMatch._id) {
@@ -190,7 +178,7 @@ export default function FlashcardsPage() {
     }
   }, [courseSearchTerm, courses, selectedUploadCourse]);
 
-  const groupFlashcardsByCourse = () => {
+  const groupFlashcardsByCourse = useCallback(() => {
     if (!flashcards.length || !courses.length) {
       return;
     }
@@ -221,14 +209,14 @@ export default function FlashcardsPage() {
         });
 
         const mastered = sortedFlashcards.filter(
-          (card) => card.masteryLevel >= 80
+          (card) => card.masteryLevel >= 80,
         ).length;
         const needReview = sortedFlashcards.filter(
-          (card) => card.masteryLevel < 60
+          (card) => card.masteryLevel < 60,
         ).length;
         const averageMastery = Math.round(
           sortedFlashcards.reduce((sum, card) => sum + card.masteryLevel, 0) /
-            sortedFlashcards.length
+            sortedFlashcards.length,
         );
 
         groups.push({
@@ -252,13 +240,13 @@ export default function FlashcardsPage() {
     });
 
     setCourseGroups(groups);
-  };
+  }, [flashcards, courses]);
 
-  const loadFlashcards = async () => {
+  const loadFlashcards = useCallback(async () => {
     try {
       setLoading(true);
       const data = await flashcardService.getUserFlashcards(
-        credentials.accessToken
+        credentials.accessToken,
       );
       // Transform the data to match our local interface
       const transformedData: IFlashcard[] = data.map((card: any) => ({
@@ -284,9 +272,9 @@ export default function FlashcardsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [credentials.accessToken]);
 
-  const loadMaterials = async () => {
+  const loadMaterials = useCallback(async () => {
     try {
       // Fetch real user materials from backend
       const response = await axios.get(`${Config.API_URL}/materials/user`, {
@@ -300,31 +288,48 @@ export default function FlashcardsPage() {
       // Fallback to empty array if API fails
       setMaterials([]);
     }
-  };
+  }, [credentials.accessToken]);
 
-  const loadCourses = async () => {
+  const loadCourses = useCallback(async () => {
     try {
-      const coursesData = await getAllCourses();
-      setCourses(coursesData);
+      const coursesResponse = await getAllCourses();
+      const list = Array.isArray(coursesResponse)
+        ? (coursesResponse as unknown as Course[])
+        : ((coursesResponse.courses || []) as unknown as Course[]);
+      setCourses(list);
     } catch (error) {
       console.error("Failed to load courses:", error);
     }
-  };
+  }, []);
 
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       const data = await flashcardService.getFlashcardStats(
-        credentials.accessToken
+        credentials.accessToken,
       );
       setStats(data);
     } catch (error) {
       console.error("Failed to load stats:", error);
     }
-  };
+  }, [credentials.accessToken]);
 
-  const startAutoSave = () => {
+  const startAutoSave = useCallback(() => {
     flashcardService.startAutoSave(30000, credentials.accessToken); // Auto-save every 30 seconds
-  };
+  }, [credentials.accessToken]);
+
+  // Load flashcards, materials, courses and stats on mount
+  useEffect(() => {
+    loadFlashcards();
+    loadMaterials();
+    loadCourses();
+    loadStats();
+    startAutoSave();
+  }, [loadFlashcards, loadMaterials, loadCourses, loadStats, startAutoSave]);
+
+  // Group flashcards by course when flashcards or courses change
+  useEffect(() => {
+    groupFlashcardsByCourse();
+  }, [flashcards, courses, groupFlashcardsByCourse]);
 
   const handleMaterialSelection = (materialId: string) => {
     setSelectedMaterial(materialId);
@@ -339,7 +344,7 @@ export default function FlashcardsPage() {
       const exactMatch = courses.find(
         (course) =>
           course.code.toLowerCase() === searchTerm.toLowerCase() ||
-          course.title.toLowerCase() === searchTerm.toLowerCase()
+          course.title.toLowerCase() === searchTerm.toLowerCase(),
       );
 
       if (exactMatch) {
@@ -379,11 +384,11 @@ export default function FlashcardsPage() {
           },
           onUploadProgress: (progressEvent: any) => {
             const percentCompleted = Math.round(
-              (progressEvent.loaded * 100) / progressEvent.total
+              (progressEvent.loaded * 100) / progressEvent.total,
             );
             setUploadProgress(percentCompleted);
           },
-        }
+        },
       );
 
       // Store the uploaded material ID for generation
@@ -413,7 +418,7 @@ export default function FlashcardsPage() {
     if (!selectedMaterial && !uploadedMaterialId) {
       showToast(
         "Please select a material or upload a new one to generate flashcards from.",
-        "error"
+        "error",
       );
       return;
     }
@@ -428,7 +433,7 @@ export default function FlashcardsPage() {
         const generated = await flashcardService.generateFlashcards(
           materialToProcess,
           flashcardCount,
-          credentials.accessToken
+          credentials.accessToken,
         );
         // Transform the generated data to match our local interface
         const transformedGenerated = generated.map((card: any) => ({
@@ -460,7 +465,7 @@ export default function FlashcardsPage() {
       // Show success message
       showToast(
         `Successfully generated ${newFlashcards.length} flashcards!`,
-        "success"
+        "success",
       );
     } catch (error: any) {
       if (
@@ -470,7 +475,7 @@ export default function FlashcardsPage() {
       ) {
         showToast(
           "Failed to generate flashcards. Please upgrade your subscription.",
-          "error"
+          "error",
         );
       } else {
         showToast("Failed to generate flashcards. Please try again.", "error");
@@ -513,7 +518,7 @@ export default function FlashcardsPage() {
         group.flashcards.some(
           (card) =>
             card.front.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            card.back.toLowerCase().includes(searchTerm.toLowerCase())
+            card.back.toLowerCase().includes(searchTerm.toLowerCase()),
         )
       );
     }
@@ -791,11 +796,11 @@ export default function FlashcardsPage() {
                                     course.code
                                       .toLowerCase()
                                       .includes(
-                                        courseSearchTerm.toLowerCase()
+                                        courseSearchTerm.toLowerCase(),
                                       ) ||
                                     course.title
                                       .toLowerCase()
-                                      .includes(courseSearchTerm.toLowerCase())
+                                      .includes(courseSearchTerm.toLowerCase()),
                                 )
                                 .map((course) => (
                                   <SelectItem
@@ -817,13 +822,13 @@ export default function FlashcardsPage() {
                                   Auto-selected:{" "}
                                   {
                                     courses.find(
-                                      (c) => c._id === selectedUploadCourse
+                                      (c) => c._id === selectedUploadCourse,
                                     )?.code
                                   }
                                   :{" "}
                                   {
                                     courses.find(
-                                      (c) => c._id === selectedUploadCourse
+                                      (c) => c._id === selectedUploadCourse,
                                     )?.title
                                   }
                                 </span>
@@ -954,7 +959,7 @@ export default function FlashcardsPage() {
                           <p className="text-sm text-muted-foreground">
                             {(() => {
                               const material = materials.find(
-                                (m) => m._id === selectedMaterial
+                                (m) => m._id === selectedMaterial,
                               );
                               if (!material) return "Unknown Course";
 
@@ -1007,8 +1012,8 @@ export default function FlashcardsPage() {
                             ?.createdAt
                             ? new Date(
                                 materials.find(
-                                  (m) => m._id === selectedMaterial
-                                )?.createdAt || ""
+                                  (m) => m._id === selectedMaterial,
+                                )?.createdAt || "",
                               ).toLocaleDateString()
                             : ""}
                         </span>
@@ -1178,7 +1183,7 @@ export default function FlashcardsPage() {
                                 </span>
                                 <span>
                                   {new Date(
-                                    material.createdAt
+                                    material.createdAt,
                                   ).toLocaleDateString()}
                                 </span>
                               </div>
@@ -1303,7 +1308,7 @@ export default function FlashcardsPage() {
               >
                 {filteredCourseGroups.reduce(
                   (sum, group) => sum + group.stats.mastered,
-                  0
+                  0,
                 )}{" "}
                 Mastered
               </Badge>
@@ -1313,7 +1318,7 @@ export default function FlashcardsPage() {
               >
                 {filteredCourseGroups.reduce(
                   (sum, group) => sum + group.stats.needReview,
-                  0
+                  0,
                 )}{" "}
                 Need Review
               </Badge>

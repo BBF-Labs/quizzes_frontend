@@ -37,50 +37,68 @@ interface Quiz {
 
 export default function HomeCoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
-  const [quizzes, setQuizzes] = useState<Quiz[]>([]); // State for quizzes
+  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
+  const [totalPages, setTotalPages] = useState(1);
+  const itemsPerPage = 12;
 
   useEffect(() => {
-    const fetchCoursesAndQuizzes = async () => {
-      setLoading(true);
-      try {
-        const [coursesResponse, quizzesResponse] = await Promise.all([
-          getAllCourses(),
-          getQuizzes(), // Fetch quizzes
-        ]);
-        setCourses(coursesResponse);
-        setQuizzes(quizzesResponse); // Set quizzes state
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCoursesAndQuizzes();
+    fetchQuizzes();
   }, []);
 
-  const filteredCourses = courses.filter(
-    (course) =>
-      course.code
-        .replace(" ", "")
-        .toLowerCase()
-        .includes(searchQuery.replace(" ", "").toLowerCase()) ||
-      course.title
-        .replace(" ", "")
-        .toLowerCase()
-        .includes(searchQuery.replace(" ", "").toLowerCase())
-  );
+  useEffect(() => {
+    fetchCourses();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage]);
 
-  const totalPages = Math.ceil(filteredCourses.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedCourses = filteredCourses.slice(
-    startIndex,
-    startIndex + itemsPerPage
-  );
+  const fetchQuizzes = async () => {
+    try {
+      const quizzesResponse = await getQuizzes();
+      setQuizzes(quizzesResponse.quizzes || []);
+    } catch (error) {
+      console.error("Error fetching quizzes:", error);
+    }
+  };
+
+  const fetchCourses = async () => {
+    setLoading(true);
+    try {
+      const coursesResponse = await getAllCourses({
+        page: currentPage,
+        limit: itemsPerPage,
+      });
+      
+      setCourses(coursesResponse.courses || []);
+      
+      if (coursesResponse.pagination) {
+        setTotalPages(coursesResponse.pagination.totalPages || coursesResponse.pagination.pages);
+      } else {
+        // Fallback for non-paginated response
+        setTotalPages(Math.ceil((coursesResponse.courses?.length || 0) / itemsPerPage));
+      }
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Client-side filtering for search
+  const filteredCourses = searchQuery
+    ? courses.filter(
+        (course) =>
+          course.code
+            .replace(" ", "")
+            .toLowerCase()
+            .includes(searchQuery.replace(" ", "").toLowerCase()) ||
+          course.title
+            .replace(" ", "")
+            .toLowerCase()
+            .includes(searchQuery.replace(" ", "").toLowerCase())
+      )
+    : courses;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -119,10 +137,10 @@ export default function HomeCoursesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {paginatedCourses.map((course) => {
+            {filteredCourses.map((course) => {
               const hasQuiz = quizzes.some(
                 (quiz) => quiz.courseId === course._id
-              ); // Check if the course has quizzes
+              );
               return (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
@@ -172,11 +190,13 @@ export default function HomeCoursesPage() {
         )}
       </div>
       <div className="flex items-center justify-center pb-8">
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-        />
+        {totalPages > 1 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        )}
       </div>
     </div>
   );

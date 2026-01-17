@@ -6,7 +6,7 @@ import {
   getAllPayments,
   verifyPayment,
 } from "./paymentControllers";
-import { getQuizzes } from "./quizControllers";
+import { getQuizzes, getPublicPersonalQuizzes } from "./quizControllers";
 
 export {
   loginUser,
@@ -17,6 +17,7 @@ export {
   getAllCourses,
   createPayment,
   getQuizzes,
+  getPublicPersonalQuizzes,
   getAllPayments,
   verifyPayment,
 };

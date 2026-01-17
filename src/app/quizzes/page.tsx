@@ -12,6 +12,7 @@ interface Quiz {
   questions: number;
   completions: number;
   id: string | number;
+  createdAt?: any;
 }
 interface Course {
   code: string;
@@ -28,104 +29,111 @@ interface Course {
 export default function QuizzesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 9;
+  const [totalPages, setTotalPages] = useState(1);
+  const itemsPerPage = 12;
   const [quizzesData, setQuizzesData] = useState<Quiz[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
-  const [loading, setLoading] = useState(true); // Loading state
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchCourses = async () => {
-      try {
-        const response = await getAllCourses();
-        setCourses(response);
-      } catch (error) {
-        console.error("Error fetching courses:", error);
-      }
-    };
-
     fetchCourses();
   }, []);
 
   useEffect(() => {
-    const fetchQuizzes = async () => {
-      setLoading(true);
-      try {
-        const response = await getQuizzes();
-
-        const getQuizDetails = (quiz: any) => {
-          const timePerQuestion = 30;
-
-          const totalQuestions = quiz.quizQuestions.reduce(
-            (acc: number, quizQuestion: any) => {
-              const uniqueQuestions = new Set(quizQuestion.questions || []);
-              return acc + uniqueQuestions.size;
-            },
-            0
-          );
-
-          const totalDuration = Math.floor(
-            (totalQuestions * timePerQuestion) / 60
-          );
-
-          return {
-            totalQuestions,
-            totalDuration,
-          };
-        };
-
-        const mappedQuizzes = response
-          .map((quiz: any) => {
-            const course = courses.find(
-              (course) => quiz.courseId === course._id
-            );
-            const { totalQuestions, totalDuration } = getQuizDetails(quiz);
-
-            return {
-              title: course?.title || "Unknown Title",
-              category: course?.code.split(" ")[0] || "Unknown Category",
-              duration: totalDuration,
-              questions: totalQuestions,
-              completions: quiz.completions || 0,
-              id: quiz.courseId,
-              createdAt: quiz.createdAt, // Add this line
-            };
-          })
-          .sort((a: any, b: any) => {
-            const dateA = new Date(a.createdAt);
-            const dateB = new Date(b.createdAt);
-
-            if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) {
-              return 0;
-            }
-
-            return dateB.getTime() - dateA.getTime();
-          });
-
-        setQuizzesData(mappedQuizzes);
-      } catch (error) {
-        console.error("Error fetching quizzes:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (courses.length > 0) {
       fetchQuizzes();
     }
-  }, [courses]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courses, currentPage]);
 
-  const filteredQuizzes = quizzesData.filter(
-    (quiz) =>
-      quiz.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      quiz.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const fetchCourses = async () => {
+    try {
+      const response = await getAllCourses();
+      setCourses(response.courses || []);
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+    }
+  };
 
-  const totalPages = Math.ceil(filteredQuizzes.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedQuizzes = filteredQuizzes.slice(
-    startIndex,
-    startIndex + itemsPerPage
-  );
+  const fetchQuizzes = async () => {
+    setLoading(true);
+    try {
+      const response = await getQuizzes({
+        page: currentPage,
+        limit: itemsPerPage,
+      });
+
+      const getQuizDetails = (quiz: any) => {
+        const timePerQuestion = 30;
+
+        const totalQuestions = quiz.quizQuestions.reduce(
+          (acc: number, quizQuestion: any) => {
+            const uniqueQuestions = new Set(quizQuestion.questions || []);
+            return acc + uniqueQuestions.size;
+          },
+          0,
+        );
+
+        const totalDuration = Math.floor(
+          (totalQuestions * timePerQuestion) / 60,
+        );
+
+        return {
+          totalQuestions,
+          totalDuration,
+        };
+      };
+
+      const quizzes = response.quizzes || [];
+      const mappedQuizzes = quizzes
+        .map((quiz: any) => {
+          const course = courses.find((course) => quiz.courseId === course._id);
+          const { totalQuestions, totalDuration } = getQuizDetails(quiz);
+
+          return {
+            title: course?.title || "Unknown Title",
+            category: course?.code.split(" ")[0] || "Unknown Category",
+            duration: totalDuration.toString(),
+            questions: totalQuestions,
+            completions: quiz.completions || 0,
+            id: quiz.courseId,
+            createdAt: quiz.createdAt,
+          };
+        })
+        .sort((a: any, b: any) => {
+          const dateA = new Date(a.createdAt);
+          const dateB = new Date(b.createdAt);
+
+          if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) {
+            return 0;
+          }
+
+          return dateB.getTime() - dateA.getTime();
+        });
+
+      setQuizzesData(mappedQuizzes);
+
+      if (response.pagination) {
+        setTotalPages(
+          response.pagination.totalPages || response.pagination.pages,
+        );
+      } else {
+        setTotalPages(Math.ceil(mappedQuizzes.length / itemsPerPage));
+      }
+    } catch (error) {
+      console.error("Error fetching quizzes:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredQuizzes = searchQuery
+    ? quizzesData.filter(
+        (quiz) =>
+          quiz.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          quiz.category.toLowerCase().includes(searchQuery.toLowerCase()),
+      )
+    : quizzesData;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -166,18 +174,20 @@ export default function QuizzesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {paginatedQuizzes.map((quiz, index) => (
+            {filteredQuizzes.map((quiz, index) => (
               <QuizCard key={index} {...quiz} />
             ))}
           </div>
         )}
       </div>
       <div className="flex items-center justify-center pb-8">
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-        />
+        {totalPages > 1 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        )}
       </div>
     </div>
   );
