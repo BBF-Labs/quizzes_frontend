@@ -35,7 +35,7 @@ import {
 
 import { showToast } from "@/components";
 import { FloatingAIWidget } from "@/components/ui/floating-ai-widget";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import Config from "@/config";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib";
@@ -365,7 +365,18 @@ export default function PersonalQuizzesPage() {
       // Refresh quizzes list
       loadPersonalQuizzes();
     } catch (error: any) {
-      console.error("Failed to create quiz:", error);
+      if (
+        error instanceof AxiosError &&
+        error.response?.data?.message ===
+          "Error validating user AI access: Your subscription does not allow you to use our AI Model"
+      ) {
+        showToast(
+          "Failed to create quiz. Please upgrade your subscription.",
+          "error"
+        );
+      } else {
+        showToast("Failed to create quiz. Please try again.", "error");
+      }
       showToast(
         error.response?.data?.message ||
           "Failed to create quiz. Please try again.",

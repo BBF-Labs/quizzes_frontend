@@ -56,7 +56,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/lib";
 import { getAllCourses } from "@/controllers";
 import { showToast } from "@/components";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import Config from "@/config";
 
 interface Material {
@@ -462,9 +462,19 @@ export default function FlashcardsPage() {
         `Successfully generated ${newFlashcards.length} flashcards!`,
         "success"
       );
-    } catch (error) {
-      console.error("Failed to generate flashcards:", error);
-      showToast("Failed to generate flashcards. Please try again.", "error");
+    } catch (error: any) {
+      if (
+        error instanceof AxiosError &&
+        error.response?.data?.message ===
+          "Error validating user AI access: Your subscription does not allow you to use our AI Model"
+      ) {
+        showToast(
+          "Failed to generate flashcards. Please upgrade your subscription.",
+          "error"
+        );
+      } else {
+        showToast("Failed to generate flashcards. Please try again.", "error");
+      }
     } finally {
       setGeneratingFlashcards(false);
     }

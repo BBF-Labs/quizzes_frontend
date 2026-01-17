@@ -14,7 +14,13 @@ import {
   DialogFooter,
   showToast,
 } from "@/components";
-import { Loader, Save, RotateCcw, BarChart3 } from "lucide-react";
+import {
+  Loader,
+  Save,
+  RotateCcw,
+  BarChart3,
+  AlertTriangle,
+} from "lucide-react";
 import { setCurrentQuizQuestion, setQuizStateSettings } from "@/lib";
 import { useAppDispatch } from "@/hooks";
 import { useSelector } from "react-redux";
@@ -25,6 +31,7 @@ import { FloatingAIWidget } from "@/components/ui/floating-ai-widget";
 import { QuizQuestionCard } from "@/components/QuizQuestionCard";
 import { QuizResultsCard } from "@/components/QuizResultsCard";
 import { QuizSettingsModal } from "@/components/QuizSettingsModal";
+import Link from "next/link";
 import confetti from "canvas-confetti";
 
 type QuizSettings = {
@@ -473,6 +480,47 @@ export default function QuizPage() {
               <p className="text-muted-foreground">
                 Fetching quiz and verifying eligibility...
               </p>
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!quizData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card className="shadow-2xl border border-blue-100 rounded-3xl p-10 max-w-md w-full">
+          <div className="flex flex-col items-center space-y-6">
+            <div className="relative">
+              <span className="absolute -top-2 -right-2 w-6 h-6 bg-yellow-300 rounded-full flex items-center justify-center animate-bounce z-10">
+                <AlertTriangle className="h-4 w-4 text-yellow-900" />
+              </span>
+              <div className="w-16 h-16 bg-gradient-to-br from-red-400 to-yellow-300 rounded-full flex items-center justify-center shadow-lg animate-pulse-glow">
+                <AlertTriangle className="h-8 w-8 text-white drop-shadow" />
+              </div>
+            </div>
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-primary mb-2 drop-shadow">
+                Access Required
+              </h2>
+              <p className="text-base text-primary mb-4">
+                You do not have access to this quiz.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center mt-2">
+                <Link
+                  href="/packages"
+                  className="inline-block px-5 py-2 rounded-full bg-gradient-to-r from-teal-500 to-blue-500 text-white font-semibold shadow hover:scale-105 transition-transform"
+                >
+                  Subscribe for Access
+                </Link>
+                <Link
+                  href="/quizzes"
+                  className="inline-block px-5 py-2 rounded-full border border-blue-400 text-blue-700 bg-white/80 font-semibold shadow hover:bg-blue-50 transition"
+                >
+                  Browse Other Quizzes
+                </Link>
+              </div>
             </div>
           </div>
         </Card>
