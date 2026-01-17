@@ -32,6 +32,7 @@ import { QuizQuestionCard } from "@/components/QuizQuestionCard";
 import { QuizResultsCard } from "@/components/QuizResultsCard";
 import { QuizSettingsModal } from "@/components/QuizSettingsModal";
 import Link from "next/link";
+import confetti from "canvas-confetti";
 
 type QuizSettings = {
   lectures: string[];
@@ -91,6 +92,17 @@ export default function QuizPage() {
   const [savedProgress, setSavedProgress] = useState<any>(null);
   const [showProgressModal, setShowProgressModal] = useState(false);
   const [quizData, setQuizData] = useState<FullQuiz | null>(null);
+
+  // refs for audio (safe for SSR)
+  const correctAudioCue = useRef<HTMLAudioElement | null>(null);
+  // const incorrectAudioCue = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      correctAudioCue.current = new Audio("/sounds/correct.mp3");
+      // incorrectAudioCue.current = new Audio("/sounds/incorrect.mp3");
+    }
+  }, []);
 
   useEffect(() => {
     const fetchQuizData = async () => {
@@ -222,9 +234,49 @@ export default function QuizPage() {
 
     if (quizSettings.feedbackType === "during") {
       const isCorrect =
-        answer.toLowerCase() ===
-        questions[currentQuestion].answer.toLowerCase();
+          answer.toLowerCase() ===
+          questions[currentQuestion].answer.toLowerCase();
+
       setFeedback(isCorrect ? "Correct!" : "Incorrect. Try again.");
+
+      if (isCorrect) {
+        //  Play audio safely
+        if (correctAudioCue.current) {
+          correctAudioCue.current.currentTime = 0;
+          correctAudioCue.current.play();
+        }
+
+        // Fireworks animation
+        const duration = 5 * 1000;
+        const animationEnd = Date.now() + duration;
+        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+        const randomInRange = (min: number, max: number) =>
+            Math.random() * (max - min) + min;
+
+        const interval = window.setInterval(() => {
+          const timeLeft = animationEnd - Date.now();
+          if (timeLeft <= 0) return clearInterval(interval);
+
+          const particleCount = 50 * (timeLeft / duration);
+          confetti({
+            ...defaults,
+            particleCount,
+            origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+          });
+          confetti({
+            ...defaults,
+            particleCount,
+            origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+          });
+        }, 250);
+      } else {
+        {/* incorrect cue */}
+        // if (incorrectAudioCue.current) {
+        //   incorrectAudioCue.current.currentTime = 0;
+        //   incorrectAudioCue.current.play();
+        // }
+      }
     }
 
     if (quizSettings.autoNext) {
@@ -239,7 +291,6 @@ export default function QuizPage() {
       }
     }
 
-    // Save progress after each answer
     saveProgress(true);
   };
 
