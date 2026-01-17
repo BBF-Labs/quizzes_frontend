@@ -40,7 +40,7 @@ export default function CoursesPage() {
     <div>
       <div className="max-w-6xl mx-auto px-4 pt-24 pb-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-teal-500 to-blue-500 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold mb-2 text-teal-500">
             My Courses
           </h1>
           <p className="text-zinc-400">
@@ -51,7 +51,7 @@ export default function CoursesPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {courses.map((course) => (
             <Card key={course.id} className="bg-zinc-900 border-zinc-800">
-              <div className="aspect-video w-full overflow-hidden bg-gradient-to-br from-teal-500 to-blue-600 p-6 flex items-center justify-center rounded-t-lg">
+              <div className="aspect-video w-full overflow-hidden bg-teal-500 p-6 flex items-center justify-center rounded-t-lg">
                 <h2 className="text-2xl font-bold text-white text-center group-hover:scale-105 transition-transform duration-300 flex-wrap">
                   {course.title}
                 </h2>

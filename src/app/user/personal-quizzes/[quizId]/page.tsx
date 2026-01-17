@@ -141,7 +141,7 @@ export default function PersonalQuizPage() {
         <div className="text-center">
           <div className="relative">
             <BookOpen className="w-16 h-16 text-primary mx-auto mb-4 animate-pulse" />
-            <div className="absolute inset-0 bg-gradient-to-r from-primary to-secondary rounded-full blur-xl opacity-20 animate-pulse" />
+            <div className="absolute inset-0 bg-primary rounded-full blur-xl opacity-20 animate-pulse" />
           </div>
           <p className="text-muted-foreground text-lg">Loading quiz...</p>
         </div>
@@ -308,7 +308,7 @@ export default function PersonalQuizPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-card to-card/50 border border-border/50 hover:border-primary/50 transition-all duration-300 p-6"
+              className="group relative overflow-hidden rounded-xl bg-card border border-border/50 hover:border-primary/50 transition-all duration-300 p-6"
             >
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-3">

@@ -93,7 +93,7 @@ export default function ProfilePage() {
     <div>
       <div className="max-w-2xl mx-auto px-4 pt-24 pb-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-teal-500 to-blue-500 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold mb-2 text-teal-500">
             Profile Settings
           </h1>
           <p className="text-zinc-400">Manage your account information</p>
@@ -101,12 +101,12 @@ export default function ProfilePage() {
 
         <div className="space-y-8">
           <div className="flex flex-col items-center space-y-4">
-            <Avatar className="h-24 w-24 bg-gradient-to-r from-teal-500 to-blue-500">
+            <Avatar className="h-24 w-24 bg-teal-500">
               <AvatarFallback className="text-2xl">
                 {profileData.name.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <div className="flex items-center space-x-2 px-4 py-2 rounded-full bg-gradient-to-r from-teal-500 to-blue-500">
+            <div className="flex items-center space-x-2 px-4 py-2 rounded-full bg-teal-500 text-white">
               <Coins className="h-5 w-5" />
               <span className="font-medium">{profileData.credits || 0}</span>
             </div>
@@ -222,7 +222,7 @@ export default function ProfilePage() {
                     </div>
                     <Button
                       type="submit"
-                      className="w-full text-white bg-gradient-to-r from-teal-500 to-blue-500 hover:from-teal-600 hover:to-blue-600"
+                      className="w-full text-white bg-teal-500 hover:bg-teal-600"
                     >
                       Update Password
                     </Button>
@@ -232,7 +232,7 @@ export default function ProfilePage() {
 
               <Button
                 type="submit"
-                className="bg-gradient-to-r from-teal-500 to-blue-500 hover:from-teal-600 hover:to-blue-600"
+                className="bg-teal-500 hover:bg-teal-600 text-white"
                 disabled={isLoading}
               >
                 <Save className="mr-2 h-4 w-4" />

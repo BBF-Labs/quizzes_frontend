@@ -233,7 +233,7 @@ export default function UploadPage() {
           transition={{ duration: 0.5 }}
           className="text-center space-y-4"
         >
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl text-gradient-brand">
+          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl text-teal-500">
             Upload Learning Material
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">

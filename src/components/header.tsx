@@ -34,7 +34,7 @@ export function Header() {
             width={100}
             src={logo}
             alt="BBF Logo"
-            className="text-xl font-bold bg-gradient-to-r from-teal-500 to-blue-500 bg-clip-text text-transparent"
+            className="text-xl font-bold text-teal-500"
           />
         </Link>
         <div className="flex items-center space-x-4">

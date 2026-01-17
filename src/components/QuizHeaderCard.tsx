@@ -39,11 +39,11 @@ export function QuizHeaderCard({
       transition={{ duration: 0.4, ease: "easeOut" }}
       className="w-full"
     >
-      <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 overflow-hidden">
+      <Card className="border-0 shadow-lg bg-white dark:bg-gray-800 overflow-hidden">
         <CardHeader className="pb-4">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div className="flex-1">
-              <CardTitle className="text-2xl font-bold bg-gradient-to-r from-teal-600 to-blue-600 bg-clip-text text-transparent mb-2">
+              <CardTitle className="text-2xl font-bold text-teal-600 mb-2">
                 {lectureName}
               </CardTitle>
               <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
@@ -61,7 +61,7 @@ export function QuizHeaderCard({
             <div className="flex flex-col sm:flex-row items-center gap-3">
               {/* Timer */}
               {timerEnabled && (
-                <div className="flex items-center space-x-2 bg-gradient-to-r from-red-500 to-pink-500 text-white px-4 py-2 rounded-full shadow-lg">
+                <div className="flex items-center space-x-2 bg-red-500 text-white px-4 py-2 rounded-full shadow-lg">
                   <Clock className="h-4 w-4" />
                   <span className="font-mono font-bold">
                     {formatTime(timeLeft)}
@@ -92,7 +92,7 @@ export function QuizHeaderCard({
 
                 <Button
                   onClick={onSaveClick}
-                  className="bg-gradient-to-r from-teal-500 to-blue-500 hover:from-teal-600 hover:to-blue-600 text-white shadow-lg"
+                  className="bg-teal-500 hover:bg-teal-600 text-white shadow-lg"
                 >
                   <BarChart3 className="h-4 w-4 mr-2" />
                   Save Progress

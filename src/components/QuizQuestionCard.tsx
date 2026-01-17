@@ -176,7 +176,7 @@ export function QuizQuestionCard({
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-base shadow-lg">
+                    <div className="w-10 h-10 bg-teal-500 rounded-full flex items-center justify-center text-white font-bold text-base shadow-lg">
                       {currentQuestion + 1}
                     </div>
                     <div>
@@ -250,7 +250,7 @@ export function QuizQuestionCard({
                   <div className="flex items-center gap-2">
                     {/* Timer */}
                     {timerEnabled && timeLeft !== undefined && formatTime && (
-                      <div className="flex items-center gap-2 bg-gradient-to-br from-teal-500 to-blue-600 text-white px-2 py-1 rounded-full text-xs font-medium">
+                      <div className="flex items-center gap-2 bg-teal-500 text-white px-2 py-1 rounded-full text-xs font-medium">
                         <Clock className="h-3 w-3" />
                         {formatTime(timeLeft)}
                       </div>
@@ -274,7 +274,7 @@ export function QuizQuestionCard({
                 {/* Progress Bar */}
                 <div className="w-full bg-muted rounded-full h-1">
                   <div
-                    className="bg-gradient-to-r from-teal-500 to-blue-600 h-1 rounded-full transition-all duration-300"
+                    className="bg-teal-500 h-1 rounded-full transition-all duration-300"
                     style={{
                       width: `${
                         ((currentQuestion + 1) / totalQuestions) * 100
@@ -299,7 +299,7 @@ export function QuizQuestionCard({
 
                 {/* Hint Display */}
                 {showHints && showHint && question.hint && (
-                  <div className="p-3 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg mb-4">
+                  <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg mb-4">
                     <div className="flex items-start gap-2">
                       <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
                       <div>
@@ -400,7 +400,7 @@ export function QuizQuestionCard({
         <Button
           onClick={onNext}
           disabled={!canGoNext}
-          className="bg-gradient-to-br from-teal-500 to-blue-600 hover:from-teal-600 hover:to-blue-700 text-white rounded-full w-14 h-14 p-0 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 flex-shrink-0"
+          className="bg-teal-500 hover:bg-teal-600 text-white rounded-full w-14 h-14 p-0 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 flex-shrink-0"
         >
           <ArrowRight className="h-4 w-4" />
         </Button>

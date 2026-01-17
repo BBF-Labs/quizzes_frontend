@@ -275,7 +275,7 @@ function PayPageContent() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="text-2xl font-bold text-gradient-brand">
+                  <div className="text-2xl font-bold text-teal-500">
                     Amount: {amount} cedis
                   </div>
                   <div>
@@ -339,7 +339,7 @@ function PayPageContent() {
                   className="relative"
                 >
                   {pkg.highlighted && (
-                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-sm font-medium bg-gradient-brand text-white">
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-sm font-medium bg-teal-500 text-white">
                       Most Popular
                     </div>
                   )}
@@ -358,7 +358,7 @@ function PayPageContent() {
                       </CardTitle>
                       <CardDescription>{pkg.description}</CardDescription>
                       <div className="flex items-baseline text-3xl font-bold">
-                        <span className="text-gradient-brand">
+                        <span className="text-teal-500">
                           {pkg.price} cedis
                         </span>
                         <span className="ml-1 text-base font-normal text-muted-foreground">
@@ -488,7 +488,7 @@ function PayPageContent() {
                       </div>
                       <div className="space-y-2">
                         <Label>Amount to Pay</Label>
-                        <div className="text-2xl font-bold text-gradient-brand">
+                        <div className="text-2xl font-bold text-teal-500">
                           {getSelectedPackageAmount()} cedis
                         </div>
                         {isQuizCredits && (

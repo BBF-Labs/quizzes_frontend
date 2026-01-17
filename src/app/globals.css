@@ -87,47 +87,46 @@
   .bg-grid {
     background-image: radial-gradient(
       circle at 1px 1px,
-      rgb(var(--primary) / 0.03) 1px,
+      hsl(168 80% 40% / 0.08) 1px,
       transparent 0
     );
-    background-size: 20px 20px;
+    background-size: 24px 24px;
   }
 
   .dark .bg-grid {
     background-image: radial-gradient(
       circle at 1px 1px,
-      rgb(var(--primary) / 0.1) 1px,
+      hsl(168 80% 40% / 0.15) 1px,
       transparent 0
     );
   }
 
   .bg-gradient-brand {
-    background: linear-gradient(to right, rgb(16 185 129), rgb(59 130 246));
+    background: rgb(16 185 129);
   }
 
   .text-gradient-brand {
-    background: linear-gradient(to right, rgb(16 185 129), rgb(59 130 246));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: rgb(16 185 129);
   }
 
   .card-highlight {
-    background: linear-gradient(
-      165deg,
-      rgb(var(--card)) 0%,
-      rgba(59, 130, 246, 0.1) 100%
-    );
+    background: hsl(var(--card));
+    border: 1px solid hsl(168 80% 40% / 0.3);
+    box-shadow: 0 4px 20px -4px hsl(168 80% 40% / 0.1);
+  }
+
+  .dark .card-highlight {
     border: 1px solid rgba(59, 130, 246, 0.2);
     backdrop-filter: blur(20px);
   }
 
   .card-normal {
-    background: linear-gradient(
-      165deg,
-      rgb(var(--card)) 0%,
-      rgba(16, 185, 129, 0.05) 100%
-    );
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    box-shadow: 0 1px 3px hsl(220 20% 15% / 0.05);
+  }
+
+  .dark .card-normal {
     border: 1px solid rgba(16, 185, 129, 0.1);
     backdrop-filter: blur(20px);
   }
@@ -135,7 +134,7 @@
 
 @layer components {
   .button-gradient {
-    background: linear-gradient(to right, rgb(16 185 129), rgb(59 130 246));
+    background: rgb(16 185 129);
     color: white;
     transition: all 0.2s ease;
   }
@@ -143,7 +142,7 @@
   .button-gradient:hover {
     opacity: 0.95;
     transform: translateY(-1px);
-    box-shadow: 0 8px 24px -4px rgba(59, 130, 246, 0.25);
+    box-shadow: 0 8px 24px -4px rgba(16, 185, 129, 0.25);
   }
 
   .pricing-card {
@@ -182,7 +181,7 @@
     content: "";
     position: absolute;
     inset: -2px;
-    background: linear-gradient(45deg, rgb(16 185 129), rgb(59 130 246));
+    background: rgb(16 185 129);
     border-radius: calc(var(--radius) + 2px);
     z-index: -1;
     opacity: 0.5;

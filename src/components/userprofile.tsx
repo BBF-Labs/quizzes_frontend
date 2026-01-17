@@ -107,8 +107,8 @@ export function UserProfile({ name, email, credits }: UserProfileProps) {
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
-          <Avatar className="h-8 w-8 bg-gradient-to-r from-teal-500 to-blue-500">
-            <AvatarFallback className="bg-brand-gradient">
+          <Avatar className="h-8 w-8 bg-teal-500">
+            <AvatarFallback className="bg-teal-500">
               {initial}
             </AvatarFallback>
           </Avatar>
@@ -131,7 +131,7 @@ export function UserProfile({ name, email, credits }: UserProfileProps) {
           <span className="text-sm font-medium text-foreground">
             Quiz Credits
           </span>
-          <span className="px-2 py-1 text-sm font-medium rounded-full bg-gradient-to-r from-teal-500 to-blue-500">
+          <span className="px-2 py-1 text-sm font-medium rounded-full bg-teal-500 text-white">
             {credits || 0}
           </span>
         </div>
