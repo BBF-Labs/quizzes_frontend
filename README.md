@@ -1,8 +1,8 @@
-# BBF Lab Quizzes 📚
+# BetaForge Labs Quizzes 📚
 
 <div align="center">
 
-![BBF Lab Quizzes](https://quizzess.theniitettey.live/api/og)
+![BetaForge Labs Quizzes](https://quizzes.bflabs.tech/api/og)
 
 **An interactive quiz platform designed for university students to enhance their learning experience**
 
@@ -10,6 +10,7 @@
 [![React](https://img.shields.io/badge/React-19.2.1-61DAFB?logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?logo=typescript)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-06B6D4?logo=tailwindcss)](https://tailwindcss.com/)
+[![React Query](https://img.shields.io/badge/TanStack_Query-5.0-FF4154?logo=react-query)](https://tanstack.com/query/latest)
 
 [Live Demo](https://quizzess.theniitettey.live) · [Report Bug](https://github.com/BBF-Labs/quizzes_frontend/issues) · [Request Feature](https://github.com/BBF-Labs/quizzes_frontend/issues)
 
@@ -19,7 +20,7 @@
 
 ## ✨ Overview
 
-BBF Lab Quizzes is a comprehensive quiz platform tailored for Ghanaian university students. It provides lecture-specific quizzes, flashcards, and assessments to help students master their coursework and improve exam performance.
+BetaForge Labs Quizzes is a comprehensive quiz platform tailored for Ghanaian university students. It provides lecture-specific quizzes, flashcards, and assessments to help students master their coursework and improve exam performance.
 
 ### 🎯 Key Features
 
@@ -104,12 +105,10 @@ quizzes_frontend/
 │   │   └── wrappers/      # Layout wrappers
 │   ├── config/            # App configuration
 │   ├── controllers/       # API request handlers
-│   ├── hooks/             # Custom React hooks
+│   ├── hooks/             # Custom React hooks (TanStack Query hooks)
 │   ├── interfaces/        # TypeScript interfaces
-│   ├── lib/               # Utilities and state management
-│   │   ├── reducers/      # Redux reducers
-│   │   ├── services/      # API services
-│   │   ├── store/         # Redux store configuration
+│   ├── lib/               # Utilities and logic
+│   │   ├── services/      # API services (Axios instances)
 │   │   └── utils/         # Utility functions
 │   └── types/             # TypeScript type definitions
 ├── tailwind.config.ts     # Tailwind CSS configuration
@@ -134,9 +133,9 @@ quizzes_frontend/
 ### State Management
 | Technology | Purpose |
 |------------|---------|
-| [Redux Toolkit](https://redux-toolkit.js.org/) | Global state management |
-| [Redux Persist](https://github.com/rt2zz/redux-persist) | State persistence |
-| [React Redux](https://react-redux.js.org/) | React bindings for Redux |
+| [TanStack Query](https://tanstack.com/query/latest) | Server state management, caching, and data synchronization |
+| [Redux Toolkit](https://redux-toolkit.js.org/) | Global client state management |
+| [Redux Persist](https://github.com/rt2zz/redux-persist) | State persistence for local user settings |
 
 ### Additional Libraries
 | Library | Purpose |
@@ -153,10 +152,10 @@ quizzes_frontend/
 
 | Command | Description |
 |---------|-------------|
-| `pnpm dev` | Start development server with Turbopack |
-| `pnpm build` | Build for production |
-| `pnpm start` | Start production server |
-| `pnpm lint` | Run ESLint |
+| `npm run dev` | Start development server with Turbopack |
+| `npm run build` | Build for production |
+| `npm run start` | Start production server |
+| `npm run lint` | Run ESLint |
 
 ---
 
@@ -196,7 +195,7 @@ This project is proprietary software owned by BBF Labs.
 
 Created with ❤️ for Ghanaian university students
 
-[Michael Perry Nii Tettey](https://theniitettey.live)
+[Michael Perry Nii Tettey](https://okponglozuck.bflabs.tech)
 
 </div>
 
@@ -204,8 +203,8 @@ Created with ❤️ for Ghanaian university students
 
 ## 📬 Contact
 
-- **Website**: [quizzess.theniitettey.live](https://quizzess.theniitettey.live)
-- **Twitter**: [@BBFLabs](https://twitter.com/BBFLabs)
+- **Website**: [quizzes.bflabs.tech](https://quizzes.bflabs.tech)
+- **Twitter**: [@BBFLabs](https://twitter.com/BFLabs)
 - **Email**: Contact through the website
 
 ---
