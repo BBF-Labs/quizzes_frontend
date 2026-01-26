@@ -17,6 +17,7 @@ interface Course {
 const getAllCourses = async (params?: {
   page?: number;
   limit?: number;
+  search?: string;
 }): Promise<{
   courses: Course[];
   pagination?: IPaginationResponse;
@@ -25,6 +26,7 @@ const getAllCourses = async (params?: {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append("page", params.page.toString());
     if (params?.limit) queryParams.append("limit", params.limit.toString());
+    if (params?.search) queryParams.append("search", params.search);
 
     const response = await axios.get(
       `${Config.API_URL}/courses?${queryParams}`
@@ -52,5 +54,17 @@ const getAllCourses = async (params?: {
   }
 };
 
-export { getAllCourses };
+const getCourse = async (courseId: string): Promise<Course | null> => {
+    try {
+        const response = await axios.get(`${Config.API_URL}/courses/${courseId}`);
+        return response.data.course || response.data;
+    } catch (error: any) {
+        if (error instanceof AxiosError) {
+             console.error("Fetch course failed", error.message);
+        }
+        return null;
+    }
+}
+
+export { getAllCourses, getCourse };
 export type { Course };

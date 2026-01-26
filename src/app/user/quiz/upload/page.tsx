@@ -35,8 +35,7 @@ import {
 import Link from "next/link";
 import { getAllCourses } from "@/controllers";
 import Config from "@/config";
-import { useSelector } from "react-redux";
-import { RootState } from "@/lib";
+
 
 interface Course {
   _id: string;
@@ -46,8 +45,10 @@ interface Course {
 
 const baseUrl = Config.API_URL;
 
+import { useAuth } from "@/context";
+
 export default function UploadPage() {
-  const { credentials } = useSelector((state: RootState) => state.auth);
+  const { credentials } = useAuth();
   const [uploadType, setUploadType] = useState<"link" | "file">("link");
   const [courseId, setCourseId] = useState("");
   const [title, setTitle] = useState("");

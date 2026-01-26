@@ -7,7 +7,13 @@ import type React from "react";
 
 const inter = Inter({ subsets: ["latin"] });
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1.0,
+};
+
 export const metadata: Metadata = {
+  metadataBase: new URL("https://quizzess.theniitettey.live"),
   title: "BBF Lab Quizzes",
   description:
     "Engage with interactive quizzes at BBF Lab to enhance your learning experience.",
@@ -22,7 +28,6 @@ export const metadata: Metadata = {
       url: "https://theniitettey.live",
     },
   ],
-  viewport: "width=device-width, initial-scale=1.0",
   robots: "index, follow",
   openGraph: {
     type: "website",

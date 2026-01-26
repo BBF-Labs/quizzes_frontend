@@ -1,12 +1,9 @@
 import { loginUser, logoutUser, refreshToken } from "./authControllers";
+import {  getQuiz,  getPublicPersonalQuizzes, getQuizzes} from "./quizControllers";
+import { getAllCourses, getCourse } from "./coursesController";
+import { getAllPayments, verifyPayment, createPayment} from "./paymentControllers";
 import { createUser, updateUser } from "./userController";
-import { getAllCourses } from "./coursesController";
-import {
-  createPayment,
-  getAllPayments,
-  verifyPayment,
-} from "./paymentControllers";
-import { getQuizzes, getPublicPersonalQuizzes } from "./quizControllers";
+export * from "./packageControllers";
 
 export {
   loginUser,
@@ -20,4 +17,6 @@ export {
   getPublicPersonalQuizzes,
   getAllPayments,
   verifyPayment,
+  getCourse,
+  getQuiz,
 };

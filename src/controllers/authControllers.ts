@@ -1,5 +1,4 @@
 import { ILoginResponse } from "@/interfaces";
-import { logout, login, AppDispatch } from "@/lib";
 import axios, { AxiosError } from "axios";
 import qs from "qs";
 import Config from "@/config";
@@ -21,8 +20,7 @@ const getUserInfo = async (accessToken: string) => {
   }
 };
 
-const loginUser =
-  (username: string, password: string) => async (dispatch: AppDispatch) => {
+const loginUser = async (username: string, password: string) => {
     try {
       const response = await axios.post<ILoginResponse | any>(
         `${url}/auth/login`,
@@ -40,7 +38,8 @@ const loginUser =
         const expiryTime = new Date(Date.now() + 60 * 60 * 1000).toISOString();
         localStorage.setItem("aExpBff", expiryTime);
 
-        const payload = {
+        // We return the payload structure so caller can handle state update
+        return {
           isAuthenticated: true,
           hasMultipleSessions: false,
           credentials: {
@@ -56,8 +55,9 @@ const loginUser =
             role: user.role,
           },
         };
-        dispatch(login(payload));
       }
+      // If no accessToken, return null or throw an error, depending on desired behavior
+      return null;
     } catch (error: any) {
       if (error instanceof AxiosError) {
         throw new Error(error.response?.data.message);
@@ -66,8 +66,9 @@ const loginUser =
     }
   };
 
-const logoutUser = () => async (dispatch: AppDispatch) => {
-  dispatch(logout());
+const logoutUser = () => {
+  // Logic handled by context/hook
+  return Promise.resolve();
 };
 
 const refreshToken = async (refreshToken: string) => {
@@ -78,7 +79,7 @@ const refreshToken = async (refreshToken: string) => {
 
     const response = await axios.post(`${url}/auth/refresh`, data, {
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "application/x-www-form-urlencoded", // Fix: qs.stringify usually implies urlencoded
       },
     });
 

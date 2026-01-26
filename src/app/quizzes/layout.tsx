@@ -1,6 +1,11 @@
 import { Metadata } from "next";
 import type React from "react";
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1.0,
+};
+
 export const metadata: Metadata = {
   title: "Available Quizzes at BBF Lab",
   description:
@@ -24,7 +29,6 @@ export const metadata: Metadata = {
       url: "https://theniitettey.live",
     },
   ],
-  viewport: "width=device-width, initial-scale=1.0",
   robots: "index, follow",
   openGraph: {
     type: "website",

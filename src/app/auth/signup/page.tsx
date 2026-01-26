@@ -11,14 +11,13 @@ import {
   showToast,
 } from "@/components";
 import { useRouter } from "next/navigation";
-import { createUser, loginUser } from "@/controllers";
-import { useAppDispatch } from "@/hooks";
+import { useUser, useAuthMutations } from "@/hooks";
 import { motion } from "framer-motion";
 import { Loader2, User, Lock, Mail, UserCircle, ArrowRight } from "lucide-react";
 
 export default function SignUpPage() {
-  const dispatch = useAppDispatch();
-  const [isLoading, setIsLoading] = useState(false);
+  const { register } = useUser();
+  const { login } = useAuthMutations();
   const [formData, setFormData] = useState({
     fullName: "",
     username: "",
@@ -43,25 +42,27 @@ export default function SignUpPage() {
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setIsLoading(true);
 
+    const data = {
+      name: formData.fullName.trim(),
+      username: formData.username.trim().replace(" ", "").toLowerCase(),
+      password: formData.password,
+      email: formData.email.trim().toLowerCase(),
+    };
+    
+    // Register then Login
     try {
-      const data = {
-        name: formData.fullName.trim(),
-        username: formData.username.trim().replace(" ", "").toLowerCase(),
-        password: formData.password,
-        email: formData.email.trim().toLowerCase(),
-      };
-      await createUser(data);
-      setIsLoading(false);
-      showToast("Account created successfully!", "success");
-      await dispatch(
-        loginUser(formData.username.trim().toLowerCase(), formData.password)
-      );
-      router.push(returnUrl);
-    } catch (error: any) {
-      setIsLoading(false);
-      showToast(`${error.message}`, "error");
+        await register.mutateAsync(data);
+        // Login immediately after
+        await login.mutateAsync({
+             username: data.username,
+             password: data.password,
+             rememberMe: false
+        });
+        
+        router.push(returnUrl);
+    } catch (error) {
+        // Error handling done in mutations (toasts)
     }
   }
 
@@ -192,9 +193,9 @@ export default function SignUpPage() {
           <Button
             type="submit"
             className="w-full h-12 bg-teal-500 hover:bg-teal-600 text-white font-semibold text-base transition-all duration-300 shadow-lg shadow-teal-500/25 hover:shadow-xl hover:shadow-teal-500/30"
-            disabled={isLoading}
-          >
-            {isLoading ? (
+          disabled={register.isPending}
+        >
+          {register.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Creating account...

@@ -1,7 +1,5 @@
-import { AppDispatch, setPaymentDetails } from "@/lib";
 import Config from "@/config";
 import axios, { AxiosError } from "axios";
-import { sessionSet, update } from "@/lib/reducers";
 
 const getUserInfo = async (accessToken: string) => {
   try {
@@ -18,8 +16,7 @@ const getUserInfo = async (accessToken: string) => {
   }
 };
 
-const createPayment =
-  (paymentdata: any, accessToken: string) => async (dispatch: AppDispatch) => {
+const createPayment = async (paymentdata: any, accessToken: string) => {
     try {
       const response = await axios.post(
         `${Config.API_URL}/payments/pay`,
@@ -33,41 +30,27 @@ const createPayment =
       );
 
       if (response.data.authorization_url) {
-        const payload = {
-          packageId: paymentdata.packageId || "",
-          amount: paymentdata.amount,
-          email: paymentdata.email,
-          reference: response.data.reference,
-          accessCode: "",
-          status: "pending",
-          discountCode: paymentdata.discountCode || "",
-        };
+        // Storing reference in localStorage for verification flow
         localStorage.setItem("reference", response.data.reference);
-        dispatch(setPaymentDetails(payload));
         return response.data.authorization_url;
       } else {
         throw new Error("Try again, failed");
       }
     } catch (error: any) {
       if (error instanceof AxiosError) {
-        if (
-          error.response?.data.message ==
-          "Error validating token: Multiple sessions detected. Please login again."
-        ) {
-          dispatch(sessionSet());
-          return;
-        }
-        throw new Error(error.response?.data.message);
+         // Handle session errors at the component level or interceptor
+        throw new Error(error.response?.data.message || "Payment creation failed");
       }
 
       throw new Error("Something went wrong");
     }
   };
 
-const verifyPayment =
-  (accessToken: string) => async (dispatch: AppDispatch) => {
+const verifyPayment = async (accessToken: string) => {
     try {
       const reference = localStorage.getItem("reference");
+      if (!reference) throw new Error("No payment reference found");
+
       const response = await axios.get(
         `${Config.API_URL}/payments/${reference}/verify`,
         {
@@ -79,39 +62,13 @@ const verifyPayment =
       );
 
       if (response) {
-        const user = await getUserInfo(accessToken);
-
-        const payload = {
-          isAuthenticated: true,
-          credentials: {
-            accessToken: accessToken,
-            refreshToken: "",
-          },
-          user: {
-            email: user.email,
-            name: user.name,
-            password: "",
-            credits: user.quizCredits,
-            username: user.username,
-            role: user.role,
-          },
-        };
-
-        console.log(response.data);
-
-        dispatch(update(payload));
+        // Backend verification might return updated user data or just success
+        // We will return response data so component can update context
         return response.data;
       }
     } catch (error: any) {
       if (error instanceof AxiosError) {
-        if (
-          error.response?.data.message ==
-          "Error validating token: Multiple sessions detected. Please login again."
-        ) {
-          dispatch(sessionSet());
-          return;
-        }
-        throw new Error(error.response?.data.message);
+         throw new Error(error.response?.data.message || "Payment verification failed");
       }
 
       throw new Error("Something went wrong");
@@ -123,8 +80,7 @@ interface IAllPaymentsResponse {
   payment: any[];
 }
 
-const getAllPayments =
-  (accessToken: string) => async (dispatch: AppDispatch) => {
+const getAllPayments = async (accessToken: string) => {
     try {
       const response = await axios.get<IAllPaymentsResponse>(
         `${Config.API_URL}/payments/i/user`,
@@ -142,18 +98,12 @@ const getAllPayments =
       return [];
     } catch (error: any) {
       if (error instanceof AxiosError) {
-        if (
-          error.response?.data.message ==
-          "Error validating token: Multiple sessions detected. Please login again."
-        ) {
-          dispatch(sessionSet());
-          return;
-        }
-        throw new Error(error.response?.data.message);
+         // handle error
+         throw new Error(error.response?.data.message || "Failed to fetch payments");
       }
 
       throw new Error("Something went wrong");
     }
   };
 
-export { createPayment, verifyPayment, getAllPayments };
+  export { createPayment, verifyPayment, getAllPayments };

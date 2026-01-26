@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   BookOpen,
   Plus,
@@ -37,8 +38,6 @@ import { showToast } from "@/components";
 import { FloatingAIWidget } from "@/components/ui/floating-ai-widget";
 import axios, { AxiosError } from "axios";
 import Config from "@/config";
-import { useSelector } from "react-redux";
-import { RootState } from "@/lib";
 
 interface PersonalQuiz {
   _id: string;
@@ -130,16 +129,26 @@ interface Course {
   updatedAt: string;
 }
 
+import { useAuth } from "@/context";
+import { usePersonalQuizzes, useCreatePersonalQuiz, useDeletePersonalQuiz, useUserMaterials } from "@/hooks";
+import { useCourses } from "@/hooks";
+
 export default function PersonalQuizzesPage() {
-  const { credentials } = useSelector((state: RootState) => state.auth);
-  const [quizzes, setQuizzes] = useState<PersonalQuiz[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { credentials } = useAuth();
+  
+  // TanStack Query hooks
+  const queryClient = useQueryClient();
+  const { data: quizzes = [], isLoading } = usePersonalQuizzes();
+  const { data: materials = [] } = useUserMaterials();
+  const { data: coursesData } = useCourses();
+  const courses = Array.isArray(coursesData) ? coursesData : (coursesData?.courses || []);
+  const createQuiz = useCreatePersonalQuiz();
+  const deleteQuizMutation = useDeletePersonalQuiz();
+  
   const [deletingQuiz, setDeletingQuiz] = useState<string | null>(null);
 
   // Quiz creation modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [materials, setMaterials] = useState<Material[]>([]);
-  const [courses, setCourses] = useState<Course[]>([]);
   const [selectedMaterial, setSelectedMaterial] = useState<string>("");
   const [selectedCourse, setSelectedCourse] = useState<string>("");
   const [courseSearchTerm, setCourseSearchTerm] = useState("");
@@ -153,89 +162,13 @@ export default function PersonalQuizzesPage() {
   const [creatingQuiz, setCreatingQuiz] = useState(false);
   const [questionCount, setQuestionCount] = useState(10);
 
-  useEffect(() => {
-    loadPersonalQuizzes();
-    loadMaterials();
-    loadCourses();
-  }, []);
 
-  // Auto-select course when there's an exact match in search
-  useEffect(() => {
-    if (courseSearchTerm.trim()) {
-      const exactMatch = courses.find(
-        (course) =>
-          course.code.toLowerCase() === courseSearchTerm.toLowerCase() ||
-          course.title.toLowerCase() === courseSearchTerm.toLowerCase()
-      );
 
-      if (exactMatch && selectedCourse !== exactMatch._id) {
-        setSelectedCourse(exactMatch._id);
-      }
-    }
-  }, [courseSearchTerm, courses, selectedCourse]);
-
-  const loadPersonalQuizzes = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get(
-        `${Config.API_URL}/personal-quizzes/user`,
-        {
-          headers: {
-            Authorization: `Bearer ${credentials.accessToken}`,
-          },
-        }
-      );
-      setQuizzes(response.data.quizzes);
-    } catch (error: any) {
-      console.error("Failed to load personal quizzes:", error);
-      showToast(
-        error.response?.data?.message || "Failed to load personal quizzes",
-        "error"
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadMaterials = async () => {
-    try {
-      const response = await axios.get(`${Config.API_URL}/materials/user`, {
-        headers: {
-          Authorization: `Bearer ${credentials.accessToken}`,
-        },
-      });
-      setMaterials(response.data.materials);
-    } catch (error) {
-      console.error("Failed to load materials:", error);
-      setMaterials([]);
-    }
-  };
-
-  const loadCourses = async () => {
-    try {
-      const response = await axios.get(`${Config.API_URL}/courses`, {
-        headers: {
-          Authorization: `Bearer ${credentials.accessToken}`,
-        },
-      });
-      setCourses(response.data.courses);
-    } catch (error) {
-      console.error("Failed to load courses:", error);
-      setCourses([]);
-    }
-  };
-
-  const deleteQuiz = async (quizId: string) => {
+  const handleDeleteQuiz = async (quizId: string) => {
     try {
       setDeletingQuiz(quizId);
-      await axios.delete(`${Config.API_URL}/personal-quizzes/${quizId}`, {
-        headers: {
-          Authorization: `Bearer ${credentials.accessToken}`,
-        },
-      });
-
+      await deleteQuizMutation.mutateAsync(quizId);
       showToast("Quiz deleted successfully", "success");
-      setQuizzes(quizzes.filter((quiz) => quiz._id !== quizId));
     } catch (error: any) {
       console.error("Failed to delete quiz:", error);
       showToast(
@@ -263,7 +196,7 @@ export default function PersonalQuizzesPage() {
   };
 
   const getCourseName = (courseId: string) => {
-    const course = courses.find((c) => c._id === courseId);
+    const course = courses.find((c: Course) => c._id === courseId);
     return course ? `${course.code}: ${course.title}` : "Unknown Course";
   };
 
@@ -318,7 +251,7 @@ export default function PersonalQuizzesPage() {
       setUploadTitle("");
       setSelectedCourse("");
 
-      loadMaterials();
+      queryClient.invalidateQueries({ queryKey: ["userMaterials"] });
     } catch (error: any) {
       console.error("Upload failed:", error);
       showToast(error.response?.data?.message || "Upload failed", "error");
@@ -328,7 +261,7 @@ export default function PersonalQuizzesPage() {
     }
   };
 
-  const createQuiz = async () => {
+  const handleCreateQuiz = async () => {
     const materialToProcess = uploadedMaterialId || selectedMaterial;
 
     if (!materialToProcess) {
@@ -341,18 +274,10 @@ export default function PersonalQuizzesPage() {
 
     setCreatingQuiz(true);
     try {
-      await axios.post(
-        `${Config.API_URL}/personal-quizzes`,
-        {
-          materialId: materialToProcess,
-          count: questionCount,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${credentials.accessToken}`,
-          },
-        }
-      );
+      await createQuiz.mutateAsync({
+        materialId: materialToProcess,
+        count: questionCount
+      });
 
       showToast("Quiz created successfully!", "success");
       setShowCreateModal(false);
@@ -361,9 +286,6 @@ export default function PersonalQuizzesPage() {
       setUploadFile(null);
       setUploadTitle("");
       setSelectedCourse("");
-
-      // Refresh quizzes list
-      loadPersonalQuizzes();
     } catch (error: any) {
       if (
         error instanceof AxiosError &&
@@ -377,17 +299,12 @@ export default function PersonalQuizzesPage() {
       } else {
         showToast("Failed to create quiz. Please try again.", "error");
       }
-      showToast(
-        error.response?.data?.message ||
-          "Failed to create quiz. Please try again.",
-        "error"
-      );
     } finally {
       setCreatingQuiz(false);
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="text-center">
@@ -476,7 +393,7 @@ export default function PersonalQuizzesPage() {
                       </p>
                       <p className="text-2xl font-bold text-foreground">
                         {quizzes.reduce(
-                          (sum, quiz) => sum + quiz.questions.length,
+                          (sum: number, quiz: PersonalQuiz) => sum + quiz.questions.length,
                           0
                         )}
                       </p>
@@ -502,7 +419,7 @@ export default function PersonalQuizzesPage() {
                       </p>
                       <p className="text-2xl font-bold text-foreground">
                         {quizzes.reduce(
-                          (sum, quiz) => sum + quiz.stats.totalAttempts,
+                          (sum: number, quiz: any) => sum + quiz.stats.totalAttempts,
                           0
                         )}
                       </p>
@@ -528,7 +445,7 @@ export default function PersonalQuizzesPage() {
                       </p>
                       <p className="text-2xl font-bold text-foreground">
                         {quizzes.length > 0
-                          ? Math.max(...quizzes.map((q) => q.stats.bestScore))
+                          ? Math.max(...quizzes.map((q: any) => q.stats.bestScore))
                           : 0}
                         %
                       </p>
@@ -543,7 +460,7 @@ export default function PersonalQuizzesPage() {
         {/* Quizzes List */}
         {quizzes.length > 0 ? (
           <div className="space-y-6">
-            {quizzes.map((quiz, index) => (
+            {quizzes.map((quiz: any, index: number) => (
               <motion.div
                 key={quiz._id}
                 initial={{ opacity: 0, y: 20 }}
@@ -585,7 +502,7 @@ export default function PersonalQuizzesPage() {
 
                     {/* Tags */}
                     <div className="flex flex-wrap gap-2 mb-4">
-                      {quiz.tags.map((tag, tagIndex) => (
+                      {quiz.tags.map((tag: string, tagIndex: number) => (
                         <Badge
                           key={tagIndex}
                           variant="outline"
@@ -680,7 +597,7 @@ export default function PersonalQuizzesPage() {
                       size="sm"
                       variant="outline"
                       className="border-red-200 text-red-600 hover:bg-red-50"
-                      onClick={() => deleteQuiz(quiz._id)}
+                      onClick={() => handleDeleteQuiz(quiz._id)}
                       disabled={deletingQuiz === quiz._id}
                     >
                       {deletingQuiz === quiz._id ? (
@@ -791,7 +708,7 @@ export default function PersonalQuizzesPage() {
                         <Input
                           placeholder="Enter material title"
                           value={uploadTitle}
-                          onChange={(e) => setUploadTitle(e.target.value)}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUploadTitle(e.target.value)}
                           className="border-border focus:border-primary"
                         />
                       </div>
@@ -804,12 +721,12 @@ export default function PersonalQuizzesPage() {
                           <Input
                             placeholder="Search courses..."
                             value={courseSearchTerm}
-                            onChange={(e) => handleCourseSearch(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleCourseSearch(e.target.value)}
                             className="border-border focus:border-primary"
                           />
                           <Select
                             value={selectedCourse}
-                            onValueChange={setSelectedCourse}
+                            onValueChange={(value: string) => setSelectedCourse(value)}
                           >
                             <SelectTrigger className="border-border">
                               <SelectValue placeholder="Select a course" />
@@ -817,7 +734,7 @@ export default function PersonalQuizzesPage() {
                             <SelectContent>
                               {courses
                                 .filter(
-                                  (course) =>
+                                  (course: Course) =>
                                     course.code
                                       .toLowerCase()
                                       .includes(
@@ -827,7 +744,7 @@ export default function PersonalQuizzesPage() {
                                       .toLowerCase()
                                       .includes(courseSearchTerm.toLowerCase())
                                 )
-                                .map((course) => (
+                                .map((course: Course) => (
                                   <SelectItem
                                     key={course._id}
                                     value={course._id}
@@ -872,7 +789,7 @@ export default function PersonalQuizzesPage() {
                           min="1"
                           max="15"
                           value={questionCount}
-                          onChange={(e) =>
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                             setQuestionCount(
                               Math.min(
                                 15,
@@ -1005,14 +922,14 @@ export default function PersonalQuizzesPage() {
                         <div className="flex-1">
                           <h4 className="font-medium text-foreground text-lg">
                             {
-                              materials.find((m) => m._id === selectedMaterial)
+                              materials.find((m: any) => m._id === selectedMaterial)
                                 ?.title
                             }
                           </h4>
                           <p className="text-sm text-muted-foreground">
                             {(() => {
                               const material = materials.find(
-                                (m) => m._id === selectedMaterial
+                                (m: any) => m._id === selectedMaterial
                               );
                               if (!material) return "Unknown Course";
 
@@ -1031,7 +948,7 @@ export default function PersonalQuizzesPage() {
                             })()}{" "}
                             •{" "}
                             {materials
-                              .find((m) => m._id === selectedMaterial)
+                              .find((m: any) => m._id === selectedMaterial)
                               ?.type.toUpperCase()}
                           </p>
                         </div>
@@ -1049,23 +966,23 @@ export default function PersonalQuizzesPage() {
                         <span>
                           Type:{" "}
                           {materials
-                            .find((m) => m._id === selectedMaterial)
+                            .find((m: any) => m._id === selectedMaterial)
                             ?.type.toUpperCase()}
                         </span>
                         <span>
                           Status:{" "}
-                          {materials.find((m) => m._id === selectedMaterial)
+                          {materials.find((m: any) => m._id === selectedMaterial)
                             ?.isProcessed
                             ? "Processed"
                             : "Pending"}
                         </span>
                         <span>
                           Created:{" "}
-                          {materials.find((m) => m._id === selectedMaterial)
+                          {materials.find((m: any) => m._id === selectedMaterial)
                             ?.createdAt
                             ? new Date(
                                 materials.find(
-                                  (m) => m._id === selectedMaterial
+                                  (m: any) => m._id === selectedMaterial
                                 )?.createdAt || ""
                               ).toLocaleDateString()
                             : ""}
@@ -1083,7 +1000,7 @@ export default function PersonalQuizzesPage() {
                         min="1"
                         max="20"
                         value={questionCount}
-                        onChange={(e) =>
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                           setQuestionCount(
                             Math.min(
                               20,
@@ -1126,7 +1043,7 @@ export default function PersonalQuizzesPage() {
                         onClick={() => {
                           setSelectedMaterial("");
                           setShowCreateModal(false);
-                          createQuiz();
+                          handleCreateQuiz();
                         }}
                         className="bg-emerald-600 hover:bg-emerald-700 text-white"
                         size="sm"
@@ -1148,7 +1065,7 @@ export default function PersonalQuizzesPage() {
                   {/* Materials List - Only show when no material is selected */}
                   {!selectedMaterial && (
                     <div className="space-y-3">
-                      {materials.map((material) => (
+                      {materials.map((material: Material) => (
                         <div
                           key={material._id}
                           className={`p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
@@ -1238,7 +1155,7 @@ export default function PersonalQuizzesPage() {
                       <p className="text-sm text-primary/70">
                         Ready to create quiz from{" "}
                         {
-                          materials.find((m) => m._id === selectedMaterial)
+                          materials.find((m: any) => m._id === selectedMaterial)
                             ?.title
                         }
                       </p>
@@ -1269,7 +1186,7 @@ export default function PersonalQuizzesPage() {
                   {selectedMaterial && (
                     <div className="mt-6">
                       <Button
-                        onClick={createQuiz}
+                        onClick={handleCreateQuiz}
                         disabled={creatingQuiz}
                         className="w-full button-gradient shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
                       >

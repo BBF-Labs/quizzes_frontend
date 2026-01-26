@@ -23,8 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { RootState } from "@/lib";
-import { useSelector } from "react-redux";
+import { useQuizSession } from "@/context";
 
 interface QuizSettings {
   lectures: string[];
@@ -59,7 +58,7 @@ export function QuizSettingsModal({
   initialSettings,
   lectureRanges,
 }: QuizSettingsModalProps) {
-  const { quizStateSettings } = useSelector((state: RootState) => state.quiz);
+  const { quizStateSettings } = useQuizSession();
 
   const [settings, setSettings] = useState<QuizSettings>(
     initialSettings ||

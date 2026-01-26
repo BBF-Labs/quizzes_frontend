@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { Search, Loader } from "lucide-react";
 import { Pagination, Input, LandingHeader, QuizCard } from "@/components";
-import { getQuizzes, getAllCourses } from "@/controllers";
 
 interface Quiz {
   title: string;
@@ -26,114 +25,50 @@ interface Course {
   isDeleted?: boolean;
 }
 
-export default function QuizzesPage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+import { useQuery } from "@tanstack/react-query";
+import { useDebounce, useSyncQueryString } from "@/hooks";
+import { getQuizzes, getAllCourses } from "@/controllers";
+
+import { Suspense } from "react";
+
+function QuizzesContent() {
+  const { getParam, setQueryString } = useSyncQueryString();
+
+  const initialSearch = getParam("search");
+  const initialPage = Number(getParam("page")) || 1;
+
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
+  const debouncedSearch = useDebounce(searchQuery, 500);
+
+  useEffect(() => {
+    if (debouncedSearch !== initialSearch) {
+      setQueryString("search", debouncedSearch);
+      if (debouncedSearch) setQueryString("page", "1");
+    }
+  }, [debouncedSearch, setQueryString, initialSearch]);
+
+  const currentPage = initialPage;
   const itemsPerPage = 12;
-  const [quizzesData, setQuizzesData] = useState<Quiz[]>([]);
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchCourses();
-  }, []);
-
-  useEffect(() => {
-    if (courses.length > 0) {
-      fetchQuizzes();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [courses, currentPage]);
-
-  const fetchCourses = async () => {
-    try {
-      const response = await getAllCourses();
-      setCourses(response.courses || []);
-    } catch (error) {
-      console.error("Error fetching courses:", error);
-    }
-  };
-
-  const fetchQuizzes = async () => {
-    setLoading(true);
-    try {
-      const response = await getQuizzes({
+  const { data, isLoading } = useQuery({
+    queryKey: ["quizzes", currentPage, debouncedSearch],
+    queryFn: () =>
+      getQuizzes({
         page: currentPage,
         limit: itemsPerPage,
-      });
+        search: debouncedSearch,
+      }),
+  });
 
-      const getQuizDetails = (quiz: any) => {
-        const timePerQuestion = 30;
+  const quizzes = data?.quizzes || [];
+  const pagination = data?.pagination;
+  const totalPages = pagination
+    ? pagination.totalPages || pagination.pages
+    : Math.ceil((quizzes.length || 0) / itemsPerPage) || 1;
 
-        const totalQuestions = quiz.quizQuestions.reduce(
-          (acc: number, quizQuestion: any) => {
-            const uniqueQuestions = new Set(quizQuestion.questions || []);
-            return acc + uniqueQuestions.size;
-          },
-          0,
-        );
-
-        const totalDuration = Math.floor(
-          (totalQuestions * timePerQuestion) / 60,
-        );
-
-        return {
-          totalQuestions,
-          totalDuration,
-        };
-      };
-
-      const quizzes = response.quizzes || [];
-      const mappedQuizzes = quizzes
-        .map((quiz: any) => {
-          const course = courses.find((course) => quiz.courseId === course._id);
-          const { totalQuestions, totalDuration } = getQuizDetails(quiz);
-
-          return {
-            title: course?.title || "Unknown Title",
-            category: course?.code.split(" ")[0] || "Unknown Category",
-            duration: totalDuration.toString(),
-            questions: totalQuestions,
-            completions: quiz.completions || 0,
-            id: quiz.courseId,
-            createdAt: quiz.createdAt,
-          };
-        })
-        .sort((a: any, b: any) => {
-          const dateA = new Date(a.createdAt);
-          const dateB = new Date(b.createdAt);
-
-          if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) {
-            return 0;
-          }
-
-          return dateB.getTime() - dateA.getTime();
-        });
-
-      setQuizzesData(mappedQuizzes);
-
-      if (response.pagination) {
-        setTotalPages(
-          response.pagination.totalPages || response.pagination.pages,
-        );
-      } else {
-        setTotalPages(Math.ceil(mappedQuizzes.length / itemsPerPage));
-      }
-    } catch (error) {
-      console.error("Error fetching quizzes:", error);
-    } finally {
-      setLoading(false);
-    }
+  const handlePageChange = (page: number) => {
+    setQueryString("page", page.toString());
   };
-
-  const filteredQuizzes = searchQuery
-    ? quizzesData.filter(
-        (quiz) =>
-          quiz.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          quiz.category.toLowerCase().includes(searchQuery.toLowerCase()),
-      )
-    : quizzesData;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -158,14 +93,13 @@ export default function QuizzesPage() {
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
-                  setCurrentPage(1);
                 }}
               />
             </div>
           </div>
         </div>
 
-        {loading ? (
+        {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader className="animate-spin h-8 w-8 text-teal-500" />
             <span className="ml-2 text-lg text-zinc-400">
@@ -174,7 +108,7 @@ export default function QuizzesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredQuizzes.map((quiz, index) => (
+            {quizzes.map((quiz, index) => (
               <QuizCard key={index} {...quiz} />
             ))}
           </div>
@@ -185,10 +119,18 @@ export default function QuizzesPage() {
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
-            onPageChange={setCurrentPage}
+            onPageChange={handlePageChange}
           />
         )}
       </div>
     </div>
+  );
+}
+
+export default function QuizzesPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Loader className="animate-spin h-8 w-8 text-teal-500" /></div>}>
+      <QuizzesContent />
+    </Suspense>
   );
 }

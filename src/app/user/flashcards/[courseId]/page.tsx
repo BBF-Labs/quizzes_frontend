@@ -18,8 +18,7 @@ import { FloatingAIWidget } from "../../../../components/ui/floating-ai-widget";
 import { FlashcardCard } from "../../../../components/FlashcardCard";
 
 import { IFlashcard } from "../../../../interfaces";
-import { useSelector } from "react-redux";
-import { RootState } from "@/lib";
+import { useAuth } from "@/context";
 import axios from "axios";
 import Config from "@/config";
 
@@ -34,7 +33,7 @@ export default function CourseFlashcardsPage() {
   const params = useParams();
   const router = useRouter();
   const courseId = params.courseId as string;
-  const { credentials } = useSelector((state: RootState) => state.auth);
+  const { credentials } = useAuth();
 
   const [course, setCourse] = useState<Course | null>(null);
   const [flashcards, setFlashcards] = useState<IFlashcard[]>([]);

@@ -1,10 +1,13 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
+import { useDebounce, useSyncQueryString } from "@/hooks";
+import { getAllCourses } from "@/controllers";
+import { BookOpen, Loader, Search } from "lucide-react";
+import Link from "next/link";
+
 import { useEffect, useState } from "react";
-import { BookOpen, Loader } from "lucide-react";
-import { getAllCourses, getQuizzes } from "@/controllers"; // Import getQuizzes
-import { Search } from "lucide-react";
+import { motion } from "framer-motion";
 import {
   Card,
   CardContent,
@@ -17,7 +20,6 @@ import {
   Pagination,
   Button,
 } from "@/components";
-import Link from "next/link";
 
 interface Course {
   code: string;
@@ -35,70 +37,52 @@ interface Quiz {
   courseId: string; // Assuming quizzes have a courseId to link them to courses
 }
 
-export default function HomeCoursesPage() {
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+import { Suspense } from "react";
+
+function CoursesContent() {
+  const { getParam, setQueryString } = useSyncQueryString();
+
+  const initialSearch = getParam("search");
+  const initialPage = Number(getParam("page")) || 1;
+
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
+  const debouncedSearch = useDebounce(searchQuery, 500);
+
+  // Sync debounced search to URL
+  useEffect(() => {
+    // Only update if it's different to avoid loops/initial double firing if desired
+    // But setQueryString is safe.
+    // Reset page to 1 on new search
+    if (debouncedSearch !== initialSearch) {
+      setQueryString("search", debouncedSearch);
+      if (debouncedSearch) setQueryString("page", "1");
+    }
+  }, [debouncedSearch, setQueryString, initialSearch]);
+
+  const currentPage = initialPage;
   const itemsPerPage = 12;
 
-  useEffect(() => {
-    fetchQuizzes();
-  }, []);
-
-  useEffect(() => {
-    fetchCourses();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage]);
-
-  const fetchQuizzes = async () => {
-    try {
-      const quizzesResponse = await getQuizzes();
-      setQuizzes(quizzesResponse.quizzes || []);
-    } catch (error) {
-      console.error("Error fetching quizzes:", error);
-    }
-  };
-
-  const fetchCourses = async () => {
-    setLoading(true);
-    try {
-      const coursesResponse = await getAllCourses({
+  const { data, isLoading } = useQuery({
+    queryKey: ["courses", currentPage, debouncedSearch],
+    queryFn: () =>
+      getAllCourses({
         page: currentPage,
         limit: itemsPerPage,
-      });
-      
-      setCourses(coursesResponse.courses || []);
-      
-      if (coursesResponse.pagination) {
-        setTotalPages(coursesResponse.pagination.totalPages || coursesResponse.pagination.pages);
-      } else {
-        // Fallback for non-paginated response
-        setTotalPages(Math.ceil((coursesResponse.courses?.length || 0) / itemsPerPage));
-      }
-    } catch (error) {
-      console.error("Error fetching courses:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+        search: debouncedSearch,
+      }),
+  });
 
-  // Client-side filtering for search
-  const filteredCourses = searchQuery
-    ? courses.filter(
-        (course) =>
-          course.code
-            .replace(" ", "")
-            .toLowerCase()
-            .includes(searchQuery.replace(" ", "").toLowerCase()) ||
-          course.title
-            .replace(" ", "")
-            .toLowerCase()
-            .includes(searchQuery.replace(" ", "").toLowerCase())
-      )
-    : courses;
+  const courses = data?.courses || [];
+  const pagination = data?.pagination;
+
+  // Calculate total pages
+  const totalPages = pagination
+    ? pagination.totalPages || pagination.pages
+    : Math.ceil((courses.length || 0) / itemsPerPage) || 1; 
+
+  const handlePageChange = (page: number) => {
+    setQueryString("page", page.toString());
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -121,14 +105,13 @@ export default function HomeCoursesPage() {
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
-                  setCurrentPage(1);
                 }}
               />
             </div>
           </div>
         </div>
 
-        {loading ? (
+        {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader className="animate-spin h-8 w-8 text-teal-500" />
             <span className="ml-2 text-lg text-zinc-400">
@@ -137,10 +120,8 @@ export default function HomeCoursesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredCourses.map((course) => {
-              const hasQuiz = quizzes.some(
-                (quiz) => quiz.courseId === course._id
-              );
+            {courses.map((course) => {
+              const hasQuiz = (course as any).hasQuiz; // Using backend provided field
               return (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
@@ -194,10 +175,18 @@ export default function HomeCoursesPage() {
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
-            onPageChange={setCurrentPage}
+            onPageChange={handlePageChange}
           />
         )}
       </div>
     </div>
+  );
+}
+
+export default function HomeCoursesPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Loader className="animate-spin h-8 w-8 text-teal-500" /></div>}>
+      <CoursesContent />
+    </Suspense>
   );
 }
