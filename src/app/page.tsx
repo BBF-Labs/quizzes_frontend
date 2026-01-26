@@ -12,11 +12,24 @@ import {
   Upload,
   ChevronLeft,
   ChevronRight,
+  CheckCircle2,
+  PartyPopper,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { PricingCard, FeatureCard, Stat, LandingHeader } from "@/components";
 import { UGLogo, AshesiLogo, UCCLogo } from "@/assets";
+import { useWaitlist } from "@/hooks";
+import confetti from "canvas-confetti";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+
+
 
 // Carousel slides data
 const carouselSlides = [
@@ -192,9 +205,16 @@ const quizzes = [
 
 export default function Page() {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [email, setEmail] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    university: "",
+  });
+  const [customUniversity, setCustomUniversity] = useState("");
+  const [showWaitlistModal, setShowWaitlistModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  const { mutate: joinWaitlist, isPending: isSubmitting } = useWaitlist();
 
   const nextSlide = useCallback(() => {
     setCurrentSlide((prev) => (prev + 1) % carouselSlides.length);
@@ -212,15 +232,25 @@ export default function Page() {
     return () => clearInterval(interval);
   }, [nextSlide]);
 
-  const handleWaitlistSubmit = async (e: React.FormEvent) => {
+  const handleWaitlistSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsSubmitting(false);
-    setSubmitted(true);
-    setEmail("");
-    setTimeout(() => setSubmitted(false), 3000);
+    
+    const finalUniversity = formData.university === "Other" ? customUniversity : formData.university;
+    
+    joinWaitlist({ ...formData, university: finalUniversity }, {
+      onSuccess: () => {
+        confetti({
+          particleCount: 150,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: [currentColors.start, currentColors.mid, "#ffffff"],
+        });
+        setShowWaitlistModal(false);
+        setShowSuccessModal(true);
+        setFormData({ name: "", email: "", university: "" });
+        setCustomUniversity("");
+      },
+    });
   };
 
   const currentColors = brandColorMap[carouselSlides[currentSlide].brandColor] || brandColorMap.teal;
@@ -355,47 +385,19 @@ export default function Page() {
                         )}
                       </div>
 
-                      {/* Waitlist Form */}
-                      <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 lg:p-6 max-w-md">
-                        <h3 className="text-lg lg:text-xl font-semibold mb-2 lg:mb-3">
-                          Join the Waitlist
-                        </h3>
-                        <p className="text-xs lg:text-sm text-white/80 mb-3 lg:mb-4">
-                          Be the first to access new features and exclusive content.
-                        </p>
-                        <form
-                          onSubmit={handleWaitlistSubmit}
-                          className="flex flex-col sm:flex-row gap-3"
+                      {/* Waitlist Trigger Button */}
+                      <div className="max-w-md">
+                        <button
+                          onClick={() => setShowWaitlistModal(true)}
+                          className="w-full sm:w-auto px-8 py-4 bg-white font-bold rounded-xl hover:bg-white/90 transition-all shadow-xl flex items-center justify-center gap-3 text-lg group"
+                          style={{ color: currentColors.mid }}
                         >
-                          <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder="Enter your email"
-                            required
-                            className="flex-1 px-3 lg:px-4 py-2 lg:py-3 rounded-lg bg-white/20 border border-white/30 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50 transition-all text-sm lg:text-base"
-                          />
-                          <button
-                            type="submit"
-                            disabled={isSubmitting}
-                            className="px-4 py-2 bg-white font-semibold rounded-lg hover:bg-white/90 transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-sm lg:text-base"
-                            style={{ color: currentColors.mid }}
-                          >
-                            {isSubmitting ? (
-                              <div 
-                                className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" 
-                                style={{ borderColor: currentColors.mid, borderTopColor: 'transparent' }}
-                              />
-                            ) : submitted ? (
-                              "Subscribed! ✓"
-                            ) : (
-                              <>
-                                Join Now
-                                <ArrowRight className="w-4 h-4" />
-                              </>
-                            )}
-                          </button>
-                        </form>
+                          Join the Waitlist
+                          <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                        </button>
+                        <p className="text-xs text-white/70 mt-4 text-center sm:text-left">
+                          Be the first to know when we launch and get exclusive early access.
+                        </p>
                       </div>
                     </motion.div>
                   </div>
@@ -803,6 +805,133 @@ export default function Page() {
           </div>
         </footer>
       </main>
+
+      {/* Waitlist Modal */}
+      <Dialog open={showWaitlistModal} onOpenChange={setShowWaitlistModal}>
+        <DialogContent className="sm:max-w-md border-none bg-background/95 backdrop-blur-md">
+          <DialogHeader className="flex flex-col items-center justify-center pt-6">
+            <div className="w-16 h-16 bg-teal-500/10 rounded-full flex items-center justify-center mb-4">
+              <Brain className="w-8 h-8 text-teal-600 dark:text-teal-500" />
+            </div>
+            <DialogTitle className="text-2xl font-bold text-center">
+              Join the Waitlist
+            </DialogTitle>
+            <DialogDescription className="text-center text-muted-foreground">
+              Master your learning journey. Be the first to access our premium quiz platform.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleWaitlistSubmit} className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Full Name</label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Your Name"
+                required
+                className="w-full px-4 py-2.5 rounded-lg bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-teal-500/50 transition-all text-sm"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Email Address</label>
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                placeholder="youremail@example.com"
+                required
+                className="w-full px-4 py-2.5 rounded-lg bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-teal-500/50 transition-all text-sm"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">University</label>
+              <div className="relative">
+                <select
+                  value={formData.university}
+                  onChange={(e) => setFormData({ ...formData, university: e.target.value })}
+                  required
+                  className="w-full px-4 py-2.5 rounded-lg bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-teal-500/50 transition-all text-sm appearance-none cursor-pointer"
+                >
+                  <option value="" disabled>Select your institution</option>
+                  <option value="University of Ghana">University of Ghana</option>
+                  <option value="Ashesi University">Ashesi University</option>
+                  <option value="University of Cape Coast">University of Cape Coast</option>
+                  <option value="KNUST">KNUST</option>
+                  <option value="Other">Other</option>
+                </select>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
+                  <ArrowRight className="w-4 h-4 rotate-90" />
+                </div>
+              </div>
+            </div>
+
+            {formData.university === "Other" && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                className="space-y-2"
+              >
+                <label className="text-sm font-medium">Specify University</label>
+                <input
+                  type="text"
+                  value={customUniversity}
+                  onChange={(e) => setCustomUniversity(e.target.value)}
+                  placeholder="Enter your school name"
+                  required
+                  className="w-full px-4 py-2.5 rounded-lg bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-teal-500/50 transition-all text-sm"
+                />
+              </motion.div>
+            )}
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full py-3 bg-teal-500 text-white font-bold rounded-xl hover:bg-teal-600 transition-all shadow-lg shadow-teal-500/25 disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
+            >
+              {isSubmitting ? (
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <>
+                  Join Now
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Success Modal */}
+      <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
+        <DialogContent className="sm:max-w-md border-none bg-background/95 backdrop-blur-md">
+          <DialogHeader className="flex flex-col items-center justify-center pt-6">
+            <div className="w-20 h-20 bg-teal-500/10 rounded-full flex items-center justify-center mb-4">
+              <PartyPopper className="w-10 h-10 text-teal-600 dark:text-teal-500" />
+            </div>
+            <DialogTitle className="text-2xl font-bold text-center">
+              You&apos;re on the List!
+            </DialogTitle>
+            <DialogDescription className="text-center text-lg mt-2">
+              Congratulations! You&apos;ve successfully joined the BetaForge Labs waitlist.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 py-6">
+            <div className="bg-muted p-4 rounded-xl border border-border flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-teal-600 dark:text-teal-500 mt-1 flex-shrink-0" />
+              <p className="text-sm">
+                We&apos;ve sent a confirmation email to your inbox. Keep an eye out for exclusive updates and early access invitations.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowSuccessModal(false)}
+              className="w-full py-3 bg-teal-500 text-white font-bold rounded-xl hover:bg-teal-600 transition-all shadow-lg shadow-teal-500/25"
+            >
+              Take me back
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }
