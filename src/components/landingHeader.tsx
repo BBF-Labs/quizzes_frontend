@@ -3,16 +3,13 @@ import { useState, useEffect } from "react";
 import { logo } from "@/assets";
 import { ThemeToggle } from "./theme-toggle";
 import { UserProfile } from "./userprofile";
-import { RootState } from "@/lib"; // Import RootState for type safety
-import { useSelector } from "react-redux"; // Corrected import for useSelector
+import { useAuth } from "@/context";
 import Image from "next/image";
 import Link from "next/link";
 
 export function LandingHeader() {
-  // Use useSelector to get the user's authentication state
-  const { user, isAuthenticated } = useSelector(
-    (state: RootState) => state.auth
-  );
+  // Use useAuth to get the user's authentication state
+  const { user, isAuthenticated } = useAuth();
 
   const [userDetails, setUserDetails] = useState({
     name: "",

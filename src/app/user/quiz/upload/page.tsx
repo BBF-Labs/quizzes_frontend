@@ -35,8 +35,7 @@ import {
 import Link from "next/link";
 import { getAllCourses } from "@/controllers";
 import Config from "@/config";
-import { useSelector } from "react-redux";
-import { RootState } from "@/lib";
+
 
 interface Course {
   _id: string;
@@ -46,8 +45,10 @@ interface Course {
 
 const baseUrl = Config.API_URL;
 
+import { useAuth } from "@/context";
+
 export default function UploadPage() {
-  const { credentials } = useSelector((state: RootState) => state.auth);
+  const { credentials } = useAuth();
   const [uploadType, setUploadType] = useState<"link" | "file">("link");
   const [courseId, setCourseId] = useState("");
   const [title, setTitle] = useState("");
@@ -67,7 +68,11 @@ export default function UploadPage() {
       setIsLoadingCourses(true);
       try {
         const coursesResponse = await getAllCourses();
-        setCourses(coursesResponse);
+        setCourses(
+          Array.isArray(coursesResponse)
+            ? coursesResponse
+            : coursesResponse.courses || [],
+        );
       } catch (error) {
         console.error("Error fetching courses:", error);
         showToast("Failed to load courses", "error");
@@ -90,7 +95,7 @@ export default function UploadPage() {
         .trim()
         .replace(" ", "")
         .toLowerCase()
-        .includes(searchTerm.trim().replace(" ", "").toLowerCase())
+        .includes(searchTerm.trim().replace(" ", "").toLowerCase()),
   );
 
   // Auto-select course when there's only one search result
@@ -123,7 +128,7 @@ export default function UploadPage() {
 
   const uploadMaterial = async (
     formData: FormData | object,
-    uploadType: "file" | "link"
+    uploadType: "file" | "link",
   ) => {
     const accessToken = credentials.accessToken;
     if (!accessToken) {
@@ -144,7 +149,7 @@ export default function UploadPage() {
         },
         onUploadProgress: (progressEvent: any) => {
           const percentCompleted = Math.round(
-            (progressEvent.loaded * 100) / progressEvent.total
+            (progressEvent.loaded * 100) / progressEvent.total,
           );
           setUploadProgress(percentCompleted);
         },
@@ -155,7 +160,7 @@ export default function UploadPage() {
       if (response) {
         showToast(
           `${uploadType === "file" ? "File" : "Link"} uploaded successfully`,
-          "success"
+          "success",
         );
 
         setTitle("");
@@ -427,7 +432,7 @@ export default function UploadPage() {
                                       setFile(selectedFile);
                                       showToast(
                                         "File added successfully",
-                                        "success"
+                                        "success",
                                       );
                                     }
                                   }}

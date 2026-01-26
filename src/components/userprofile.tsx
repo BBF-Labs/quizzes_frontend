@@ -12,8 +12,7 @@ import {
   UploadCloud,
   ScrollText,
 } from "lucide-react";
-import { useAppDispatch } from "@/hooks";
-import { logoutUser } from "@/controllers";
+import { useAuthMutations } from "@/hooks";
 import Link from "next/link";
 import {
   Button,
@@ -26,7 +25,7 @@ import {
   DropdownMenuTrigger,
   showToast,
 } from "@/components";
-import { logout } from "@/lib";
+
 interface UserProfileProps {
   name: string;
   email: string;
@@ -77,27 +76,10 @@ const menuItems = [
 ];
 
 export function UserProfile({ name, email, credits }: UserProfileProps) {
-  const dispatch = useAppDispatch();
+  const { logout } = useAuthMutations();
   const [isHovered, setIsHovered] = useState(false);
   const initial = name.charAt(0).toUpperCase();
-
-  useEffect(() => {
-    const tokenExpiry = localStorage.getItem("aExpBff");
-
-    if (!tokenExpiry) {
-      dispatch(logout());
-    }
-
-    if (tokenExpiry) {
-      const expiryDate = new Date(tokenExpiry);
-      const currentDate = new Date();
-
-      if (currentDate > expiryDate) {
-        dispatch(logout());
-        localStorage.removeItem("aExpBff");
-      }
-    }
-  }, [dispatch]);
+  
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -147,8 +129,7 @@ export function UserProfile({ name, email, credits }: UserProfileProps) {
         <DropdownMenuSeparator className="bg-border" />
         <DropdownMenuItem
           onClick={() => {
-            dispatch(logoutUser());
-            showToast("Logged Out Successfully", "success");
+            logout.mutate();
           }}
         >
           <div className="flex items-center cursor-pointer">

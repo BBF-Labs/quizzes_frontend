@@ -24,135 +24,51 @@ import {
   showToast,
 } from "@/components";
 import { useRouter } from "next/navigation";
-import type { RootState } from "@/lib";
-import { useSelector } from "react-redux";
-import { createPayment } from "@/controllers";
-import { useAppDispatch } from "@/hooks";
+import { usePayments } from "@/hooks";
+import { useAuth } from "@/context";
 
-const standardPackages = [
-  {
-    id: "67ad57cc0628c9cc6546ab2d",
-    name: "Pro Weekly",
-    price: 4,
-    period: "/week",
-    description: "Most popular for exam prep",
-    features: [
-      "Full semester access",
-      "All course materials",
-      "Progress tracking",
-      "Basic support",
-    ],
-  },
-  {
-    id: "67ad57ba0628c9cc6546ab27",
-    name: "Semester Access",
-    price: 9,
-    period: "/semester",
-    description: "Perfect for dedicated students",
-    features: [
-      "7-day full access",
-      "All course materials",
-      "Progress tracking",
-      "Priority support",
-      "Custom study plans",
-    ],
-    highlighted: true,
-  },
-  {
-    id: "67ad57ea0628c9cc6546ab33",
-    name: "Daily Pass",
-    price: 1.5,
-    period: "/day",
-    description: "Perfect for quick review",
-    features: [
-      "24-hour access",
-      "All course materials",
-      "Basic features",
-      "Standard support",
-    ],
-  },
-];
+import { usePackages } from "@/hooks";
+import { IPackage } from "@/controllers/packageControllers";
 
-const Packages = [
-  {
-    id: "67ad57cc0628c9cc6546ab2d",
-    name: "Pro Weekly",
-    price: 4,
-    period: "/week",
-    description: "Perfect for dedicated students",
-    features: [
-      "7-day full access",
-      "All course materials",
-      "Progress tracking",
-      "Basic support",
-    ],
-  },
-  {
-    id: "67ad57ba0628c9cc6546ab27",
-    name: "Semester Access",
-    price: 9,
-    period: "/semester",
-    description: "Most popular for exam prep",
-    features: [
-      "Full semester access",
-      "All course materials",
-      "Progress tracking",
-      "Priority support",
-      "Custom study plans",
-    ],
-    highlighted: true,
-  },
-  {
-    id: "67ad57ea0628c9cc6546ab33",
-    name: "Daily Pass",
-    price: 1.5,
-    period: "/day",
-    description: "Perfect for quick review",
-    features: [
-      "24-hour access",
-      "All course materials",
-      "Basic features",
-      "Standard support",
-    ],
-  },
-  { id: "67ad58830628c9cc6546ab39", name: "1 Credit Hour Course", price: 2 },
-  {
-    id: " 67ad58a00628c9cc6546ab3f",
-    name: "2 Credit Hours Course",
-    price: 2.5,
-  },
-  { id: "67ad58af0628c9cc6546ab45", name: "3 Credit Hours Course", price: 3 },
+// Helper to enrich backend package data with UI specific fields if missing
+const enrichPackage = (pkg: IPackage) => {
+    let features: string[] = [];
+    let description = "";
+    let period = "";
+    let highlighted = false;
 
-  {
-    id: "67ad59370628c9cc6546ab57",
-    name: "1 Credit Hour Quiz",
-    price: 1.5,
-    discount: "15% discount applied",
-  },
-  {
-    id: "67ad59250628c9cc6546ab51",
-    name: "2 Credit Hours Quiz",
-    price: 2.25,
-    discount: "15% discount applied",
-  },
-  {
-    id: "67ad58fe0628c9cc6546ab4b",
-    name: "3 Credit Hours Quiz",
-    price: 2.75,
-    discount: "35% discount applied",
-  },
-  {
-    id: "67ad5adf0628c9cc6546ab64",
-    name: "Bulk Quiz Purchase",
-    amount: 5,
-    description: "25% OFF when buying 5+ quizzes",
-    example: "Example: 5 quizzes = 5 cedis → 3.75 cedis after discount",
-  },
-];
+    // Basic logic to infer details if not provided (Backend might need update later for these)
+    if (pkg.name.toLowerCase().includes("week")) {
+        period = "/week";
+        description = "Perfect for short term study";
+        features = ["7-day access", "All course materials", "Basic support"];
+    } else if (pkg.name.toLowerCase().includes("semester")) {
+        period = "/semester";
+         description = "Perfect for dedicated students";
+        features = ["Full semester access", "Priority support", "Tracking"];
+        highlighted = true;
+    } else if (pkg.name.toLowerCase().includes("day")) {
+         period = "/day";
+         description = "Perfect for quick review";
+         features = ["24-hour access", "Basic features"];
+    } else {
+        description = `${pkg.numberOfCourses} Courses, ${pkg.numberOfQuizzes} Quizzes`;
+        features = [`${pkg.duration} Access`];
+    }
+
+    return {
+        ...pkg,
+        period: period || `/${pkg.duration}`,
+        description,
+        features,
+        highlighted
+    };
+};
 
 function PayPageContent() {
-  const dispatch = useAppDispatch();
-  const { credentials, user } = useSelector((state: RootState) => state.auth);
+  const { createPayment } = usePayments();
+  const { data: fetchedPackages = [], isLoading: isPackagesLoading } = usePackages();
+  const { credentials, user } = useAuth();
   const [email, setEmail] = useState(user.email || "");
   const [isLoading, setIsLoading] = useState(false);
   const [customAmount, setCustomAmount] = useState("");
@@ -162,8 +78,17 @@ function PayPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const amount = searchParams.get("amount");
-  const id = searchParams.get("id");
+  const idQuery = searchParams.get("id");
   const isQuizCredits = searchParams.get("type") === "credits";
+  
+  const [selectedPackage, setSelectedPackage] = useState("");
+
+  const displayPackages = fetchedPackages.map(enrichPackage);
+  // Filter for the main view (maybe exclude small ones if desired, or show all)
+  // Logic: Show packages that look like "subscriptions" or "passes" in main view?
+  // Previous keys: Pro Weekly, Semester Access, Daily Pass.
+  // We can filter by duration maybe? Or just show them all.
+  const standardPackages = displayPackages.filter(p => !p.name.includes("Credit Hour") && !p.name.includes("Bulk"));
 
   const handlePackageSelect = (packageId: string) => {
     setSelectedPackage(packageId);
@@ -175,12 +100,17 @@ function PayPageContent() {
       return Number.parseFloat(customAmount) || 0;
     }
 
-    if (amount && id) {
-      const selected = Packages.find((pkg) => pkg.id === id);
-      setSelectedPackage(selected!.id);
-      return;
+    if (amount && idQuery) {
+        // If coming from URL with ID, verify it exists in fetched packages
+        const selected = displayPackages.find((pkg) => pkg.id === idQuery);
+      if (selected) {
+          // If we found it, ensure selectedPackage state matches if not set? 
+          // Actually logic below just returns amount.
+           return selected.price; 
+      }
+      return Number.parseFloat(amount); // Fallback to URL amount if pkg not found (but backend verification might fail if price mismatch)
     }
-    const selected = standardPackages.find((pkg) => pkg.id === selectedPackage);
+    const selected = displayPackages.find((pkg) => pkg.id === selectedPackage);
     return selected ? selected.price : 0;
   };
 
@@ -192,35 +122,41 @@ function PayPageContent() {
     e.preventDefault();
     try {
       setIsLoading(true);
-      if (amount && id) {
+      if (amount && idQuery) {
         const data = {
           amount: amount,
-          packageId: id,
+          packageId: idQuery,
         };
-        const res = await dispatch(
-          createPayment(data, credentials.accessToken)
-        );
+        const res = await createPayment.mutateAsync({
+             paymentData: data,
+             accessToken: credentials.accessToken
+        });
         showToast("Redirecting...", "success");
-        router.push(res);
+        if (res.authorization_url) {
+             router.push(res.authorization_url);
+        }
       } else {
         const data = {
           packageId: selectedPackage ? selectedPackage : "",
           amount: getSelectedPackageAmount(),
         };
 
-        const res = await dispatch(
-          createPayment(data, credentials.accessToken)
-        );
+        const res = await createPayment.mutateAsync({
+             paymentData: data,
+             accessToken: credentials.accessToken
+        });
         showToast("Redirecting...", "success");
-        router.push(res);
+        if (res.authorization_url) {
+             router.push(res.authorization_url);
+        }
       }
     } catch (error: any) {
-      showToast(`${error.message},`, "error");
+      // Toast handled in hook error but we can also catch here
       setIsLoading(false);
     }
   };
 
-  const [selectedPackage, setSelectedPackage] = useState("");
+
 
   const handleCustomAmountSubmit = useCallback(() => {
     if (customAmountInput) {
@@ -243,7 +179,14 @@ function PayPageContent() {
     }
   }, [searchParams, isQuizCredits, handleCustomAmountSubmit]);
 
-  if (amount && id) {
+  if (isPackagesLoading) return <div className="min-h-screen pt-24 text-center">Loading packages...</div>;
+
+  if (amount && idQuery) {
+    const pkg = displayPackages.find((e) => e.id === idQuery);
+    // If package not found in loaded packages, display loader or error/fallback? 
+    // It might be legal (e.g. customized package not in all list? unlikely)
+    // For safety, safely access name.
+    
     return (
       <div className="min-h-screen bg-background mt-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -253,9 +196,7 @@ function PayPageContent() {
             transition={{ duration: 0.5 }}
             className="text-center"
           >
-            <h1 className="text-4xl font-bold mb-4">{`${
-              Packages.find((e) => e.id === id)!.name
-            }`}</h1>
+            <h1 className="text-4xl font-bold mb-4">{pkg ? pkg.name : "Custom Package"}</h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
               Complete your purchase
             </p>
@@ -268,9 +209,7 @@ function PayPageContent() {
           >
             <Card className="p-6">
               <CardHeader>
-                <CardTitle>{`${
-                  Packages.find((e) => e.id === id)!.name
-                }`}</CardTitle>
+                <CardTitle>{pkg ? pkg.name : "Custom Package"}</CardTitle>
                 <CardDescription>Package Details</CardDescription>
               </CardHeader>
               <CardContent>

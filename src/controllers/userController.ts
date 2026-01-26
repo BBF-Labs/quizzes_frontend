@@ -1,6 +1,4 @@
 import Config from "@/config";
-import { update, AppDispatch } from "@/lib";
-import { sessionSet } from "@/lib/reducers";
 import axios, { AxiosError } from "axios";
 
 const createUser = async (user: any) => {
@@ -24,8 +22,7 @@ const createUser = async (user: any) => {
   }
 };
 
-const updateUser =
-  (user: any, accessToken: string) => async (dispatch: AppDispatch) => {
+const updateUser = async (user: any, accessToken: string) => {
     try {
       const response = await axios.put(
         `${Config.API_URL}/user/update`,
@@ -38,36 +35,17 @@ const updateUser =
         }
       );
 
-      if (response) {
-        const payload = {
-          isAuthenticated: true,
-          credentials: {
-            accessToken: accessToken,
-            refreshToken: "",
-          },
-          user: {
-            email: response.data.user.email,
-            name: response.data.user.name,
-            password: "",
-            credits: response.data.user.quizCredits,
-            username: response.data.user.username,
-            role: response.data.user.role,
-          },
-        };
-        dispatch(update(payload));
-      }
+      return response.data;
     } catch (error: any) {
       if (error instanceof AxiosError) {
-        if (error instanceof AxiosError) {
           if (
             error.response?.data.message ==
             "Error validating token: Multiple sessions detected. Please login again."
           ) {
-            dispatch(sessionSet());
-            return;
+             // Let the caller handle session errors or use interceptors
+             throw new Error(error.response?.data.message);
           }
           throw new Error("Update failed");
-        }
       }
       throw new Error("Something went wrong");
     }

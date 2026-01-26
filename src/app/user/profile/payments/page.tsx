@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Clock, CheckCircle, XCircle, Loader, TrashIcon } from "lucide-react";
+import { Clock, CheckCircle, XCircle, Loader, Trash as TrashIcon } from "lucide-react";
 import { formatDistance } from "date-fns";
 
 import {
@@ -19,53 +19,6 @@ import {
   TableRow,
   showToast,
 } from "@/components";
-import { getAllPayments } from "@/controllers";
-import { useSelector } from "react-redux";
-import { RootState } from "@/lib";
-import { useAppDispatch } from "@/hooks";
-
-const Packages = [
-  {
-    id: "67ad57ba0628c9cc6546ab27",
-    name: "Semester Access",
-  },
-  {
-    id: "67ad57cc0628c9cc6546ab2d",
-    name: "Weekly Access",
-  },
-  {
-    id: "67ad57ea0628c9cc6546ab33",
-    name: "Daily Access",
-  },
-  {
-    id: "67ad58830628c9cc6546ab39",
-    name: "1 Credit Hour Course",
-  },
-  {
-    id: " 67ad58a00628c9cc6546ab3f",
-    name: "2 Credit Hours Course",
-  },
-  {
-    id: "67ad58af0628c9cc6546ab45",
-    name: "3 Credit Hours Course",
-  },
-  {
-    id: "67ad59370628c9cc6546ab57",
-    name: "1 Credit Hour Quiz",
-  },
-  {
-    id: "67ad59250628c9cc6546ab51",
-    name: "2 Credit Hours Quiz",
-  },
-  {
-    id: "67ad58fe0628c9cc6546ab4b",
-    name: "1 Credit Hour Quiz",
-  },
-  {
-    id: "67ad5adf0628c9cc6546ab64",
-    name: "Bulk Quiz Purchase",
-  },
-];
 
 interface Payment {
   _id: string;
@@ -78,25 +31,26 @@ interface Payment {
   reference: string;
 }
 
+import { useAuth } from "@/context";
+import { usePackages, usePaymentHistory } from "@/hooks";
+
 export default function PaymentsPage() {
-  const dispatch = useAppDispatch();
-  const { credentials } = useSelector((state: RootState) => state.auth);
-  const [loading, setLoading] = useState(true);
+  const { credentials } = useAuth();
+  const { data: packages = [] } = usePackages();
+  const { data: paymentsDoc = [], isLoading: loading } = usePaymentHistory(credentials.accessToken);
+  
   const [payments, setPayments] = useState<Payment[]>([]);
 
   useEffect(() => {
-    const fetchPayments = async () => {
-      try {
-        const paymentsDoc = (await dispatch(
-          getAllPayments(credentials.accessToken)
-        )) as unknown as Payment[];
-        const paymentsArr = Array.isArray(paymentsDoc)
+    if (loading) return;
+    
+    const paymentsArr = Array.isArray(paymentsDoc)
           ? paymentsDoc
           : [paymentsDoc];
 
-        const filteredPayments = paymentsArr
+    const filteredPayments = paymentsArr
           .map((payment) => {
-            const packageDoc = Packages.find(
+            const packageDoc = packages.find(
               (pkg) => payment.package === pkg.id
             );
             return {
@@ -106,7 +60,7 @@ export default function PaymentsPage() {
               date: payment.date,
               amount: payment.amount,
               status: payment.status,
-              description: packageDoc ? packageDoc.name : "Custom",
+              description: packageDoc ? packageDoc.name : "Custom", // Use dynamic name
               reference: payment.reference,
             };
           })
@@ -121,13 +75,7 @@ export default function PaymentsPage() {
             return dateA.getTime() - dateB.getTime();
           });
         setPayments(filteredPayments);
-        setLoading(false);
-      } catch (error: any) {
-        showToast(error.message, "error");
-      }
-    };
-    fetchPayments();
-  }, [payments, credentials.accessToken, dispatch]);
+  }, [paymentsDoc, packages, loading]);
 
   const getStatusIcon = (status: Payment["status"]) => {
     switch (status) {

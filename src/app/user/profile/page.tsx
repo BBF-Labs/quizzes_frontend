@@ -1,9 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useSelector } from "react-redux";
-import { RootState } from "@/lib";
-import { useAppDispatch } from "@/hooks";
+import { useAuth } from "@/context";
 import { updateUser } from "@/controllers";
 import { useState, useEffect } from "react";
 import { Save, Lock, Coins } from "lucide-react";
@@ -23,9 +21,8 @@ import {
 } from "@/components";
 
 export default function ProfilePage() {
-  const dispatch = useAppDispatch();
   const [isOpen, setIsOpen] = useState(false);
-  const { user, credentials } = useSelector((state: RootState) => state.auth);
+  const { user, credentials, updateUser: updateContextUser } = useAuth();
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
     newPassword: "",
@@ -44,7 +41,7 @@ export default function ProfilePage() {
       name: user.name,
       email: user.email,
       username: user.username,
-      credits: user.credits,
+      credits: user.credits?.toString() || "0",
     });
   }, [user]);
 
@@ -52,7 +49,10 @@ export default function ProfilePage() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await dispatch(updateUser(profileData, credentials.accessToken));
+      // API call
+        const updatedUser = await updateUser(profileData, credentials.accessToken);
+      // Context update
+        updateContextUser({ user: updatedUser.user });
       showToast("Profile updated", "success");
     } catch (error: any) {
       showToast(`${error.message}`, "error");
@@ -77,7 +77,8 @@ export default function ProfilePage() {
       const payload = {
         password: passwordData.newPassword,
       };
-      await dispatch(updateUser(payload, credentials.accessToken));
+      await updateUser(payload, credentials.accessToken);
+       // No context update needed for password usually unless token changes?
       showToast("Password updated successfully", "success");
       setIsOpen(false);
     } catch (error: any) {

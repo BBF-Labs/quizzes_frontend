@@ -20,8 +20,6 @@ import { QuizSettingsModal } from "@/components/QuizSettingsModal";
 import { FloatingAIWidget } from "@/components/ui/floating-ai-widget";
 import axios from "axios";
 import Config from "@/config";
-import { useSelector } from "react-redux";
-import { RootState } from "@/lib";
 
 interface PersonalQuiz {
   _id: string;
@@ -67,9 +65,11 @@ interface PersonalQuiz {
   updatedAt: string;
 }
 
+import { useAuth } from "@/context";
+
 export default function TakePersonalQuizPage() {
   const { quizId } = useParams();
-  const { credentials } = useSelector((state: RootState) => state.auth);
+  const { credentials } = useAuth();
 
   const [quiz, setQuiz] = useState<PersonalQuiz | null>(null);
   const [loading, setLoading] = useState(true);

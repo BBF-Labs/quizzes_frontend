@@ -2,10 +2,10 @@
 import type React from "react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useAppDispatch } from "@/hooks";
+
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { loginUser } from "@/controllers";
+import { useAuthMutations } from "@/hooks";
 import { Loader2, User, Lock, ArrowRight } from "lucide-react";
 
 import {
@@ -17,9 +17,10 @@ import {
   showToast,
 } from "@/components";
 
-export default function LoginPage() {
-  const dispatch = useAppDispatch();
-  const [isLoading, setIsLoading] = useState(false);
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+
+function LoginPageContent() {
   const [rememberMe, setRememberMe] = useState(false);
   const [formData, setFormData] = useState({
     username: "",
@@ -27,6 +28,8 @@ export default function LoginPage() {
   });
 
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/quizzes";
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -35,29 +38,21 @@ export default function LoginPage() {
     });
   };
 
-  const [returnUrl, setReturnUrl] = useState("/quizzes");
-  useEffect(() => {
-    setReturnUrl(localStorage.getItem("returnUrl") || "/quizzes");
-    localStorage.removeItem("returnUrl");
-  }, []);
+  const { login } = useAuthMutations();
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setIsLoading(true);
-
+    
     try {
-      await dispatch(
-        loginUser(
-          formData.username.trim().replace(" ", "").toLowerCase(),
-          formData.password
-        )
-      );
-      setIsLoading(false);
-      showToast("Login Successful!", "success");
-      router.push(returnUrl);
-    } catch (error: any) {
-      setIsLoading(false);
-      showToast(`${error.message}`, "error");
+      await login.mutateAsync({
+        username: formData.username.trim().replace(" ", "").toLowerCase(),
+        password: formData.password,
+        rememberMe: rememberMe
+      });
+      
+      router.push(callbackUrl);
+    } catch (error) {
+      // Error handled in mutation onError
     }
   }
 
@@ -169,9 +164,9 @@ export default function LoginPage() {
           <Button
             type="submit"
             className="w-full h-12 bg-teal-500 hover:bg-teal-600 text-white font-semibold text-base transition-all duration-300 shadow-lg shadow-teal-500/25 hover:shadow-xl hover:shadow-teal-500/30"
-            disabled={isLoading}
+            disabled={login.isPending}
           >
-            {isLoading ? (
+            {login.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Signing in...
@@ -216,5 +211,13 @@ export default function LoginPage() {
         </Link>
       </motion.div>
     </AuthCard>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><Loader2 className="animate-spin h-8 w-8 text-teal-500" /></div>}>
+      <LoginPageContent />
+    </Suspense>
   );
 }

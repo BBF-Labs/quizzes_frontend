@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-import { RootState } from "@/lib";
+
 import Link from "next/link";
 import { UserProfile } from "@/components/userprofile";
 import { ThemeToggle } from "@/components/theme-toggle";
 import Image from "next/image";
 import { logo } from "@/assets";
+
+import { useAuth } from "@/context";
 
 export function Header() {
   const [userDetails, setUserDetails] = useState({
@@ -16,7 +17,7 @@ export function Header() {
     credits: 0,
   });
 
-  const { user } = useSelector((state: RootState) => state.auth);
+  const { user } = useAuth();
 
   useEffect(() => {
     setUserDetails({

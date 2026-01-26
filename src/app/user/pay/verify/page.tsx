@@ -3,20 +3,11 @@
 import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useSelector } from "react-redux";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { CheckCircle, XCircle, AlertCircle, Loader } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardFooter,
-} from "@/components";
-import { RootState } from "@/lib";
 import { verifyPayment } from "@/controllers";
-import { useAppDispatch } from "@/hooks";
+
 
 type PaymentStatus = "pending" | "success" | "failed";
 
@@ -75,9 +66,10 @@ const LoadingCard = () => (
   </div>
 );
 
+import { useAuth } from "@/context";
+
 function PaymentVerificationContent() {
-  const dispatch = useAppDispatch();
-  const { credentials } = useSelector((state: RootState) => state.auth);
+  const { credentials, login } = useAuth(); // We might need to update user context
   const [status, setStatus] = useState<PaymentStatus>("pending");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -93,10 +85,13 @@ function PaymentVerificationContent() {
       }
 
       try {
-        let result = await dispatch(verifyPayment(credentials.accessToken));
+        let result = await verifyPayment(credentials.accessToken);
 
         if (result.isValid) {
           setError(null);
+           // If we want to refresh user credits immediately in UI:
+           // We might need a force refresh of user profile here if the context doesn't auto-refresh.
+           // For now, let's assume valid payment means we can show success.
           return (result = "success" as PaymentStatus);
         }
         if (!mounted) return "pending";
@@ -137,7 +132,7 @@ function PaymentVerificationContent() {
     return () => {
       mounted = false;
     };
-  }, [searchParams, credentials.accessToken, dispatch]);
+  }, [searchParams, credentials.accessToken]);
 
   if (isLoading) {
     return <LoadingCard />;

@@ -4,3 +4,4 @@ export * from "./IPaymentState";
 export * from "./IQuizState";
 export * from "./IFlashcard";
 export * from "./IPersonalQuiz";
+export * from "./IPagination";

@@ -2,6 +2,11 @@ import { Metadata } from "next";
 import { ProfileWrapper } from "@/components/wrappers";
 import type React from "react";
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1.0,
+};
+
 export const metadata: Metadata = {
   title: "BBF Lab Quizzes",
   description:
@@ -17,7 +22,6 @@ export const metadata: Metadata = {
       url: "https://theniitettey.live",
     },
   ],
-  viewport: "width=device-width, initial-scale=1.0",
   robots: "index, follow",
   openGraph: {
     type: "website",

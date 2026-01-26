@@ -255,7 +255,7 @@ class PersonalQuizService {
     const params = new URLSearchParams();
     if (courseId) params.append("courseId", courseId);
 
-    const response = await fetch(`${API_BASE}/personal-quizzes?${params}`, {
+    const response = await fetch(`${API_BASE}/personal-quizzes/user?${params}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -267,6 +267,41 @@ class PersonalQuizService {
 
     const data = await response.json();
     return data.quizzes;
+  }
+
+  // Get public personal quizzes with pagination
+  async getPublicPersonalQuizzes(params?: {
+    page?: number;
+    limit?: number;
+    courseId?: string;
+    tags?: string[];
+  }): Promise<{
+    quizzes: IPersonalQuiz[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      pages: number;
+    };
+  }> {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append("page", params.page.toString());
+    if (params?.limit) queryParams.append("limit", params.limit.toString());
+    if (params?.courseId) queryParams.append("courseId", params.courseId);
+    if (params?.tags) {
+      params.tags.forEach((tag) => queryParams.append("tags", tag));
+    }
+
+    const response = await fetch(
+      `${API_BASE}/personal-quizzes/public?${queryParams}`
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch public personal quizzes");
+    }
+
+    const data = await response.json();
+    return data;
   }
 
   // Get personal quiz by ID

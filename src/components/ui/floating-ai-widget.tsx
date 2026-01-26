@@ -15,8 +15,7 @@ import {
   ChevronUp,
   ChevronDown,
 } from "lucide-react";
-import { useSelector } from "react-redux";
-import { RootState } from "@/lib";
+import { useAuth } from "@/context";
 import axios from "axios";
 import Config from "@/config";
 
@@ -42,7 +41,7 @@ export function FloatingAIWidget({
   contextType = "general",
   className = "",
 }: FloatingAIWidgetProps) {
-  const { credentials } = useSelector((state: RootState) => state.auth);
+  const { credentials } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [aiQuestion, setAiQuestion] = useState("");
