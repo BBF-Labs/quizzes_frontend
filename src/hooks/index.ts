@@ -8,3 +8,4 @@ export * from "./useQuizzes";
 export * from "./useUser";
 export * from "./useFlashcards";
 export * from "./usePersonalQuizzes";
+export * from "./useWaitlist";
