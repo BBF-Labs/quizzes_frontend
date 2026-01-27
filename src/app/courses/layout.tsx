@@ -22,17 +22,17 @@ export const metadata: Metadata = {
   authors: [
     {
       name: "BBF Labs Team",
-      url: "https://quizzess.theniitettey.live",
+      url: "https://quizzess.bflabs.tech",
     },
     {
       name: "Michael Perry Nii Tettey",
-      url: "https://theniitettey.live",
+      url: "https://okponglozuck.bflabs.tech",
     },
   ],
   robots: "index, follow",
   openGraph: {
     type: "website",
-    url: "https://quizzess.theniitettey.live/courses",
+    url: "https://quizzess.bflabs.tech/courses",
     title: "Available Courses at BBF Lab",
     description:
       "Discover a range of interactive courses at BBF Lab designed to enhance your skills and knowledge in various subjects.",

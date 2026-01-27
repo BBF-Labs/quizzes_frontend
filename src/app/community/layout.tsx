@@ -22,13 +22,13 @@ export const metadata: Metadata = {
   authors: [
     {
       name: "BBF Labs Team",
-      url: "https://quizzess.theniitettey.live",
+      url: "https://quizzess.bflabs.tech",
     },
   ],
   robots: "index, follow",
   openGraph: {
     type: "website",
-    url: "https://quizzess.theniitettey.live/community",
+    url: "https://quizzess.bflabs.tech/community",
     title: "Community Quizzes - BBF Lab",
     description:
       "Explore and learn from quizzes shared by the BBF Lab community.",
