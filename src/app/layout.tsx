@@ -13,7 +13,7 @@ export const viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://quizzess.bflabs.tech"),
+  metadataBase: new URL("https://quizzes.bflabs.tech"),
   title: "BBF Lab Quizzes",
   description:
     "Engage with interactive quizzes at BBF Lab to enhance your learning experience.",
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   authors: [
     {
       name: "BBF Labs Team",
-      url: "https://quizzess.bflabs.tech",
+      url: "https://quizzes.bflabs.tech",
     },
     {
       name: "Michael Perry Nii Tettey",
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   robots: "index, follow",
   openGraph: {
     type: "website",
-    url: "https://quizzess.bflabs.tech",
+    url: "https://quizzes.bflabs.tech",
     title: "BBF Lab Quizzes",
     description:
       "Engage with interactive quizzes at BBF Lab to enhance your learning experience.",

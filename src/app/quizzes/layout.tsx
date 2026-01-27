@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   authors: [
     {
       name: "BBF Labs Team",
-      url: "https://quizzess.bflabs.tech",
+      url: "https://quizzes.bflabs.tech",
     },
     {
       name: "Michael Perry Nii Tettey",
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   robots: "index, follow",
   openGraph: {
     type: "website",
-    url: "https://quizzess.bflabs.tech/quizzes",
+    url: "https://quizzes.bflabs.tech/quizzes",
     title: "Available Quizzes at BBF Lab",
     description:
       "Explore a variety of interactive quizzes at BBF Lab designed to enhance your learning experience and test your knowledge.",
