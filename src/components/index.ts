@@ -91,6 +91,8 @@ import {
 } from "./ui/dropdown-menu";
 import { Slider } from "./ui/slider";
 import Pagination from "./pagination";
+import { UniversityMultiSelect } from "./university-multi-select";
+import { UserMultiSelect } from "./user-multi-select";
 import { Header } from "./header";
 import { LandingHeader } from "./landingHeader";
 import {
@@ -197,4 +199,6 @@ export {
   showToast,
   Badge,
   ScrollArea,
+  UniversityMultiSelect,
+  UserMultiSelect,
 };

@@ -26,12 +26,39 @@ class WaitlistService {
     return response.data;
   }
 
-  async getWaitlist(token: string, page = 1, limit = 50, search = "", university = "", showDeleted = false) {
-    const response = await axios.get(`${Config.API_URL}/waitlist`, {
-      params: { page, limit, search, university, showDeleted },
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    return response.data;
+  async getWaitlist(accessToken: string, page = 1, limit = 50, search = "", university: string | string[] = "", showDeleted = false) {
+    try {
+      const response = await axios.get(`${Config.API_URL}/waitlist`, {
+        params: { page, limit, search, university, showDeleted },
+        headers: { Authorization: `Bearer ${accessToken}` },
+        paramsSerializer: { indexes: null } // Ensures arrays are sent as university=A&university=B
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getUniversities(accessToken: string) {
+    try {
+      const response = await axios.get(`${Config.API_URL}/waitlist/universities`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getAllUsers(accessToken: string) {
+    try {
+      const response = await axios.get(`${Config.API_URL}/waitlist/all`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   }
 
   async deleteUser(accessToken: string, id: string) {
@@ -94,9 +121,9 @@ class WaitlistService {
     return response.data;
   }
 
-  async sendDailyUpdate(accessToken: string, id: string) {
+  async sendDailyUpdate(accessToken: string, id: string, filters?: { type: 'all' | 'university' | 'specific', value?: string | string[] }) {
     const response = await axios.post(`${Config.API_URL}/waitlist/update/send/${id}`, 
-      {},
+      { filters },
       { headers: { Authorization: `Bearer ${accessToken}` } }
     );
     return response.data;

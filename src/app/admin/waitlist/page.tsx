@@ -25,11 +25,21 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
   showToast,
   Pagination,
   Badge,
   ScrollArea,
   Checkbox,
+  RadioGroup,
+  RadioGroupItem,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  UniversityMultiSelect,
+  UserMultiSelect,
 } from "@/components";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import {
@@ -72,7 +82,7 @@ export default function AdminWaitlistPage() {
   const [userPage, setUserPage] = useState(1);
   const [historyPage, setHistoryPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const [universityFilter, setUniversityFilter] = useState("");
+  const [universityFilter, setUniversityFilter] = useState<string[]>([]);
   const [showDeleted, setShowDeleted] = useState(false);
   const [context, setContext] = useState("");
   const [emailType, setEmailType] = useState<'update' | 'promotional' | 'security' | 'general'>('update');
@@ -82,6 +92,9 @@ export default function AdminWaitlistPage() {
   const [selectedUpdate, setSelectedUpdate] = useState<EmailUpdate | null>(null);
   const [activeUrlIndex, setActiveUrlIndex] = useState<number | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set()); // Store emails
+  const [sendDialog, setSendDialog] = useState<{ isOpen: boolean, updateId: string | null }>({ isOpen: false, updateId: null });
+  const [sendConfig, setSendConfig] = useState<{ audience: 'all' | 'university' | 'specific' | 'selected', value: string | string[] }>({ audience: 'all', value: '' });
 
   useEffect(() => {
     const isDark = document.documentElement.classList.contains('dark');
@@ -133,6 +146,20 @@ export default function AdminWaitlistPage() {
     retry: false,
   });
 
+  // Fetch Universities
+  const { data: universities } = useQuery({
+    queryKey: ["universities"],
+    queryFn: () => waitlistService.getUniversities(credentials.accessToken),
+    enabled: isAuthenticated && isAdmin,
+  });
+
+  // Fetch All Users for Select
+  const { data: allUsers } = useQuery({
+    queryKey: ["allUsers"],
+    queryFn: () => waitlistService.getAllUsers(credentials.accessToken),
+    enabled: isAuthenticated && isAdmin,
+  });
+
   // Mutations
   const restoreMutation = useMutation({
     mutationFn: (id: string) => waitlistService.restoreUser(credentials.accessToken, id),
@@ -182,13 +209,33 @@ export default function AdminWaitlistPage() {
   });
 
   const sendMutation = useMutation({
-    mutationFn: (id: string) => waitlistService.sendDailyUpdate(credentials.accessToken, id),
+    mutationFn: ({id, filters}: {id: string, filters?: any}) => waitlistService.sendDailyUpdate(credentials.accessToken, id, filters),
     onSuccess: (data) => {
       showToast(data.message || "Bulk email job queued!", "success");
+      setSendDialog({ isOpen: false, updateId: null });
       queryClient.invalidateQueries({ queryKey: ["waitlist-history"] });
       queryClient.invalidateQueries({ queryKey: ["pendingUpdate"] });
     },
   });
+
+  // Selection Logic
+  const toggleSelectUser = (email: string) => {
+    const newSelected = new Set(selectedUsers);
+    if (newSelected.has(email)) newSelected.delete(email);
+    else newSelected.add(email);
+    setSelectedUsers(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    if (!waitlistData?.data) return;
+    if (selectedUsers.size === waitlistData.data.length) {
+      setSelectedUsers(new Set());
+    } else {
+      const newSelected = new Set<string>();
+      waitlistData.data.forEach((user: any) => newSelected.add(user.email));
+      setSelectedUsers(newSelected);
+    }
+  };
 
   if (!isAuthenticated || !isAdmin) {
     return (
@@ -306,18 +353,15 @@ export default function AdminWaitlistPage() {
                     }}
                   />
                 </div>
-                <div className="relative">
-                  <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    placeholder="University..." 
-                    className="pl-9 h-11 w-48 border-border/60 focus-visible:ring-teal-500"
-                    value={universityFilter}
-                    onChange={(e) => {
-                      setUniversityFilter(e.target.value);
-                      setUserPage(1);
-                    }}
-                  />
-                </div>
+                  <div className="relative">
+                    <UniversityMultiSelect 
+                       options={universities?.data || []}
+                       selected={universityFilter}
+                       onChange={(val) => { setUniversityFilter(val); setUserPage(1); }}
+                       className="w-[250px]"
+                       placeholder="Filter Universities"
+                    />
+                  </div>
               </div>
               
               <div className="flex items-center gap-4">
@@ -347,8 +391,15 @@ export default function AdminWaitlistPage() {
             <Card className="border-border/40 shadow-lg overflow-hidden bg-background/60 backdrop-blur-md rounded-2xl">
               <Table>
                 <TableHeader className="bg-muted/30">
-                  <TableRow>
-                    <TableHead className="w-[250px]">Full Name</TableHead>
+                      <TableRow>
+                        <TableHead className="w-[50px] pl-6">
+                          <Checkbox 
+                             checked={waitlistData?.data?.length > 0 && selectedUsers.size === waitlistData.data.length}
+                             onCheckedChange={toggleSelectAll}
+                             className="border-muted-foreground/50 data-[state=checked]:bg-teal-600 data-[state=checked]:border-teal-600"
+                          />
+                        </TableHead>
+                        <TableHead className="w-[200px]">Full Name</TableHead>
                     <TableHead>Email Address</TableHead>
                     <TableHead>University / Institution</TableHead>
                     <TableHead>Joined Date</TableHead>
@@ -359,7 +410,7 @@ export default function AdminWaitlistPage() {
                   {isUsersLoading ? (
                     Array.from({ length: 5 }).map((_, i) => (
                       <TableRow key={i} className="animate-pulse">
-                        <TableCell colSpan={5}><div className="h-8 bg-muted rounded w-full"></div></TableCell>
+                        <TableCell colSpan={6}><div className="h-8 bg-muted rounded w-full"></div></TableCell>
                       </TableRow>
                     ))
                   ) : (
@@ -374,7 +425,14 @@ export default function AdminWaitlistPage() {
                             transition={{ delay: idx * 0.03 }}
                             className={`${user.isDeleted ? 'bg-red-50/30 dark:bg-red-950/10' : 'hover:bg-muted/30'} group transition-colors`}
                           >
-                            <TableCell className="font-medium pl-6">{user.name}</TableCell>
+                            <TableCell className="pl-6">
+                              <Checkbox 
+                                checked={selectedUsers.has(user.email)}
+                                onCheckedChange={() => toggleSelectUser(user.email)}
+                                className="border-muted-foreground/30 data-[state=checked]:bg-teal-600 data-[state=checked]:border-teal-600"
+                              />
+                            </TableCell>
+                            <TableCell className="font-medium">{user.name}</TableCell>
                             <TableCell className="text-muted-foreground">{user.email}</TableCell>
                             <TableCell>
                               <Badge variant="secondary" className="font-normal bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-400 border-teal-100 dark:border-teal-800 italic rounded-full">
@@ -418,7 +476,7 @@ export default function AdminWaitlistPage() {
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                         >
-                          <TableCell colSpan={5} className="h-40 text-center">
+                          <TableCell colSpan={6} className="h-40 text-center">
                              <div className="flex flex-col items-center justify-center space-y-2 opacity-50">
                                 <Users className="h-8 w-8" />
                                 <p>No matching users found.</p>
@@ -533,11 +591,18 @@ export default function AdminWaitlistPage() {
                                  <Button 
                                   variant="ghost" 
                                   size="sm" 
-                                   className="h-8 px-2 text-xs font-medium text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950/30 transition-colors"
-                                  onClick={() => sendMutation.mutate(update._id)}
-                                  disabled={sendMutation.isPending}
+                                   className="h-8 px-2 text-xs font-medium text-teal-600 hover:text-teal-700 hover:bg-teal-50 dark:hover:bg-teal-950/30 transition-colors"
+                                  onClick={() => {
+                                    setSendDialog({ isOpen: true, updateId: update._id });
+                                    if (selectedUsers.size > 0) {
+                                       setSendConfig({ 
+                                         audience: 'specific', 
+                                         value: '' 
+                                       });
+                                    }
+                                  }}
                                  >
-                                   Send Bulk
+                                   Send...
                                  </Button>
                               )}
                             </div>
@@ -853,14 +918,17 @@ export default function AdminWaitlistPage() {
               {selectedUpdate?.status === 'sent' && (
                 <Button 
                   variant="outline"
-                  onClick={() => sendMutation.mutate(selectedUpdate._id)}
-                  disabled={sendMutation.isPending}
+                  onClick={() => {
+                    setSendDialog({ isOpen: true, updateId: selectedUpdate._id });
+                    setIsPreviewOpen(false);
+                  }}
                   className="rounded-xl border-teal-200 hover:bg-teal-50 dark:border-teal-900 dark:hover:bg-teal-950/30"
                 >
-                  <RefreshCcw className={`h-4 w-4 mr-2 ${sendMutation.isPending ? 'animate-spin' : ''}`} />
+                  <RefreshCcw className={`h-4 w-4 mr-2`} />
                   Resend Communication
                 </Button>
               )}
+              
               <Button 
                 onClick={() => setIsPreviewOpen(false)}
                 className="bg-teal-600 hover:bg-teal-700 text-white rounded-xl px-8"
@@ -871,7 +939,101 @@ export default function AdminWaitlistPage() {
         </DialogContent>
       </Dialog>
 
-      </div>
+      <Dialog open={sendDialog.isOpen} onOpenChange={(open) => !open && setSendDialog({ ...sendDialog, isOpen: false })}>
+        <DialogContent className="sm:max-w-[500px] border-teal-100 shadow-xl dark:border-zinc-800 dark:bg-zinc-950">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-teal-600">Send Update</DialogTitle>
+            <DialogDescription>
+              Choose your target audience for this communication.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-6 space-y-6">
+            <RadioGroup 
+                value={sendConfig.audience} 
+                onValueChange={(val: any) => setSendConfig({ audience: val, value: '' })}
+                className="space-y-3"
+            >
+              <div className="flex items-center space-x-3 p-3 rounded-xl border border-border/50 hover:bg-muted/30 transition-colors">
+                <RadioGroupItem value="all" id="r-all" className="text-teal-600 border-teal-200" />
+                <div className="flex-1">
+                  <Label htmlFor="r-all" className="font-bold cursor-pointer">All Users</Label>
+                  <p className="text-xs text-muted-foreground">Send to everyone on the waitlist ({waitlistData?.pagination?.total || 0} users)</p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-3 p-3 rounded-xl border border-border/50 hover:bg-muted/30 transition-colors">
+                <RadioGroupItem value="university" id="r-uni" className="text-teal-600 border-teal-200" />
+                <div className="flex-1 space-y-2">
+                  <Label htmlFor="r-uni" className="font-bold cursor-pointer">Filter by University</Label>
+                  {sendConfig.audience === 'university' && (
+                    <UniversityMultiSelect 
+                       options={universities?.data || []}
+                       selected={Array.isArray(sendConfig.value) ? sendConfig.value : []}
+                       onChange={(val) => setSendConfig({...sendConfig, value: val})}
+                       className="w-full mt-1"
+                       placeholder="Select Target Universities"
+                    />
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-3 p-3 rounded-xl border border-border/50 hover:bg-muted/30 transition-colors">
+                <RadioGroupItem value="specific" id="r-spec" className="text-teal-600 border-teal-200" />
+                <div className="flex-1 space-y-2">
+                   <div className="flex justify-between items-center">
+                     <Label htmlFor="r-spec" className="font-bold cursor-pointer">Specific Users</Label>
+                     {selectedUsers.size > 0 && (
+                        <div className="flex gap-2">
+                            <Badge variant="outline" className="text-[10px] bg-teal-50 text-teal-600 border-teal-200">
+                                {selectedUsers.size} Selected
+                            </Badge>
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-5 text-[10px] px-1 text-teal-600 hover:text-teal-700"
+                                onClick={() => setSendConfig({...sendConfig, audience: 'specific', value: Array.from(selectedUsers)})}
+                             >
+                                Use Selected
+                             </Button>
+                        </div>
+                     )}
+                   </div>
+                  {sendConfig.audience === 'specific' && (
+                    <UserMultiSelect 
+                       options={allUsers?.data || []}
+                       selected={Array.isArray(sendConfig.value) ? sendConfig.value : (sendConfig.value ? (sendConfig.value as string).split(',').map(s => s.trim()) : [])}
+                       onChange={(val) => setSendConfig({...sendConfig, value: val})}
+                       className="w-full mt-1"
+                       placeholder="Search and Select Users"
+                    />
+                  )}
+                </div>
+              </div>
+            </RadioGroup>
+
+            <div className="bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg border border-amber-100 dark:border-amber-900/40 text-xs text-amber-700 dark:text-amber-400">
+               <strong>Note:</strong> This action cannot be undone. Emails will be queued immediately.
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setSendDialog({ ...sendDialog, isOpen: false })}>Cancel</Button>
+            <Button 
+                className="bg-teal-600 hover:bg-teal-700"
+                disabled={sendMutation.isPending || (sendConfig.audience !== 'all' && (!sendConfig.value || (Array.isArray(sendConfig.value) && sendConfig.value.length === 0)))}
+                onClick={() => sendMutation.mutate({ 
+                    id: sendDialog.updateId!, 
+                    filters: sendConfig.audience === 'all' ? undefined : { type: sendConfig.audience, value: sendConfig.value }
+                })}
+            >
+                {sendMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
+                Confirm & Send
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+     </div>
     </div>
   );
 }
