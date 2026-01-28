@@ -18,6 +18,8 @@ import { AuthCard } from "./ui/auth-card";
 
 import { Alert, AlertTitle, AlertDescription } from "./ui/alert";
 import { Checkbox } from "./ui/checkbox";
+import { Badge } from "./ui/badge";
+import { ScrollArea } from "./ui/scroll-area";
 
 import {
   Table,
@@ -193,4 +195,6 @@ export {
   SheetTitle,
   SheetDescription,
   showToast,
+  Badge,
+  ScrollArea,
 };
