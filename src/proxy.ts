@@ -10,6 +10,8 @@ export function proxy(request: NextRequest) {
     pathname.includes('.') || // Static files like favicon.ico, images, etc.
     pathname.startsWith('/_next') || // Next.js internal files
     pathname.startsWith('/api') || // Backend API routes
+    pathname.startsWith('/admin') || // Admin routes
+    pathname.startsWith('/waitlist') || // Waitlist routes
     pathname.startsWith('/assets') // Static assets
   ) {
     return NextResponse.next()
