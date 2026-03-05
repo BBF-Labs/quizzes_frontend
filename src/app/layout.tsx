@@ -1,77 +1,78 @@
-import { Inter } from "next/font/google";
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Metadata } from "next";
-import { Analytics } from "@vercel/analytics/react";
-import { AuthWrapper } from "@/components/wrappers";
-import type React from "react";
 
-const inter = Inter({ subsets: ["latin"] });
+import { Providers } from "@/components/providers";
 
-export const viewport = {
-  width: "device-width",
-  initialScale: 1.0,
-};
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://quizzes.bflabs.tech"),
-  title: "BBF Lab Quizzes",
-  description:
-    "Engage with interactive quizzes at BBF Lab to enhance your learning experience.",
-  keywords: ["BBF Lab", "quizzes", "interactive learning", "education"],
-  authors: [
-    {
-      name: "BBF Labs Team",
-      url: "https://quizzes.bflabs.tech",
-    },
-    {
-      name: "Michael Perry Nii Tettey",
-      url: "https://okponglozuck.bflabs.tech",
-    },
-  ],
-  robots: "index, follow",
+  title: "Qz - Study smarter. Know where you are. Never fall behind.",
+  description: "Qz is the AI-powered study platform built around your university, your program, and your pace — powered by Z, your personal AI study partner. Developed by BetaForge Labs (bflabs.tech).",
+  metadataBase: new URL("https://qz.bflabs.tech"),
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
-    type: "website",
-    url: "https://quizzes.bflabs.tech",
-    title: "BBF Lab Quizzes",
-    description:
-      "Engage with interactive quizzes at BBF Lab to enhance your learning experience.",
+    title: "Qz - Study smarter. Know where you are. Never fall behind.",
+    description: "Qz is the AI-powered study platform built around your university, your program, and your pace — powered by Z, your personal AI study partner.",
+    url: "https://qz.bflabs.tech",
+    siteName: "Qz Platform",
     images: [
       {
-        url: "/api/og",
-        width: 800,
-        height: 600,
-        alt: "BBF Lab Quizzes",
+        url: "/students.png",
+        width: 1200,
+        height: 630,
+        alt: "Qz Study Platform",
       },
     ],
+    locale: "en_US",
+    type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    site: "@BBFLabs",
-    creator: "@MichaelPerry",
-    title: "BBF Lab Quizzes",
-    description:
-      "Engage with interactive quizzes at BBF Lab to enhance your learning experience.",
-    images: [
-      {
-        url: "/api/og",
-        alt: "BBF Lab Quizzes",
-      },
-    ],
+    title: "Qz - Study smarter. Know where you are. Never fall behind.",
+    description: "AI-powered university study platform powered by Z, your personal study partner.",
+    images: ["/students.png"],
+    creator: "@bflabs",
+  },
+  icons: {
+    icon: "/favicon.ico",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
-        <AuthWrapper>
+    <html lang="en" className="dark scroll-smooth">
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        <Providers>
           {children}
-          <Analytics />
-        </AuthWrapper>
+        </Providers>
       </body>
     </html>
   );
