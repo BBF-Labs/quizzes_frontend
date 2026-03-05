@@ -18,6 +18,9 @@ export const metadata: Metadata = {
   title: "Qz - Study smarter. Know where you are. Never fall behind.",
   description: "Qz is the AI-powered study platform built around your university, your program, and your pace — powered by Z, your personal AI study partner. Developed by BetaForge Labs (bflabs.tech).",
   metadataBase: new URL("https://qz.bflabs.tech"),
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
