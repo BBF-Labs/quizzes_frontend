@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -11,15 +12,15 @@ export function Navbar() {
 
   const backgroundColor = useTransform(
     scrollY,
-    [0, 50],
-    ["rgba(11, 16, 26, 0)", "rgba(11, 16, 26, 0.95)"] // Matches dark background
+    [0, 100],
+    ["rgba(var(--navbar-bg), 0)", "rgba(var(--navbar-bg), 0.7)"]
   );
 
-  const backdropBlur = useTransform(scrollY, [0, 50], ["blur(0px)", "blur(12px)"]);
+  const backdropBlur = useTransform(scrollY, [0, 100], ["blur(0px)", "blur(16px)"]);
   const borderBottom = useTransform(
     scrollY,
-    [0, 50],
-    ["1px solid rgba(255,255,255,0)", "1px solid rgba(255,255,255,0.05)"]
+    [0, 100],
+    ["1px solid rgba(var(--navbar-border), 0)", "1px solid rgba(var(--navbar-border), 0.1)"]
   );
 
   const scrollToHero = () => {
@@ -31,7 +32,7 @@ export function Navbar() {
     <>
       <motion.header
         style={{ backgroundColor, backdropFilter: backdropBlur, borderBottom }}
-        className="fixed top-0 left-0 right-0 z-50 transition-colors"
+        className="fixed top-0 left-0 right-0 z-50"
       >
         <div className="container mx-auto px-4 max-w-6xl h-16 flex items-center justify-between">
           <div className="flex items-end space-x-2">
@@ -46,19 +47,25 @@ export function Navbar() {
               <span className="text-xs font-mono font-medium tracking-[0.15em] text-muted-foreground hover:text-foreground cursor-pointer transition-colors uppercase">Curriculum</span>
               <span className="text-xs font-mono font-medium tracking-[0.15em] text-muted-foreground hover:text-foreground cursor-pointer transition-colors uppercase">Testimonies</span>
             </nav>
-            <Button onClick={scrollToHero} variant="outline" className="rounded-none border-border/80 text-xs font-mono tracking-[0.15em] uppercase hover:bg-primary/10 hover:text-primary transition-colors bg-transparent">
-              WAITLIST
-            </Button>
+            <div className="flex items-center space-x-4">
+              <ThemeToggle />
+              <Button onClick={scrollToHero} variant="outline" className="rounded-none border-border/80 text-xs font-mono tracking-[0.15em] uppercase hover:bg-primary/10 hover:text-primary transition-colors bg-transparent">
+                WAITLIST
+              </Button>
+            </div>
           </div>
 
-          {/* Mobile Toggle */}
-          <button
-            className="md:hidden p-2 text-foreground"
-            onClick={() => setIsOpen(!isOpen)}
-            aria-label="Toggle menu"
-          >
-            {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+          {/* Mobile Toggle & ThemeToggle */}
+          <div className="flex items-center space-x-2 md:hidden">
+            <ThemeToggle />
+            <button
+              className="p-2 text-foreground"
+              onClick={() => setIsOpen(!isOpen)}
+              aria-label="Toggle menu"
+            >
+              {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
         </div>
       </motion.header>
 

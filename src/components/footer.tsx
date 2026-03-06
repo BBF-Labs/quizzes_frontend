@@ -26,7 +26,7 @@ export function Footer() {
   };
 
   return (
-    <footer className="bg-black/80 pt-20 pb-16 border-t border-border/20">
+    <footer className="bg-background pt-20 pb-16 border-t border-border/50">
       <div className="container mx-auto px-4 max-w-6xl">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
           {/* Column 1: Brand */}
@@ -95,7 +95,7 @@ export function Footer() {
         </div>
       </div>
 
-      <div className="border-t border-border/40 bg-black mt-16">
+      <div className="border-t border-border/40 bg-secondary/30 mt-16">
         <div className="container mx-auto px-4 max-w-6xl h-10 flex items-center overflow-hidden">
           <div className="flex flex-wrap items-center gap-6 text-[10px] font-mono text-muted-foreground overflow-x-auto no-scrollbar w-full">
             <div className="flex items-center gap-2">

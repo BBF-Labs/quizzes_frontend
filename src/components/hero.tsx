@@ -147,7 +147,7 @@ export function Hero() {
                               const val = e.target.value;
                               setFormData(prev => ({ ...prev, email: val }));
                             }}
-                            className="flex-1 bg-transparent border-white/20 rounded-none uppercase font-mono text-xs placeholder:text-muted-foreground/40 h-14 px-4 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary tracking-wider"
+                            className="flex-1 bg-transparent border-border/50 rounded-none uppercase font-mono text-xs placeholder:text-muted-foreground/40 h-14 px-4 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary tracking-wider"
                           />
                           <motion.button 
                             type="button" 
@@ -155,7 +155,7 @@ export function Hero() {
                             disabled={!formData.email.includes("@")}
                             whileHover={formData.email.includes("@") ? { scale: 1.05 } : {}}
                             whileTap={formData.email.includes("@") ? { scale: 0.95 } : {}}
-                            className="w-14 h-14 rounded-none bg-primary text-white hover:bg-white hover:text-primary flex items-center justify-center transition-all duration-300 disabled:opacity-30 group cursor-pointer disabled:cursor-not-allowed"
+                            className="w-14 h-14 rounded-none bg-primary text-primary-foreground hover:bg-foreground hover:text-background flex items-center justify-center transition-all duration-300 disabled:opacity-30 group cursor-pointer disabled:cursor-not-allowed"
                           >
                             <ArrowRight className="w-6 h-6 stroke-[3px] transition-transform duration-300 group-hover:translate-x-1" />
                           </motion.button>
@@ -179,7 +179,7 @@ export function Hero() {
                               const val = e.target.value;
                               setFormData(prev => ({ ...prev, name: val }));
                             }}
-                            className="flex-1 bg-transparent border-white/20 rounded-none uppercase font-mono text-xs placeholder:text-muted-foreground/40 h-14 px-4 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary tracking-wider"
+                            className="flex-1 bg-transparent border-border/50 rounded-none uppercase font-mono text-xs placeholder:text-muted-foreground/40 h-14 px-4 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary tracking-wider"
                           />
                           <motion.button 
                             type="button"
@@ -187,7 +187,7 @@ export function Hero() {
                             disabled={formData.name.length < 2}
                             whileHover={formData.name.length >= 2 ? { scale: 1.05 } : {}}
                             whileTap={formData.name.length >= 2 ? { scale: 0.95 } : {}}
-                            className="w-14 h-14 rounded-none bg-primary text-white hover:bg-white hover:text-primary flex items-center justify-center transition-all duration-300 disabled:opacity-30 group cursor-pointer disabled:cursor-not-allowed"
+                            className="w-14 h-14 rounded-none bg-primary text-primary-foreground hover:bg-foreground hover:text-background flex items-center justify-center transition-all duration-300 disabled:opacity-30 group cursor-pointer disabled:cursor-not-allowed"
                           >
                             <ArrowRight className="w-6 h-6 stroke-[3px] transition-transform duration-300 group-hover:translate-x-1" />
                           </motion.button>
@@ -214,7 +214,7 @@ export function Hero() {
                                 const val = e.target.value;
                                 setFormData(prev => ({ ...prev, university: val, universityId: "" }));
                               }}
-                              className={`w-full bg-transparent border-white/20 rounded-none uppercase font-mono text-xs placeholder:text-muted-foreground/40 h-14 px-4 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary tracking-wider ${isPending ? "animate-pulse border-primary/50" : ""}`}
+                              className={`w-full bg-transparent border-border/50 rounded-none uppercase font-mono text-xs placeholder:text-muted-foreground/40 h-14 px-4 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary tracking-wider ${isPending ? "animate-pulse border-primary/50" : ""}`}
                             />
                             {showUniSelect && !isPending && filteredUnis.length > 0 && (
                               <div className="absolute bottom-full left-0 right-0 mb-1 bg-background border border-border z-50 max-h-48 overflow-y-auto">
@@ -249,7 +249,7 @@ export function Hero() {
                             disabled={formData.university.length < 2 || isPending}
                             whileHover={formData.university.length >= 2 && !isPending ? { scale: 1.05 } : {}}
                             whileTap={formData.university.length >= 2 && !isPending ? { scale: 0.95 } : {}}
-                            className="w-14 h-14 rounded-none bg-primary text-white hover:bg-white hover:text-primary flex items-center justify-center transition-all duration-300 disabled:opacity-30 group cursor-pointer disabled:cursor-not-allowed shadow-[0_0_20px_rgba(0,110,255,0.2)]"
+                            className="w-14 h-14 rounded-none bg-primary text-primary-foreground hover:bg-foreground hover:text-background flex items-center justify-center transition-all duration-300 disabled:opacity-30 group cursor-pointer disabled:cursor-not-allowed shadow-[0_0_20px_rgba(0,110,255,0.2)]"
                           >
                             <ArrowRight className="w-6 h-6 stroke-[3px] transition-transform duration-300 group-hover:translate-x-1" />
                           </motion.button>
@@ -261,7 +261,7 @@ export function Hero() {
                        {[0, 1, 2].map((i) => (
                          <div 
                            key={`step-dot-${i}`} 
-                           className={`h-0.5 transition-all duration-300 ${i <= step ? "bg-primary w-8" : "bg-white/10 w-4"}`}
+                           className={`h-0.5 transition-all duration-300 ${i <= step ? "bg-primary w-8" : "bg-muted w-4"}`}
                          />
                        ))}
                     </div>
