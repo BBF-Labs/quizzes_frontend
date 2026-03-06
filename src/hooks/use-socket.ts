@@ -21,7 +21,7 @@ export function useSocket() {
   useEffect(() => {
     console.log(`[Socket] Attempting connection to ${SOCKET_URL}...`);
     const s = io(SOCKET_URL, {
-      transports: ["websocket", "polling"],
+      transports: ["polling", "websocket"],
       reconnectionAttempts: 5,
     });
 

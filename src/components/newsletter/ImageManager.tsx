@@ -35,7 +35,8 @@ export function ImageManager({ images, onChange, disabled }: ImageManagerProps) 
 
   const { data: galleryData, isLoading: isLoadingGallery } = useNewsletterImages({ 
     page, 
-    limit: 12 
+    limit: 12,
+    enabled: galleryOpen,
   });
 
   const addImage = () => {
