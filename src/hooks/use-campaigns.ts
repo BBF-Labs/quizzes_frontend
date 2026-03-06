@@ -94,8 +94,9 @@ export function useUpdateCampaign(id: string) {
       const res = await api.patch(`${BASE}/${id}`, data);
       return res.data?.data as ICampaign;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["campaign", id] });
+    onSuccess: (updatedCampaign) => {
+      // Update cache directly with the returned data instead of invalidating
+      qc.setQueryData(["campaign", id], updatedCampaign);
       qc.invalidateQueries({ queryKey: ["campaigns"] });
     },
   });

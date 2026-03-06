@@ -172,14 +172,6 @@ export default function CampaignDetailPage() {
 
   const saveChanges = async () => {
     try {
-      // Reset dirty flags BEFORE mutation to prevent race condition with refetch
-      setPromptDirty(false);
-      setLinksDirty(false);
-      setImagesDirty(false);
-      setBodyDirty(false);
-      setMetaDirty(false);
-      setTargetDirty(false);
-
       await updateMutation.mutateAsync({
         title,
         subjectLine,
@@ -189,15 +181,17 @@ export default function CampaignDetailPage() {
         images,
         bodyMarkdown,
       });
+      
+      // Only reset dirty flags AFTER mutation succeeds
+      setPromptDirty(false);
+      setLinksDirty(false);
+      setImagesDirty(false);
+      setBodyDirty(false);
+      setMetaDirty(false);
+      setTargetDirty(false);
+      
       toast.success("All changes synced.");
     } catch (err: any) {
-      // On error, mark everything as dirty again
-      setPromptDirty(true);
-      setLinksDirty(true);
-      setImagesDirty(true);
-      setBodyDirty(true);
-      setMetaDirty(true);
-      setTargetDirty(true);
       toast.error(err.response?.data?.message ?? "Save failed");
     }
   };
