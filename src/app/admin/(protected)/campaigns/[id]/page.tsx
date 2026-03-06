@@ -181,7 +181,7 @@ export default function CampaignDetailPage() {
         images,
         bodyMarkdown,
       });
-      
+
       // Only reset dirty flags AFTER mutation succeeds
       setPromptDirty(false);
       setLinksDirty(false);
@@ -189,9 +189,16 @@ export default function CampaignDetailPage() {
       setBodyDirty(false);
       setMetaDirty(false);
       setTargetDirty(false);
-      
+
       toast.success("All changes synced.");
     } catch (err: any) {
+      // On error, mark everything as dirty again
+      setPromptDirty(true);
+      setLinksDirty(true);
+      setImagesDirty(true);
+      setBodyDirty(true);
+      setMetaDirty(true);
+      setTargetDirty(true);
       toast.error(err.response?.data?.message ?? "Save failed");
     }
   };
