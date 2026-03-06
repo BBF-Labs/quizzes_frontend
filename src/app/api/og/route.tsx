@@ -81,7 +81,6 @@ export async function GET(request: Request) {
                 border: '1px solid rgba(0, 110, 255, 0.4)',
                 backgroundColor: 'rgba(0, 110, 255, 0.1)',
                 padding: '6px 12px',
-                width: 'fit-content',
                 marginBottom: '32px',
               }}
             >
