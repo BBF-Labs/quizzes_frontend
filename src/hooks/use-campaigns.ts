@@ -47,18 +47,20 @@ export function useCampaigns() {
   });
 }
 
-export function useNewsletterImages(options: { page?: number; limit?: number; campaignId?: string } = {}) {
+export function useNewsletterImages(options: { page?: number; limit?: number; campaignId?: string; enabled?: boolean } = {}) {
+  const { enabled = true, ...queryParams } = options;
   return useQuery({
-    queryKey: ["newsletter-images", options],
+    queryKey: ["newsletter-images", queryParams],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (options.page) params.append("page", options.page.toString());
-      if (options.limit) params.append("limit", options.limit.toString());
-      if (options.campaignId) params.append("campaignId", options.campaignId);
+      if (queryParams.page) params.append("page", queryParams.page.toString());
+      if (queryParams.limit) params.append("limit", queryParams.limit.toString());
+      if (queryParams.campaignId) params.append("campaignId", queryParams.campaignId);
       
       const res = await api.get(`${BASE}/images?${params.toString()}`);
       return res.data?.data as { data: INewsletterImage[]; total: number; page: number; limit: number };
     },
+    enabled,
   });
 }
 
