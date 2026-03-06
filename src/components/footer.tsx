@@ -1,7 +1,30 @@
+"use client";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import React, { useState } from "react";
+import { useSubscribeNewsletter } from "@/hooks/use-newsletter";
 
 export function Footer() {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const { mutate, isPending } = useSubscribeNewsletter();
+
+  const handleSubscribe = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !email.includes("@")) return;
+
+    setStatus("loading");
+    mutate(email, {
+      onSuccess: () => {
+        setStatus("success");
+        setEmail("");
+      },
+      onError: () => {
+        setStatus("error");
+      }
+    });
+  };
+
   return (
     <footer className="bg-black/80 pt-20 pb-16 border-t border-border/20">
       <div className="container mx-auto px-4 max-w-6xl">
@@ -38,16 +61,36 @@ export function Footer() {
           {/* Column 4: Subscribe */}
           <div className="flex flex-col space-y-4">
             <h4 className="text-sm font-bold text-foreground tracking-widest uppercase mb-2">Subscribe</h4>
-            <div className="flex w-full mt-2">
-              <input 
-                type="email" 
-                placeholder="ENTER EMAIL" 
-                className="flex-1 bg-secondary/80 border-none text-xs font-mono uppercase px-4 py-3 placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary rounded-none"
-              />
-              <button className="bg-primary text-primary-foreground px-4 py-3 flex items-center justify-center hover:bg-primary/90 transition-colors">
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
+            <form onSubmit={handleSubscribe} className="flex flex-col w-full mt-2">
+              <div className="flex w-full">
+                <input 
+                  type="email" 
+                  placeholder={status === "success" ? "THANK YOU" : "ENTER EMAIL"}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={status === "loading" || status === "success"}
+                  required
+                  className="flex-1 bg-secondary/80 border-none text-xs font-mono uppercase px-4 py-3 placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary rounded-none disabled:opacity-50"
+                />
+                <button 
+                  type="submit"
+                  disabled={status === "loading" || status === "success"}
+                  className="bg-primary text-primary-foreground px-4 py-3 flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  <ArrowRight className={`w-4 h-4 ${status === "loading" ? "animate-pulse" : ""}`} />
+                </button>
+              </div>
+              {status === "success" && (
+                <p className="text-[10px] font-mono text-primary mt-2 uppercase tracking-widest animate-pulse">
+                  Check your inbox to confirm
+                </p>
+              )}
+              {status === "error" && (
+                <p className="text-[10px] font-mono text-red-500 mt-2 uppercase tracking-widest">
+                  Something went wrong. Try again.
+                </p>
+              )}
+            </form>
           </div>
         </div>
       </div>
