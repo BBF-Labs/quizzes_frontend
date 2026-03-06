@@ -12,6 +12,10 @@ export async function GET(request: Request) {
       ? searchParams.get('title')?.slice(0, 100)
       : 'BETAFORGE LABS';
 
+    const { origin } = new URL(request.url);
+    const logoUrl = `${origin}/logo.png`;
+    const studentsUrl = `${origin}/students.png`;
+
     return new ImageResponse(
       (
         <div
@@ -20,10 +24,10 @@ export async function GET(request: Request) {
             height: '100%',
             width: '100%',
             display: 'flex',
-            flexDirection: 'column',
+            flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
-            fontFamily: 'monospace',
+            fontFamily: 'sans-serif',
             position: 'relative',
             overflow: 'hidden',
           }}
@@ -47,102 +51,133 @@ export async function GET(request: Request) {
             style={{
               position: 'absolute',
               top: '50%',
-              left: '50%',
+              left: '25%',
               transform: 'translate(-50%, -50%)',
               width: '600px',
-              height: '300px',
-              background: 'radial-gradient(circle, rgba(0, 110, 255, 0.1) 0%, transparent 70%)',
-              filter: 'blur(50px)',
+              height: '400px',
+              background: 'radial-gradient(circle, rgba(0, 110, 255, 0.15) 0%, transparent 70%)',
               borderRadius: '100%',
             }}
           />
 
-          {/* Border Frame */}
+          {/* Left Column - Content */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              width: '60%',
+              height: '100%',
+              padding: '60px 0 60px 60px',
+              justifyContent: 'center',
+              zIndex: 10,
+            }}
+          >
+            {/* Waitlist Badge */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                border: '1px solid rgba(0, 110, 255, 0.4)',
+                backgroundColor: 'rgba(0, 110, 255, 0.1)',
+                padding: '6px 12px',
+                width: 'fit-content',
+                marginBottom: '32px',
+              }}
+            >
+              <div style={{ width: '6px', height: '6px', backgroundColor: '#006eff' }} />
+              <div style={{ color: '#006eff', fontSize: '12px', fontWeight: 'bold', letterSpacing: '0.15em' }}>
+                WAITLIST NOW OPEN
+              </div>
+            </div>
+
+            {/* Logo and Title Section */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                <img
+                  src={logoUrl}
+                  alt="Logo"
+                  width="48"
+                  height="48"
+                  style={{ objectFit: 'contain' }}
+                />
+                <div
+                  style={{
+                    fontSize: '80px',
+                    fontWeight: '900',
+                    color: '#ffffff',
+                    lineHeight: 0.9,
+                    letterSpacing: '-0.04em',
+                    display: 'flex',
+                    flexDirection: 'column',
+                  }}
+                >
+                  <span style={{ color: '#006eff' }}>{title}</span>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  fontSize: '24px',
+                  color: '#94a3b8',
+                  maxWidth: '500px',
+                  lineHeight: '1.4',
+                  fontWeight: '300',
+                  marginTop: '12px',
+                }}
+              >
+                Study Smarter. Know your rank. Master it all.
+              </div>
+            </div>
+
+            {/* Stats / Features */}
+            <div style={{ display: 'flex', gap: '32px', marginTop: '48px', borderLeft: '2px solid #006eff', paddingLeft: '20px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ color: '#ffffff', fontSize: '18px', fontWeight: 'bold' }}>100%</div>
+                <div style={{ color: '#64748b', fontSize: '10px', letterSpacing: '0.1em' }}>CURRICULUM SYNC</div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ color: '#ffffff', fontSize: '18px', fontWeight: 'bold' }}>REAL-TIME</div>
+                <div style={{ color: '#64748b', fontSize: '10px', letterSpacing: '0.1em' }}>AI INSIGHTS</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column - Image */}
+          <div
+            style={{
+              display: 'flex',
+              width: '40%',
+              height: '100%',
+              position: 'relative',
+            }}
+          >
+            <img
+              src={studentsUrl}
+              alt="Students"
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                transform: 'scaleX(-1)',
+                maskImage: 'linear-gradient(to right, transparent, black 20%)',
+              }}
+            />
+          </div>
+
+          {/* Decorative Corner Element */}
           <div
             style={{
               position: 'absolute',
-              top: '40px',
-              left: '40px',
-              right: '40px',
               bottom: '40px',
-              border: '1px solid rgba(0, 110, 255, 0.2)',
+              right: '40px',
               display: 'flex',
-              flexDirection: 'column',
-              padding: '40px',
-              justifyContent: 'space-between',
+              gap: '4px',
             }}
           >
-            {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ color: '#006eff', fontSize: '14px', fontWeight: 'bold', letterSpacing: '0.2em' }}>
-                SYSTEM://QZ.GENESIS
-              </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <div style={{ width: '8px', height: '8px', backgroundColor: '#006eff', opacity: 0.5 }} />
-                <div style={{ width: '8px', height: '8px', backgroundColor: '#006eff', opacity: 0.3 }} />
-                <div style={{ width: '8px', height: '8px', backgroundColor: '#006eff', opacity: 0.1 }} />
-              </div>
-            </div>
-
-            {/* Main Content */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '24px',
-                }}
-              >
-                <div
-                  style={{
-                    width: '80px',
-                    height: '80px',
-                    border: '3px solid #006eff',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: 'rgba(0, 110, 255, 0.1)',
-                  }}
-                >
-                  <div style={{ color: '#006eff', fontSize: '48px', fontWeight: '900' }}>Z</div>
-                </div>
-                <div
-                  style={{
-                    fontSize: '64px',
-                    fontWeight: 'bold',
-                    color: '#ffffff',
-                    letterSpacing: '-0.02em',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  {title}
-                </div>
-              </div>
-              <div
-                style={{
-                  fontSize: '20px',
-                  color: '#94a3b8',
-                  maxWidth: '700px',
-                  lineHeight: '1.4',
-                  letterSpacing: '0.05em',
-                  textTransform: 'uppercase',
-                }}
-              >
-                A high-frequency curriculum mastery platform for serious university students.
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <div style={{ color: '#64748b', fontSize: '12px' }}>STATUS: STABLE_BUILD</div>
-                <div style={{ color: '#006eff', fontSize: '10px' }}>[ SECURE CONNECTION ESTABLISHED ]</div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{ height: '1px', width: '100px', backgroundColor: 'rgba(0, 110, 255, 0.3)' }} />
-                <div style={{ color: '#ffffff', fontSize: '14px', fontWeight: 'bold' }}>QUZZES_V1.0</div>
-              </div>
-            </div>
+            <div style={{ width: '4px', height: '4px', backgroundColor: '#006eff', opacity: 0.5 }} />
+            <div style={{ width: '4px', height: '4px', backgroundColor: '#006eff', opacity: 0.3 }} />
+            <div style={{ width: '4px', height: '4px', backgroundColor: '#006eff', opacity: 0.1 }} />
           </div>
         </div>
       ),

@@ -59,7 +59,8 @@ export function Navbar() {
               <ThemeToggle />
               <Button 
                 onClick={scrollToHero} 
-                className="rounded-none bg-primary text-primary-foreground text-xs font-mono tracking-[0.15em] uppercase hover:bg-foreground hover:text-background transition-all duration-300 shadow-[0_0_15px_rgba(0,110,255,0.2)]"
+                variant="outline"
+                className="rounded-none border-primary/40 bg-primary/5 text-primary text-xs font-mono tracking-[0.15em] uppercase hover:bg-primary hover:text-primary-foreground transition-all duration-300 shadow-[0_0_15px_rgba(0,110,255,0.1)]"
               >
                 WAITLIST
               </Button>
@@ -99,7 +100,8 @@ export function Navbar() {
               Testimonies
             </Button>
             <Button 
-              className="w-full rounded-none bg-primary text-primary-foreground font-mono tracking-widest uppercase hover:bg-foreground hover:text-background transition-all duration-300" 
+              variant="outline"
+              className="w-full rounded-none border-primary/40 bg-primary/5 text-primary font-mono tracking-widest uppercase hover:bg-primary hover:text-primary-foreground transition-all duration-300" 
               onClick={scrollToHero}
             >
               WAITLIST
