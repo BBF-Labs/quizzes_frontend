@@ -24,7 +24,6 @@ export function useSocket() {
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    console.log(`[Socket] Attempting connection to ${SOCKET_URL} (path: ${SOCKET_PATH})...`);
     const s = io(SOCKET_URL, {
       path: SOCKET_PATH,
       transports: ["websocket", "polling"],
@@ -34,12 +33,10 @@ export function useSocket() {
     setSocket(s);
 
     s.on("connect", () => {
-      console.log(`[Socket] Connected to backend: ${s.id}`);
       setIsConnected(true);
     });
 
     s.on("disconnect", (reason) => {
-      console.log(`[Socket] Disconnected from backend. Reason: ${reason}`);
       setIsConnected(false);
     });
 
@@ -48,7 +45,6 @@ export function useSocket() {
     });
 
     return () => {
-      console.log("[Socket] Cleaning up connection...");
       s.disconnect();
     };
   }, []);
