@@ -29,6 +29,14 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
+## Environment Variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `NEXT_PUBLIC_API_URL` | Yes | The base URL of the backend API (e.g. `https://your-backend.herokuapp.com/api/v1`) |
+| `NEXT_PUBLIC_SOCKET_URL` | No | Explicit Socket.IO server URL. Defaults to the origin extracted from `NEXT_PUBLIC_API_URL`. Set this if the Socket.IO server is on a different host than the REST API. |
+| `NEXT_PUBLIC_SOCKET_PATH` | No | Custom Socket.IO endpoint path. Defaults to `/socket.io`. Set this if the backend mounts Socket.IO at a non-standard path (e.g. `/api/socket.io`). |
+
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
