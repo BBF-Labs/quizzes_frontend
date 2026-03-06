@@ -54,7 +54,7 @@ export function SocialProof() {
           className="grid grid-cols-1 md:grid-cols-3 gap-6"
         >
           <motion.div variants={itemVariants}>
-            <Card className="h-full border border-border/50 bg-card/60 rounded-none hover:border-primary hover:bg-card hover:shadow-[0_0_15px_rgba(212,255,0,0.05)] transition-all duration-300 flex flex-col relative pt-6 group">
+            <Card className="h-full border border-border/50 bg-card/60 rounded-none hover:border-primary hover:bg-card hover:shadow-[0_0_20px_rgba(var(--navbar-border),0.05)] transition-all duration-300 flex flex-col relative pt-6 group">
               <div className="absolute top-0 left-0 w-full h-[2px] bg-primary scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300" />
               <CardContent className="p-8 flex flex-col h-full relative z-10">
                 <div className="flex justify-between items-center mb-6">
@@ -82,7 +82,7 @@ export function SocialProof() {
           </motion.div>
 
           <motion.div variants={itemVariants}>
-            <Card className="h-full border border-border/50 bg-card/60 rounded-none hover:border-primary hover:bg-card hover:shadow-[0_0_15px_rgba(212,255,0,0.05)] transition-all duration-300 flex flex-col relative pt-6 group">
+            <Card className="h-full border border-border/50 bg-card/60 rounded-none hover:border-primary hover:bg-card hover:shadow-[0_0_20px_rgba(var(--navbar-border),0.05)] transition-all duration-300 flex flex-col relative pt-6 group">
               <div className="absolute top-0 left-0 w-full h-[2px] bg-primary scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300" />
               <CardContent className="p-8 flex flex-col h-full relative z-10">
                 <div className="flex justify-between items-center mb-6">
@@ -110,7 +110,7 @@ export function SocialProof() {
           </motion.div>
 
           <motion.div variants={itemVariants}>
-            <Card className="h-full border border-border/50 bg-card/60 rounded-none hover:border-primary hover:bg-card hover:shadow-[0_0_15px_rgba(212,255,0,0.05)] transition-all duration-300 flex flex-col relative pt-6 group">
+            <Card className="h-full border border-border/50 bg-card/60 rounded-none hover:border-primary hover:bg-card hover:shadow-[0_0_20px_rgba(var(--navbar-border),0.05)] transition-all duration-300 flex flex-col relative pt-6 group">
               <div className="absolute top-0 left-0 w-full h-[2px] bg-primary scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300" />
               <CardContent className="p-8 flex flex-col h-full relative z-10">
                 <div className="flex justify-between items-center mb-6">

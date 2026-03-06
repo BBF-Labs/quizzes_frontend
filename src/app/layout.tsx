@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     siteName: "Qz Platform",
     images: [
       {
-        url: "/students.png",
+        url: "/api/og",
         width: 1200,
         height: 630,
         alt: "Qz Study Platform",
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Qz - Study smarter. Know where you are. Never fall behind.",
     description: "AI-powered university study platform powered by Z, your personal study partner.",
-    images: ["/students.png"],
+    images: ["/api/og"],
     creator: "@bflabs",
   },
   icons: {
@@ -66,7 +66,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark scroll-smooth">
+    <html lang="en" className="scroll-smooth" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

@@ -1,17 +1,40 @@
+"use client";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import React, { useState } from "react";
+import { useSubscribeNewsletter } from "@/hooks/use-newsletter";
 
 export function Footer() {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const { mutate, isPending } = useSubscribeNewsletter();
+
+  const handleSubscribe = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !email.includes("@")) return;
+
+    setStatus("loading");
+    mutate(email, {
+      onSuccess: () => {
+        setStatus("success");
+        setEmail("");
+      },
+      onError: () => {
+        setStatus("error");
+      }
+    });
+  };
+
   return (
-    <footer className="bg-black/80 pt-20 pb-16 border-t border-border/20">
+    <footer className="bg-background pt-20 border-t border-border/50">
       <div className="container mx-auto px-4 max-w-6xl">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
           {/* Column 1: Brand */}
           <div className="flex flex-col items-start">
-            <div className="flex items-end space-x-2 mb-6">
-              <span className="text-xl font-bold tracking-widest text-foreground uppercase leading-none">Qz.</span>
+            <Link href="/" className="flex items-end space-x-2 mb-6 group">
+              <span className="text-xl font-bold tracking-widest text-foreground uppercase leading-none group-hover:text-primary transition-colors">Qz.</span>
               <span className="text-[10px] font-mono tracking-widest text-muted-foreground/60 uppercase leading-none mb-[2px]">/ BetaForge Labs</span>
-            </div>
+            </Link>
             <p className="text-[13px] font-mono text-muted-foreground leading-relaxed max-w-[200px]">
               Providing the infrastructure for disciplined students to excel in their university curriculum.
             </p>
@@ -38,21 +61,41 @@ export function Footer() {
           {/* Column 4: Subscribe */}
           <div className="flex flex-col space-y-4">
             <h4 className="text-sm font-bold text-foreground tracking-widest uppercase mb-2">Subscribe</h4>
-            <div className="flex w-full mt-2">
-              <input 
-                type="email" 
-                placeholder="ENTER EMAIL" 
-                className="flex-1 bg-secondary/80 border-none text-xs font-mono uppercase px-4 py-3 placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary rounded-none"
-              />
-              <button className="bg-primary text-primary-foreground px-4 py-3 flex items-center justify-center hover:bg-primary/90 transition-colors">
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
+            <form onSubmit={handleSubscribe} className="flex flex-col w-full mt-2">
+              <div className="flex w-full">
+                <input 
+                  type="email" 
+                  placeholder={status === "success" ? "THANK YOU" : "ENTER EMAIL"}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={status === "loading" || status === "success"}
+                  required
+                  className="flex-1 bg-secondary/80 border-none text-xs font-mono uppercase px-4 py-3 placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary rounded-none disabled:opacity-50"
+                />
+                <button 
+                  type="submit"
+                  disabled={status === "loading" || status === "success"}
+                  className="bg-primary text-primary-foreground px-4 py-3 flex items-center justify-center hover:bg-white hover:text-primary hover:ring-1 hover:ring-inset hover:ring-primary transition-all duration-300 disabled:opacity-50"
+                >
+                  <ArrowRight className={`w-4 h-4 ${status === "loading" ? "animate-pulse" : ""}`} />
+                </button>
+              </div>
+              {status === "success" && (
+                <p className="text-[10px] font-mono text-primary mt-2 uppercase tracking-widest animate-pulse">
+                  Check your inbox to confirm
+                </p>
+              )}
+              {status === "error" && (
+                <p className="text-[10px] font-mono text-red-500 mt-2 uppercase tracking-widest">
+                  Something went wrong. Try again.
+                </p>
+              )}
+            </form>
           </div>
         </div>
       </div>
 
-      <div className="border-t border-border/40 bg-black mt-16">
+      <div className="border-t border-border/40 bg-secondary/30 mt-16">
         <div className="container mx-auto px-4 max-w-6xl h-10 flex items-center overflow-hidden">
           <div className="flex flex-wrap items-center gap-6 text-[10px] font-mono text-muted-foreground overflow-x-auto no-scrollbar w-full">
             <div className="flex items-center gap-2">
@@ -64,7 +107,7 @@ export function Footer() {
             <span className="uppercase tracking-widest whitespace-nowrap"><span className="text-foreground">DB LOAD</span> 1%</span>
             
             <div className="md:ml-auto uppercase tracking-widest text-muted-foreground/40 whitespace-nowrap">
-              © {new Date().getFullYear()} <a href="https://bflabs.tech" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">BetaForge Labs</a>
+              © {new Date().getFullYear()} <Link href="https://bflabs.tech" target="_blank" rel="noopener noreferrer" className="text-foreground hover:text-primary transition-colors decoration-primary/30 underline-offset-4 hover:underline">BFLABS.TECH</Link>
             </div>
           </div>
         </div>
