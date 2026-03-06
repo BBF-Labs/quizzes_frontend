@@ -1,13 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
+import { usePathname, useRouter } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
   const { scrollY } = useScroll();
 
   const backgroundColor = useTransform(
@@ -24,7 +28,11 @@ export function Navbar() {
   );
 
   const scrollToHero = () => {
-    document.getElementById("waitlist-form")?.scrollIntoView({ behavior: "smooth" });
+    if (pathname !== "/") {
+      router.push("/#waitlist-form");
+    } else {
+      document.getElementById("waitlist-form")?.scrollIntoView({ behavior: "smooth" });
+    }
     setIsOpen(false);
   };
 
@@ -35,10 +43,10 @@ export function Navbar() {
         className="fixed top-0 left-0 right-0 z-50"
       >
         <div className="container mx-auto px-4 max-w-6xl h-16 flex items-center justify-between">
-          <div className="flex items-end space-x-2">
-            <span className="text-xl font-bold tracking-widest text-foreground uppercase leading-none">Qz.</span>
+          <Link href="/" className="flex items-end space-x-2 group">
+            <span className="text-xl font-bold tracking-widest text-foreground uppercase leading-none group-hover:text-primary transition-colors">Qz.</span>
             <span className="text-[10px] font-mono tracking-widest text-muted-foreground/60 uppercase leading-none mb-[2px] hidden sm:inline-block">/ BetaForge Labs</span>
-          </div>
+          </Link>
 
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center space-x-8">
@@ -49,7 +57,10 @@ export function Navbar() {
             </nav>
             <div className="flex items-center space-x-4">
               <ThemeToggle />
-              <Button onClick={scrollToHero} variant="outline" className="rounded-none border-border/80 text-xs font-mono tracking-[0.15em] uppercase hover:bg-primary/10 hover:text-primary transition-colors bg-transparent">
+              <Button 
+                onClick={scrollToHero} 
+                className="rounded-none bg-primary text-primary-foreground text-xs font-mono tracking-[0.15em] uppercase hover:bg-foreground hover:text-background transition-all duration-300 shadow-[0_0_15px_rgba(0,110,255,0.2)]"
+              >
                 WAITLIST
               </Button>
             </div>
@@ -87,7 +98,10 @@ export function Navbar() {
             <Button variant="ghost" className="w-full justify-start rounded-none font-mono tracking-widest uppercase">
               Testimonies
             </Button>
-            <Button className="w-full rounded-none font-mono tracking-widest uppercase" onClick={scrollToHero}>
+            <Button 
+              className="w-full rounded-none bg-primary text-primary-foreground font-mono tracking-widest uppercase hover:bg-foreground hover:text-background transition-all duration-300" 
+              onClick={scrollToHero}
+            >
               WAITLIST
             </Button>
           </motion.div>

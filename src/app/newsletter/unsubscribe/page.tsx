@@ -27,7 +27,7 @@ function UnsubscribeContent() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-black/40 border border-white/10 p-8 md:p-12 text-center relative overflow-hidden"
+        className="bg-card/40 border border-border/50 p-8 md:p-12 text-center relative overflow-hidden"
       >
         {/* Decorative corner */}
         <div className="absolute bottom-0 left-0 w-16 h-16 pointer-events-none">
@@ -43,7 +43,7 @@ function UnsubscribeContent() {
               <LogOut className="w-8 h-8 text-red-500" />
             </div>
           ) : (
-            <div className="w-16 h-16 bg-white/5 flex items-center justify-center border border-white/10">
+            <div className="w-16 h-16 bg-muted flex items-center justify-center border border-border">
               <AlertCircle className="w-8 h-8 text-muted-foreground" />
             </div>
           )}
@@ -53,7 +53,7 @@ function UnsubscribeContent() {
           {isPending ? "PROCESS_QUIT..." : isSuccess ? "LINK SEVERED." : "ERROR DETECTED."}
         </h1>
 
-        <div className="h-px bg-white/10 w-full mb-8" />
+        <div className="h-px bg-border/50 w-full mb-8" />
 
         <p className="text-sm font-mono text-muted-foreground uppercase tracking-widest leading-relaxed mb-10">
           {isPending
@@ -65,7 +65,7 @@ function UnsubscribeContent() {
 
         <Link
           href="/"
-          className="inline-flex items-center space-x-3 border border-white/20 px-8 py-4 text-white font-mono text-xs font-bold uppercase tracking-[0.2em] hover:bg-white hover:text-black transition-all duration-300 group"
+          className="inline-flex items-center space-x-3 border border-border px-8 py-4 text-foreground font-mono text-xs font-bold uppercase tracking-[0.2em] hover:bg-white hover:text-primary hover:ring-1 hover:ring-inset hover:ring-primary transition-all duration-300 group"
         >
           <span>CLOSE TERMINAL</span>
           <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />

@@ -155,7 +155,7 @@ export function Hero() {
                             disabled={!formData.email.includes("@")}
                             whileHover={formData.email.includes("@") ? { scale: 1.05 } : {}}
                             whileTap={formData.email.includes("@") ? { scale: 0.95 } : {}}
-                            className="w-14 h-14 rounded-none bg-primary text-primary-foreground hover:bg-foreground hover:text-background flex items-center justify-center transition-all duration-300 disabled:opacity-30 group cursor-pointer disabled:cursor-not-allowed"
+                            className="w-14 h-14 rounded-none bg-primary text-primary-foreground hover:bg-white hover:text-primary hover:ring-1 hover:ring-inset hover:ring-primary flex items-center justify-center transition-all duration-300 disabled:opacity-30 group cursor-pointer disabled:cursor-not-allowed"
                           >
                             <ArrowRight className="w-6 h-6 stroke-[3px] transition-transform duration-300 group-hover:translate-x-1" />
                           </motion.button>
@@ -187,7 +187,7 @@ export function Hero() {
                             disabled={formData.name.length < 2}
                             whileHover={formData.name.length >= 2 ? { scale: 1.05 } : {}}
                             whileTap={formData.name.length >= 2 ? { scale: 0.95 } : {}}
-                            className="w-14 h-14 rounded-none bg-primary text-primary-foreground hover:bg-foreground hover:text-background flex items-center justify-center transition-all duration-300 disabled:opacity-30 group cursor-pointer disabled:cursor-not-allowed"
+                            className="w-14 h-14 rounded-none bg-primary text-primary-foreground hover:bg-white hover:text-primary hover:ring-1 hover:ring-inset hover:ring-primary flex items-center justify-center transition-all duration-300 disabled:opacity-30 group cursor-pointer disabled:cursor-not-allowed"
                           >
                             <ArrowRight className="w-6 h-6 stroke-[3px] transition-transform duration-300 group-hover:translate-x-1" />
                           </motion.button>
@@ -249,7 +249,7 @@ export function Hero() {
                             disabled={formData.university.length < 2 || isPending}
                             whileHover={formData.university.length >= 2 && !isPending ? { scale: 1.05 } : {}}
                             whileTap={formData.university.length >= 2 && !isPending ? { scale: 0.95 } : {}}
-                            className="w-14 h-14 rounded-none bg-primary text-primary-foreground hover:bg-foreground hover:text-background flex items-center justify-center transition-all duration-300 disabled:opacity-30 group cursor-pointer disabled:cursor-not-allowed shadow-[0_0_20px_rgba(0,110,255,0.2)]"
+                            className="w-14 h-14 rounded-none bg-primary text-primary-foreground hover:bg-white hover:text-primary hover:ring-1 hover:ring-inset hover:ring-primary flex items-center justify-center transition-all duration-300 disabled:opacity-30 group cursor-pointer disabled:cursor-not-allowed shadow-[0_0_20px_rgba(0,110,255,0.2)]"
                           >
                             <ArrowRight className="w-6 h-6 stroke-[3px] transition-transform duration-300 group-hover:translate-x-1" />
                           </motion.button>

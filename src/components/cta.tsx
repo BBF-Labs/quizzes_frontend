@@ -1,11 +1,19 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
 export function CTA() {
+  const pathname = usePathname();
+  const router = useRouter();
+
   const scrollToForm = () => {
-    document.getElementById("waitlist-form")?.scrollIntoView({ behavior: "smooth" });
+    if (pathname !== "/") {
+      router.push("/#waitlist-form");
+    } else {
+      document.getElementById("waitlist-form")?.scrollIntoView({ behavior: "smooth" });
+    }
   };
 
   return (

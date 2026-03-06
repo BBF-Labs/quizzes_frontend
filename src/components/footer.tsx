@@ -26,15 +26,15 @@ export function Footer() {
   };
 
   return (
-    <footer className="bg-background pt-20 pb-16 border-t border-border/50">
+    <footer className="bg-background pt-20 border-t border-border/50">
       <div className="container mx-auto px-4 max-w-6xl">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
           {/* Column 1: Brand */}
           <div className="flex flex-col items-start">
-            <div className="flex items-end space-x-2 mb-6">
-              <span className="text-xl font-bold tracking-widest text-foreground uppercase leading-none">Qz.</span>
+            <Link href="/" className="flex items-end space-x-2 mb-6 group">
+              <span className="text-xl font-bold tracking-widest text-foreground uppercase leading-none group-hover:text-primary transition-colors">Qz.</span>
               <span className="text-[10px] font-mono tracking-widest text-muted-foreground/60 uppercase leading-none mb-[2px]">/ BetaForge Labs</span>
-            </div>
+            </Link>
             <p className="text-[13px] font-mono text-muted-foreground leading-relaxed max-w-[200px]">
               Providing the infrastructure for disciplined students to excel in their university curriculum.
             </p>
@@ -75,7 +75,7 @@ export function Footer() {
                 <button 
                   type="submit"
                   disabled={status === "loading" || status === "success"}
-                  className="bg-primary text-primary-foreground px-4 py-3 flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  className="bg-primary text-primary-foreground px-4 py-3 flex items-center justify-center hover:bg-white hover:text-primary hover:ring-1 hover:ring-inset hover:ring-primary transition-all duration-300 disabled:opacity-50"
                 >
                   <ArrowRight className={`w-4 h-4 ${status === "loading" ? "animate-pulse" : ""}`} />
                 </button>
@@ -107,7 +107,7 @@ export function Footer() {
             <span className="uppercase tracking-widest whitespace-nowrap"><span className="text-foreground">DB LOAD</span> 1%</span>
             
             <div className="md:ml-auto uppercase tracking-widest text-muted-foreground/40 whitespace-nowrap">
-              © {new Date().getFullYear()} <a href="https://bflabs.tech" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">BetaForge Labs</a>
+              © {new Date().getFullYear()} <Link href="https://bflabs.tech" target="_blank" rel="noopener noreferrer" className="text-foreground hover:text-primary transition-colors decoration-primary/30 underline-offset-4 hover:underline">BFLABS.TECH</Link>
             </div>
           </div>
         </div>
