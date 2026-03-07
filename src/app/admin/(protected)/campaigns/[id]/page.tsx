@@ -1,6 +1,11 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import {
+  useParams,
+  useRouter,
+  usePathname,
+  useSearchParams,
+} from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
@@ -58,9 +63,18 @@ const STATUS_CLASS: Record<string, string> = {
   failed: "bg-destructive/10 border-destructive/50 text-destructive",
 };
 
+const TAB_VALUES = ["configure", "assets", "ai-writer", "composing"] as const;
+type CampaignTab = (typeof TAB_VALUES)[number];
+
+function isCampaignTab(value: string | null): value is CampaignTab {
+  return TAB_VALUES.includes(value as CampaignTab);
+}
+
 export default function CampaignDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const id = params.id as string;
 
   const { data: campaign, isLoading, refetch } = useCampaign(id);
@@ -86,7 +100,6 @@ export default function CampaignDetailPage() {
   const [bodyDirty, setBodyDirty] = useState(false);
   const [metaDirty, setMetaDirty] = useState(false);
   const [targetDirty, setTargetDirty] = useState(false);
-  const [activeTab, setActiveTab] = useState("configure");
   const { theme } = useTheme();
   const isMobile = useIsMobile();
   const { socket } = useSocket();
@@ -162,6 +175,10 @@ export default function CampaignDetailPage() {
 
   const isDraft = campaign.status === "draft";
   const isDone = campaign.status === "done";
+  const tabParam = searchParams.get("tab");
+  const activeTab: CampaignTab = isCampaignTab(tabParam)
+    ? tabParam
+    : "configure";
 
   const isDirty =
     promptDirty ||
@@ -172,6 +189,11 @@ export default function CampaignDetailPage() {
     targetDirty;
 
   const saveChanges = async () => {
+    if (isDone) {
+      toast.info("Completed campaigns are read-only.");
+      return;
+    }
+
     try {
       await updateMutation.mutateAsync({
         title,
@@ -205,6 +227,22 @@ export default function CampaignDetailPage() {
           "Could not save campaign changes. Please try again.",
       );
     }
+  };
+
+  const handleTabChange = (value: string) => {
+    const nextTab: CampaignTab = isCampaignTab(value) ? value : "configure";
+
+    const nextParams = new URLSearchParams(searchParams.toString());
+    if (nextTab === "configure") {
+      nextParams.delete("tab");
+    } else {
+      nextParams.set("tab", nextTab);
+    }
+
+    const query = nextParams.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, {
+      scroll: false,
+    });
   };
 
   const handleGenerate = async () => {
@@ -309,7 +347,7 @@ export default function CampaignDetailPage() {
               <RefreshCw className="size-4" />
             </Button>
 
-            {isDirty && (
+            {isDirty && !isDone && (
               <Button
                 onClick={saveChanges}
                 disabled={updateMutation.isPending}
@@ -414,7 +452,11 @@ export default function CampaignDetailPage() {
       </AnimatePresence>
 
       {/* Navigation Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs
+        value={activeTab}
+        onValueChange={handleTabChange}
+        className="w-full"
+      >
         <TabsList
           variant="line"
           className="bg-transparent border-b border-border/20 w-auto min-w-full justify-start rounded-none h-auto px-0 mb-6 overflow-x-auto overflow-y-hidden no-scrollbar flex-nowrap shrink-0"
@@ -461,11 +503,12 @@ export default function CampaignDetailPage() {
                   </label>
                   <Input
                     value={title}
+                    disabled={isDone}
                     onChange={(e) => {
                       setTitle(e.target.value);
                       setMetaDirty(true);
                     }}
-                    className="rounded-none h-10 bg-background/50 font-mono text-sm"
+                    className="rounded-none h-10 bg-background/50 font-mono text-sm disabled:opacity-60 disabled:cursor-not-allowed"
                   />
                 </div>
                 <div className="space-y-2">
@@ -474,11 +517,12 @@ export default function CampaignDetailPage() {
                   </label>
                   <Input
                     value={subjectLine}
+                    disabled={isDone}
                     onChange={(e) => {
                       setSubjectLine(e.target.value);
                       setMetaDirty(true);
                     }}
-                    className="rounded-none h-10 bg-background/50 font-mono text-sm"
+                    className="rounded-none h-10 bg-background/50 font-mono text-sm disabled:opacity-60 disabled:cursor-not-allowed"
                   />
                 </div>
                 <div className="pt-4 border-t border-border/20 space-y-3">
