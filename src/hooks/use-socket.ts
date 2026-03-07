@@ -22,48 +22,8 @@ const getSocketUrl = () => {
 const SOCKET_URL = getSocketUrl();
 const SOCKET_PATH = process.env.NEXT_PUBLIC_SOCKET_PATH || "/socket.io";
 
+import { useGlobalSocket } from "@/contexts/socket-context";
+
 export function useSocket() {
-  // Keep a stable socket instance without triggering an extra render in effect.
-  const socket = useMemo(
-    () =>
-      io(SOCKET_URL, {
-        path: SOCKET_PATH,
-        transports: ["websocket", "polling"],
-        reconnectionAttempts: 5,
-        autoConnect: false,
-      }),
-    [],
-  );
-  const [isConnected, setIsConnected] = useState(false);
-
-  useEffect(() => {
-    const handleConnect = () => {
-      console.log(`[Socket] Connected to backend: ${socket.id}`);
-      setIsConnected(true);
-    };
-
-    const handleDisconnect = (reason: Socket.DisconnectReason) => {
-      console.warn(`[Socket] Disconnected from backend: ${reason}`);
-      setIsConnected(false);
-    };
-
-    const handleConnectError = (error: Error) => {
-      console.error("[Socket] Connection error:", error.message);
-    };
-
-    socket.on("connect", handleConnect);
-    socket.on("disconnect", handleDisconnect);
-    socket.on("connect_error", handleConnectError);
-    socket.connect();
-
-    return () => {
-      console.log("[Socket] Cleaning up connection...");
-      socket.off("connect", handleConnect);
-      socket.off("disconnect", handleDisconnect);
-      socket.off("connect_error", handleConnectError);
-      socket.disconnect();
-    };
-  }, [socket]);
-
-  return { socket, isConnected };
+  return useGlobalSocket();
 }

@@ -166,34 +166,42 @@ function LinkItem({
                       />
                     ) : (
                       <div className="relative group/seg inline-block">
-                      <button
-                        type="button"
-                        onClick={() => !disabled && setIsEditingPath(sIdx)}
-                        className={cn(
-                          "px-2 py-1 border transition-all truncate max-w-[200px] flex items-center gap-1.5 pr-6 rounded-none",
-                          seg.startsWith(":") 
-                            ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground font-bold shadow-[0_0_10px_rgba(0,110,255,0.05)]" 
-                            : "border-border/60 bg-secondary/10 text-foreground/80 hover:border-primary/40 hover:bg-secondary/30"
-                        )}
-                      >
-                        {seg.startsWith(":") && <span className="size-1 bg-primary rounded-none animate-pulse" />}
-                        {seg}
-                      </button>
-                      {!disabled && (
                         <button
                           type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const segments = link.pathTemplate.split('/').filter(Boolean);
-                            segments.splice(sIdx, 1);
-                            updateLink(index, "pathTemplate", "/" + segments.join("/"));
-                          }}
-                          className="absolute right-1 top-1/2 -translate-y-1/2 size-4 flex items-center justify-center text-muted-foreground/40 hover:text-destructive transition-colors rounded-none"
+                          onClick={() => !disabled && setIsEditingPath(sIdx)}
+                          className={cn(
+                            "px-2 py-1 border transition-all truncate max-w-50 flex items-center gap-1.5 pr-6 rounded-none",
+                            seg.startsWith(":")
+                              ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground font-bold shadow-[0_0_10px_rgba(0,110,255,0.05)]"
+                              : "border-border/60 bg-secondary/10 text-foreground/80 hover:border-primary/40 hover:bg-secondary/30",
+                          )}
                         >
-                          <X className="size-2.5" />
+                          {seg.startsWith(":") && (
+                            <span className="size-1 bg-primary rounded-none animate-pulse" />
+                          )}
+                          {seg}
                         </button>
-                      )}
-                    </div>
+                        {!disabled && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const segments = link.pathTemplate
+                                .split("/")
+                                .filter(Boolean);
+                              segments.splice(sIdx, 1);
+                              updateLink(
+                                index,
+                                "pathTemplate",
+                                "/" + segments.join("/"),
+                              );
+                            }}
+                            className="absolute right-1 top-1/2 -translate-y-1/2 size-4 flex items-center justify-center text-muted-foreground/40 hover:text-destructive transition-colors rounded-none"
+                          >
+                            <X className="size-2.5" />
+                          </button>
+                        )}
+                      </div>
                     )}
                     <span className="text-muted-foreground/40 font-bold select-none">
                       /

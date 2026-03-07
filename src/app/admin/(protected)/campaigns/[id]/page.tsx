@@ -10,16 +10,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
   Check,
-  Plus,
-  Trash2,
   RefreshCw,
-  Eye,
-  EyeOff,
   ArrowLeft,
-  Link2,
   Settings2,
-  Image,
-  FileText,
+  ImageIcon,
   PenTool,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -32,10 +26,13 @@ import {
   useSendCampaignPreview,
   ILinkContext,
   INewsletterImage,
+  IAudienceFilter,
+  CampaignType,
 } from "@/hooks/use-campaigns";
 import { EmailPreview } from "@/components/newsletter/EmailPreview";
 import { LinkBuilder } from "@/components/newsletter/LinkBuilder";
 import { ImageManager } from "@/components/newsletter/ImageManager";
+import { AudienceSelector } from "@/components/newsletter/AudienceSelector";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
@@ -43,9 +40,8 @@ const MdEditor = dynamic(
   () => import("md-editor-rt").then((mod) => mod.MdEditor),
   { ssr: false },
 );
-import "md-editor-rt/lib/style.css";
 import { useTheme } from "next-themes";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -61,6 +57,19 @@ const STATUS_CLASS: Record<string, string> = {
   dispatching: "bg-yellow-400/10 border-yellow-400/50 text-yellow-400",
   done: "bg-green-400/10 border-green-400/50 text-green-400",
   failed: "bg-destructive/10 border-destructive/50 text-destructive",
+  cancelled: "bg-orange-400/10 border-orange-400/50 text-orange-400",
+  scheduled: "bg-purple-400/10 border-purple-400/50 text-purple-400",
+};
+
+const TYPE_LABELS: Record<string, string> = {
+  newsletter: "Newsletter",
+  announcement: "Announcement",
+  product_update: "Product",
+  waitlist_update: "Waitlist",
+  system_update: "System",
+  exam_reminder: "Exam",
+  quiz_available: "Quiz",
+  welcome: "Welcome",
 };
 
 const TAB_VALUES = ["configure", "assets", "ai-writer", "composing"] as const;
@@ -68,6 +77,18 @@ type CampaignTab = (typeof TAB_VALUES)[number];
 
 function isCampaignTab(value: string | null): value is CampaignTab {
   return TAB_VALUES.includes(value as CampaignTab);
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (typeof error === "object" && error !== null) {
+    const response = (error as { response?: { data?: { message?: string } } })
+      .response;
+    if (response?.data?.message) {
+      return response.data.message;
+    }
+  }
+
+  return fallback;
 }
 
 export default function CampaignDetailPage() {
@@ -83,16 +104,15 @@ export default function CampaignDetailPage() {
   const approveMutation = useApproveCampaign(id);
   const sendPreviewMutation = useSendCampaignPreview(id);
 
-  const [showPreview, setShowPreview] = useState(false);
   const [promptInstruction, setPromptInstruction] = useState("");
   const [linkContexts, setLinkContexts] = useState<ILinkContext[]>([]);
   const [images, setImages] = useState<INewsletterImage[]>([]);
   const [bodyMarkdown, setBodyMarkdown] = useState("");
   const [title, setTitle] = useState("");
   const [subjectLine, setSubjectLine] = useState("");
-  const [targetAudience, setTargetAudience] = useState<
-    ("waitlist" | "newsletter" | "users" | "all")[]
-  >([]);
+  const [campaignType, setCampaignType] = useState<CampaignType>("newsletter");
+  const [audience, setAudience] = useState<"single" | "broadcast">("broadcast");
+  const [audienceFilter, setAudienceFilter] = useState<IAudienceFilter>({});
 
   const [promptDirty, setPromptDirty] = useState(false);
   const [linksDirty, setLinksDirty] = useState(false);
@@ -113,7 +133,7 @@ export default function CampaignDetailPage() {
     if (!socket) return;
 
     const handleUpdate = (data: { campaignId: string; type: string }) => {
-      console.log(`[Socket] Received newsletter:updated event:`, data);
+      console.log(`[Socket] Received email:updated event:`, data);
       console.log(`[Socket] Current page campaign ID: ${id}`);
 
       if (data.campaignId === id) {
@@ -127,9 +147,9 @@ export default function CampaignDetailPage() {
       }
     };
 
-    socket.on("newsletter:updated", handleUpdate);
+    socket.on("email:updated", handleUpdate);
     return () => {
-      socket.off("newsletter:updated", handleUpdate);
+      socket.off("email:updated", handleUpdate);
     };
   }, [socket, id, refetch]);
 
@@ -143,17 +163,21 @@ export default function CampaignDetailPage() {
 
   // Sync local state from fetched data
   useEffect(() => {
-    if (campaign && !promptDirty)
-      setPromptInstruction(campaign.promptInstruction ?? "");
-    if (campaign && !linksDirty) setLinkContexts(campaign.linkContexts ?? []);
-    if (campaign && !imagesDirty) setImages(campaign.images ?? []);
-    if (campaign && !bodyDirty) setBodyMarkdown(campaign.bodyMarkdown ?? "");
-    if (campaign && !metaDirty) {
-      setTitle(campaign.title ?? "");
-      setSubjectLine(campaign.subjectLine ?? "");
-    }
-    if (campaign && !targetDirty)
-      setTargetAudience(campaign.targetAudience ?? []);
+    if (!campaign) return;
+
+    queueMicrotask(() => {
+      if (!promptDirty) setPromptInstruction(campaign.promptInstruction ?? "");
+      if (!linksDirty) setLinkContexts(campaign.linkContexts ?? []);
+      if (!imagesDirty) setImages(campaign.images ?? []);
+      if (!bodyDirty) setBodyMarkdown(campaign.bodyMarkdown ?? "");
+      if (!metaDirty) {
+        setTitle(campaign.title ?? "");
+        setSubjectLine(campaign.subjectLine ?? "");
+        setCampaignType(campaign.campaignType ?? "newsletter");
+        setAudience(campaign.audience ?? "broadcast");
+      }
+      if (!targetDirty) setAudienceFilter(campaign.audienceFilter ?? {});
+    });
   }, [
     campaign,
     promptDirty,
@@ -198,7 +222,9 @@ export default function CampaignDetailPage() {
       await updateMutation.mutateAsync({
         title,
         subjectLine,
-        targetAudience,
+        campaignType,
+        audience,
+        audienceFilter,
         promptInstruction,
         linkContexts,
         images,
@@ -214,7 +240,7 @@ export default function CampaignDetailPage() {
       setTargetDirty(false);
 
       toast.success("Campaign changes saved.");
-    } catch (err: any) {
+    } catch (error: unknown) {
       // On error, mark everything as dirty again
       setPromptDirty(true);
       setLinksDirty(true);
@@ -223,8 +249,10 @@ export default function CampaignDetailPage() {
       setMetaDirty(true);
       setTargetDirty(true);
       toast.error(
-        err.response?.data?.message ??
+        getErrorMessage(
+          error,
           "Could not save campaign changes. Please try again.",
+        ),
       );
     }
   };
@@ -252,11 +280,12 @@ export default function CampaignDetailPage() {
       toast.success(
         "AI draft generation queued. Content will update once processing completes.",
       );
-      setShowPreview(true);
-    } catch (err: any) {
+    } catch (error: unknown) {
       toast.error(
-        err.response?.data?.message ??
+        getErrorMessage(
+          error,
           "Could not queue AI draft generation. Update instructions and try again.",
+        ),
       );
     }
   };
@@ -267,10 +296,12 @@ export default function CampaignDetailPage() {
       toast.success(
         "Campaign approved. Dispatch has been queued and is running in the background.",
       );
-    } catch (err: any) {
+    } catch (error: unknown) {
       toast.error(
-        err.response?.data?.message ??
+        getErrorMessage(
+          error,
           "Could not approve campaign. Ensure the body is ready and try again.",
+        ),
       );
     }
   };
@@ -281,10 +312,12 @@ export default function CampaignDetailPage() {
       toast.success(
         "Test email queued. It should arrive at your admin address shortly.",
       );
-    } catch (err: any) {
+    } catch (error: unknown) {
       toast.error(
-        err.response?.data?.message ??
+        getErrorMessage(
+          error,
           "Could not queue test email. Check SMTP settings and try again.",
+        ),
       );
     }
   };
@@ -310,17 +343,22 @@ export default function CampaignDetailPage() {
         <div className="flex flex-col lg:flex-row items-start justify-between gap-6">
           <div className="space-y-2 w-full lg:w-auto">
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-mono font-bold tracking-[0.2em] uppercase text-foreground truncate max-w-[200px] sm:max-w-md">
+              <h1 className="text-2xl font-mono font-bold tracking-[0.2em] uppercase text-foreground truncate max-w-50 sm:max-w-md">
                 {campaign.title}
               </h1>
-              <span
-                className={cn(
-                  "text-[9px] font-mono tracking-widest uppercase border px-1.5 py-0.5 rounded-none",
-                  STATUS_CLASS[campaign.status || "draft"],
-                )}
-              >
-                {campaign.status}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] font-mono tracking-widest uppercase border border-primary/30 px-1.5 py-0.5 rounded-none text-primary/70">
+                  {TYPE_LABELS[campaign.campaignType] || campaign.campaignType}
+                </span>
+                <span
+                  className={cn(
+                    "text-[9px] font-mono tracking-widest uppercase border px-1.5 py-0.5 rounded-none",
+                    STATUS_CLASS[campaign.status || "draft"],
+                  )}
+                >
+                  {campaign.status}
+                </span>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <p className="text-xs font-mono text-muted-foreground truncate">
@@ -425,25 +463,50 @@ export default function CampaignDetailPage() {
           >
             <div>
               <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-1">
-                Sent
+                Dispatched
               </p>
-              <p className="text-2xl sm:text-3xl font-bold text-green-400">
+              <p className="text-2xl sm:text-3xl font-bold text-foreground">
                 {campaign.stats?.sent ?? 0}
               </p>
             </div>
-            <div>
-              <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-1">
-                Failed
-              </p>
-              <p className="text-2xl sm:text-3xl font-bold text-destructive">
-                {campaign.stats?.failed ?? 0}
-              </p>
-            </div>
+
+            {campaign.stats?.sent > 0 && (
+              <>
+                <div>
+                  <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-1">
+                    Open Rate
+                  </p>
+                  <p className="text-2xl sm:text-3xl font-bold text-green-400">
+                    {(campaign.stats?.openRate * 100).toFixed(1)}%
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-1">
+                    Click Rate
+                  </p>
+                  <p className="text-2xl sm:text-3xl font-bold text-blue-400">
+                    {(campaign.stats?.clickRate * 100).toFixed(1)}%
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-1">
+                    Bounced
+                  </p>
+                  <p className="text-2xl sm:text-3xl font-bold text-destructive/80">
+                    {campaign.stats?.bounced ?? 0}
+                  </p>
+                </div>
+              </>
+            )}
+
             {campaign.status === "dispatching" && (
               <div className="flex items-center gap-2 sm:ml-auto">
                 <div className="size-1.5 rounded-none bg-yellow-400 animate-pulse" />
                 <span className="text-[10px] font-mono text-yellow-400 uppercase tracking-widest">
-                  Dispatching — refreshing every 5s
+                  Dispatching —{" "}
+                  {campaign.dispatchTotal
+                    ? `${Math.round((campaign.stats.sent / campaign.dispatchTotal) * 100)}%`
+                    : "Active"}
                 </span>
               </div>
             )}
@@ -471,7 +534,7 @@ export default function CampaignDetailPage() {
             value="assets"
             className="rounded-none data-[state=active]:bg-primary/5"
           >
-            <Image className="size-3.5 mr-1.5" /> ASSETS
+            <ImageIcon className="size-3.5 mr-1.5" /> ASSETS
           </TabsTrigger>
           <TabsTrigger
             value="ai-writer"
@@ -487,321 +550,286 @@ export default function CampaignDetailPage() {
           </TabsTrigger>
         </TabsList>
 
-        <AnimatePresence mode="wait">
-          {/* ────── CONFIGURE ────── */}
-          <TabsContent value="configure">
+        <div className="min-h-125">
+          <AnimatePresence mode="wait">
             <motion.div
-              key="configure"
-              initial={{ opacity: 0, x: -10 }}
+              key={activeTab}
+              initial={{ opacity: 0, x: -5 }}
               animate={{ opacity: 1, x: 0 }}
-              className="space-y-6"
+              exit={{ opacity: 0, x: 5 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
             >
-              <div className="border border-border/40 bg-card/40 p-6 space-y-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
-                    Campaign Title
-                  </label>
-                  <Input
-                    value={title}
-                    disabled={isDone}
-                    onChange={(e) => {
-                      setTitle(e.target.value);
-                      setMetaDirty(true);
-                    }}
-                    className="rounded-none h-10 bg-background/50 font-mono text-sm disabled:opacity-60 disabled:cursor-not-allowed"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
-                    Subject Line
-                  </label>
-                  <Input
-                    value={subjectLine}
-                    disabled={isDone}
-                    onChange={(e) => {
-                      setSubjectLine(e.target.value);
-                      setMetaDirty(true);
-                    }}
-                    className="rounded-none h-10 bg-background/50 font-mono text-sm disabled:opacity-60 disabled:cursor-not-allowed"
-                  />
-                </div>
-                <div className="pt-4 border-t border-border/20 space-y-3">
-                  <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
-                    Target Audience
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {["waitlist", "newsletter", "users", "all"].map(
-                      (option) => {
-                        const isSelected = targetAudience.includes(
-                          option as any,
-                        );
-                        return (
-                          <button
-                            key={option}
-                            type="button"
-                            disabled={isDone}
-                            onClick={() => {
-                              if (isDone) return;
-                              if (option === "all") {
-                                // "all" is mutually exclusive with other options
-                                if (isSelected) {
-                                  // Deselect "all"
-                                  setTargetAudience([]);
-                                } else {
-                                  // Select only "all", clear others
-                                  setTargetAudience(["all"]);
-                                }
-                              } else {
-                                // Selecting a specific audience removes "all"
-                                const hasAll = targetAudience.includes("all");
-                                if (isSelected) {
-                                  // Deselect this option
-                                  setTargetAudience(
-                                    targetAudience.filter((a) => a !== option),
-                                  );
-                                } else {
-                                  // Add this option, remove "all" if present
-                                  const filtered = hasAll
-                                    ? targetAudience.filter((a) => a !== "all")
-                                    : targetAudience;
-                                  setTargetAudience([
-                                    ...filtered,
-                                    option as any,
-                                  ]);
-                                }
-                              }
-                              setTargetDirty(true);
-                            }}
-                            className={cn(
-                              "px-3 py-1.5 text-[9px] font-mono uppercase tracking-widest border transition-all",
-                              isSelected
-                                ? "bg-primary/20 border-primary/60 text-primary"
-                                : "bg-secondary/40 border-border/50 text-foreground/70 hover:border-primary/30",
-                              isDone &&
-                                "opacity-50 cursor-not-allowed hover:border-border/50",
-                            )}
-                          >
-                            {option}
-                          </button>
-                        );
-                      },
-                    )}
-                  </div>
-                  <p className="text-[9px] text-muted-foreground font-mono italic">
-                    Select "all" alone, or choose specific audiences without
-                    "all"
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          </TabsContent>
-
-          {/* ────── ASSETS ────── */}
-          <TabsContent value="assets">
-            <motion.div
-              key="assets"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="space-y-8"
-            >
-              <div className="grid grid-cols-1 gap-8">
-                <div className="border border-border/40 bg-card/40 p-6">
-                  <LinkBuilder
-                    links={linkContexts}
-                    onChange={(newLinks) => {
-                      setLinkContexts(newLinks);
-                      setLinksDirty(true);
-                    }}
-                    disabled={!isDraft}
-                  />
-                </div>
-                <div className="border border-border/40 bg-card/40 p-6">
-                  <ImageManager
-                    images={images}
-                    onChange={(newImages) => {
-                      setImages(newImages);
-                      setImagesDirty(true);
-                    }}
-                    disabled={!isDraft}
-                  />
-                </div>
-              </div>
-            </motion.div>
-          </TabsContent>
-
-          {/* ────── AI WRITER ────── */}
-          <TabsContent value="ai-writer">
-            <motion.div
-              key="ai-writer"
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="space-y-6"
-            >
-              <div className="border border-border/40 bg-card/40 p-6 space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground">
-                    Generation Instructions (Z)
-                  </span>
-                </div>
-                <textarea
-                  value={promptInstruction}
-                  onChange={(e) => {
-                    setPromptInstruction(e.target.value);
-                    setPromptDirty(true);
-                  }}
-                  disabled={!isDraft}
-                  rows={8}
-                  className="w-full rounded-none font-mono text-sm border border-input bg-background/30 px-3 py-2 text-foreground focus-visible:outline-none focus-visible:border-primary/50 focus-visible:ring-0 resize-none"
-                  placeholder="Focus on the benefits of our new platform features..."
-                />
-                <div className="flex items-center gap-4 pt-4 border-t border-border/10">
-                  <Button
-                    onClick={handleGenerate}
-                    disabled={generateMutation.isPending || !isDraft}
-                    className="rounded-none font-mono text-xs tracking-widest uppercase"
-                  >
-                    {generateMutation.isPending ? (
-                      <RefreshCw className="size-3.5 animate-spin mr-2" />
-                    ) : (
-                      <Sparkles className="size-3.5 mr-2" />
-                    )}
-                    Generate AI Draft
-                  </Button>
-                  <p className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest italic">
-                    Z uses the context provided in Assets to build the body.
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          </TabsContent>
-
-          {/* ────── COMPOSING (SPLIT VIEW) ────── */}
-          <TabsContent
-            value="composing"
-            className="h-[calc(100vh-280px)] min-h-[700px] flex flex-col"
-          >
-            <motion.div
-              key="composing"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex-1 flex flex-col h-full border border-border/30 overflow-hidden bg-card/20"
-            >
-              <ResizablePanelGroup
-                orientation={isMobile ? "vertical" : "horizontal"}
-                className="flex-1 h-full min-h-[600px]"
-              >
-                {/* EDITOR PANEL */}
-                <ResizablePanel defaultSize={50} minSize={30}>
-                  <div className="h-full flex flex-col newsletter-editor-container">
-                    <div className="px-4 py-2 bg-background/40 border-b border-border/20 flex items-center justify-between">
-                      <span className="text-[9px] font-mono tracking-widest uppercase text-muted-foreground">
-                        Source Markdown
-                      </span>
-                      {bodyDirty && (
-                        <span className="text-[8px] font-mono uppercase bg-primary/10 text-primary px-1.5 py-0.5 animate-pulse">
-                          Modified
-                        </span>
-                      )}
+              {activeTab === "configure" && (
+                <div className="space-y-6">
+                  <div className="border border-border/40 bg-card/40 p-6 space-y-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+                        Campaign Title
+                      </label>
+                      <Input
+                        value={title}
+                        disabled={isDone}
+                        onChange={(e) => {
+                          setTitle(e.target.value);
+                          setMetaDirty(true);
+                        }}
+                        className="rounded-none h-10 bg-background/50 font-mono text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                      />
                     </div>
-                    <MdEditor
-                      id="newsletter-body"
-                      value={bodyMarkdown}
-                      onChange={(val) => {
-                        setBodyMarkdown(val);
-                        setBodyDirty(true);
-                      }}
-                      theme={theme === "dark" ? "dark" : "light"}
-                      language="en-US"
-                      modelValue={bodyMarkdown}
-                      preview={false}
-                      placeholder="Start writing or use Z to generate a draft..."
-                      disabled={!isDraft}
-                      className="!border-none !bg-transparent flex-1"
-                      toolbars={[
-                        "bold",
-                        "italic",
-                        "strikeThrough",
-                        "-",
-                        "title",
-                        "sub",
-                        "sup",
-                        "quote",
-                        "unorderedList",
-                        "orderedList",
-                        "-",
-                        "link",
-                        "image",
-                        "table",
-                      ]}
-                    />
-                  </div>
-                </ResizablePanel>
-
-                <ResizableHandle
-                  withHandle
-                  className="bg-border/40 hover:bg-primary/40 transition-colors"
-                />
-
-                {/* PREVIEW PANEL */}
-                <ResizablePanel defaultSize={50} minSize={30}>
-                  <div className="h-full flex flex-col bg-background/50 overflow-hidden border-l border-border/10">
-                    <div className="px-4 py-2 bg-background/40 border-b border-border/20 flex items-center justify-between">
-                      <span className="text-[9px] font-mono tracking-widest uppercase text-muted-foreground">
-                        Email Preview
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <div className="size-1.5 rounded-none bg-green-500 animate-pulse" />
-                        <span className="text-[8px] font-mono text-muted-foreground uppercase">
-                          Real-time Rendering
-                        </span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground">
+                          Campaign Type
+                        </label>
+                        <select
+                          value={campaignType}
+                          disabled={isDone}
+                          onChange={(e) => {
+                            setCampaignType(e.target.value as CampaignType);
+                            setMetaDirty(true);
+                          }}
+                          className="w-full h-10 px-3 py-2 bg-background/50 border border-border/40 text-xs font-mono rounded-none focus:outline-none focus:border-primary/50 transition-all uppercase disabled:opacity-50"
+                        >
+                          <option value="newsletter">Newsletter</option>
+                          <option value="announcement">Announcement</option>
+                          <option value="product_update">Product Update</option>
+                          <option value="waitlist_update">
+                            Waitlist Update
+                          </option>
+                          <option value="system_update">System Update</option>
+                          <option value="exam_reminder">Exam Reminder</option>
+                          <option value="quiz_available">Quiz Available</option>
+                        </select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground">
+                          Broadcast Mode
+                        </label>
+                        <div className="flex gap-2">
+                          {(["broadcast", "single"] as const).map((opt) => (
+                            <Button
+                              key={opt}
+                              type="button"
+                              variant={audience === opt ? "default" : "outline"}
+                              disabled={isDone}
+                              onClick={() => {
+                                setAudience(opt);
+                                setMetaDirty(true);
+                              }}
+                              className="flex-1 rounded-none font-mono text-[10px] uppercase h-10"
+                            >
+                              {opt}
+                            </Button>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                    <div className="flex-1 overflow-y-auto preview-scroll-panel bg-[#f8fafc] dark:bg-zinc-950">
-                      <EmailPreview
-                        category={
-                          (campaign.targetAudience || []).includes("waitlist")
-                            ? "waitlist"
-                            : "newsletter"
-                        }
-                        type="promotional"
-                        title={title}
-                        markdownBody={bodyMarkdown}
-                        links={(linkContexts || []).map((l) => ({
-                          label: l.label,
-                          url: `${l.baseUrl}${l.pathTemplate}`,
-                        }))}
-                        name="Admin (Preview)"
-                        className="!border-none !p-0 sm:!p-8"
+
+                    <div className="pt-4 border-t border-border/20 space-y-3">
+                      <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+                        Audience Filter Configuration
+                      </label>
+                      <AudienceSelector
+                        value={audienceFilter}
+                        onChange={(filter) => {
+                          setAudienceFilter(filter);
+                          setTargetDirty(true);
+                        }}
+                      />
+                      <p className="text-[9px] text-muted-foreground font-mono italic">
+                        Select &quot;all&quot; alone, or choose specific
+                        audiences without &quot;all&quot;
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "assets" && (
+                <div className="space-y-8">
+                  <div className="grid grid-cols-1 gap-8">
+                    <div className="border border-border/40 bg-card/40 p-6">
+                      <LinkBuilder
+                        links={linkContexts}
+                        onChange={(newLinks) => {
+                          setLinkContexts(newLinks);
+                          setLinksDirty(true);
+                        }}
+                        disabled={!isDraft}
+                      />
+                    </div>
+                    <div className="border border-border/40 bg-card/40 p-6">
+                      <ImageManager
+                        images={images}
+                        onChange={(newImages) => {
+                          setImages(newImages);
+                          setImagesDirty(true);
+                        }}
+                        disabled={!isDraft}
                       />
                     </div>
                   </div>
-                </ResizablePanel>
-              </ResizablePanelGroup>
+                </div>
+              )}
+
+              {activeTab === "ai-writer" && (
+                <div className="space-y-6">
+                  <div className="border border-border/40 bg-card/40 p-6 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground">
+                        Generation Instructions (Z)
+                      </span>
+                    </div>
+                    <textarea
+                      value={promptInstruction}
+                      onChange={(e) => {
+                        setPromptInstruction(e.target.value);
+                        setPromptDirty(true);
+                      }}
+                      disabled={!isDraft}
+                      rows={8}
+                      className="w-full rounded-none font-mono text-sm border border-input bg-background/30 px-3 py-2 text-foreground focus-visible:outline-none focus-visible:border-primary/50 focus-visible:ring-0 resize-none"
+                      placeholder={`Write a ${campaignType.replace("_", " ")} for our students...`}
+                    />
+                    <div className="flex items-center gap-4 pt-4 border-t border-border/10">
+                      <Button
+                        onClick={handleGenerate}
+                        disabled={generateMutation.isPending || !isDraft}
+                        className="rounded-none font-mono text-xs tracking-widest uppercase"
+                      >
+                        {generateMutation.isPending ? (
+                          <RefreshCw className="size-3.5 animate-spin mr-2" />
+                        ) : (
+                          <Sparkles className="size-3.5 mr-2" />
+                        )}
+                        Generate AI Draft
+                      </Button>
+                      <p className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest italic">
+                        Z uses the context provided in Assets to build the body.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "composing" && (
+                <div className="h-[calc(100vh-280px)] min-h-175 flex flex-col border border-border/30 overflow-hidden bg-card/20">
+                  <ResizablePanelGroup
+                    orientation={isMobile ? "vertical" : "horizontal"}
+                    className="flex-1 h-full min-h-150"
+                  >
+                    <ResizablePanel defaultSize={50} minSize={30}>
+                      <div className="h-full flex flex-col newsletter-editor-container">
+                        <div className="px-4 py-2 bg-background/40 border-b border-border/20 flex items-center justify-between">
+                          <span className="text-[9px] font-mono tracking-widest uppercase text-muted-foreground">
+                            Source Markdown
+                          </span>
+                          {bodyDirty && (
+                            <span className="text-[8px] font-mono uppercase bg-primary/10 text-primary px-1.5 py-0.5 animate-pulse">
+                              Modified
+                            </span>
+                          )}
+                        </div>
+                        <MdEditor
+                          id="newsletter-body"
+                          value={bodyMarkdown}
+                          onChange={(val) => {
+                            setBodyMarkdown(val);
+                            setBodyDirty(true);
+                          }}
+                          theme={theme === "dark" ? "dark" : "light"}
+                          language="en-US"
+                          modelValue={bodyMarkdown}
+                          preview={false}
+                          placeholder="Start writing or use Z to generate a draft..."
+                          disabled={!isDraft}
+                          className="border-none! bg-transparent! flex-1"
+                          toolbars={[
+                            "bold",
+                            "italic",
+                            "strikeThrough",
+                            "-",
+                            "title",
+                            "sub",
+                            "sup",
+                            "quote",
+                            "unorderedList",
+                            "orderedList",
+                            "-",
+                            "link",
+                            "image",
+                            "table",
+                          ]}
+                        />
+                      </div>
+                    </ResizablePanel>
+
+                    <ResizableHandle
+                      withHandle
+                      className="bg-border/40 hover:bg-primary/40 transition-colors"
+                    />
+
+                    <ResizablePanel defaultSize={50} minSize={30}>
+                      <div className="h-full flex flex-col bg-background/50 overflow-hidden border-l border-border/10">
+                        <div className="px-4 py-2 bg-background/40 border-b border-border/20 flex items-center justify-between">
+                          <span className="text-[9px] font-mono tracking-widest uppercase text-muted-foreground">
+                            Email Preview
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <div className="size-1.5 rounded-none bg-green-500 animate-pulse" />
+                            <span className="text-[8px] font-mono text-muted-foreground uppercase">
+                              Real-time Rendering
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex-1 overflow-y-auto preview-scroll-panel bg-[#f8fafc] dark:bg-zinc-950">
+                          <EmailPreview
+                            category={
+                              campaign.audienceFilter?.contactLanes?.waitlist
+                                ? "waitlist"
+                                : "newsletter"
+                            }
+                            type="promotional"
+                            title={title}
+                            markdownBody={bodyMarkdown}
+                            links={(linkContexts || []).map((l) => ({
+                              label: l.label,
+                              url: `${l.baseUrl}${l.pathTemplate}`,
+                            }))}
+                            name="Admin (Preview)"
+                            className="border-none! p-0! sm:p-8!"
+                          />
+                        </div>
+                      </div>
+                    </ResizablePanel>
+                  </ResizablePanelGroup>
+                </div>
+              )}
             </motion.div>
-            <style jsx global>{`
-              .newsletter-editor-container .md-editor {
-                --md-bk-color: transparent !important;
-                height: 100% !important;
-              }
-              .newsletter-editor-container .md-editor-toolbar-wrapper {
-                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-              }
-              .preview-scroll-panel::-webkit-scrollbar {
-                width: 4px;
-              }
-              .preview-scroll-panel::-webkit-scrollbar-thumb {
-                background: rgba(0, 0, 0, 0.1);
-              }
-              .no-scrollbar::-webkit-scrollbar {
-                display: none;
-              }
-              .no-scrollbar {
-                -ms-overflow-style: none;
-                scrollbar-width: none;
-              }
-            `}</style>
-          </TabsContent>
-        </AnimatePresence>
+          </AnimatePresence>
+        </div>
+        <style jsx global>{`
+          .newsletter-editor-container .md-editor {
+            --md-bk-color: transparent !important;
+            height: 100% !important;
+          }
+          .newsletter-editor-container .md-editor-toolbar-wrapper {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+          }
+          .preview-scroll-panel::-webkit-scrollbar {
+            width: 4px;
+          }
+          .preview-scroll-panel::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.1);
+          }
+          .no-scrollbar::-webkit-scrollbar {
+            display: none;
+          }
+          .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+          }
+        `}</style>
       </Tabs>
     </motion.div>
   );

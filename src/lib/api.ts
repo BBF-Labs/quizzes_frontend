@@ -1,22 +1,10 @@
 import axios from "axios";
-
-/**
- * Storage key constants
- */
-const TOKEN_KEY = "admin_token";
-const REFRESH_TOKEN_KEY = "admin_refresh_token";
-const REMEMBER_ME_KEY = "admin_remember_me";
-
-/**
- * Helper to get the correct storage based on "Remember Me" preference.
- * If rememberMe is true, we use localStorage (persistent).
- * Otherwise, we use sessionStorage (tab-scoped).
- */
-export const getStorage = () => {
-  if (typeof window === "undefined") return null;
-  const rememberMe = localStorage.getItem(REMEMBER_ME_KEY) === "true";
-  return rememberMe ? localStorage : sessionStorage;
-};
+import {
+  clearAdminSession,
+  getAdminAccessToken,
+  getAdminRefreshToken,
+  setAdminSession,
+} from "@/lib/admin-session";
 
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -28,8 +16,7 @@ export const api = axios.create({
 // Inject Bearer token on every request
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
-    const storage = getStorage();
-    const token = storage?.getItem(TOKEN_KEY);
+    const token = getAdminAccessToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -61,8 +48,7 @@ api.interceptors.response.use(
       const isAdminRoute = window.location.pathname.startsWith("/admin");
       if (!isAdminRoute) return Promise.reject(error);
 
-      const storage = getStorage();
-      const refreshToken = storage?.getItem(REFRESH_TOKEN_KEY);
+      const refreshToken = getAdminRefreshToken();
 
       if (refreshToken && !originalRequest._retry) {
         if (isRefreshing) {
@@ -79,35 +65,36 @@ api.interceptors.response.use(
 
         try {
           // Attempt refresh
-          const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`, {
-            refreshToken,
-          });
+          const res = await axios.post(
+            `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`,
+            {
+              refreshToken,
+            },
+          );
 
           const newToken = res.data?.accessToken;
           if (newToken) {
-            storage?.setItem(TOKEN_KEY, newToken);
+            setAdminSession({ accessToken: newToken });
             isRefreshing = false;
             onTokenRefreshed(newToken);
-            
+
             // Retry original request
             originalRequest.headers.Authorization = `Bearer ${newToken}`;
             return api(originalRequest);
           }
         } catch (refreshError) {
           isRefreshing = false;
-          // Refresh failed -> clear everything and redirect to login
-          storage?.removeItem(TOKEN_KEY);
-          storage?.removeItem(REFRESH_TOKEN_KEY);
+          // Refresh failed -> clear memory session and redirect to login
+          clearAdminSession();
           window.location.href = "/admin/login";
           return Promise.reject(refreshError);
         }
       } else {
         // No refresh token or retry failed -> logout
-        storage?.removeItem(TOKEN_KEY);
-        storage?.removeItem(REFRESH_TOKEN_KEY);
+        clearAdminSession();
         window.location.href = "/admin/login";
       }
     }
     return Promise.reject(error);
-  }
+  },
 );

@@ -2,16 +2,18 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Check } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function AdminLoginPage() {
   const { login } = useAuth();
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -36,12 +38,13 @@ export default function AdminLoginPage() {
       <div
         className="absolute inset-0 opacity-[0.12]"
         style={{
-          backgroundImage: "radial-gradient(circle, hsl(var(--border)) 1px, transparent 1px)",
+          backgroundImage:
+            "radial-gradient(circle, hsl(var(--border)) 1px, transparent 1px)",
           backgroundSize: "28px 28px",
         }}
       />
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="w-[500px] h-[300px] rounded-full bg-primary/5 blur-[120px]" />
+        <div className="w-125 h-75 rounded-full bg-primary/5 blur-[120px]" />
       </div>
 
       <motion.div
@@ -53,9 +56,13 @@ export default function AdminLoginPage() {
         {/* Header */}
         <div className="mb-10">
           <div className="inline-block border border-primary/60 px-2 py-1 mb-4 bg-primary/5">
-            <span className="text-[10px] font-mono tracking-widest uppercase text-primary">Superadmin Access</span>
+            <span className="text-[10px] font-mono tracking-widest uppercase text-primary">
+              Superadmin Access
+            </span>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Qz.</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            Qz.
+          </h1>
           <p className="text-xs font-mono text-muted-foreground mt-1 tracking-widest uppercase">
             BetaForge Labs — Internal Dashboard
           </p>
@@ -82,38 +89,47 @@ export default function AdminLoginPage() {
             <label className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground">
               Password
             </label>
-            <Input
-              id="admin-password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="rounded-none font-mono bg-secondary/40 dark:bg-input/30 border-border"
-              placeholder="••••••••"
-            />
+            <div className="relative">
+              <Input
+                id="admin-password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="rounded-none font-mono bg-secondary/40 dark:bg-input/30 border-border pr-10"
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                tabIndex={-1}
+              >
+                {showPassword ? (
+                  <EyeOff className="size-3.5" />
+                ) : (
+                  <Eye className="size-3.5" />
+                )}
+              </button>
+            </div>
           </div>
 
-          <div className="flex items-center space-x-2 py-1">
-            <div className="relative flex items-center justify-center">
-              <input
-                type="checkbox"
-                id="remember-me"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                className="peer size-3.5 appearance-none border border-border bg-secondary/40 dark:bg-input/30 rounded-none checked:bg-primary checked:border-primary transition-all cursor-pointer"
-              />
-              <Check className="absolute size-2.5 text-primary-foreground opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" />
-            </div>
-            <label
-              htmlFor="remember-me"
-              className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors"
-            >
-              Remember for 30 days
-            </label>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="remember-me"
+              className="rounded-none"
+              checked={rememberMe}
+              onCheckedChange={(checked) => setRememberMe(Boolean(checked))}
+            />
+            <span className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground">
+              Remember me
+            </span>
           </div>
 
           {error && (
-            <p className="text-[11px] font-mono text-destructive tracking-wider">{error}</p>
+            <p className="text-[11px] font-mono text-destructive tracking-wider">
+              {error}
+            </p>
           )}
 
           <Button
