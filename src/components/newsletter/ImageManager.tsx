@@ -1,9 +1,9 @@
 "use client";
 import React, { useRef, useState } from "react";
+import NextImage from "next/image";
 import { cn } from "@/lib/utils";
 import {
   Plus,
-  Trash2,
   ImageIcon,
   ExternalLink,
   X,
@@ -11,6 +11,7 @@ import {
   Check,
   RotateCcw,
   ShieldCheck,
+  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,7 +28,6 @@ import {
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search } from "lucide-react";
 
 interface ImageManagerProps {
   images: INewsletterImage[];
@@ -61,7 +61,7 @@ export function ImageManager({
   const updateImage = (
     i: number,
     field: keyof INewsletterImage,
-    value: any,
+    value: INewsletterImage[keyof INewsletterImage],
   ) => {
     onChange(
       images.map((img, idx) => (idx === i ? { ...img, [field]: value } : img)),
@@ -128,9 +128,19 @@ export function ImageManager({
       setPendingFiles(nextPending);
 
       toast.success("Image uploaded and linked to this campaign.");
-    } catch (err: any) {
+    } catch (error: unknown) {
+      const apiErrorMessage =
+        typeof error === "object" &&
+        error !== null &&
+        "response" in error &&
+        typeof (error as { response?: { data?: { message?: string } } })
+          .response?.data?.message === "string"
+          ? (error as { response: { data: { message: string } } }).response.data
+              .message
+          : null;
+
       toast.error(
-        err.response?.data?.message ||
+        apiErrorMessage ??
           "Image upload failed. Check file type/size and try again.",
       );
     } finally {
@@ -181,7 +191,7 @@ export function ImageManager({
                   <Search className="size-3" /> Browse System Gallery
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[400px] sm:w-[500px]">
+              <SheetContent side="right" className="w-100 sm:w-125">
                 <SheetHeader>
                   <SheetTitle className="text-xs font-mono tracking-widest uppercase">
                     System Visual Assets
@@ -199,8 +209,8 @@ export function ImageManager({
                             />
                           ))}
                         </div>
-                      ) : !galleryData?.data ||
-                        galleryData.data.length === 0 ? (
+                      ) : !galleryData?.items ||
+                        galleryData.items.length === 0 ? (
                         <div className="text-center py-20 opacity-30">
                           <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
                             Library Empty
@@ -208,7 +218,7 @@ export function ImageManager({
                         </div>
                       ) : (
                         <div className="grid grid-cols-2 gap-3 pb-20">
-                          {galleryData?.data?.map((asset) => (
+                          {galleryData?.items?.map((asset) => (
                             <div
                               key={asset._id}
                               onClick={() => {
@@ -221,10 +231,13 @@ export function ImageManager({
                               }}
                               className="group relative aspect-square bg-secondary/20 border border-border/40 cursor-pointer overflow-hidden hover:border-primary/50 transition-all"
                             >
-                              <img
+                              <NextImage
                                 src={asset.url}
                                 alt={asset.altText}
-                                className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
+                                fill
+                                unoptimized
+                                sizes="(max-width: 768px) 50vw, 25vw"
+                                className="object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
                               />
                               <div className="absolute inset-x-0 bottom-0 bg-black/60 p-2 translate-y-full group-hover:translate-y-0 transition-transform">
                                 <p className="text-[8px] font-mono text-white truncate uppercase tracking-widest leading-none mb-1">
@@ -327,7 +340,7 @@ export function ImageManager({
                         !disabled && !img.url && !pending && triggerUpload(i)
                       }
                       className={cn(
-                        "size-24 bg-black/20 border border-border/20 flex-shrink-0 overflow-hidden flex items-center justify-center relative group/preview transition-all",
+                        "size-24 bg-black/20 border border-border/20 shrink-0 overflow-hidden flex items-center justify-center relative group/preview transition-all",
                         !img.url &&
                           !pending &&
                           !disabled &&
@@ -336,11 +349,14 @@ export function ImageManager({
                     >
                       {previewUrl ? (
                         <>
-                          <img
+                          <NextImage
                             src={previewUrl}
                             alt={img.altText}
+                            fill
+                            unoptimized
+                            sizes="96px"
                             className={cn(
-                              "w-full h-full object-cover transition-all duration-700 group-hover/preview:scale-110",
+                              "object-cover transition-all duration-700 group-hover/preview:scale-110",
                               !pending &&
                                 "grayscale group-hover/preview:grayscale-0",
                             )}
