@@ -1,7 +1,17 @@
 "use client";
 import React, { useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { Plus, Trash2, ImageIcon, ExternalLink, X, Upload, Check, RotateCcw, ShieldCheck } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  ImageIcon,
+  ExternalLink,
+  X,
+  Upload,
+  Check,
+  RotateCcw,
+  ShieldCheck,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
@@ -25,7 +35,11 @@ interface ImageManagerProps {
   disabled?: boolean;
 }
 
-export function ImageManager({ images, onChange, disabled }: ImageManagerProps) {
+export function ImageManager({
+  images,
+  onChange,
+  disabled,
+}: ImageManagerProps) {
   const [pendingFiles, setPendingFiles] = useState<Record<number, File>>({});
   const [isUploading, setIsUploading] = useState<Record<number, boolean>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -33,18 +47,25 @@ export function ImageManager({ images, onChange, disabled }: ImageManagerProps) 
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [page, setPage] = useState(1);
 
-  const { data: galleryData, isLoading: isLoadingGallery } = useNewsletterImages({ 
-    page, 
-    limit: 12,
-    enabled: galleryOpen,
-  });
+  const { data: galleryData, isLoading: isLoadingGallery } =
+    useNewsletterImages({
+      page,
+      limit: 12,
+      enabled: galleryOpen,
+    });
 
   const addImage = () => {
     onChange([...images, { url: "", altText: "" }]);
   };
 
-  const updateImage = (i: number, field: keyof INewsletterImage, value: any) => {
-    onChange(images.map((img, idx) => idx === i ? { ...img, [field]: value } : img));
+  const updateImage = (
+    i: number,
+    field: keyof INewsletterImage,
+    value: any,
+  ) => {
+    onChange(
+      images.map((img, idx) => (idx === i ? { ...img, [field]: value } : img)),
+    );
   };
 
   const removeImage = (i: number) => {
@@ -54,10 +75,13 @@ export function ImageManager({ images, onChange, disabled }: ImageManagerProps) 
     onChange(images.filter((_, idx) => idx !== i));
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, i: number) => {
+  const handleFileSelect = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    i: number,
+  ) => {
     const file = e.target.files?.[0];
     if (file) {
-      setPendingFiles(prev => ({ ...prev, [i]: file }));
+      setPendingFiles((prev) => ({ ...prev, [i]: file }));
     }
   };
 
@@ -71,22 +95,22 @@ export function ImageManager({ images, onChange, disabled }: ImageManagerProps) 
     if (!file) return;
 
     if (!images[i].altText.trim()) {
-      toast.error("Alt text is required for AI processing & accessibility.");
+      toast.error("Add alt text before uploading this image.");
       return;
     }
 
-    setIsUploading(prev => ({ ...prev, [i]: true }));
+    setIsUploading((prev) => ({ ...prev, [i]: true }));
     try {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("folder", "newsletter");
 
       const res = await api.post("/system/upload", formData, {
-        headers: { "Content-Type": "multipart/form-data" }
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
       const { url, filename, mimetype, size } = res.data.data;
-      
+
       // Update the parent state
       const nextImages = [...images];
       nextImages[i] = {
@@ -94,7 +118,7 @@ export function ImageManager({ images, onChange, disabled }: ImageManagerProps) 
         url,
         filename,
         mimetype,
-        size
+        size,
       };
       onChange(nextImages);
 
@@ -102,12 +126,15 @@ export function ImageManager({ images, onChange, disabled }: ImageManagerProps) 
       const nextPending = { ...pendingFiles };
       delete nextPending[i];
       setPendingFiles(nextPending);
-      
-      toast.success("Identity verified and asset secured.");
+
+      toast.success("Image uploaded and linked to this campaign.");
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Secure upload failed.");
+      toast.error(
+        err.response?.data?.message ||
+          "Image upload failed. Check file type/size and try again.",
+      );
     } finally {
-      setIsUploading(prev => ({ ...prev, [i]: false }));
+      setIsUploading((prev) => ({ ...prev, [i]: false }));
     }
   };
 
@@ -123,7 +150,10 @@ export function ImageManager({ images, onChange, disabled }: ImageManagerProps) 
       <input
         type="file"
         ref={fileInputRef}
-        onChange={(e) => activeIndexRef.current !== null && handleFileSelect(e, activeIndexRef.current)}
+        onChange={(e) =>
+          activeIndexRef.current !== null &&
+          handleFileSelect(e, activeIndexRef.current)
+        }
         className="hidden"
         accept="image/*"
       />
@@ -133,7 +163,9 @@ export function ImageManager({ images, onChange, disabled }: ImageManagerProps) 
         <div className="h-px flex-1 bg-border/30" />
         <div className="bg-secondary/40 border border-border/50 px-2.5 py-1 flex items-center gap-2">
           <ImageIcon className="size-3 text-primary" />
-          <span className="text-[10px] font-mono font-bold tracking-[0.2em] uppercase text-primary/80">Asset Library</span>
+          <span className="text-[10px] font-mono font-bold tracking-[0.2em] uppercase text-primary/80">
+            Asset Library
+          </span>
         </div>
         <div className="h-px flex-1 bg-border/30" />
         {!disabled && (
@@ -151,7 +183,9 @@ export function ImageManager({ images, onChange, disabled }: ImageManagerProps) 
               </SheetTrigger>
               <SheetContent side="right" className="w-[400px] sm:w-[500px]">
                 <SheetHeader>
-                  <SheetTitle className="text-xs font-mono tracking-widest uppercase">System Visual Assets</SheetTitle>
+                  <SheetTitle className="text-xs font-mono tracking-widest uppercase">
+                    System Visual Assets
+                  </SheetTitle>
                 </SheetHeader>
                 <div className="mt-4 space-y-4 h-full flex flex-col">
                   <div className="flex-1 overflow-hidden">
@@ -159,33 +193,46 @@ export function ImageManager({ images, onChange, disabled }: ImageManagerProps) 
                       {isLoadingGallery ? (
                         <div className="grid grid-cols-2 gap-3">
                           {[...Array(6)].map((_, i) => (
-                            <Skeleton key={i} className="aspect-square rounded-none bg-secondary/30" />
+                            <Skeleton
+                              key={i}
+                              className="aspect-square rounded-none bg-secondary/30"
+                            />
                           ))}
                         </div>
-                                            ) : !galleryData?.data || galleryData.data.length === 0 ? (
+                      ) : !galleryData?.data ||
+                        galleryData.data.length === 0 ? (
                         <div className="text-center py-20 opacity-30">
-                          <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Library Empty</p>
+                          <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+                            Library Empty
+                          </p>
                         </div>
-                                              ) : (
+                      ) : (
                         <div className="grid grid-cols-2 gap-3 pb-20">
                           {galleryData?.data?.map((asset) => (
-                            <div 
+                            <div
                               key={asset._id}
                               onClick={() => {
-                                onChange([...images, { url: asset.url, altText: asset.altText }]);
+                                onChange([
+                                  ...images,
+                                  { url: asset.url, altText: asset.altText },
+                                ]);
                                 setGalleryOpen(false);
-                                toast.success("Asset imported to campaign context.");
+                                toast.success("Image added to this campaign.");
                               }}
                               className="group relative aspect-square bg-secondary/20 border border-border/40 cursor-pointer overflow-hidden hover:border-primary/50 transition-all"
                             >
-                              <img 
-                                src={asset.url} 
-                                alt={asset.altText} 
+                              <img
+                                src={asset.url}
+                                alt={asset.altText}
                                 className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
                               />
                               <div className="absolute inset-x-0 bottom-0 bg-black/60 p-2 translate-y-full group-hover:translate-y-0 transition-transform">
-                                <p className="text-[8px] font-mono text-white truncate uppercase tracking-widest leading-none mb-1">{asset.filename || "Static Asset"}</p>
-                                <p className="text-[7px] font-mono text-muted-foreground truncate leading-none">{asset.altText}</p>
+                                <p className="text-[8px] font-mono text-white truncate uppercase tracking-widest leading-none mb-1">
+                                  {asset.filename || "Static Asset"}
+                                </p>
+                                <p className="text-[7px] font-mono text-muted-foreground truncate leading-none">
+                                  {asset.altText}
+                                </p>
                               </div>
                             </div>
                           ))}
@@ -193,31 +240,31 @@ export function ImageManager({ images, onChange, disabled }: ImageManagerProps) 
                       )}
                     </ScrollArea>
                   </div>
-                  
+
                   {/* Gallery Pagination */}
                   {(galleryData?.total || 0) > 12 && (
                     <div className="flex items-center justify-between border-t border-border/30 pt-4 pb-8 bg-background">
-                       <Button 
-                         variant="outline" 
-                         size="xs" 
-                         disabled={page === 1}
-                         onClick={() => setPage(p => p - 1)}
-                         className="rounded-none text-[8px] h-6 uppercase font-mono tracking-widest"
-                       >
-                         PREV
-                       </Button>
-                       <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest">
-                         Page {page}
-                       </span>
-                       <Button 
-                         variant="outline" 
-                         size="xs" 
-                         disabled={(galleryData?.total || 0) <= page * 12}
-                         onClick={() => setPage(p => p + 1)}
-                         className="rounded-none text-[8px] h-6 uppercase font-mono tracking-widest"
-                       >
-                         NEXT
-                       </Button>
+                      <Button
+                        variant="outline"
+                        size="xs"
+                        disabled={page === 1}
+                        onClick={() => setPage((p) => p - 1)}
+                        className="rounded-none text-[8px] h-6 uppercase font-mono tracking-widest"
+                      >
+                        PREV
+                      </Button>
+                      <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest">
+                        Page {page}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="xs"
+                        disabled={(galleryData?.total || 0) <= page * 12}
+                        onClick={() => setPage((p) => p + 1)}
+                        className="rounded-none text-[8px] h-6 uppercase font-mono tracking-widest"
+                      >
+                        NEXT
+                      </Button>
                     </div>
                   )}
                 </div>
@@ -239,15 +286,19 @@ export function ImageManager({ images, onChange, disabled }: ImageManagerProps) 
 
       {images.length === 0 ? (
         <div className="border border-dashed border-border/30 py-8 flex flex-col items-center justify-center opacity-30">
-           <ImageIcon className="size-5 mb-2 text-muted-foreground" />
-           <p className="text-[9px] font-mono uppercase tracking-[0.2em]">No visual assets defined</p>
+          <ImageIcon className="size-5 mb-2 text-muted-foreground" />
+          <p className="text-[9px] font-mono uppercase tracking-[0.2em]">
+            No visual assets defined
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <AnimatePresence initial={false}>
             {images.map((img, i) => {
               const pending = pendingFiles[i];
-              const previewUrl = pending ? URL.createObjectURL(pending) : img.url;
+              const previewUrl = pending
+                ? URL.createObjectURL(pending)
+                : img.url;
               const uploading = isUploading[i];
 
               return (
@@ -271,35 +322,41 @@ export function ImageManager({ images, onChange, disabled }: ImageManagerProps) 
 
                   <div className="flex gap-4">
                     {/* Preview Wrap */}
-                    <div 
-                      onClick={() => !disabled && !img.url && !pending && triggerUpload(i)}
+                    <div
+                      onClick={() =>
+                        !disabled && !img.url && !pending && triggerUpload(i)
+                      }
                       className={cn(
                         "size-24 bg-black/20 border border-border/20 flex-shrink-0 overflow-hidden flex items-center justify-center relative group/preview transition-all",
-                        !img.url && !pending && !disabled && "cursor-pointer hover:border-primary/40 hover:bg-primary/5"
+                        !img.url &&
+                          !pending &&
+                          !disabled &&
+                          "cursor-pointer hover:border-primary/40 hover:bg-primary/5",
                       )}
                     >
                       {previewUrl ? (
                         <>
-                          <img 
-                            src={previewUrl} 
-                            alt={img.altText} 
+                          <img
+                            src={previewUrl}
+                            alt={img.altText}
                             className={cn(
                               "w-full h-full object-cover transition-all duration-700 group-hover/preview:scale-110",
-                              !pending && "grayscale group-hover/preview:grayscale-0"
+                              !pending &&
+                                "grayscale group-hover/preview:grayscale-0",
                             )}
                           />
                           {!pending && img.url && (
-                             <>
-                               <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover/preview:opacity-100 transition-opacity" />
-                               <a 
-                                 href={img.url} 
-                                 target="_blank" 
-                                 rel="noreferrer"
-                                 className="absolute inset-x-0 bottom-0 py-1 bg-black/60 text-[8px] font-mono text-white text-center translate-y-full group-hover/preview:translate-y-0 transition-transform flex items-center justify-center gap-1"
-                               >
-                                 OPEN <ExternalLink className="size-2" />
-                               </a>
-                             </>
+                            <>
+                              <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover/preview:opacity-100 transition-opacity" />
+                              <a
+                                href={img.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="absolute inset-x-0 bottom-0 py-1 bg-black/60 text-[8px] font-mono text-white text-center translate-y-full group-hover/preview:translate-y-0 transition-transform flex items-center justify-center gap-1"
+                              >
+                                OPEN <ExternalLink className="size-2" />
+                              </a>
+                            </>
                           )}
                           {pending && (
                             <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
@@ -310,7 +367,9 @@ export function ImageManager({ images, onChange, disabled }: ImageManagerProps) 
                       ) : (
                         <div className="flex flex-col items-center gap-1 opacity-20 group-hover/preview:opacity-40 transition-opacity">
                           <Upload className="size-4" />
-                          <span className="text-[7px] font-mono uppercase tracking-widest text-center px-1">Upload Required</span>
+                          <span className="text-[7px] font-mono uppercase tracking-widest text-center px-1">
+                            Upload Required
+                          </span>
                         </div>
                       )}
 
@@ -325,11 +384,15 @@ export function ImageManager({ images, onChange, disabled }: ImageManagerProps) 
                       {/* URL Source */}
                       <div className="space-y-1">
                         <div className="flex items-center justify-between">
-                          <label className="text-[8px] font-mono uppercase text-muted-foreground/60 tracking-wider">Asset Protocol / URL</label>
+                          <label className="text-[8px] font-mono uppercase text-muted-foreground/60 tracking-wider">
+                            Asset Protocol / URL
+                          </label>
                         </div>
                         <Input
                           value={img.url}
-                          onChange={(e) => updateImage(i, "url", e.target.value)}
+                          onChange={(e) =>
+                            updateImage(i, "url", e.target.value)
+                          }
                           disabled={disabled || !!pending}
                           placeholder="https://cdn.qz.tech/asset.jpg"
                           className="h-7 text-[10px] font-mono rounded-none bg-secondary/10 border-border/30 focus:border-primary/50 transition-colors"
@@ -338,10 +401,14 @@ export function ImageManager({ images, onChange, disabled }: ImageManagerProps) 
 
                       {/* Alt Text */}
                       <div className="space-y-1">
-                        <label className="text-[8px] font-mono uppercase text-muted-foreground/60 tracking-wider">AI Narrative Alt Text</label>
+                        <label className="text-[8px] font-mono uppercase text-muted-foreground/60 tracking-wider">
+                          AI Narrative Alt Text
+                        </label>
                         <Input
                           value={img.altText}
-                          onChange={(e) => updateImage(i, "altText", e.target.value)}
+                          onChange={(e) =>
+                            updateImage(i, "altText", e.target.value)
+                          }
                           disabled={disabled}
                           placeholder="Explain for Z..."
                           className="h-7 text-[10px] font-mono rounded-none bg-secondary/10 border-border/30 focus:border-primary/50 transition-colors"
@@ -351,7 +418,7 @@ export function ImageManager({ images, onChange, disabled }: ImageManagerProps) 
                       {/* Pending Actions */}
                       <AnimatePresence>
                         {pending && !uploading && (
-                          <motion.div 
+                          <motion.div
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: "auto" }}
                             exit={{ opacity: 0, height: 0 }}

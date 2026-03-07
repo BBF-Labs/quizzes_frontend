@@ -1,11 +1,17 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { motion,  Variants } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import { Plus, ArrowRight, RefreshCw, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useCampaigns, useCreateCampaign, ICampaign, ILinkContext, INewsletterImage } from "@/hooks/use-campaigns";
+import {
+  useCampaigns,
+  useCreateCampaign,
+  ICampaign,
+  ILinkContext,
+  INewsletterImage,
+} from "@/hooks/use-campaigns";
 import { LinkBuilder } from "@/components/newsletter/LinkBuilder";
 import { ImageManager } from "@/components/newsletter/ImageManager";
 import { toast } from "sonner";
@@ -33,15 +39,15 @@ export default function AdminPage() {
   const { data: campaigns, isLoading, refetch } = useCampaigns();
   const createMutation = useCreateCampaign();
   const [showNewForm, setShowNewForm] = useState(false);
-  
-  const initialForm = { 
-    title: "", 
-    subjectLine: "", 
-    previewText: "", 
-    promptInstruction: "", 
+
+  const initialForm = {
+    title: "",
+    subjectLine: "",
+    previewText: "",
+    promptInstruction: "",
     linkContexts: [] as ILinkContext[],
     images: [] as INewsletterImage[],
-    targetAudience: ["all"] as ("waitlist" | "newsletter" | "users" | "all")[]
+    targetAudience: ["all"] as ("waitlist" | "newsletter" | "users" | "all")[],
   };
 
   const [form, setForm] = useState(initialForm);
@@ -50,11 +56,16 @@ export default function AdminPage() {
     e.preventDefault();
     try {
       await createMutation.mutateAsync(form);
-      toast.success("Campaign draft created");
+      toast.success(
+        "Campaign draft created. You can now configure content and generate an AI draft.",
+      );
       setShowNewForm(false);
       setForm(initialForm);
     } catch (err: any) {
-      toast.error(err.response?.data?.message ?? "Failed to create campaign");
+      toast.error(
+        err.response?.data?.message ??
+          "Could not create campaign draft. Check required fields and try again.",
+      );
     }
   };
 
@@ -69,11 +80,16 @@ export default function AdminPage() {
       >
         <div>
           <div className="inline-block border border-primary/60 px-2 py-1 mb-3 bg-primary/5">
-            <span className="text-[10px] font-mono tracking-widest uppercase text-primary">Newsletter</span>
+            <span className="text-[10px] font-mono tracking-widest uppercase text-primary">
+              Newsletter
+            </span>
           </div>
-          <h1 className="text-3xl font-mono font-bold tracking-[0.2em] uppercase text-foreground">Campaigns Manager</h1>
+          <h1 className="text-3xl font-mono font-bold tracking-[0.2em] uppercase text-foreground">
+            Campaigns Manager
+          </h1>
           <p className="text-xs font-mono text-muted-foreground mt-1 tracking-widest uppercase">
-            {campaigns?.length ?? 0} campaign{campaigns?.length === 1 ? "" : "s"}
+            {campaigns?.length ?? 0} campaign
+            {campaigns?.length === 1 ? "" : "s"}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -106,9 +122,14 @@ export default function AdminPage() {
           className="border border-primary/40 bg-card/60 p-6 space-y-5"
         >
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-mono tracking-widest uppercase text-primary">New Campaign</span>
+            <span className="text-[10px] font-mono tracking-widest uppercase text-primary">
+              New Campaign
+            </span>
             <button
-              onClick={() => { setShowNewForm(false); setForm(initialForm); }}
+              onClick={() => {
+                setShowNewForm(false);
+                setForm(initialForm);
+              }}
               className="text-[10px] font-mono text-muted-foreground hover:text-foreground transition-colors uppercase tracking-widest"
             >
               Cancel
@@ -117,7 +138,9 @@ export default function AdminPage() {
           <form onSubmit={handleCreate} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground">Title *</label>
+                <label className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground">
+                  Title *
+                </label>
                 <Input
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
@@ -127,10 +150,14 @@ export default function AdminPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground">Subject Line *</label>
+                <label className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground">
+                  Subject Line *
+                </label>
                 <Input
                   value={form.subjectLine}
-                  onChange={(e) => setForm({ ...form, subjectLine: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, subjectLine: e.target.value })
+                  }
                   required
                   className="rounded-none font-mono"
                   placeholder="What's new at Qz this month"
@@ -138,19 +165,27 @@ export default function AdminPage() {
               </div>
             </div>
             <div className="space-y-1.5">
-              <label className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground">Preview Text</label>
+              <label className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground">
+                Preview Text
+              </label>
               <Input
                 value={form.previewText}
-                onChange={(e) => setForm({ ...form, previewText: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, previewText: e.target.value })
+                }
                 className="rounded-none font-mono"
                 placeholder="Inbox preview snippet…"
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground">AI Prompt Instruction *</label>
+              <label className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground">
+                AI Prompt Instruction
+              </label>
               <textarea
                 value={form.promptInstruction}
-                onChange={(e) => setForm({ ...form, promptInstruction: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, promptInstruction: e.target.value })
+                }
                 rows={4}
                 className="w-full rounded-none font-mono text-sm border border-input bg-transparent px-3 py-2 text-foreground shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 resize-none dark:bg-input/30"
                 placeholder="Write a newsletter announcing our new exam timetable feature…"
@@ -159,15 +194,17 @@ export default function AdminPage() {
 
             {/* Visual Assets */}
             <div className="bg-background/20 p-5 border border-border/20">
-              <ImageManager 
-                images={form.images} 
-                onChange={(images) => setForm({ ...form, images })} 
+              <ImageManager
+                images={form.images}
+                onChange={(images) => setForm({ ...form, images })}
               />
             </div>
 
             {/* Target Audience */}
             <div className="space-y-3">
-              <label className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground">Target Audience *</label>
+              <label className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground">
+                Target Audience *
+              </label>
               <div className="flex flex-wrap gap-2">
                 {["all", "waitlist", "newsletter", "users"].map((audience) => (
                   <button
@@ -179,27 +216,40 @@ export default function AdminPage() {
                         setForm({ ...form, targetAudience: ["all"] });
                       } else {
                         const next = current.includes(audience as any)
-                          ? current.filter(a => a !== audience)
-                          : [...current.filter(a => a !== "all"), audience as any];
-                        setForm({ ...form, targetAudience: next.length === 0 ? ["all"] : next as any });
+                          ? current.filter((a) => a !== audience)
+                          : [
+                              ...current.filter((a) => a !== "all"),
+                              audience as any,
+                            ];
+                        setForm({
+                          ...form,
+                          targetAudience:
+                            next.length === 0 ? ["all"] : (next as any),
+                        });
                       }
                     }}
                     className={cn(
                       "group flex items-center gap-2 border px-3 py-1.5 transition-all",
                       form.targetAudience.includes(audience as any)
                         ? "border-primary bg-primary/10 text-primary"
-                        : "border-border/40 bg-secondary/20 text-muted-foreground hover:border-border"
+                        : "border-border/40 bg-secondary/20 text-muted-foreground hover:border-border",
                     )}
                   >
-                    <div className={cn(
-                      "size-2.5 border transition-all flex items-center justify-center",
-                      form.targetAudience.includes(audience as any) 
-                        ? "border-primary bg-primary" 
-                        : "border-muted-foreground/30"
-                    )}>
-                      {form.targetAudience.includes(audience as any) && <Check className="size-2 text-primary-foreground" />}
+                    <div
+                      className={cn(
+                        "size-2.5 border transition-all flex items-center justify-center",
+                        form.targetAudience.includes(audience as any)
+                          ? "border-primary bg-primary"
+                          : "border-muted-foreground/30",
+                      )}
+                    >
+                      {form.targetAudience.includes(audience as any) && (
+                        <Check className="size-2 text-primary-foreground" />
+                      )}
                     </div>
-                    <span className="text-[10px] font-mono uppercase tracking-widest">{audience}</span>
+                    <span className="text-[10px] font-mono uppercase tracking-widest">
+                      {audience}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -207,9 +257,9 @@ export default function AdminPage() {
 
             {/* Link Builder */}
             <div className="bg-background/40 border border-border/30 p-5">
-              <LinkBuilder 
-                links={form.linkContexts} 
-                onChange={(links) => setForm({ ...form, linkContexts: links })} 
+              <LinkBuilder
+                links={form.linkContexts}
+                onChange={(links) => setForm({ ...form, linkContexts: links })}
               />
             </div>
             <div className="flex gap-3">
@@ -235,10 +285,14 @@ export default function AdminPage() {
 
       {/* Campaign List */}
       {isLoading ? (
-        <div className="text-xs font-mono text-muted-foreground tracking-widest uppercase animate-pulse">Loading campaigns…</div>
+        <div className="text-xs font-mono text-muted-foreground tracking-widest uppercase animate-pulse">
+          Loading campaigns…
+        </div>
       ) : !campaigns?.length ? (
         <div className="border border-dashed border-border/50 py-24 text-center">
-          <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest">No campaigns yet. Create your first one.</p>
+          <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest">
+            No campaigns yet. Create your first one.
+          </p>
         </div>
       ) : (
         <motion.div
@@ -259,21 +313,31 @@ export default function AdminPage() {
                   <h3 className="text-lg font-mono font-bold tracking-[0.2em] uppercase text-foreground group-hover:text-primary transition-colors truncate flex-1">
                     {c.title}
                   </h3>
-                  <span className={cn(
-                    "text-[8px] font-mono tracking-widest uppercase border px-1.5 py-0.5 rounded-none",
-                    STATUS_CLASS[c.status]
-                  )}>
+                  <span
+                    className={cn(
+                      "text-[8px] font-mono tracking-widest uppercase border px-1.5 py-0.5 rounded-none",
+                      STATUS_CLASS[c.status],
+                    )}
+                  >
                     {c.status}
                   </span>
                 </div>
 
                 <div className="px-5 py-4 flex items-center justify-between">
                   <div className="space-y-1.5 truncate mr-4">
-                    <p className="text-xs font-mono text-muted-foreground truncate">{c.subjectLine}</p>
-                    {(c.status === "dispatching" || c.status === "done" || c.status === "failed") && (
+                    <p className="text-xs font-mono text-muted-foreground truncate">
+                      {c.subjectLine}
+                    </p>
+                    {(c.status === "dispatching" ||
+                      c.status === "done" ||
+                      c.status === "failed") && (
                       <p className="text-[10px] font-mono text-muted-foreground/60">
-                        Sent: <span className="text-green-400">{c.stats.sent}</span>
-                        {" · "}Failed: <span className="text-destructive">{c.stats.failed}</span>
+                        Sent:{" "}
+                        <span className="text-green-400">{c.stats.sent}</span>
+                        {" · "}Failed:{" "}
+                        <span className="text-destructive">
+                          {c.stats.failed}
+                        </span>
                       </p>
                     )}
                   </div>

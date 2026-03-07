@@ -6,7 +6,13 @@ import { cn } from "@/lib/utils";
 
 interface EmailPreviewProps {
   category: "waitlist" | "newsletter" | "system";
-  type: "update" | "promotional" | "security" | "general" | "welcome" | "confirmation";
+  type:
+    | "update"
+    | "promotional"
+    | "security"
+    | "general"
+    | "welcome"
+    | "confirmation";
   title: string;
   markdownBody?: string;
   links?: { label: string; url: string }[];
@@ -15,12 +21,36 @@ interface EmailPreviewProps {
 }
 
 const typeConfigs = {
-  update: { label: "STATUS_UPDATE", color: "text-[#006eff]", border: "border-[#006eff]" },
-  promotional: { label: "ANNOUNCEMENT", color: "text-[#006eff]", border: "border-[#006eff]" },
-  security: { label: "SECURITY_ALERT", color: "text-red-500", border: "border-red-500" },
-  general: { label: "GENERAL_INFO", color: "text-foreground", border: "border-foreground" },
-  welcome: { label: "WELCOME", color: "text-[#006eff]", border: "border-[#006eff]" },
-  confirmation: { label: "CONFIRMATION", color: "text-[#006eff]", border: "border-[#006eff]" },
+  update: {
+    label: "STATUS_UPDATE",
+    color: "text-[#006eff]",
+    border: "border-[#006eff]",
+  },
+  promotional: {
+    label: "ANNOUNCEMENT",
+    color: "text-[#006eff]",
+    border: "border-[#006eff]",
+  },
+  security: {
+    label: "SECURITY_ALERT",
+    color: "text-red-500",
+    border: "border-red-500",
+  },
+  general: {
+    label: "GENERAL_INFO",
+    color: "text-foreground",
+    border: "border-foreground",
+  },
+  welcome: {
+    label: "WELCOME",
+    color: "text-[#006eff]",
+    border: "border-[#006eff]",
+  },
+  confirmation: {
+    label: "CONFIRMATION",
+    color: "text-[#006eff]",
+    border: "border-[#006eff]",
+  },
 };
 
 export function EmailPreview({
@@ -35,41 +65,74 @@ export function EmailPreview({
   const config = typeConfigs[type] || typeConfigs.update;
 
   return (
-    <div className={cn("bg-[#f8fafc] dark:bg-zinc-950 p-4 sm:p-10 font-sans border border-border/50", className)}>
-      <div className="w-full max-w-[1000px] mx-auto bg-white dark:bg-zinc-900 border-2 border-black dark:border-zinc-800 shadow-[8px_8px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_rgba(255,255,255,0.05)]">
-        <div className="p-6 sm:p-14">
+    <div
+      className={cn(
+        "bg-[#f8fafc] dark:bg-zinc-950 p-4 sm:p-10 font-mono border border-border/50",
+        className,
+      )}
+    >
+      <div className="w-full max-w-[600px] mx-auto bg-white dark:bg-zinc-900 border-2 border-black dark:border-zinc-800 shadow-[8px_8px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_rgba(255,255,255,0.05)]">
+        <div className="p-5 sm:p-8">
           {/* Badge */}
-          <div className={cn("border px-2 py-1 inline-block mb-6", config.border)}>
-            <span className={cn("text-[11px] font-mono font-bold tracking-[0.1em] uppercase", config.color)}>
+          <div
+            className={cn("border px-2 py-1 inline-block mb-6", config.border)}
+          >
+            <span
+              className={cn(
+                "text-[11px] font-mono font-bold tracking-[0.1em] uppercase",
+                config.color,
+              )}
+            >
               {category === "newsletter" ? "NEWSLETTER" : config.label}
             </span>
           </div>
 
           {/* Heading Block */}
-          <div className={cn("bg-[#f8fafc] dark:bg-zinc-800/50 border-l-4 p-6 mb-8", config.border)}>
-            <h1 className="text-3xl sm:text-5xl font-black leading-[0.9] m-0 text-black dark:text-white uppercase tracking-tighter">
+          <div
+            className={cn(
+              "bg-[#f8fafc] dark:bg-zinc-800/50 border-l-4 p-4 mb-5",
+              config.border,
+            )}
+          >
+            <h1 className="text-[22px] sm:text-[24px] font-black leading-[1.15] m-0 text-black dark:text-white uppercase tracking-tight">
               {title}
             </h1>
           </div>
 
-          <div className="text-base font-bold text-black dark:text-white mb-4 tracking-wide">
-            Greetings <span className="text-[#006eff]">{name || "Subscriber"}</span>,
+          <div className="text-[13px] font-bold text-black dark:text-white mb-3 tracking-wide font-mono">
+            Greetings{" "}
+            <span className="text-[#006eff]">{name || "Subscriber"}</span>,
           </div>
 
-          <div className="mb-8">
-            <div className="prose prose-sm dark:prose-invert max-w-none 
+          <div className="mb-5">
+            <div
+              className="prose prose-sm dark:prose-invert max-w-none text-[14px]
+              font-mono
               prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-black dark:prose-headings:text-white
-              prose-p:text-zinc-700 dark:prose-p:text-zinc-300 prose-p:leading-relaxed
+              prose-p:text-zinc-700 dark:prose-p:text-zinc-300 prose-p:leading-[1.6]
               prose-a:text-[#006eff] prose-a:no-underline hover:prose-a:underline
               prose-strong:text-black dark:prose-strong:text-white
               prose-li:text-zinc-700 dark:prose-li:text-zinc-300
-              prose-hr:border-zinc-200 dark:prose-hr:border-zinc-800">
-              <ReactMarkdown 
+              prose-hr:border-zinc-200 dark:prose-hr:border-zinc-800"
+            >
+              <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
-                  h1: ({ children }) => <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tighter mb-4 text-black dark:text-white">{children}</h1>,
-                  h2: ({ children }) => <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight mb-3 mt-6 text-black dark:text-white">{children}</h2>,
-                  h3: ({ children }) => <h3 className="text-xl sm:text-2xl font-bold uppercase tracking-wide mb-2 mt-4 text-black dark:text-white">{children}</h3>,
+                  h1: ({ children }) => (
+                    <h1 className="text-[22px] sm:text-[24px] font-black uppercase tracking-tight mb-2.5 text-black dark:text-white font-mono leading-[1.2]">
+                      {children}
+                    </h1>
+                  ),
+                  h2: ({ children }) => (
+                    <h2 className="text-[18px] sm:text-[20px] font-black uppercase tracking-tight mb-2 mt-4 text-black dark:text-white font-mono leading-[1.25]">
+                      {children}
+                    </h2>
+                  ),
+                  h3: ({ children }) => (
+                    <h3 className="text-[16px] sm:text-[17px] font-bold uppercase tracking-wide mb-1.5 mt-3 text-black dark:text-white font-mono leading-[1.3]">
+                      {children}
+                    </h3>
+                  ),
                 }}
               >
                 {markdownBody || "_No body content generated yet._"}
@@ -78,12 +141,12 @@ export function EmailPreview({
           </div>
 
           {links && links.length > 0 && (
-            <div className="my-8 flex flex-col gap-3">
+            <div className="my-5 flex flex-col gap-2.5">
               {links.map((link, idx) => (
                 <a
                   key={idx}
                   href={link.url}
-                  className="bg-[#006eff] text-white text-sm font-mono font-bold text-center block py-4 px-6 tracking-[0.15em] uppercase border-2 border-black dark:border-white/10 hover:translate-x-[2px] hover:translate-y-[2px] transition-transform"
+                  className="bg-[#006eff] text-white text-[13px] font-mono font-bold text-center block py-3 px-4 tracking-[0.15em] uppercase border-2 border-black dark:border-white/10 hover:translate-x-[2px] hover:translate-y-[2px] transition-transform"
                 >
                   {link.label}
                 </a>
@@ -91,18 +154,21 @@ export function EmailPreview({
             </div>
           )}
 
-          <hr className="border-t border-zinc-200 dark:border-zinc-800 my-10" />
+          <hr className="border-t border-zinc-200 dark:border-zinc-800 my-5" />
 
-          <div className="text-[12px] leading-relaxed text-zinc-500 mb-8">
+          <div className="text-[10px] leading-relaxed text-zinc-500 mb-4 font-mono">
             <strong className="text-black dark:text-white font-mono uppercase tracking-widest">
               BF LABS // {category.toUpperCase()}
             </strong>
             <br />
-            This communication is part of your status updates on the Qz platform.
+            This communication is part of your status updates on the Qz
+            platform.
           </div>
 
-          <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6 flex flex-col sm:flex-row justify-between gap-4 text-[10px] text-zinc-500 uppercase tracking-widest">
-            <span>© {new Date().getFullYear()} BF LABS. ALL RIGHTS RESERVED.</span>
+          <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4 flex flex-col sm:flex-row justify-between gap-3 text-[9px] text-zinc-500 uppercase tracking-widest font-mono">
+            <span>
+              © {new Date().getFullYear()} BF LABS. ALL RIGHTS RESERVED.
+            </span>
             <div className="flex gap-4">
               <span className="underline cursor-pointer">Visit Qz</span>
               <span className="underline cursor-pointer">Unsubscribe</span>
