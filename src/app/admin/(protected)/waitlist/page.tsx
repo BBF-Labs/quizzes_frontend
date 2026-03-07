@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import {
   UserPlus,
   Search,
-  Filter,
   Rocket,
   Calendar,
   Mail,
@@ -14,15 +13,25 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PaginationController } from "@/components/pagination-controller";
 import { useWaitlist } from "@/hooks/use-admin";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
 export default function WaitlistPage() {
+  const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const { data: waitlist, isLoading } = useWaitlist({ search });
-  console.log("Waitlist data:", waitlist);
-  const waitlistEntries = waitlist?.data ?? [];
+  const [statusFilter, setStatusFilter] = useState("");
+  const { data: waitlistData, isLoading } = useWaitlist({
+    page,
+    limit: 20,
+    search: search || undefined,
+    waitlistStatus: statusFilter || undefined,
+  });
+  
+  const waitlistEntries = waitlistData?.data || [];
+  const totalPages = waitlistData?.page && waitlistData?.limit ? Math.ceil(waitlistData.total / waitlistData.limit) : 1;
 
   return (
     <div className="space-y-8">
@@ -46,39 +55,46 @@ export default function WaitlistPage() {
       </motion.div>
 
       {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-        <div className="relative w-full sm:w-96">
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
             placeholder="Search entries..."
             className="pl-9 rounded-none bg-background/50 font-mono text-xs uppercase tracking-widest"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
           />
         </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Button
-            variant="outline"
-            size="sm"
-            className="rounded-none font-mono text-[10px] tracking-widest uppercase gap-2 flex-1 sm:flex-none"
-          >
-            <Filter className="size-3.5" /> Filter
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="rounded-none font-mono text-[10px] tracking-widest uppercase gap-2 flex-1 sm:flex-none"
-          >
-            <Rocket className="size-3.5" /> Bulk Invite
-          </Button>
-        </div>
+        <Select value={statusFilter || "all"} onValueChange={(value) => {
+          setStatusFilter(value === "all" ? "" : value);
+          setPage(1);
+        }}>
+          <SelectTrigger className="w-full sm:w-auto sm:min-w-140 rounded-none bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+            <SelectValue placeholder="All Statuses" />
+          </SelectTrigger>
+          <SelectContent className="rounded-none border-border/40 bg-card/95 font-mono text-xs uppercase">
+            <SelectItem value="all" className="rounded-none font-mono text-xs uppercase">All Statuses</SelectItem>
+            <SelectItem value="active" className="rounded-none font-mono text-xs uppercase">Active</SelectItem>
+            <SelectItem value="removed" className="rounded-none font-mono text-xs uppercase">Removed</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button
+          variant="outline"
+          size="sm"
+          className="rounded-none font-mono text-[10px] tracking-widest uppercase gap-2"
+        >
+          <Rocket className="size-3.5" /> Bulk Invite
+        </Button>
       </div>
 
       {/* List */}
       <Card className="rounded-none border-border/50 bg-card/40 overflow-hidden">
         <CardHeader className="border-b border-border/10">
           <CardTitle className="text-[11px] font-mono tracking-[0.2em] uppercase text-muted-foreground">
-            Queue Status {waitlist?.total ? `(${waitlist.total})` : ""}
+            Queue Status {waitlistEntries?.length ? `(${waitlistEntries.length})` : ""}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
@@ -126,7 +142,7 @@ export default function WaitlistPage() {
                     </td>
                   </tr>
                 ) : (
-                  waitlistEntries.map((entry) => (
+                  waitlistEntries.map((entry: any) => (
                     <tr
                       key={entry._id}
                       className="hover:bg-primary/5 transition-colors group"
@@ -188,6 +204,13 @@ export default function WaitlistPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination */}
+          <PaginationController
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
         </CardContent>
       </Card>
     </div>

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   useParams,
   useRouter,
@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   useCampaign,
   useUpdateCampaign,
@@ -128,6 +129,24 @@ export default function CampaignDetailPage() {
   const isMobile = useIsMobile();
   const { socket } = useSocket();
 
+  // Debounce refetch to prevent socket + polling simultaneous requests
+  const refetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const debouncedRefetch = useCallback((source: string) => {
+    // Clear any pending refetch
+    if (refetchTimeoutRef.current) {
+      clearTimeout(refetchTimeoutRef.current);
+    }
+
+    console.log(`[Refetch] Scheduled from ${source}`);
+
+    // Schedule new refetch with small delay to batch requests
+    refetchTimeoutRef.current = setTimeout(() => {
+      console.log(`[Refetch] Executing batched refetch from ${source}`);
+      refetch();
+      refetchTimeoutRef.current = null;
+    }, 100); // 100ms debounce window
+  }, [refetch]);
+
   // Real-time updates
   useEffect(() => {
     if (!socket) return;
@@ -138,7 +157,7 @@ export default function CampaignDetailPage() {
 
       if (data.campaignId === id) {
         console.log(`[Socket] IDs match! Triggering refetch for ${id}...`);
-        refetch();
+        debouncedRefetch("socket");
         toast.info("Campaign updated in real-time.");
       } else {
         console.log(
@@ -151,15 +170,15 @@ export default function CampaignDetailPage() {
     return () => {
       socket.off("email:updated", handleUpdate);
     };
-  }, [socket, id, refetch]);
+  }, [socket, id, debouncedRefetch]);
 
-  // Auto-refresh during dispatch
+  // Auto-refresh during dispatch (now uses debounced version)
   useEffect(() => {
     if (campaign?.status === "dispatching") {
-      const interval = setInterval(() => refetch(), 5000);
+      const interval = setInterval(() => debouncedRefetch("polling"), 5000);
       return () => clearInterval(interval);
     }
-  }, [campaign?.status, refetch]);
+  }, [campaign?.status, debouncedRefetch]);
 
   // Sync local state from fetched data
   useEffect(() => {
@@ -188,6 +207,15 @@ export default function CampaignDetailPage() {
     targetDirty,
   ]);
 
+  // Cleanup refetch timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (refetchTimeoutRef.current) {
+        clearTimeout(refetchTimeoutRef.current);
+      }
+    };
+  }, []);
+
   if (isLoading)
     return (
       <div className="text-xs font-mono text-muted-foreground tracking-widest uppercase animate-pulse">
@@ -202,7 +230,7 @@ export default function CampaignDetailPage() {
     );
 
   const isDraft = campaign.status === "draft";
-  const isDone = campaign.status === "done";
+  const isEditable = isDraft; // Only draft campaigns can be edited
 
   const isDirty =
     promptDirty ||
@@ -212,9 +240,61 @@ export default function CampaignDetailPage() {
     metaDirty ||
     targetDirty;
 
+  // Validation helper
+  const validateCampaignData = (): boolean => {
+    // Check required fields
+    if (!title.trim()) {
+      toast.error("Campaign title is required.");
+      return false;
+    }
+
+    if (!subjectLine.trim()) {
+      toast.error("Email subject line is required.");
+      return false;
+    }
+
+    if (!promptInstruction.trim() || promptInstruction.length < 10) {
+      toast.error("AI instructions must be at least 10 characters.");
+      return false;
+    }
+
+    // Validate link contexts
+    for (const link of linkContexts) {
+      if (!link.baseUrl.trim()) {
+        toast.error("All link contexts must have a base URL.");
+        return false;
+      }
+      try {
+        new URL(link.baseUrl);
+      } catch {
+        toast.error(`Invalid URL: ${link.baseUrl}`);
+        return false;
+      }
+    }
+
+    // Validate images
+    for (const img of images) {
+      if (img.url && !img.url.trim()) {
+        toast.error("Image URLs cannot be empty.");
+        return false;
+      }
+      if (!img.altText.trim()) {
+        toast.error("All images must have alt text.");
+        return false;
+      }
+    }
+
+    return true;
+  };
+
   const saveChanges = async () => {
-    if (isDone) {
-      toast.info("Completed campaigns are read-only.");
+    if (!isEditable) {
+      toast.info("Only draft campaigns can be edited. This campaign is " + campaign.status + ".");
+      return;
+    }
+
+    // Validate before sending
+    if (!validateCampaignData()) {
       return;
     }
 
@@ -385,7 +465,7 @@ export default function CampaignDetailPage() {
               <RefreshCw className="size-4" />
             </Button>
 
-            {isDirty && !isDone && (
+            {isDirty && isEditable && (
               <Button
                 onClick={saveChanges}
                 disabled={updateMutation.isPending}
@@ -568,7 +648,7 @@ export default function CampaignDetailPage() {
                       </label>
                       <Input
                         value={title}
-                        disabled={isDone}
+                        disabled={!isEditable}
                         onChange={(e) => {
                           setTitle(e.target.value);
                           setMetaDirty(true);
@@ -581,25 +661,23 @@ export default function CampaignDetailPage() {
                         <label className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground">
                           Campaign Type
                         </label>
-                        <select
-                          value={campaignType}
-                          disabled={isDone}
-                          onChange={(e) => {
-                            setCampaignType(e.target.value as CampaignType);
-                            setMetaDirty(true);
-                          }}
-                          className="w-full h-10 px-3 py-2 bg-background/50 border border-border/40 text-xs font-mono rounded-none focus:outline-none focus:border-primary/50 transition-all uppercase disabled:opacity-50"
-                        >
-                          <option value="newsletter">Newsletter</option>
-                          <option value="announcement">Announcement</option>
-                          <option value="product_update">Product Update</option>
-                          <option value="waitlist_update">
-                            Waitlist Update
-                          </option>
-                          <option value="system_update">System Update</option>
-                          <option value="exam_reminder">Exam Reminder</option>
-                          <option value="quiz_available">Quiz Available</option>
-                        </select>
+                        <Select value={campaignType} onValueChange={(value) => {
+                          setCampaignType(value as CampaignType);
+                          setMetaDirty(true);
+                        }} disabled={!isEditable}>
+                          <SelectTrigger className="rounded-none bg-background/50 border border-border/40 font-mono text-xs uppercase focus-visible:ring-0 disabled:opacity-50">
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="newsletter">Newsletter</SelectItem>
+                            <SelectItem value="announcement">Announcement</SelectItem>
+                            <SelectItem value="product_update">Product Update</SelectItem>
+                            <SelectItem value="waitlist_update">Waitlist Update</SelectItem>
+                            <SelectItem value="system_update">System Update</SelectItem>
+                            <SelectItem value="exam_reminder">Exam Reminder</SelectItem>
+                            <SelectItem value="quiz_available">Quiz Available</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="space-y-1.5">
                         <label className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground">
@@ -611,7 +689,7 @@ export default function CampaignDetailPage() {
                               key={opt}
                               type="button"
                               variant={audience === opt ? "default" : "outline"}
-                              disabled={isDone}
+                              disabled={!isEditable}
                               onClick={() => {
                                 setAudience(opt);
                                 setMetaDirty(true);

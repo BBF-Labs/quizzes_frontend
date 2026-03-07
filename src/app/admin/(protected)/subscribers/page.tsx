@@ -4,23 +4,32 @@ import { motion } from "framer-motion";
 import {
   Users,
   Search,
-  Filter,
   Download,
   Mail,
   Calendar,
-  ExternalLink,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PaginationController } from "@/components/pagination-controller";
 import { useSubscribers } from "@/hooks/use-admin";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
 export default function SubscribersPage() {
+  const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const { data: subscribers, isLoading } = useSubscribers({ search });
-  const subscriberEntries = subscribers?.data ?? [];
+  const [statusFilter, setStatusFilter] = useState("");
+  const { data: subscribersData, isLoading } = useSubscribers({
+    page,
+    limit: 20,
+    search: search || undefined,
+    newsletterStatus: statusFilter || undefined,
+  });
+  
+  const subscriberEntries = subscribersData?.data || [];
+  const totalPages = subscribersData?.page && subscribersData?.limit ? Math.ceil(subscribersData.total / subscribersData.limit) : 1;
 
   return (
     <div className="space-y-8">
@@ -44,32 +53,41 @@ export default function SubscribersPage() {
       </motion.div>
 
       {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-        <div className="relative w-full sm:w-96">
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
             placeholder="Search by email..."
             className="pl-9 rounded-none bg-background/50 font-mono text-xs uppercase tracking-widest"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
           />
         </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Button
-            variant="outline"
-            size="sm"
-            className="rounded-none font-mono text-[10px] tracking-widest uppercase gap-2 flex-1 sm:flex-none"
-          >
-            <Filter className="size-3.5" /> Filter
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="rounded-none font-mono text-[10px] tracking-widest uppercase gap-2 flex-1 sm:flex-none"
-          >
-            <Download className="size-3.5" /> Export
-          </Button>
-        </div>
+        <Select value={statusFilter || "all"} onValueChange={(value) => {
+          setStatusFilter(value === "all" ? "" : value);
+          setPage(1);
+        }}>
+          <SelectTrigger className="w-full sm:w-auto sm:min-w-140 rounded-none bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+            <SelectValue placeholder="All Statuses" />
+          </SelectTrigger>
+          <SelectContent className="rounded-none border-border/40 bg-card/95 font-mono text-xs uppercase">
+            <SelectItem value="all" className="rounded-none font-mono text-xs uppercase">All Statuses</SelectItem>
+            <SelectItem value="active" className="rounded-none font-mono text-xs uppercase">Active</SelectItem>
+            <SelectItem value="pending" className="rounded-none font-mono text-xs uppercase">Pending</SelectItem>
+            <SelectItem value="unsubscribed" className="rounded-none font-mono text-xs uppercase">Unsubscribed</SelectItem>
+            <SelectItem value="bounced" className="rounded-none font-mono text-xs uppercase">Bounced</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button
+          variant="outline"
+          size="sm"
+          className="rounded-none font-mono text-[10px] tracking-widest uppercase gap-2"
+        >
+          <Download className="size-3.5" /> Export
+        </Button>
       </div>
 
       {/* List */}
@@ -77,7 +95,7 @@ export default function SubscribersPage() {
         <CardHeader className="border-b border-border/10">
           <CardTitle className="text-[11px] font-mono tracking-[0.2em] uppercase text-muted-foreground">
             Current Subscribers{" "}
-            {subscribers?.total ? `(${subscribers.total})` : ""}
+            {subscribersData?.total ? `(${subscribersData.total})` : ""}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
@@ -174,6 +192,13 @@ export default function SubscribersPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination */}
+          <PaginationController
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
         </CardContent>
       </Card>
     </div>

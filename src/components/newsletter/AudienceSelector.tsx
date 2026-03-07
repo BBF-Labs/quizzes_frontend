@@ -147,6 +147,7 @@ export function AudienceSelector({ value, onChange }: AudienceSelectorProps) {
                 {ROLES.map((role) => (
                   <button
                     key={role}
+                    type="button"
                     onClick={() => {
                       const current = filter.roles || [];
                       const next = current.includes(role)
@@ -205,6 +206,7 @@ export function AudienceSelector({ value, onChange }: AudienceSelectorProps) {
                       {WAITLIST_STATUS.map((status) => (
                         <button
                           key={status}
+                          type="button"
                           onClick={() => {
                             const cs = filter.contactStatus || {};
                             const current = cs.waitlistStatus || [];
@@ -264,6 +266,7 @@ export function AudienceSelector({ value, onChange }: AudienceSelectorProps) {
                       {NEWSLETTER_STATUS.map((status) => (
                         <button
                           key={status}
+                          type="button"
                           onClick={() => {
                             const cs = filter.contactStatus || {};
                             const current = cs.newsletterStatus || [];
