@@ -100,6 +100,10 @@ export default function CampaignDetailPage() {
   const [bodyDirty, setBodyDirty] = useState(false);
   const [metaDirty, setMetaDirty] = useState(false);
   const [targetDirty, setTargetDirty] = useState(false);
+  const [activeTab, setActiveTab] = useState<CampaignTab>(() => {
+    const initialTab = searchParams.get("tab");
+    return isCampaignTab(initialTab) ? initialTab : "configure";
+  });
   const { theme } = useTheme();
   const isMobile = useIsMobile();
   const { socket } = useSocket();
@@ -175,10 +179,6 @@ export default function CampaignDetailPage() {
 
   const isDraft = campaign.status === "draft";
   const isDone = campaign.status === "done";
-  const tabParam = searchParams.get("tab");
-  const activeTab: CampaignTab = isCampaignTab(tabParam)
-    ? tabParam
-    : "configure";
 
   const isDirty =
     promptDirty ||
@@ -231,6 +231,7 @@ export default function CampaignDetailPage() {
 
   const handleTabChange = (value: string) => {
     const nextTab: CampaignTab = isCampaignTab(value) ? value : "configure";
+    setActiveTab(nextTab);
 
     const nextParams = new URLSearchParams(searchParams.toString());
     if (nextTab === "configure") {
@@ -240,9 +241,8 @@ export default function CampaignDetailPage() {
     }
 
     const query = nextParams.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname, {
-      scroll: false,
-    });
+    const nextUrl = query ? `${pathname}?${query}` : pathname;
+    window.history.replaceState(null, "", nextUrl);
   };
 
   const handleGenerate = async () => {
