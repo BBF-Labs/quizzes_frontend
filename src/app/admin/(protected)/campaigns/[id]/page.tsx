@@ -161,6 +161,7 @@ export default function CampaignDetailPage() {
     );
 
   const isDraft = campaign.status === "draft";
+  const isDone = campaign.status === "done";
 
   const isDirty =
     promptDirty ||
@@ -190,7 +191,7 @@ export default function CampaignDetailPage() {
       setMetaDirty(false);
       setTargetDirty(false);
 
-      toast.success("All changes synced.");
+      toast.success("Campaign changes saved.");
     } catch (err: any) {
       // On error, mark everything as dirty again
       setPromptDirty(true);
@@ -199,7 +200,10 @@ export default function CampaignDetailPage() {
       setBodyDirty(true);
       setMetaDirty(true);
       setTargetDirty(true);
-      toast.error(err.response?.data?.message ?? "Save failed");
+      toast.error(
+        err.response?.data?.message ??
+          "Could not save campaign changes. Please try again.",
+      );
     }
   };
 
@@ -207,28 +211,43 @@ export default function CampaignDetailPage() {
     try {
       if (promptDirty || linksDirty || imagesDirty) await saveChanges();
       await generateMutation.mutateAsync();
-      toast.success("AI body generated!");
+      toast.success(
+        "AI draft generation queued. Content will update once processing completes.",
+      );
       setShowPreview(true);
     } catch (err: any) {
-      toast.error(err.response?.data?.message ?? "Generation failed");
+      toast.error(
+        err.response?.data?.message ??
+          "Could not queue AI draft generation. Update instructions and try again.",
+      );
     }
   };
 
   const handleApprove = async () => {
     try {
       await approveMutation.mutateAsync();
-      toast.success("Campaign approved — dispatch queued!");
+      toast.success(
+        "Campaign approved. Dispatch has been queued and is running in the background.",
+      );
     } catch (err: any) {
-      toast.error(err.response?.data?.message ?? "Approval failed");
+      toast.error(
+        err.response?.data?.message ??
+          "Could not approve campaign. Ensure the body is ready and try again.",
+      );
     }
   };
 
   const handleSendPreview = async () => {
     try {
       await sendPreviewMutation.mutateAsync();
-      toast.success("Test email sent to your admin address!");
+      toast.success(
+        "Test email queued. It should arrive at your admin address shortly.",
+      );
     } catch (err: any) {
-      toast.error(err.response?.data?.message ?? "Test send failed");
+      toast.error(
+        err.response?.data?.message ??
+          "Could not queue test email. Check SMTP settings and try again.",
+      );
     }
   };
 
@@ -476,7 +495,9 @@ export default function CampaignDetailPage() {
                           <button
                             key={option}
                             type="button"
+                            disabled={isDone}
                             onClick={() => {
+                              if (isDone) return;
                               if (option === "all") {
                                 // "all" is mutually exclusive with other options
                                 if (isSelected) {
@@ -512,6 +533,8 @@ export default function CampaignDetailPage() {
                               isSelected
                                 ? "bg-primary/20 border-primary/60 text-primary"
                                 : "bg-secondary/40 border-border/50 text-foreground/70 hover:border-primary/30",
+                              isDone &&
+                                "opacity-50 cursor-not-allowed hover:border-border/50",
                             )}
                           >
                             {option}
