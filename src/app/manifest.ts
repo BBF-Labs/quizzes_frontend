@@ -2,9 +2,9 @@ import { MetadataRoute } from 'next'
  
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Qz Platform',
+    name: 'Qz.',
     short_name: 'Qz',
-    description: 'AI-powered study platform for university students.',
+    description: 'AI-powered study platform for students.',
     start_url: '/',
     display: 'standalone',
     background_color: '#0b101a',
