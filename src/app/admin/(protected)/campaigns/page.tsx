@@ -279,15 +279,15 @@ export default function AdminPage() {
                <div className="space-y-1.5">
                   <label className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground">Campaign Type</label>
                   <Select value={form.campaignType} onValueChange={(value) => setForm({ ...form, campaignType: value as CampaignType })}>
-                    <SelectTrigger className="rounded-none bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+                    <SelectTrigger className="w-full rounded-none bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="newsletter">Newsletter</SelectItem>
-                      <SelectItem value="announcement">Announcement</SelectItem>
-                      <SelectItem value="product_update">Product Update</SelectItem>
-                      <SelectItem value="waitlist_update">Waitlist Update</SelectItem>
-                      <SelectItem value="system_update">System Update</SelectItem>
+                    <SelectContent className="rounded-none border-border/40 bg-card/95 font-mono text-xs uppercase">
+                      <SelectItem value="newsletter" className="rounded-none font-mono text-xs uppercase">Newsletter</SelectItem>
+                      <SelectItem value="announcement" className="rounded-none font-mono text-xs uppercase">Announcement</SelectItem>
+                      <SelectItem value="product_update" className="rounded-none font-mono text-xs uppercase">Product Update</SelectItem>
+                      <SelectItem value="waitlist_update" className="rounded-none font-mono text-xs uppercase">Waitlist Update</SelectItem>
+                      <SelectItem value="system_update" className="rounded-none font-mono text-xs uppercase">System Update</SelectItem>
                     </SelectContent>
                   </Select>
                </div>

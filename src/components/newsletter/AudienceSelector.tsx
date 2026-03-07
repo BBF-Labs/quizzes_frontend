@@ -1,11 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Check, Info, Users, Building2, School, MapPin } from "lucide-react";
 import { IAudienceFilter } from "@/hooks/use-campaigns";
 import { useUniversities } from "@/hooks/use-universities";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface AudienceSelectorProps {
   value: IAudienceFilter;
@@ -45,6 +52,14 @@ export function AudienceSelector({ value, onChange }: AudienceSelectorProps) {
     : [];
 
   const filter = value || {};
+  const [specificEmailsText, setSpecificEmailsText] = useState(
+    filter.specificEmails?.join("\n") || "",
+  );
+
+  useEffect(() => {
+    const next = filter.specificEmails?.join("\n") || "";
+    setSpecificEmailsText(next);
+  }, [filter.specificEmails]);
 
   const updateFilter = (updates: Partial<IAudienceFilter>) => {
     onChange({ ...filter, ...updates });
@@ -305,23 +320,37 @@ export function AudienceSelector({ value, onChange }: AudienceSelectorProps) {
                 <label className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground flex items-center gap-2">
                   <Building2 className="size-3" /> University Target
                 </label>
-                <select
-                  value={filter.universityId || ""}
-                  onChange={(e) =>
-                    updateFilter({ universityId: e.target.value || undefined })
+                <Select
+                  value={filter.universityId || "all"}
+                  onValueChange={(value) =>
+                    updateFilter({
+                      universityId: value === "all" ? undefined : value,
+                    })
                   }
-                  className="w-full h-10 px-3 py-2 bg-background/50 border border-border/40 text-xs font-mono rounded-none focus:outline-none focus:border-primary transition-all uppercase"
                 >
-                  <option value="">Global (All Universities)</option>
-                  {universities.map((u) => (
-                    <option
-                      key={u._id ?? u.id ?? u.name}
-                      value={u._id ?? u.id ?? ""}
+                  <SelectTrigger className="w-full rounded-none bg-background/50 border border-border/40 font-mono text-xs uppercase focus-visible:ring-0">
+                    <SelectValue placeholder="Global (All Universities)" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-none border-border/40 bg-card/95 font-mono text-xs uppercase">
+                    <SelectItem
+                      value="all"
+                      className="rounded-none font-mono text-xs uppercase"
                     >
-                      {u.name}
-                    </option>
-                  ))}
-                </select>
+                      Global (All Universities)
+                    </SelectItem>
+                    {universities
+                      .filter((u) => Boolean(u._id ?? u.id))
+                      .map((u) => (
+                        <SelectItem
+                          key={u._id ?? u.id ?? u.name}
+                          value={(u._id ?? u.id) as string}
+                          className="rounded-none font-mono text-xs uppercase"
+                        >
+                          {u.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -457,14 +486,17 @@ export function AudienceSelector({ value, onChange }: AudienceSelectorProps) {
                   Target specific emails (one per line):
                 </p>
                 <textarea
-                  value={filter.specificEmails?.join("\n") || ""}
-                  onChange={(e) =>
+                  value={specificEmailsText}
+                  onChange={(e) => {
+                    const text = e.target.value;
+                    setSpecificEmailsText(text);
                     updateFilter({
-                      specificEmails: e.target.value
-                        .split("\n")
-                        .filter((em) => em.trim() !== ""),
-                    })
-                  }
+                      specificEmails: text
+                        .split(/\r?\n/)
+                        .map((em) => em.trim())
+                        .filter(Boolean),
+                    });
+                  }}
                   rows={3}
                   className="w-full rounded-none font-mono text-[10px] border border-input bg-background/30 px-3 py-2 text-foreground focus:outline-none focus:border-primary resize-none"
                   placeholder="user@example.com"

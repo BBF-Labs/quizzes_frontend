@@ -665,17 +665,17 @@ export default function CampaignDetailPage() {
                           setCampaignType(value as CampaignType);
                           setMetaDirty(true);
                         }} disabled={!isEditable}>
-                          <SelectTrigger className="rounded-none bg-background/50 border border-border/40 font-mono text-xs uppercase focus-visible:ring-0 disabled:opacity-50">
+                          <SelectTrigger className="w-full rounded-none bg-background/50 border border-border/40 font-mono text-xs uppercase focus-visible:ring-0 disabled:opacity-50">
                             <SelectValue placeholder="Select type" />
                           </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="newsletter">Newsletter</SelectItem>
-                            <SelectItem value="announcement">Announcement</SelectItem>
-                            <SelectItem value="product_update">Product Update</SelectItem>
-                            <SelectItem value="waitlist_update">Waitlist Update</SelectItem>
-                            <SelectItem value="system_update">System Update</SelectItem>
-                            <SelectItem value="exam_reminder">Exam Reminder</SelectItem>
-                            <SelectItem value="quiz_available">Quiz Available</SelectItem>
+                          <SelectContent className="rounded-none border-border/40 bg-card/95 font-mono text-xs uppercase">
+                            <SelectItem value="newsletter" className="rounded-none font-mono text-xs uppercase">Newsletter</SelectItem>
+                            <SelectItem value="announcement" className="rounded-none font-mono text-xs uppercase">Announcement</SelectItem>
+                            <SelectItem value="product_update" className="rounded-none font-mono text-xs uppercase">Product Update</SelectItem>
+                            <SelectItem value="waitlist_update" className="rounded-none font-mono text-xs uppercase">Waitlist Update</SelectItem>
+                            <SelectItem value="system_update" className="rounded-none font-mono text-xs uppercase">System Update</SelectItem>
+                            <SelectItem value="exam_reminder" className="rounded-none font-mono text-xs uppercase">Exam Reminder</SelectItem>
+                            <SelectItem value="quiz_available" className="rounded-none font-mono text-xs uppercase">Quiz Available</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
