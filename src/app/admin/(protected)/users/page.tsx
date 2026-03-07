@@ -2,17 +2,28 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Users, Search, Filter, Download, UserCheck, Shield, GraduationCap, Calendar, Mail } from "lucide-react";
+import { Users, Search, Download, Shield, GraduationCap } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PaginationController } from "@/components/pagination-controller";
 import { useUsers } from "@/hooks/use-admin";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
 
 export default function UsersPage() {
+  const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const { data: users, isLoading } = useUsers({ search });
+  const [roleFilter, setRoleFilter] = useState("");
+  const { data: usersData, isLoading } = useUsers({
+    page,
+    limit: 20,
+    search: search || undefined,
+    role: roleFilter || undefined,
+  });
+
+  const users = usersData?.data || [];
+  const totalPages = usersData?.page && usersData?.limit ? Math.ceil(usersData.total / usersData.limit) : 1;
 
   return (
     <div className="space-y-8">
@@ -36,31 +47,44 @@ export default function UsersPage() {
       </motion.div>
 
       {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-        <div className="relative w-full sm:w-96">
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input 
             placeholder="Search by name, email, or username..." 
             className="pl-9 rounded-none bg-background/50 font-mono text-xs uppercase tracking-widest"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
           />
         </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Button variant="outline" size="sm" className="rounded-none font-mono text-[10px] tracking-widest uppercase gap-2 flex-1 sm:flex-none">
-            <Filter className="size-3.5" /> Filter
-          </Button>
-          <Button variant="outline" size="sm" className="rounded-none font-mono text-[10px] tracking-widest uppercase gap-2 flex-1 sm:flex-none">
-            <Download className="size-3.5" /> Export
-          </Button>
-        </div>
+        <Select value={roleFilter || "all"} onValueChange={(value) => {
+          setRoleFilter(value === "all" ? "" : value);
+          setPage(1);
+        }}>
+          <SelectTrigger className="w-full sm:w-auto sm:min-w-130 rounded-none bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+            <SelectValue placeholder="All Roles" />
+          </SelectTrigger>
+          <SelectContent className="rounded-none border-border/40 bg-card/95 font-mono text-xs uppercase">
+            <SelectItem value="all" className="rounded-none font-mono text-xs uppercase">All Roles</SelectItem>
+            <SelectItem value="student" className="rounded-none font-mono text-xs uppercase">Student</SelectItem>
+            <SelectItem value="admin" className="rounded-none font-mono text-xs uppercase">Admin</SelectItem>
+            <SelectItem value="moderator" className="rounded-none font-mono text-xs uppercase">Moderator</SelectItem>
+            <SelectItem value="staff" className="rounded-none font-mono text-xs uppercase">Staff</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button variant="outline" size="sm" className="rounded-none font-mono text-[10px] tracking-widest uppercase gap-2">
+          <Download className="size-3.5" /> Export
+        </Button>
       </div>
 
       {/* List */}
       <Card className="rounded-none border-border/50 bg-card/40 overflow-hidden">
         <CardHeader className="border-b border-border/10">
           <CardTitle className="text-[11px] font-mono tracking-[0.2em] uppercase text-muted-foreground">
-            Registered Users {users?.total ? `(${users.total})` : ""}
+            Registered Users {usersData?.total ? `(${usersData.total})` : ""}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
@@ -81,7 +105,7 @@ export default function UsersPage() {
                       Retrieving platform user records…
                     </td>
                   </tr>
-                ) : !users?.data || users.data.length === 0 ? (
+                ) : !users || users.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="px-6 py-12 text-center space-y-3">
                       <Users className="size-8 text-muted-foreground/30 mx-auto" />
@@ -89,15 +113,15 @@ export default function UsersPage() {
                     </td>
                   </tr>
                 ) : (
-                  users?.data.map((user: any) => (
+                  users.map((user) => (
                     <tr key={user._id} className="hover:bg-primary/5 transition-colors group">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="size-8 bg-zinc-800 border border-border/50 flex items-center justify-center shrink-0">
-                            <span className="text-[10px] font-bold text-zinc-400">{user.username?.[0]?.toUpperCase()}</span>
+                            <span className="text-[10px] font-bold text-zinc-400">{user.name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase()}</span>
                           </div>
                           <div className="flex flex-col gap-0.5">
-                            <span className="text-foreground font-bold">{user.name || user.username}</span>
+                            <span className="text-foreground font-bold">{user.name || user.email}</span>
                             <span className="text-[9px] text-muted-foreground lowercase tracking-normal">{user.email}</span>
                           </div>
                         </div>
@@ -145,13 +169,20 @@ export default function UsersPage() {
               </tbody>
             </table>
           </div>
+          
+          {/* Pagination */}
+          <PaginationController
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
         </CardContent>
       </Card>
     </div>
   );
 }
 
-function ExternalLink(props: any) {
+function ExternalLink(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       {...props}

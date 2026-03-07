@@ -19,6 +19,9 @@ export interface IAudienceEntry {
   newsletterStatus?: string;
   waitlistStatus?: string;
   createdAt: string;
+  role?: string;
+  isSubscribed?: boolean;
+  isBanned?: boolean;
 }
 
 export interface IPaginatedAudience {
@@ -33,11 +36,22 @@ function normalizePaginatedAudience(
   options: { page?: number; limit?: number },
 ): IPaginatedAudience {
   if (Array.isArray(payload)) {
+    const page = options.page ?? 1;
+    const limit = options.limit ?? 10;
+    const pageSize = payload.length;
+
+    // Some endpoints currently return data arrays without total metadata.
+    // Estimate totals so pager controls can still move forward/backward.
+    const estimatedTotal =
+      pageSize === limit
+        ? page * limit + 1
+        : (page - 1) * limit + pageSize;
+
     return {
       data: payload as IAudienceEntry[],
-      total: payload.length,
-      page: options.page ?? 1,
-      limit: options.limit ?? 10,
+      total: estimatedTotal,
+      page,
+      limit,
     };
   }
 
@@ -77,7 +91,12 @@ export function useAdminStats() {
 }
 
 export function useSubscribers(
-  options: { page?: number; limit?: number; search?: string } = {},
+  options: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    newsletterStatus?: string;
+  } = {},
 ) {
   return useQuery({
     queryKey: ["admin", "subscribers", options],
@@ -92,7 +111,12 @@ export function useSubscribers(
 }
 
 export function useWaitlist(
-  options: { page?: number; limit?: number; search?: string } = {},
+  options: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    waitlistStatus?: string;
+  } = {},
 ) {
   return useQuery({
     queryKey: ["admin", "waitlist", options],
@@ -107,7 +131,12 @@ export function useWaitlist(
 }
 
 export function useUsers(
-  options: { page?: number; limit?: number; search?: string } = {},
+  options: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    role?: string;
+  } = {},
 ) {
   return useQuery({
     queryKey: ["admin", "users", options],

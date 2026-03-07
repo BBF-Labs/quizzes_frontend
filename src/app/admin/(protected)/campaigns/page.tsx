@@ -5,6 +5,7 @@ import { motion, Variants } from "framer-motion";
 import { Plus, ArrowRight, RefreshCw, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   useCampaigns,
   useCreateCampaign,
@@ -14,6 +15,8 @@ import {
   CampaignType,
   IAudienceFilter
 } from "@/hooks/use-campaigns";
+import { SearchFilterBar } from "@/components/search-filter-bar";
+import { PaginationController } from "@/components/pagination-controller";
 import { LinkBuilder } from "@/components/newsletter/LinkBuilder";
 import { ImageManager } from "@/components/newsletter/ImageManager";
 import { AudienceSelector } from "@/components/newsletter/AudienceSelector";
@@ -51,9 +54,20 @@ const itemVariants: Variants = {
 };
 
 export default function AdminPage() {
-  const { data: campaigns, isLoading, refetch } = useCampaigns();
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const { data: campaignsData, isLoading, refetch } = useCampaigns({
+    page,
+    limit: 10,
+    search: search || undefined,
+    status: statusFilter || undefined,
+  });
   const createMutation = useCreateCampaign();
   const [showNewForm, setShowNewForm] = useState(false);
+
+  const campaigns = campaignsData?.items || [];
+  const totalPages = campaignsData?.totalPages || 1;
 
   interface CampaignForm {
     title: string;
@@ -147,6 +161,33 @@ export default function AdminPage() {
         </div>
       </motion.div>
 
+      {/* Search & Filter Toolbar */}
+      <SearchFilterBar
+        search={search}
+        onSearchChange={(value) => {
+          setSearch(value);
+          setPage(1);
+        }}
+        placeholder="Search campaigns by title or subject..."
+        filterValue={statusFilter}
+        onFilterChange={(value) => {
+          setStatusFilter(value);
+          setPage(1);
+        }}
+        filterOptions={[
+          { value: "draft", label: "Draft" },
+          { value: "generating", label: "Generating" },
+          { value: "approved", label: "Approved" },
+          { value: "scheduled", label: "Scheduled" },
+          { value: "dispatching", label: "Dispatching" },
+          { value: "done", label: "Done" },
+          { value: "failed", label: "Failed" },
+          { value: "cancelled", label: "Cancelled" },
+        ]}
+        showRefresh={true}
+        onRefresh={() => refetch()}
+      />
+
       {/* New Campaign Form */}
       {showNewForm && (
         <motion.div
@@ -237,17 +278,18 @@ export default function AdminPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                <div className="space-y-1.5">
                   <label className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground">Campaign Type</label>
-                  <select
-                    value={form.campaignType}
-                    onChange={(e) => setForm({ ...form, campaignType: e.target.value as CampaignType })}
-                    className="w-full h-10 px-3 py-2 bg-background/50 border border-input text-xs font-mono rounded-none focus:outline-none focus:border-primary transition-all uppercase"
-                  >
-                    <option value="newsletter">Newsletter</option>
-                    <option value="announcement">Announcement</option>
-                    <option value="product_update">Product Update</option>
-                    <option value="waitlist_update">Waitlist Update</option>
-                    <option value="system_update">System Update</option>
-                  </select>
+                  <Select value={form.campaignType} onValueChange={(value) => setForm({ ...form, campaignType: value as CampaignType })}>
+                    <SelectTrigger className="rounded-none bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="newsletter">Newsletter</SelectItem>
+                      <SelectItem value="announcement">Announcement</SelectItem>
+                      <SelectItem value="product_update">Product Update</SelectItem>
+                      <SelectItem value="waitlist_update">Waitlist Update</SelectItem>
+                      <SelectItem value="system_update">System Update</SelectItem>
+                    </SelectContent>
+                  </Select>
                </div>
                <div className="space-y-1.5">
                   <label className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground">Broadcast Mode</label>
@@ -318,70 +360,79 @@ export default function AdminPage() {
           </p>
         </div>
       ) : (
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="space-y-2"
-        >
-          {campaigns.map((c: ICampaign) => (
-            <motion.div key={c._id} variants={itemVariants}>
-              <Link
-                href={`/admin/campaigns/${c._id}`}
-                id={`campaign-${c._id}`}
-                className="block border border-border/50 bg-card/40 p-0 hover:border-primary transition-all duration-300 group"
-              >
-                {/* Simple Mono Title */}
-                <div className="flex items-center gap-2 p-2 border-b border-border/25 bg-secondary/10">
-                  <h3 className="text-lg font-mono font-bold tracking-[0.2em] uppercase text-foreground group-hover:text-primary transition-colors truncate flex-1">
-                    {c.title}
-                  </h3>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[8px] font-mono tracking-widest uppercase border border-primary/30 px-1.5 py-0.5 rounded-none text-primary/70">
-                      {TYPE_LABELS[c.campaignType] || c.campaignType}
-                    </span>
-                    <span
-                      className={cn(
-                        "text-[8px] font-mono tracking-widest uppercase border px-1.5 py-0.5 rounded-none",
-                        STATUS_CLASS[c.status],
-                      )}
-                    >
-                      {c.status}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="px-5 py-4 flex items-center justify-between">
-                  <div className="space-y-1.5 truncate mr-4">
-                    <p className="text-xs font-mono text-muted-foreground truncate">
-                      {c.subjectLine}
-                    </p>
-                    {(c.status === "dispatching" ||
-                      c.status === "done" ||
-                      c.status === "failed") && (
-                      <p className="text-[10px] font-mono text-muted-foreground/60 flex gap-3">
-                        <span>
-                          SENT: <span className="text-foreground">{c.stats.sent}</span>
-                        </span>
-                        {c.stats.sent > 0 && (
-                          <>
-                            <span>
-                              OPEN: <span className="text-green-500">{(c.stats.openRate * 100).toFixed(1)}%</span>
-                            </span>
-                            <span>
-                              CLICK: <span className="text-blue-500">{(c.stats.clickRate * 100).toFixed(1)}%</span>
-                            </span>
-                          </>
+        <>
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="space-y-2"
+          >
+            {campaigns.map((c: ICampaign) => (
+              <motion.div key={c._id} variants={itemVariants}>
+                <Link
+                  href={`/admin/campaigns/${c._id}`}
+                  id={`campaign-${c._id}`}
+                  className="block border border-border/50 bg-card/40 p-0 hover:border-primary transition-all duration-300 group"
+                >
+                  {/* Simple Mono Title */}
+                  <div className="flex items-center gap-2 p-2 border-b border-border/25 bg-secondary/10">
+                    <h3 className="text-lg font-mono font-bold tracking-[0.2em] uppercase text-foreground group-hover:text-primary transition-colors truncate flex-1">
+                      {c.title}
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[8px] font-mono tracking-widest uppercase border border-primary/30 px-1.5 py-0.5 rounded-none text-primary/70">
+                        {TYPE_LABELS[c.campaignType] || c.campaignType}
+                      </span>
+                      <span
+                        className={cn(
+                          "text-[8px] font-mono tracking-widest uppercase border px-1.5 py-0.5 rounded-none",
+                          STATUS_CLASS[c.status],
                         )}
-                      </p>
-                    )}
+                      >
+                        {c.status}
+                      </span>
+                    </div>
                   </div>
-                  <ArrowRight className="size-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
-                </div>
-              </Link>
-            </motion.div>
-          ))}
-        </motion.div>
+
+                  <div className="px-5 py-4 flex items-center justify-between">
+                    <div className="space-y-1.5 truncate mr-4">
+                      <p className="text-xs font-mono text-muted-foreground truncate">
+                        {c.subjectLine}
+                      </p>
+                      {(c.status === "dispatching" ||
+                        c.status === "done" ||
+                        c.status === "failed") && (
+                        <p className="text-[10px] font-mono text-muted-foreground/60 flex gap-3">
+                          <span>
+                            SENT: <span className="text-foreground">{c.stats.sent}</span>
+                          </span>
+                          {c.stats.sent > 0 && (
+                            <>
+                              <span>
+                                OPEN: <span className="text-green-500">{(c.stats.openRate * 100).toFixed(1)}%</span>
+                              </span>
+                              <span>
+                                CLICK: <span className="text-blue-500">{(c.stats.clickRate * 100).toFixed(1)}%</span>
+                              </span>
+                            </>
+                          )}
+                        </p>
+                      )}
+                    </div>
+                    <ArrowRight className="size-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          {/* Pagination */}
+          <PaginationController
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
+        </>
       )}
     </div>
   );

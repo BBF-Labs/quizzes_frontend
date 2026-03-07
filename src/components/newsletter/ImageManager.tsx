@@ -1,5 +1,5 @@
 "use client";
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useCallback } from "react";
 import NextImage from "next/image";
 import { cn } from "@/lib/utils";
 import {
@@ -44,6 +44,7 @@ export function ImageManager({
   const [isUploading, setIsUploading] = useState<Record<number, boolean>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const activeIndexRef = useRef<number | null>(null);
+  const uploadTimeoutRef = useRef<Record<number, NodeJS.Timeout>>({});
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [page, setPage] = useState(1);
 
@@ -90,69 +91,99 @@ export function ImageManager({
     fileInputRef.current?.click();
   };
 
-  const confirmUpload = async (i: number) => {
-    const file = pendingFiles[i];
-    if (!file) return;
+  const confirmUpload = useCallback(
+    async (i: number) => {
+      // Prevent duplicate uploads via debouncing
+      if (uploadTimeoutRef.current[i]) {
+        clearTimeout(uploadTimeoutRef.current[i]);
+      }
 
-    if (!images[i].altText.trim()) {
-      toast.error("Add alt text before uploading this image.");
-      return;
-    }
+      uploadTimeoutRef.current[i] = setTimeout(async () => {
+        const file = pendingFiles[i];
+        if (!file) return;
 
-    setIsUploading((prev) => ({ ...prev, [i]: true }));
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("folder", "newsletter");
+        if (!images[i].altText.trim()) {
+          toast.error("Add alt text before uploading this image.");
+          return;
+        }
 
-      const res = await api.post("/system/upload", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error("File size must be less than 5MB.");
+          return;
+        }
 
-      const { url, filename, mimetype, size } = res.data.data;
+        // Validate file type
+        if (!file.type.startsWith("image/")) {
+          toast.error("Please upload a valid image file.");
+          return;
+        }
 
-      // Update the parent state
-      const nextImages = [...images];
-      nextImages[i] = {
-        ...nextImages[i],
-        url,
-        filename,
-        mimetype,
-        size,
-      };
-      onChange(nextImages);
+        setIsUploading((prev) => ({ ...prev, [i]: true }));
+        try {
+          const formData = new FormData();
+          formData.append("file", file);
+          formData.append("folder", "newsletter");
 
-      // Clear pending
-      const nextPending = { ...pendingFiles };
-      delete nextPending[i];
-      setPendingFiles(nextPending);
+          const res = await api.post("/system/upload", formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+          });
 
-      toast.success("Image uploaded and linked to this campaign.");
-    } catch (error: unknown) {
-      const apiErrorMessage =
-        typeof error === "object" &&
-        error !== null &&
-        "response" in error &&
-        typeof (error as { response?: { data?: { message?: string } } })
-          .response?.data?.message === "string"
-          ? (error as { response: { data: { message: string } } }).response.data
-              .message
-          : null;
+          const { url, filename, mimetype, size } = res.data.data;
 
-      toast.error(
-        apiErrorMessage ??
-          "Image upload failed. Check file type/size and try again.",
-      );
-    } finally {
-      setIsUploading((prev) => ({ ...prev, [i]: false }));
-    }
-  };
+          // Update the parent state
+          const nextImages = [...images];
+          nextImages[i] = {
+            ...nextImages[i],
+            url,
+            filename,
+            mimetype,
+            size,
+          };
+          onChange(nextImages);
+
+          // Clear pending
+          const nextPending = { ...pendingFiles };
+          delete nextPending[i];
+          setPendingFiles(nextPending);
+
+          toast.success("Image uploaded and linked to this campaign.");
+        } catch (error: unknown) {
+          const apiErrorMessage =
+            typeof error === "object" &&
+            error !== null &&
+            "response" in error &&
+            typeof (error as { response?: { data?: { message?: string } } })
+              .response?.data?.message === "string"
+              ? (error as { response: { data: { message: string } } }).response.data
+                  .message
+              : null;
+
+          toast.error(
+            apiErrorMessage ??
+              "Image upload failed. Check file type/size and try again.",
+          );
+        } finally {
+          setIsUploading((prev) => ({ ...prev, [i]: false }));
+          delete uploadTimeoutRef.current[i];
+        }
+      }, 300); // Debounce for 300ms to prevent rapid clicks
+    },
+    [images, pendingFiles, onChange],
+  );
 
   const cancelPending = (i: number) => {
     const nextPending = { ...pendingFiles };
     delete nextPending[i];
     setPendingFiles(nextPending);
   };
+
+  // Cleanup timeouts on unmount
+  React.useEffect(() => {
+    return () => {
+      Object.values(uploadTimeoutRef.current).forEach(clearTimeout);
+    };
+  }, []);
 
   return (
     <div className="space-y-6">

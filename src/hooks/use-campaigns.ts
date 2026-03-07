@@ -139,19 +139,56 @@ interface ICampaignImageGalleryResponse {
   limit: number;
 }
 
-function normalizeCampaignsPayload(payload: unknown): ICampaign[] {
-  if (Array.isArray(payload)) return payload as ICampaign[];
+export interface IPaginatedCampaigns {
+  items: ICampaign[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
 
-  if (
-    payload &&
-    typeof payload === "object" &&
-    "data" in payload &&
-    Array.isArray((payload as { data: unknown }).data)
-  ) {
-    return (payload as { data: ICampaign[] }).data;
+function normalizeCampaignsPayload(
+  payload: unknown,
+  page: number = 1,
+  limit: number = 10,
+): IPaginatedCampaigns {
+  if (Array.isArray(payload)) {
+    return {
+      items: payload as ICampaign[],
+      total: payload.length,
+      page,
+      limit,
+      totalPages: Math.ceil(payload.length / limit),
+    };
   }
 
-  return [];
+  if (payload && typeof payload === "object") {
+    const obj = payload as Record<string, unknown>;
+    const items = Array.isArray(obj.data)
+      ? (obj.data as ICampaign[])
+      : Array.isArray(obj.items)
+        ? (obj.items as ICampaign[])
+        : [];
+    const total = typeof obj.total === "number" ? obj.total : items.length;
+    const returnPage = typeof obj.page === "number" ? obj.page : page;
+    const returnLimit = typeof obj.limit === "number" ? obj.limit : limit;
+
+    return {
+      items,
+      total,
+      page: returnPage,
+      limit: returnLimit,
+      totalPages: Math.ceil(total / returnLimit),
+    };
+  }
+
+  return {
+    items: [],
+    total: 0,
+    page,
+    limit,
+    totalPages: 0,
+  };
 }
 
 function normalizeCampaignImagesPayload(
@@ -198,12 +235,28 @@ function normalizeCampaignImagesPayload(
 }
 
 // --- Queries ---
-export function useCampaigns() {
+export function useCampaigns(options: {
+  page?: number;
+  limit?: number;
+  status?: string;
+  search?: string;
+} = {}) {
+  const page = options.page ?? 1;
+  const limit = options.limit ?? 10;
+  const status = options.status;
+  const search = options.search;
+
   return useQuery({
-    queryKey: ["campaigns"],
+    queryKey: ["campaigns", { page, limit, status, search }],
     queryFn: async () => {
-      const res = await api.get(BASE);
-      return normalizeCampaignsPayload(res.data?.data);
+      const params = new URLSearchParams();
+      params.append("page", page.toString());
+      params.append("limit", limit.toString());
+      if (status) params.append("status", status);
+      if (search) params.append("search", search);
+      
+      const res = await api.get(`${BASE}?${params.toString()}`);
+      return normalizeCampaignsPayload(res.data?.data, page, limit);
     },
   });
 }
@@ -244,6 +297,8 @@ export function useCampaign(id: string) {
       return res.data?.data as ICampaign;
     },
     enabled: !!id,
+    staleTime: 10000, // Keep data fresh for 10 seconds
+    gcTime: 30000, // Keep unused data in cache for 30 seconds
   });
 }
 
