@@ -29,7 +29,8 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// Push: show notification unless the app is already focused
+// Push: show notification unless the app is already focused.
+// Test pushes can force display while focused via data.forceShow.
 self.addEventListener("push", (event) => {
   let data = {};
   if (event.data) {
@@ -45,21 +46,22 @@ self.addEventListener("push", (event) => {
     body: data.body || "",
     icon: data.icon || "/icon-192x192.png",
     badge: data.badge || "/favicon-32x32.png",
-    data: { url: data.url || "/" },
+    data: { url: data.url || "/", ...data.data },
     tag: data.tag || "qz-notification",
     renotify: !!data.tag,
   };
 
   event.waitUntil(
-    // Check if any client window is currently focused
     self.clients
       .matchAll({ type: "window", includeUncontrolled: true })
       .then((clientList) => {
         const appIsFocused = clientList.some((client) => client.focused);
-        if (appIsFocused) {
-          // App is open and focused — socket handles real-time updates
+        const forceShow = Boolean(data?.data?.forceShow);
+        
+        if (appIsFocused && !forceShow) {
           return;
         }
+        
         return self.registration.showNotification(title, options);
       })
   );
