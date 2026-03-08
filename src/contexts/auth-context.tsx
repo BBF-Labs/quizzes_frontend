@@ -3,6 +3,10 @@ import React, { createContext, useContext, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import {
+  ensurePushSubscription,
+  getCurrentPushEndpoint,
+} from "@/lib/push-notifications";
+import {
   clearAdminSession,
   getAdminAccessToken,
   setAdminSession,
@@ -99,10 +103,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       password: string;
       rememberMe: boolean;
     }) => {
+      const pushEndpoint = await getCurrentPushEndpoint();
+
       const res = await api.post("/auth/login", {
         username,
         password,
         rememberMe,
+        endpoint: pushEndpoint ?? undefined,
       });
 
       const resData = res.data?.data ?? res.data;
@@ -131,8 +138,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isSuperAdmin: decoded.isSuperAdmin ?? false,
       } as AdminUser;
     },
-    onSuccess: (adminUser) => {
+    onSuccess: async (adminUser) => {
       qc.setQueryData(["admin-session"], adminUser);
+      // Post-login, prompt once for permission so authenticated sessions can receive pushes.
+      await ensurePushSubscription({ promptForPermission: true });
     },
   });
 

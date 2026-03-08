@@ -29,6 +29,79 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
+// Push: show notification unless the app is already focused.
+// Test pushes can force display while focused via data.forceShow.
+self.addEventListener("push", (event) => {
+  let data = {};
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch {
+      data = { title: event.data.text() };
+    }
+  }
+
+  const title = data.title || "QZ Notification";
+  const options = {
+    body: data.body || "",
+    icon: data.icon || "/icon-192x192.png",
+    badge: data.badge || "/favicon-32x32.png",
+    data: { url: data.url || "/", ...data.data },
+    tag: data.tag || "qz-notification",
+    renotify: !!data.tag,
+  };
+
+  event.waitUntil(
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((clientList) => {
+        const appIsFocused = clientList.some((client) => client.focused);
+        const forceShow = Boolean(data?.data?.forceShow);
+        
+        if (appIsFocused && !forceShow) {
+          return;
+        }
+        
+        return self.registration.showNotification(title, options);
+      })
+  );
+});
+
+// NotificationClick: focus an existing tab or open a new one
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+
+  const targetUrl = (event.notification.data && event.notification.data.url) || "/";
+
+  event.waitUntil(
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((clientList) => {
+        // Try to focus an existing tab that has the target URL
+        let targetPathname = "/";
+        try {
+          targetPathname = new URL(targetUrl, self.location.origin).pathname;
+        } catch {
+          // Fall through with default pathname
+        }
+        for (const client of clientList) {
+          try {
+            const clientPathname = new URL(client.url).pathname;
+            if (clientPathname === targetPathname && "focus" in client) {
+              return client.focus();
+            }
+          } catch {
+            // Skip clients with unparseable URLs
+          }
+        }
+        // No matching tab — open a new one
+        if (self.clients.openWindow) {
+          return self.clients.openWindow(targetUrl);
+        }
+      })
+  );
+});
+
 // Fetch: network-first with cache fallback
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;

@@ -2,16 +2,17 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Radio, Zap, Activity, Clock, Trash2, StopCircle, PlayCircle } from "lucide-react";
+import { Zap, Activity, Clock, Trash2, StopCircle, PlayCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useSocket } from "@/hooks/use-socket";
 import { cn } from "@/lib/utils";
+import { resubscribeWithFreshKeys, sendTestPushNotification } from "@/lib/push-notifications";
 
 interface SystemEvent {
   id: string;
   type: string;
-  payload: any;
+  payload: unknown;
   timestamp: string;
 }
 
@@ -19,14 +20,23 @@ export default function EventsPage() {
   const { socket, isConnected } = useSocket();
   const [events, setEvents] = useState<SystemEvent[]>([]);
   const [isPaused, setIsPaused] = useState(false);
+  const [isSendingPushTest, setIsSendingPushTest] = useState(false);
 
   useEffect(() => {
     if (!socket || isPaused) return;
 
-    const handleEvent = (data: any) => {
+    const handleEvent = (data: unknown) => {
+      const eventType =
+        typeof data === "object" &&
+        data !== null &&
+        "type" in data &&
+        typeof (data as { type: unknown }).type === "string"
+          ? (data as { type: string }).type
+          : "unknown";
+
       const newEvent: SystemEvent = {
         id: Math.random().toString(36).substring(7),
-        type: data.type || "unknown",
+        type: eventType,
         payload: data,
         timestamp: new Date().toISOString(),
       };
@@ -36,10 +46,12 @@ export default function EventsPage() {
     // Listen to various event channels
     socket.on("email:updated", (data) => handleEvent({ ...data, type: "email:updated" }));
     socket.on("campaign:updated", (data) => handleEvent({ ...data, type: "campaign:updated" }));
+    socket.on("notification:test_push", (data) => handleEvent({ ...data, type: "notification:test_push" }));
     
     return () => {
       socket.off("email:updated");
       socket.off("campaign:updated");
+      socket.off("notification:test_push");
     };
   }, [socket, isPaused]);
 
@@ -66,22 +78,48 @@ export default function EventsPage() {
 
       {/* Stats / Controls */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="rounded-none border-border/50 bg-card/40">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div className="space-y-1">
-              <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">Status</p>
-              <div className="flex items-center gap-2">
-                <div className={cn("size-2 rounded-none", isConnected ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]" : "bg-destructive animate-pulse")} />
-                <p className="text-sm font-mono font-bold uppercase tracking-tighter">
-                  {isConnected ? "Live Connection" : "Offline"}
-                </p>
-              </div>
-            </div>
-            <Activity className={cn("size-5 text-muted-foreground", isConnected && "text-primary animate-pulse")} />
-          </CardContent>
-        </Card>
+        <div className="rounded-none border border-border/50 bg-card/40 h-10 px-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className={cn("size-2 rounded-none", isConnected ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]" : "bg-destructive animate-pulse")} />
+            <p className="text-[10px] font-mono font-bold uppercase tracking-widest">
+              {isConnected ? "Live" : "Offline"}
+            </p>
+          </div>
+          <Activity className={cn("size-3.5 text-muted-foreground", isConnected && "text-primary animate-pulse")} />
+        </div>
 
         <div className="sm:col-span-2 flex items-center justify-end gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={async () => {
+              setIsSendingPushTest(true);
+              try {
+                // Ensure the browser subscription is valid for the current VAPID key pair.
+                await resubscribeWithFreshKeys();
+                const ok = await sendTestPushNotification();
+                const statusEvent: SystemEvent = {
+                  id: Math.random().toString(36).substring(7),
+                  type: "push:test:enqueued",
+                  payload: {
+                    message: ok
+                      ? "Test push notification job enqueued"
+                      : "Failed to enqueue test push notification",
+                    success: ok,
+                  },
+                  timestamp: new Date().toISOString(),
+                };
+                setEvents((prev) => [statusEvent, ...prev].slice(0, 50));
+              } finally {
+                setIsSendingPushTest(false);
+              }
+            }}
+            disabled={isSendingPushTest}
+            className="rounded-none font-mono text-[10px] tracking-widest uppercase gap-2 h-10 px-4"
+          >
+            <Zap className={cn("size-3.5", isSendingPushTest && "animate-pulse")} />
+            {isSendingPushTest ? "Sending Push..." : "Send Test Push"}
+          </Button>
           <Button 
             variant="outline" 
             size="sm" 
@@ -103,7 +141,7 @@ export default function EventsPage() {
       </div>
 
       {/* Event Log */}
-      <Card className="rounded-none border-border/50 bg-card/40 flex flex-col h-[600px]">
+      <Card className="rounded-none border-border/50 bg-card/40 flex flex-col h-96">
         <CardHeader className="border-b border-border/10 shrink-0">
           <CardTitle className="text-[11px] font-mono tracking-[0.2em] uppercase text-muted-foreground flex items-center justify-between">
             Event Log
