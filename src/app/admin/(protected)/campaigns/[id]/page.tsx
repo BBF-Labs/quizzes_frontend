@@ -713,6 +713,7 @@ export default function CampaignDetailPage() {
                           setAudienceFilter(filter);
                           setTargetDirty(true);
                         }}
+                        disabled={!isDraft}
                       />
                       <p className="text-[9px] text-muted-foreground font-mono italic">
                         Select &quot;all&quot; alone, or choose specific
