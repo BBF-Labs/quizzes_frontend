@@ -13,8 +13,25 @@ interface WaitlistData {
 export function useJoinWaitlist() {
   return useMutation({
     mutationFn: async (data: WaitlistData) => {
-      data.email = data.email.trim().toLowerCase();
-      const response = await api.post("/system/waitlist", data);
+      const payload: WaitlistData = {
+        ...data,
+        email: data.email.trim().toLowerCase(),
+        name: data.name.trim(),
+      };
+
+      if (!payload.university?.trim()) {
+        delete payload.university;
+      } else {
+        payload.university = payload.university.trim();
+      }
+
+      if (!payload.universityId?.trim()) {
+        delete payload.universityId;
+      } else {
+        payload.universityId = payload.universityId.trim();
+      }
+
+      const response = await api.post("/system/waitlist", payload);
       return response.data;
     },
   });
