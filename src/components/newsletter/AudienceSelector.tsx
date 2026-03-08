@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Info, Users, Building2, School, MapPin } from "lucide-react";
+import { Check, Info, Users, Building2, School, MapPin, X } from "lucide-react";
 import { IAudienceFilter } from "@/hooks/use-campaigns";
 import { useUniversities } from "@/hooks/use-universities";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -52,17 +53,50 @@ export function AudienceSelector({ value, onChange }: AudienceSelectorProps) {
     : [];
 
   const filter = value || {};
-  const [specificEmailsText, setSpecificEmailsText] = useState(
-    filter.specificEmails?.join("\n") || "",
+  const [specificEmailsText, setSpecificEmailsText] = useState(() =>
+    value?.specificEmails?.join("\n") || "",
   );
+  const [newEmailInput, setNewEmailInput] = useState("");
 
   useEffect(() => {
-    const next = filter.specificEmails?.join("\n") || "";
-    setSpecificEmailsText(next);
-  }, [filter.specificEmails]);
+    setSpecificEmailsText((prev) => {
+      const next = value?.specificEmails?.join("\n") || "";
+      if (prev !== next) {
+        return next;
+      }
+      return prev;
+    });
+  }, [value]);
 
   const updateFilter = (updates: Partial<IAudienceFilter>) => {
     onChange({ ...filter, ...updates });
+  };
+
+  const addEmail = (email: string) => {
+    const trimmed = email.trim().toLowerCase();
+    if (!trimmed) return;
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmed)) return;
+    
+    const currentEmails = filter.specificEmails || [];
+    if (currentEmails.includes(trimmed)) return;
+    
+    updateFilter({ specificEmails: [...currentEmails, trimmed] });
+    setNewEmailInput("");
+  };
+
+  const removeEmail = (email: string) => {
+    const currentEmails = filter.specificEmails || [];
+    updateFilter({ specificEmails: currentEmails.filter((e) => e !== email) });
+  };
+
+  const handleEmailInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addEmail(newEmailInput);
+    }
   };
 
   const toggleLane = (lane: "waitlist" | "newsletter") => {
@@ -483,24 +517,49 @@ export function AudienceSelector({ value, onChange }: AudienceSelectorProps) {
               </label>
               <div className="space-y-3">
                 <p className="text-[9px] font-mono text-muted-foreground uppercase">
-                  Target specific emails (one per line):
+                  Target specific emails:
                 </p>
-                <textarea
-                  value={specificEmailsText}
-                  onChange={(e) => {
-                    const text = e.target.value;
-                    setSpecificEmailsText(text);
-                    updateFilter({
-                      specificEmails: text
-                        .split(/\r?\n/)
-                        .map((em) => em.trim())
-                        .filter(Boolean),
-                    });
-                  }}
-                  rows={3}
-                  className="w-full rounded-none font-mono text-[10px] border border-input bg-background/30 px-3 py-2 text-foreground focus:outline-none focus:border-primary resize-none"
-                  placeholder="user@example.com"
-                />
+                
+                {/* Email chips display */}
+                <div className="flex flex-wrap gap-2 min-h-[40px] p-3 border border-border/40 bg-black/10">
+                  {(filter.specificEmails || []).map((email) => (
+                    <div
+                      key={email}
+                      className="group flex items-center gap-1.5 px-2 py-1 border border-primary/40 bg-primary/10 text-primary font-mono text-[10px] uppercase transition-all hover:bg-primary hover:text-primary-foreground"
+                    >
+                      <span className="truncate max-w-[200px]">{email}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeEmail(email)}
+                        className="size-3 flex items-center justify-center text-primary/60 hover:text-primary-foreground transition-colors"
+                      >
+                        <X className="size-2.5" />
+                      </button>
+                    </div>
+                  ))}
+                  
+                  {/* Empty state */}
+                  {(!filter.specificEmails || filter.specificEmails.length === 0) && (
+                    <span className="text-[9px] font-mono text-muted-foreground/40 italic">
+                      No specific emails set
+                    </span>
+                  )}
+                </div>
+
+                {/* Input field for adding emails */}
+                <div className="space-y-2">
+                  <Input
+                    value={newEmailInput}
+                    onChange={(e) => setNewEmailInput(e.target.value)}
+                    onKeyDown={handleEmailInputKeyDown}
+                    onBlur={() => addEmail(newEmailInput)}
+                    placeholder="user@example.com (press Enter to add)"
+                    className="rounded-none h-9 font-mono text-[10px] bg-background/50 focus:bg-background transition-colors"
+                  />
+                  <p className="text-[8px] font-mono text-muted-foreground/50 italic">
+                    Press Enter or click outside to add each email. Invalid or duplicate emails will be ignored.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
