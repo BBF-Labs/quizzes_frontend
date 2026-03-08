@@ -151,13 +151,61 @@ export default function CampaignDetailPage() {
   useEffect(() => {
     if (!socket) return;
 
-    const handleUpdate = (data: { campaignId: string; type: string }) => {
+    const joinCampaignRoom = () => {
+      socket.emit("join:campaign", id);
+    };
+
+    joinCampaignRoom();
+    socket.on("connect", joinCampaignRoom);
+
+    const handleUpdate = (data: {
+      campaignId: string;
+      type: string;
+      status?: string;
+      details?: {
+        sent?: number;
+        failed?: number;
+        total?: number;
+        percentComplete?: number;
+      };
+    }) => {
       console.log(`[Socket] Received email:updated event:`, data);
       console.log(`[Socket] Current page campaign ID: ${id}`);
 
       if (data.campaignId === id) {
         console.log(`[Socket] IDs match! Triggering refetch for ${id}...`);
         debouncedRefetch("socket");
+
+        if (data.type === "email:campaign:generate_body" && data.status === "completed") {
+          toast.success("AI campaign generation completed.");
+          return;
+        }
+
+        if (data.type === "email:campaign:generate_body" && data.status === "failed") {
+          toast.error("AI campaign generation failed.");
+          return;
+        }
+
+        if (data.type === "email:campaign:dispatch" && data.status === "started") {
+          toast.info("Campaign dispatch started.");
+          return;
+        }
+
+        if (
+          data.type === "email:campaign:dispatch:completed" &&
+          data.status === "completed"
+        ) {
+          const sent = data.details?.sent ?? 0;
+          const failed = data.details?.failed ?? 0;
+          toast.success(`Dispatch completed: ${sent} sent, ${failed} failed.`);
+          return;
+        }
+
+        if (data.type === "email:campaign:send" && data.status === "failed") {
+          toast.warning("Some recipients failed during dispatch.");
+          return;
+        }
+
         toast.info("Campaign updated in real-time.");
       } else {
         console.log(
@@ -168,6 +216,8 @@ export default function CampaignDetailPage() {
 
     socket.on("email:updated", handleUpdate);
     return () => {
+      socket.emit("leave:campaign", id);
+      socket.off("connect", joinCampaignRoom);
       socket.off("email:updated", handleUpdate);
     };
   }, [socket, id, debouncedRefetch]);
