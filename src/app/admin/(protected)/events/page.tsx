@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useSocket } from "@/hooks/use-socket";
 import { cn } from "@/lib/utils";
-import { sendTestPushNotification } from "@/lib/push-notifications";
+import { resubscribeWithFreshKeys, sendTestPushNotification } from "@/lib/push-notifications";
 
 interface SystemEvent {
   id: string;
@@ -95,6 +95,8 @@ export default function EventsPage() {
             onClick={async () => {
               setIsSendingPushTest(true);
               try {
+                // Ensure the browser subscription is valid for the current VAPID key pair.
+                await resubscribeWithFreshKeys();
                 const ok = await sendTestPushNotification();
                 const statusEvent: SystemEvent = {
                   id: Math.random().toString(36).substring(7),

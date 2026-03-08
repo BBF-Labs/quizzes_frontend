@@ -48,7 +48,7 @@ async function getVapidPublicKey(): Promise<string> {
   }
 
   const res = await api.get("/push/vapid-public-key");
-  const key: string | undefined = res.data?.publicKey;
+  const key: string | undefined = res.data?.data?.publicKey;
 
   if (!key) {
     throw new Error("Missing VAPID public key from backend");
