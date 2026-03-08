@@ -42,11 +42,37 @@ export function ImageManager({
 }: ImageManagerProps) {
   const [pendingFiles, setPendingFiles] = useState<Record<number, File>>({});
   const [isUploading, setIsUploading] = useState<Record<number, boolean>>({});
+  const [imageLoadErrors, setImageLoadErrors] = useState<Record<number, boolean>>({});
+  const [imageLoaded, setImageLoaded] = useState<Record<number, boolean>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const activeIndexRef = useRef<number | null>(null);
   const uploadTimeoutRef = useRef<Record<number, NodeJS.Timeout>>({});
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [page, setPage] = useState(1);
+
+  // Reset image states when images prop changes
+  React.useEffect(() => {
+    setImageLoadErrors({});
+    setImageLoaded({});
+  }, [images]);
+
+  // Create stable object URLs for pending files
+  const previewUrls = React.useMemo(() => {
+    const urls: Record<number, string> = {};
+    Object.entries(pendingFiles).forEach(([index, file]) => {
+      urls[parseInt(index)] = URL.createObjectURL(file);
+    });
+    return urls;
+  }, [pendingFiles]);
+
+  // Cleanup preview URLs when they change
+  React.useEffect(() => {
+    return () => {
+      Object.values(previewUrls).forEach(url => {
+        URL.revokeObjectURL(url);
+      });
+    };
+  }, [previewUrls]);
 
   const { data: galleryData, isLoading: isLoadingGallery } =
     useNewsletterImages({
@@ -263,8 +289,9 @@ export function ImageManager({
                               className="group relative aspect-square bg-secondary/20 border border-border/40 cursor-pointer overflow-hidden hover:border-primary/50 transition-all"
                             >
                               <NextImage
+                                key={`gallery-${asset._id}`}
                                 src={asset.url}
-                                alt={asset.altText}
+                                alt={asset.altText || 'Gallery image'}
                                 fill
                                 unoptimized
                                 sizes="(max-width: 768px) 50vw, 25vw"
@@ -340,9 +367,7 @@ export function ImageManager({
           <AnimatePresence initial={false}>
             {images.map((img, i) => {
               const pending = pendingFiles[i];
-              const previewUrl = pending
-                ? URL.createObjectURL(pending)
-                : img.url;
+              const previewUrl = previewUrls[i] || img.url;
               const uploading = isUploading[i];
 
               return (
@@ -381,18 +406,42 @@ export function ImageManager({
                       {previewUrl ? (
                         <>
                           <NextImage
+                            key={`img-${i}-${previewUrl}`}
                             src={previewUrl}
-                            alt={img.altText}
+                            alt={img.altText || 'Campaign image'}
                             fill
                             unoptimized
                             sizes="96px"
+                            onLoad={() => {
+                              setImageLoaded(prev => ({ ...prev, [i]: true }));
+                              setImageLoadErrors(prev => ({ ...prev, [i]: false }));
+                            }}
+                            onError={() => {
+                              setImageLoadErrors(prev => ({ ...prev, [i]: true }));
+                              setImageLoaded(prev => ({ ...prev, [i]: false }));
+                            }}
                             className={cn(
                               "object-cover transition-all duration-700 group-hover/preview:scale-110",
                               !pending &&
                                 "grayscale group-hover/preview:grayscale-0",
+                              !imageLoaded[i] && !imageLoadErrors[i] && "opacity-0",
+                              imageLoaded[i] && "opacity-100",
                             )}
                           />
-                          {!pending && img.url && (
+                          {!imageLoaded[i] && !imageLoadErrors[i] && (
+                            <div className="absolute inset-0 bg-secondary/20 animate-pulse flex items-center justify-center">
+                              <RotateCcw className="size-4 text-muted-foreground animate-spin" />
+                            </div>
+                          )}
+                          {imageLoadErrors[i] && (
+                            <div className="absolute inset-0 bg-destructive/10 flex flex-col items-center justify-center gap-1">
+                              <X className="size-4 text-destructive" />
+                              <span className="text-[7px] font-mono text-destructive uppercase">
+                                Failed
+                              </span>
+                            </div>
+                          )}
+                          {!pending && img.url && !imageLoadErrors[i] && (
                             <>
                               <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover/preview:opacity-100 transition-opacity" />
                               <a

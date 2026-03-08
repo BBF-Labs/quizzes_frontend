@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Check, Info, Users, Building2, School, MapPin } from "lucide-react";
+import { useState } from "react";
+import { Check, Info, Users, Building2, School, MapPin, X } from "lucide-react";
 import { IAudienceFilter } from "@/hooks/use-campaigns";
 import { useUniversities } from "@/hooks/use-universities";
 import { cn } from "@/lib/utils";
@@ -17,6 +17,7 @@ import {
 interface AudienceSelectorProps {
   value: IAudienceFilter;
   onChange: (value: IAudienceFilter) => void;
+  disabled?: boolean;
 }
 
 type UniversityOption = {
@@ -41,7 +42,7 @@ const NEWSLETTER_STATUS = [
   "bounced",
 ] as const;
 
-export function AudienceSelector({ value, onChange }: AudienceSelectorProps) {
+export function AudienceSelector({ value, onChange, disabled = false }: AudienceSelectorProps) {
   const { data: universitiesData } = useUniversities();
   const [activeTab, setActiveTab] = useState<
     "platform" | "lanes" | "institution" | "overrides"
@@ -52,17 +53,91 @@ export function AudienceSelector({ value, onChange }: AudienceSelectorProps) {
     : [];
 
   const filter = value || {};
-  const [specificEmailsText, setSpecificEmailsText] = useState(
-    filter.specificEmails?.join("\n") || "",
-  );
-
-  useEffect(() => {
-    const next = filter.specificEmails?.join("\n") || "";
-    setSpecificEmailsText(next);
-  }, [filter.specificEmails]);
+  const [newEmailInput, setNewEmailInput] = useState("");
+  const [editingEmail, setEditingEmail] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState("");
 
   const updateFilter = (updates: Partial<IAudienceFilter>) => {
     onChange({ ...filter, ...updates });
+  };
+
+  const addEmail = (email: string) => {
+    const trimmed = email.trim().toLowerCase();
+    if (!trimmed) return;
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmed)) return;
+    
+    const currentEmails = filter.specificEmails || [];
+    if (currentEmails.includes(trimmed)) return;
+    
+    updateFilter({ specificEmails: [...currentEmails, trimmed] });
+    setNewEmailInput("");
+  };
+
+  const removeEmail = (email: string) => {
+    const currentEmails = filter.specificEmails || [];
+    updateFilter({ specificEmails: currentEmails.filter((e) => e !== email) });
+  };
+
+  const startEditingEmail = (email: string) => {
+    setEditingEmail(email);
+    setEditingValue(email);
+  };
+
+  const saveEditedEmail = () => {
+    if (!editingEmail) return;
+    
+    const trimmed = editingValue.trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    
+    // If empty or invalid, just cancel editing
+    if (!trimmed || !emailRegex.test(trimmed)) {
+      setEditingEmail(null);
+      setEditingValue("");
+      return;
+    }
+    
+    const currentEmails = filter.specificEmails || [];
+    
+    // If it's a duplicate (and not the same email), cancel
+    if (trimmed !== editingEmail && currentEmails.includes(trimmed)) {
+      setEditingEmail(null);
+      setEditingValue("");
+      return;
+    }
+    
+    // Update the email
+    const updatedEmails = currentEmails.map((e) => 
+      e === editingEmail ? trimmed : e
+    );
+    
+    updateFilter({ specificEmails: updatedEmails });
+    setEditingEmail(null);
+    setEditingValue("");
+  };
+
+  const cancelEditingEmail = () => {
+    setEditingEmail(null);
+    setEditingValue("");
+  };
+
+  const handleEmailInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addEmail(newEmailInput);
+    }
+  };
+
+  const handleEditKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      saveEditedEmail();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      cancelEditingEmail();
+    }
   };
 
   const toggleLane = (lane: "waitlist" | "newsletter") => {
@@ -107,8 +182,12 @@ export function AudienceSelector({ value, onChange }: AudienceSelectorProps) {
               </label>
               <div className="flex flex-wrap gap-4">
                 <div
-                  className="flex items-center gap-2 group cursor-pointer"
+                  className={cn(
+                    "flex items-center gap-2 group",
+                    !disabled && "cursor-pointer",
+                  )}
                   onClick={() =>
+                    !disabled &&
                     updateFilter({ includeContacts: !filter.includeContacts })
                   }
                 >
@@ -118,6 +197,7 @@ export function AudienceSelector({ value, onChange }: AudienceSelectorProps) {
                       filter.includeContacts !== false
                         ? "border-primary bg-primary"
                         : "border-muted-foreground/30",
+                      disabled && "opacity-50",
                     )}
                   >
                     {filter.includeContacts !== false && (
@@ -130,8 +210,12 @@ export function AudienceSelector({ value, onChange }: AudienceSelectorProps) {
                 </div>
 
                 <div
-                  className="flex items-center gap-2 group cursor-pointer"
+                  className={cn(
+                    "flex items-center gap-2 group",
+                    !disabled && "cursor-pointer",
+                  )}
                   onClick={() =>
+                    !disabled &&
                     updateFilter({ includeUsers: !filter.includeUsers })
                   }
                 >
@@ -141,6 +225,7 @@ export function AudienceSelector({ value, onChange }: AudienceSelectorProps) {
                       filter.includeUsers !== false
                         ? "border-primary bg-primary"
                         : "border-muted-foreground/30",
+                      disabled && "opacity-50",
                     )}
                   >
                     {filter.includeUsers !== false && (
@@ -164,17 +249,20 @@ export function AudienceSelector({ value, onChange }: AudienceSelectorProps) {
                     key={role}
                     type="button"
                     onClick={() => {
+                      if (disabled) return;
                       const current = filter.roles || [];
                       const next = current.includes(role)
                         ? current.filter((r) => r !== role)
                         : [...current, role];
                       updateFilter({ roles: next });
                     }}
+                    disabled={disabled}
                     className={cn(
                       "px-2 py-1 border text-[9px] font-mono uppercase tracking-widest transition-all",
                       filter.roles?.includes(role)
                         ? "border-primary bg-primary/10 text-primary"
                         : "border-border/40 text-muted-foreground hover:border-border/60",
+                      disabled && "opacity-50 cursor-not-allowed",
                     )}
                   >
                     {role.replace("_", " ")}
@@ -192,8 +280,11 @@ export function AudienceSelector({ value, onChange }: AudienceSelectorProps) {
               {/* Waitlist Lane */}
               <div className="space-y-3">
                 <div
-                  className="flex items-center gap-3 cursor-pointer group"
-                  onClick={() => toggleLane("waitlist")}
+                  className={cn(
+                    "flex items-center gap-3 group",
+                    !disabled && "cursor-pointer",
+                  )}
+                  onClick={() => !disabled && toggleLane("waitlist")}
                 >
                   <div
                     className={cn(
@@ -201,6 +292,7 @@ export function AudienceSelector({ value, onChange }: AudienceSelectorProps) {
                       filter.contactLanes?.waitlist
                         ? "border-primary bg-primary"
                         : "border-border/40",
+                      disabled && "opacity-50",
                     )}
                   >
                     {filter.contactLanes?.waitlist && (
@@ -223,6 +315,7 @@ export function AudienceSelector({ value, onChange }: AudienceSelectorProps) {
                           key={status}
                           type="button"
                           onClick={() => {
+                            if (disabled) return;
                             const cs = filter.contactStatus || {};
                             const current = cs.waitlistStatus || [];
                             const next = current.includes(status)
@@ -232,6 +325,7 @@ export function AudienceSelector({ value, onChange }: AudienceSelectorProps) {
                               contactStatus: { ...cs, waitlistStatus: next },
                             });
                           }}
+                          disabled={disabled}
                           className={cn(
                             "px-2 py-0.5 border text-[8px] font-mono uppercase transition-all",
                             filter.contactStatus?.waitlistStatus?.includes(
@@ -239,6 +333,7 @@ export function AudienceSelector({ value, onChange }: AudienceSelectorProps) {
                             )
                               ? "border-primary bg-primary/10 text-primary"
                               : "border-border/30 text-muted-foreground",
+                            disabled && "opacity-50 cursor-not-allowed",
                           )}
                         >
                           {status}
@@ -252,8 +347,11 @@ export function AudienceSelector({ value, onChange }: AudienceSelectorProps) {
               {/* Newsletter Lane */}
               <div className="space-y-3">
                 <div
-                  className="flex items-center gap-3 cursor-pointer group"
-                  onClick={() => toggleLane("newsletter")}
+                  className={cn(
+                    "flex items-center gap-3 group",
+                    !disabled && "cursor-pointer",
+                  )}
+                  onClick={() => !disabled && toggleLane("newsletter")}
                 >
                   <div
                     className={cn(
@@ -261,6 +359,7 @@ export function AudienceSelector({ value, onChange }: AudienceSelectorProps) {
                       filter.contactLanes?.newsletter
                         ? "border-primary bg-primary"
                         : "border-border/40",
+                      disabled && "opacity-50",
                     )}
                   >
                     {filter.contactLanes?.newsletter && (
@@ -283,6 +382,7 @@ export function AudienceSelector({ value, onChange }: AudienceSelectorProps) {
                           key={status}
                           type="button"
                           onClick={() => {
+                            if (disabled) return;
                             const cs = filter.contactStatus || {};
                             const current = cs.newsletterStatus || [];
                             const next = current.includes(status)
@@ -292,6 +392,7 @@ export function AudienceSelector({ value, onChange }: AudienceSelectorProps) {
                               contactStatus: { ...cs, newsletterStatus: next },
                             });
                           }}
+                          disabled={disabled}
                           className={cn(
                             "px-2 py-0.5 border text-[8px] font-mono uppercase transition-all",
                             filter.contactStatus?.newsletterStatus?.includes(
@@ -299,6 +400,7 @@ export function AudienceSelector({ value, onChange }: AudienceSelectorProps) {
                             )
                               ? "border-primary bg-primary/10 text-primary"
                               : "border-border/30 text-muted-foreground",
+                            disabled && "opacity-50 cursor-not-allowed",
                           )}
                         >
                           {status}
@@ -327,6 +429,7 @@ export function AudienceSelector({ value, onChange }: AudienceSelectorProps) {
                       universityId: value === "all" ? undefined : value,
                     })
                   }
+                  disabled={disabled}
                 >
                   <SelectTrigger className="w-full rounded-none bg-background/50 border border-border/40 font-mono text-xs uppercase focus-visible:ring-0">
                     <SelectValue placeholder="Global (All Universities)" />
@@ -365,6 +468,7 @@ export function AudienceSelector({ value, onChange }: AudienceSelectorProps) {
                     }
                     placeholder="INSTITUTION_ID"
                     className="rounded-none h-9 font-mono text-[10px]"
+                    disabled={disabled}
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -378,6 +482,7 @@ export function AudienceSelector({ value, onChange }: AudienceSelectorProps) {
                     }
                     placeholder="INSTITUTION_ID"
                     className="rounded-none h-9 font-mono text-[10px]"
+                    disabled={disabled}
                   />
                 </div>
               </div>
@@ -405,8 +510,12 @@ export function AudienceSelector({ value, onChange }: AudienceSelectorProps) {
                 </label>
                 <div className="space-y-2">
                   <div
-                    className="flex items-center gap-2 group cursor-pointer"
+                    className={cn(
+                      "flex items-center gap-2 group",
+                      !disabled && "cursor-pointer",
+                    )}
                     onClick={() =>
+                      !disabled &&
                       updateFilter({
                         excludeUnsubscribed: !filter.excludeUnsubscribed,
                       })
@@ -418,6 +527,7 @@ export function AudienceSelector({ value, onChange }: AudienceSelectorProps) {
                         filter.excludeUnsubscribed !== false
                           ? "border-primary bg-primary"
                           : "border-border/30",
+                        disabled && "opacity-50",
                       )}
                     >
                       {filter.excludeUnsubscribed !== false && (
@@ -430,8 +540,12 @@ export function AudienceSelector({ value, onChange }: AudienceSelectorProps) {
                   </div>
 
                   <div
-                    className="flex items-center gap-2 group cursor-pointer"
+                    className={cn(
+                      "flex items-center gap-2 group",
+                      !disabled && "cursor-pointer",
+                    )}
                     onClick={() =>
+                      !disabled &&
                       updateFilter({ excludeBounced: !filter.excludeBounced })
                     }
                   >
@@ -441,6 +555,7 @@ export function AudienceSelector({ value, onChange }: AudienceSelectorProps) {
                         filter.excludeBounced !== false
                           ? "border-primary bg-primary"
                           : "border-border/30",
+                        disabled && "opacity-50",
                       )}
                     >
                       {filter.excludeBounced !== false && (
@@ -469,6 +584,7 @@ export function AudienceSelector({ value, onChange }: AudienceSelectorProps) {
                       })
                     }
                     className="rounded-none h-9 w-20 font-mono text-xs"
+                    disabled={disabled}
                   />
                   <span className="text-[9px] font-mono uppercase text-muted-foreground">
                     Hours since last email
@@ -483,24 +599,77 @@ export function AudienceSelector({ value, onChange }: AudienceSelectorProps) {
               </label>
               <div className="space-y-3">
                 <p className="text-[9px] font-mono text-muted-foreground uppercase">
-                  Target specific emails (one per line):
+                  Target specific emails:
                 </p>
-                <textarea
-                  value={specificEmailsText}
-                  onChange={(e) => {
-                    const text = e.target.value;
-                    setSpecificEmailsText(text);
-                    updateFilter({
-                      specificEmails: text
-                        .split(/\r?\n/)
-                        .map((em) => em.trim())
-                        .filter(Boolean),
-                    });
-                  }}
-                  rows={3}
-                  className="w-full rounded-none font-mono text-[10px] border border-input bg-background/30 px-3 py-2 text-foreground focus:outline-none focus:border-primary resize-none"
-                  placeholder="user@example.com"
-                />
+                
+                {/* Email chips display */}
+                <div className="flex flex-wrap gap-2 min-h-10 p-3 border border-border/40 bg-black/10">
+                  {(filter.specificEmails || []).map((email) => (
+                    <div key={email}>
+                      {editingEmail === email ? (
+                        <Input
+                          autoFocus
+                          value={editingValue}
+                          onChange={(e) => setEditingValue(e.target.value)}
+                          onBlur={saveEditedEmail}
+                          onKeyDown={handleEditKeyDown}
+                          className="h-7 py-0 px-2 min-w-40 w-auto inline-block rounded-none font-mono text-[10px] bg-background border-primary"
+                        />
+                      ) : (
+                        <div
+                          className={cn(
+                            "group flex items-center gap-1.5 px-2 py-1 border border-primary/40 bg-primary/10 text-primary font-mono text-[10px] uppercase transition-all hover:bg-primary hover:text-primary-foreground",
+                            !disabled && "cursor-pointer",
+                            disabled && "opacity-50",
+                          )}
+                        >
+                          <span 
+                            className="truncate max-w-50"
+                            onClick={() => !disabled && startEditingEmail(email)}
+                          >
+                            {email}
+                          </span>
+                          {!disabled && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeEmail(email);
+                              }}
+                              className="size-3 flex items-center justify-center text-primary/60 hover:text-primary-foreground transition-colors"
+                            >
+                              <X className="size-2.5" />
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  
+                  {/* Empty state */}
+                  {(!filter.specificEmails || filter.specificEmails.length === 0) && (
+                    <span className="text-[9px] font-mono text-muted-foreground/40 italic">
+                      No specific emails set
+                    </span>
+                  )}
+                </div>
+
+                {/* Input field for adding emails */}
+                {!disabled && (
+                  <div className="space-y-2">
+                    <Input
+                      value={newEmailInput}
+                      onChange={(e) => setNewEmailInput(e.target.value)}
+                      onKeyDown={handleEmailInputKeyDown}
+                      onBlur={() => addEmail(newEmailInput)}
+                      placeholder="user@example.com (press Enter to add)"
+                      className="rounded-none h-9 font-mono text-[10px] bg-background/50 focus:bg-background transition-colors"
+                    />
+                    <p className="text-[8px] font-mono text-muted-foreground/50 italic">
+                      Press Enter or click outside to add. Click any email to edit. Invalid or duplicate emails will be ignored.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
