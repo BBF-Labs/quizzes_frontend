@@ -1,6 +1,7 @@
 "use client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { IUpload } from "./use-upload";
 
 const BASE = "/email-campaigns";
 
@@ -13,11 +14,9 @@ export interface ILinkContext {
 
 export interface INewsletterImage {
   _id?: string;
-  url: string;
   altText: string;
-  filename?: string;
-  mimetype?: string;
-  size?: number;
+  url?: string;
+  upload?: string | IUpload;
 }
 
 export type CampaignType =
