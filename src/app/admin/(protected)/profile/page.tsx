@@ -18,10 +18,13 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
 import { useCheckProfile, useUpdateProfile } from "@/hooks/use-admin";
+import { useUploadFile, IUpload } from "@/hooks/use-upload";
 import { toast } from "sonner";
+import { useRef } from "react";
 
 export default function ProfilePage() {
   const { user, isSuperAdmin } = useAuth();
@@ -33,6 +36,11 @@ export default function ProfilePage() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [localPreview, setLocalPreview] = useState<string | null>(null);
+  const [uploadedPicture, setUploadedPicture] = useState<IUpload | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadMutation = useUploadFile();
 
   // Real-time checks from the hook data
   const isChecking = checkProfile.isPending;
@@ -60,6 +68,23 @@ export default function ProfilePage() {
     }
   }, [currentPassword, checkProfile.mutate]);
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // local preview immediately
+    const objectUrl = URL.createObjectURL(file);
+    setLocalPreview(objectUrl);
+
+    try {
+      const res = await uploadMutation.mutateAsync({ file, folder: "avatars" });
+      setUploadedPicture(res);
+    } catch (error) {
+      toast.error("Failed to process image block");
+      setLocalPreview(null);
+    }
+  };
+
   const handleUpdate = () => {
     if (!currentPassword) {
       toast.error(
@@ -85,6 +110,7 @@ export default function ProfilePage() {
         username: username !== user?.username ? username : undefined,
         currentPassword: currentPassword || undefined,
         password: newPassword || undefined,
+        profilePicture: uploadedPicture ? uploadedPicture._id : undefined,
       },
       {
         onSuccess: () => {
@@ -141,7 +167,38 @@ export default function ProfilePage() {
               </div>
             </CardHeader>
             <CardContent className="p-6 space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="flex flex-col md:flex-row items-start gap-8">
+                {/* Avatar Section */}
+                <div className="flex flex-col items-center gap-4 shrink-0 mt-2">
+                  <Avatar className="size-24 border border-border/50 rounded-none bg-secondary/20 hover:border-primary/50 transition-colors">
+                    <AvatarImage src={localPreview || uploadedPicture?.url || user?.profilePicture} className="object-cover" />
+                    <AvatarFallback className="rounded-none bg-transparent font-mono text-xl text-primary uppercase">
+                       {user?.username?.substring(0, 2) || "AD"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-[10px] font-mono uppercase rounded-none px-4 w-full"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadMutation.isPending}
+                  >
+                    {uploadMutation.isPending
+                      ? "Uploading..."
+                      : localPreview || uploadedPicture?.url || user?.profilePicture
+                        ? "Change Image"
+                        : "Upload Image"}
+                  </Button>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 flex-1 w-full">
                 {/* General Info */}
                 <div className="space-y-4">
                   <div className="space-y-1.5">
@@ -248,8 +305,9 @@ export default function ProfilePage() {
                   </div>
                 </div>
               </div>
+            </div>
 
-              <div className="pt-8 border-t border-dashed border-border/50">
+            <div className="pt-8 border-t border-dashed border-border/50">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
