@@ -1,5 +1,6 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { IUpload } from "./use-upload";
 
 export interface IAdminStats {
   users: number;
@@ -166,6 +167,7 @@ export function useUpdateProfile() {
       username?: string;
       password?: string;
       currentPassword?: string;
+      profilePicture?: string | IUpload;
     }) => {
       const response = await api.put("/admin/users/profile", data);
       return response.data.data;
