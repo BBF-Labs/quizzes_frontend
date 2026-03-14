@@ -21,6 +21,7 @@ interface AdminUser {
   username: string;
   email: string;
   isSuperAdmin: boolean;
+  profilePicture?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -50,6 +51,7 @@ type JwtPayload = {
   username?: string;
   email?: string;
   isSuperAdmin?: boolean;
+  profilePicture?: string;
 };
 
 function parseJwt(token: string): JwtPayload | null {
@@ -76,6 +78,7 @@ function getStoredUser(): AdminUser | null {
     username: decoded.username ?? decoded.email?.split("@")[0] ?? "Admin",
     email: decoded.email ?? "",
     isSuperAdmin: decoded.isSuperAdmin ?? false,
+    profilePicture: decoded.profilePicture,
   };
 }
 
@@ -136,6 +139,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         username: decoded.username ?? decoded.email?.split("@")[0] ?? username,
         email: decoded.email ?? "",
         isSuperAdmin: decoded.isSuperAdmin ?? false,
+        profilePicture: decoded.profilePicture,
       } as AdminUser;
     },
     onSuccess: async (adminUser) => {

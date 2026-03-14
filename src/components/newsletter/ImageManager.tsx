@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
 import { INewsletterImage, useNewsletterImages } from "@/hooks/use-campaigns";
-import { api } from "@/lib/api";
+import { useUploadFile } from "@/hooks/use-upload";
 import { toast } from "sonner";
 import {
   Sheet,
@@ -49,6 +49,7 @@ export function ImageManager({
   const uploadTimeoutRef = useRef<Record<number, NodeJS.Timeout>>({});
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [page, setPage] = useState(1);
+  const uploadMutation = useUploadFile();
 
   // Reset image states when images prop changes
   React.useEffect(() => {
@@ -147,24 +148,15 @@ export function ImageManager({
 
         setIsUploading((prev) => ({ ...prev, [i]: true }));
         try {
-          const formData = new FormData();
-          formData.append("file", file);
-          formData.append("folder", "newsletter");
-
-          const res = await api.post("/system/upload", formData, {
-            headers: { "Content-Type": "multipart/form-data" },
-          });
-
-          const { url, filename, mimetype, size } = res.data.data;
+          const res = await uploadMutation.mutateAsync({ file, folder: "newsletter" });
+          const { _id, url } = res;
 
           // Update the parent state
           const nextImages = [...images];
           nextImages[i] = {
             ...nextImages[i],
+            upload: _id,
             url,
-            filename,
-            mimetype,
-            size,
           };
           onChange(nextImages);
 
@@ -275,13 +267,18 @@ export function ImageManager({
                         </div>
                       ) : (
                         <div className="grid grid-cols-2 gap-3 pb-20">
-                          {galleryData?.items?.map((asset) => (
+                          {galleryData?.items?.map((asset) => {
+                            const assetDisplayUrl = asset.url || (typeof asset.upload === 'object' && asset.upload ? asset.upload.url : "");
+                            const assetFilename = typeof asset.upload === 'object' && asset.upload ? asset.upload.originalFilename : "Static Asset";
+                            if (!assetDisplayUrl) return null;
+                            
+                            return (
                             <div
                               key={asset._id}
                               onClick={() => {
                                 onChange([
                                   ...images,
-                                  { url: asset.url, altText: asset.altText },
+                                  { url: assetDisplayUrl, altText: asset.altText, upload: typeof asset.upload === 'object' && asset.upload ? asset.upload._id : asset.upload },
                                 ]);
                                 setGalleryOpen(false);
                                 toast.success("Image added to this campaign.");
@@ -290,7 +287,7 @@ export function ImageManager({
                             >
                               <NextImage
                                 key={`gallery-${asset._id}`}
-                                src={asset.url}
+                                src={assetDisplayUrl}
                                 alt={asset.altText || 'Gallery image'}
                                 fill
                                 unoptimized
@@ -299,14 +296,14 @@ export function ImageManager({
                               />
                               <div className="absolute inset-x-0 bottom-0 bg-black/60 p-2 translate-y-full group-hover:translate-y-0 transition-transform">
                                 <p className="text-[8px] font-mono text-white truncate uppercase tracking-widest leading-none mb-1">
-                                  {asset.filename || "Static Asset"}
+                                  {assetFilename}
                                 </p>
                                 <p className="text-[7px] font-mono text-muted-foreground truncate leading-none">
                                   {asset.altText}
                                 </p>
                               </div>
                             </div>
-                          ))}
+                          )})}
                         </div>
                       )}
                     </ScrollArea>
@@ -367,7 +364,8 @@ export function ImageManager({
           <AnimatePresence initial={false}>
             {images.map((img, i) => {
               const pending = pendingFiles[i];
-              const previewUrl = previewUrls[i] || img.url;
+              const previewUrl = previewUrls[i] || img.url || (typeof img.upload === 'object' && img.upload ? img.upload.url : "");
+              const isUploaded = !!img.upload || !!img.url;
               const uploading = isUploading[i];
 
               return (
@@ -393,11 +391,11 @@ export function ImageManager({
                     {/* Preview Wrap */}
                     <div
                       onClick={() =>
-                        !disabled && !img.url && !pending && triggerUpload(i)
+                        !disabled && !isUploaded && !pending && triggerUpload(i)
                       }
                       className={cn(
                         "size-24 bg-black/20 border border-border/20 shrink-0 overflow-hidden flex items-center justify-center relative group/preview transition-all",
-                        !img.url &&
+                        !isUploaded &&
                           !pending &&
                           !disabled &&
                           "cursor-pointer hover:border-primary/40 hover:bg-primary/5",
@@ -441,11 +439,11 @@ export function ImageManager({
                               </span>
                             </div>
                           )}
-                          {!pending && img.url && !imageLoadErrors[i] && (
+                          {!pending && isUploaded && !imageLoadErrors[i] && (
                             <>
                               <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover/preview:opacity-100 transition-opacity" />
                               <a
-                                href={img.url}
+                                href={previewUrl}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="absolute inset-x-0 bottom-0 py-1 bg-black/60 text-[8px] font-mono text-white text-center translate-y-full group-hover/preview:translate-y-0 transition-transform flex items-center justify-center gap-1"
@@ -485,7 +483,7 @@ export function ImageManager({
                           </label>
                         </div>
                         <Input
-                          value={img.url}
+                          value={previewUrl}
                           onChange={(e) =>
                             updateImage(i, "url", e.target.value)
                           }
