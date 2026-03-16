@@ -231,6 +231,14 @@ export default function LoginPage() {
               Forgot password?
             </Link>
           </div>
+          <div className="flex justify-center">
+            <span className="text-[10px] font-mono text-muted-foreground/60 tracking-widest uppercase">
+              No account?{" "}
+              <Link href="/signup" className="text-primary hover:underline">
+                Sign up
+              </Link>
+            </span>
+          </div>
         </form>
       </motion.div>
     </div>
