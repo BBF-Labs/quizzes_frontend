@@ -50,7 +50,7 @@ export function ProblemSolution() {
         >
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
             <div>
-              <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground uppercase mb-2">
+              <h2 className="text-2xl md:text-3xl font-black tracking-[-0.04em] text-foreground uppercase mb-3 text-primary">
                 The Protocol
               </h2>
               <p className="text-muted-foreground text-sm font-mono uppercase tracking-widest text-[10px] md:text-xs">
@@ -83,7 +83,7 @@ export function ProblemSolution() {
                     {p.label}
                   </span>
                 </div>
-                <h3 className="text-base font-bold text-foreground tracking-wider uppercase mb-3">{p.title}</h3>
+                <h3 className="text-sm font-black text-foreground tracking-[-0.02em] uppercase mb-4">{p.title}</h3>
                 <p className="text-[15px] text-muted-foreground leading-relaxed flex-1 font-light">{p.desc}</p>
                 <div className="mt-8 pt-4 border-t border-border/50">
                   <span className="text-primary text-[10px] font-mono tracking-widest uppercase font-bold group-hover:opacity-100 opacity-50 transition-opacity flex items-center gap-2">

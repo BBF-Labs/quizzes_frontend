@@ -107,19 +107,12 @@ export function AdminSidebar() {
     <Sidebar collapsible="icon" className="border-r border-border/50">
       <SidebarHeader className="h-14 flex items-center px-4">
         <div className="flex items-center gap-3 w-full">
-           <div className="size-8 bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-              <span className="text-xs font-bold tracking-tighter text-primary">QZ</span>
-           </div>
-           {state === "expanded" && (
-             <div className="flex flex-col overflow-hidden">
-                <span className="text-[11px] font-mono font-bold tracking-[0.2em] text-foreground uppercase truncate">
-                  Admin Console
-                </span>
-                <span className="text-[9px] font-mono tracking-widest text-muted-foreground/50 uppercase truncate">
-                   v1.2.0 • qz.bflabs.tech
-                </span>
-             </div>
-           )}
+            <div className="flex items-end space-x-1.5 px-0.5">
+               <span className="text-lg font-bold tracking-widest text-foreground leading-none">Qz.</span>
+               {state === "expanded" && (
+                 <span className="text-[10px] font-mono tracking-widest text-muted-foreground/60 uppercase leading-none mb-[1px]">/ Admin</span>
+               )}
+            </div>
         </div>
       </SidebarHeader>
 

@@ -4,14 +4,16 @@ import { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import { Menu, X, User, LayoutDashboard, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useAuth } from "@/contexts/auth-context";
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const { user, logout } = useAuth();
   const { scrollY } = useScroll();
 
   const backgroundColor = useTransform(
@@ -40,30 +42,58 @@ export function Navbar() {
     <>
       <motion.header
         style={{ backgroundColor, backdropFilter: backdropBlur, borderBottom }}
-        className="fixed top-0 left-0 right-0 z-50"
+        className="fixed top-0 left-0 right-0 z-50 h-16"
       >
         <div className="container mx-auto px-4 max-w-6xl h-16 flex items-center justify-between">
           <Link href="/" className="flex items-end space-x-2 group">
-            <span className="text-xl font-bold tracking-widest text-foreground uppercase leading-none group-hover:text-primary transition-colors">Qz.</span>
+            <span className="text-xl font-bold tracking-widest text-foreground leading-none group-hover:text-primary transition-colors">Qz.</span>
             <span className="text-[10px] font-mono tracking-widest text-muted-foreground/60 uppercase leading-none mb-[2px] hidden sm:inline-block">/ BetaForge Labs</span>
           </Link>
 
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center space-x-8">
-            <nav className="flex items-center space-x-6">
+            <nav className="flex items-center space-x-8">
               <span className="text-xs font-mono font-medium tracking-[0.15em] text-muted-foreground hover:text-foreground cursor-pointer transition-colors uppercase">Features</span>
-              <span className="text-xs font-mono font-medium tracking-[0.15em] text-muted-foreground hover:text-foreground cursor-pointer transition-colors uppercase">Curriculum</span>
-              <span className="text-xs font-mono font-medium tracking-[0.15em] text-muted-foreground hover:text-foreground cursor-pointer transition-colors uppercase">Testimonies</span>
             </nav>
             <div className="flex items-center space-x-4">
               <ThemeToggle />
               <Button 
                 onClick={scrollToHero} 
                 variant="outline"
-                className="rounded-none border-primary/40 bg-primary/5 text-primary text-xs font-mono tracking-[0.15em] uppercase hover:bg-primary hover:text-primary-foreground transition-all duration-300 shadow-[0_0_15px_rgba(0,110,255,0.1)]"
+                className="rounded-none border-primary/40 bg-primary/5 text-primary text-xs font-mono font-bold tracking-[0.15em] uppercase hover:bg-primary hover:text-primary-foreground transition-all duration-300 shadow-[0_0_15px_rgba(0,110,255,0.1)]"
               >
                 WAITLIST
               </Button>
+              {user ? (
+                <div className="flex items-center space-x-4">
+                  <Link href="/admin">
+                    <Button 
+                      variant="ghost"
+                      className="rounded-none text-muted-foreground hover:bg-primary hover:text-white hover:shadow-[0_0_20px_rgba(0,110,255,0.3)] text-xs font-mono font-bold tracking-[0.15em] uppercase transition-all duration-500 px-6 border border-border/50 hover:border-primary flex items-center gap-2 group"
+                    >
+                      <LayoutDashboard className="size-4 group-hover:scale-110 transition-transform" />
+                      DASHBOARD
+                    </Button>
+                  </Link>
+                  <Button 
+                    variant="ghost"
+                    onClick={() => logout()}
+                    className="rounded-none text-muted-foreground hover:bg-red-500/10 hover:text-red-500 hover:shadow-[0_0_20px_rgba(239,68,68,0.1)] text-xs font-mono font-bold tracking-[0.15em] uppercase transition-all duration-500 px-6 border border-border/50 hover:border-red-500/50 flex items-center gap-2 group"
+                  >
+                    <LogOut className="size-4 group-hover:translate-x-1 transition-transform" />
+                    SIGN OUT
+                  </Button>
+                </div>
+              ) : (
+                <Link href="/login">
+                  <Button 
+                    variant="ghost"
+                    className="rounded-none text-muted-foreground hover:bg-primary hover:text-white hover:shadow-[0_0_20px_rgba(0,110,255,0.3)] text-xs font-mono font-bold tracking-[0.15em] uppercase transition-all duration-500 px-6 border border-border/50 hover:border-primary"
+                  >
+                    LOGIN
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
 
@@ -75,40 +105,61 @@ export function Navbar() {
               onClick={() => setIsOpen(!isOpen)}
               aria-label="Toggle menu"
             >
-              {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {isOpen ? <X className="size-5" /> : <Menu className="size-5" />}
             </button>
           </div>
         </div>
-      </motion.header>
-
-      {/* Mobile Drawer */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed inset-x-0 top-[88px] bg-background/95 backdrop-blur-lg border-b border-border z-40 md:hidden pb-6 pt-4 px-4 flex flex-col space-y-4"
-          >
-            <Button variant="ghost" className="w-full justify-start rounded-none font-mono tracking-widest uppercase">
-              Features
-            </Button>
-            <Button variant="ghost" className="w-full justify-start rounded-none font-mono tracking-widest uppercase">
-              Curriculum
-            </Button>
-            <Button variant="ghost" className="w-full justify-start rounded-none font-mono tracking-widest uppercase">
-              Testimonies
-            </Button>
-            <Button 
-              variant="outline"
-              className="w-full rounded-none border-primary/40 bg-primary/5 text-primary font-mono tracking-widest uppercase hover:bg-primary hover:text-primary-foreground transition-all duration-300" 
-              onClick={scrollToHero}
+        
+        {/* Mobile Drawer - Now nested inside header for perfect alignment */}
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="absolute top-full left-0 right-0 bg-background border-b border-border z-40 md:hidden pb-6 pt-4 px-4 flex flex-col space-y-4 shadow-xl"
             >
-              WAITLIST
-            </Button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              <Button variant="ghost" className="w-full justify-start rounded-none font-mono tracking-widest uppercase">
+                Features
+              </Button>
+              <Button 
+                variant="outline"
+                className="w-full rounded-none border-primary/40 bg-primary/5 text-primary font-mono tracking-widest uppercase hover:bg-primary hover:text-primary-foreground transition-all duration-300" 
+                onClick={scrollToHero}
+              >
+                WAITLIST
+              </Button>
+              {user ? (
+                <div className="flex flex-col space-y-3 pt-2">
+                  <Link href="/admin" className="w-full">
+                    <Button variant="ghost" className="w-full justify-start rounded-none font-mono font-bold tracking-widest uppercase gap-3 hover:bg-primary hover:text-white transition-all duration-300 h-12">
+                      <LayoutDashboard className="size-4" />
+                      Dashboard
+                    </Button>
+                  </Link>
+                  <Button 
+                    variant="ghost" 
+                    className="w-full justify-start rounded-none font-mono font-bold tracking-widest uppercase gap-3 text-red-500 hover:bg-red-500/10 transition-all duration-300 h-12 border border-transparent hover:border-red-500/20"
+                    onClick={() => {
+                      logout();
+                      setIsOpen(false);
+                    }}
+                  >
+                    <LogOut className="size-4" />
+                    Sign Out
+                  </Button>
+                </div>
+              ) : (
+                <Link href="/login" className="w-full pt-2">
+                  <Button variant="ghost" className="w-full justify-start rounded-none font-mono font-bold tracking-widest uppercase hover:bg-primary hover:text-white transition-all h-12">
+                    LOGIN
+                  </Button>
+                </Link>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.header>
     </>
   );
 }
