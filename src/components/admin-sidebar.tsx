@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { useGlobalSocket } from "@/contexts/socket-context";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const navigation = [
   {
@@ -176,9 +177,12 @@ export function AdminSidebar() {
               pathname === "/admin/profile" && "bg-primary/5 border-l-2 border-primary"
             )}
           >
-            <div className="size-8 bg-zinc-800 border border-border/50 flex items-center justify-center shrink-0">
-               <span className="text-[10px] font-mono font-bold text-zinc-400">{user?.username?.[0]?.toUpperCase() || "A"}</span>
-            </div>
+            <Avatar className="size-8 rounded-none border border-border/50 bg-secondary/20 shrink-0">
+               <AvatarImage src={user?.profilePicture} className="object-cover" />
+               <AvatarFallback className="rounded-none bg-zinc-800 font-mono text-[10px] font-bold text-zinc-400">
+                  {user?.username?.[0]?.toUpperCase() || "A"}
+               </AvatarFallback>
+            </Avatar>
             {state === "expanded" && (
               <div className="flex flex-col flex-1 overflow-hidden">
                  <span className="text-[10px] font-mono font-bold text-foreground uppercase truncate">{user?.username || "Admin"}</span>
