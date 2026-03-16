@@ -71,7 +71,7 @@ export function Features() {
         >
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
             <div>
-              <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-2 uppercase">
+              <h2 className="text-2xl md:text-3xl font-black tracking-[-0.04em] text-foreground mb-4 uppercase">
                 Infrastructure
               </h2>
               <p className="text-muted-foreground text-sm font-mono uppercase tracking-widest text-[10px] md:text-xs">
@@ -107,7 +107,7 @@ export function Features() {
                   </span>
                 </div>
                 
-                <h3 className="text-base font-bold text-foreground tracking-wider uppercase mb-3">
+                <h3 className="text-sm font-black text-foreground tracking-[-0.02em] uppercase mb-4">
                   {feature.title}
                 </h3>
                 

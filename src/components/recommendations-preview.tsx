@@ -35,7 +35,7 @@ export function RecommendationsPreview() {
         >
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
             <div>
-              <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-2 uppercase">
+              <h2 className="text-3xl md:text-4xl font-mono font-bold tracking-[0.2em] text-foreground mb-4 uppercase">
                 Adaptive Insights
               </h2>
               <p className="text-muted-foreground text-sm font-mono uppercase tracking-widest text-[10px] md:text-xs">
@@ -136,7 +136,7 @@ export function RecommendationsPreview() {
                     Study Partner Match
                   </Badge>
                 </div>
-                <h3 className="text-xl font-bold text-foreground">Kwame A.</h3>
+                <h3 className="text-sm font-mono font-bold text-foreground tracking-tight uppercase leading-tight mb-1">Kwame A.</h3>
                 <p className="text-xs text-muted-foreground mt-1">Dept of CS · 91% compatibility</p>
               </CardHeader>
               <CardContent className="flex flex-col flex-1 pb-6">
