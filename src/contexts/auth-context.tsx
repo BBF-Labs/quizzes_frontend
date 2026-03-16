@@ -38,6 +38,7 @@ interface AuthContextValue {
     rememberMe: boolean,
   ) => Promise<void>;
   logout: () => void;
+  updateSession: (accessToken: string, refreshToken?: string) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -91,9 +92,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const { data: user, isLoading } = useQuery<AdminUser | null>({
     queryKey: ["admin-session"],
-    queryFn: getStoredUser,
+    queryFn: async () => getStoredUser(),
     staleTime: 60_000,
-    initialData: () => getStoredUser(),
   });
 
   const loginMutation = useMutation({
@@ -168,6 +168,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     qc.invalidateQueries({ queryKey: ["admin-session"] });
   }, [qc]);
 
+  const updateSession = useCallback(
+    (accessToken: string, refreshToken?: string) => {
+      // Re-persist tokens
+      setAdminSession({
+        accessToken,
+        refreshToken: refreshToken ?? null,
+      });
+
+      // Update local state by re-parsing the new token
+      const decoded = parseJwt(accessToken);
+      if (decoded) {
+        const adminUser: AdminUser = {
+          id: decoded.id ?? "unknown-admin",
+          username: decoded.username ?? decoded.email?.split("@")[0] ?? "Admin",
+          email: decoded.email ?? "",
+          isSuperAdmin: decoded.isSuperAdmin ?? false,
+          profilePicture: decoded.profilePicture,
+        };
+        qc.setQueryData(["admin-session"], adminUser);
+      }
+    },
+    [qc],
+  );
+
   return (
     <AuthContext.Provider
       value={{
@@ -176,6 +200,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isSuperAdmin: user?.isSuperAdmin ?? false,
         login,
         logout,
+        updateSession,
       }}
     >
       {children}
