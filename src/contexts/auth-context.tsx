@@ -16,12 +16,19 @@ import {
 // Types
 // ---------------------------------------------------------------------------
 
-interface AdminUser {
+interface User {
   id: string;
+  name: string;
   username: string;
   email: string;
+  bio?: string;
   isSuperAdmin: boolean;
   profilePicture?: string;
+  onboarding?: {
+    completed: boolean;
+    currentStep: number;
+    steps: Record<string, boolean>;
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -29,7 +36,7 @@ interface AdminUser {
 // ---------------------------------------------------------------------------
 
 interface AuthContextValue {
-  user: AdminUser | null;
+  user: User | null;
   isLoading: boolean;
   isSuperAdmin: boolean;
   login: (
@@ -37,6 +44,7 @@ interface AuthContextValue {
     password: string,
     rememberMe: boolean,
   ) => Promise<void>;
+  signup: (name: string, email: string, username: string, password: string) => Promise<void>;
   logout: () => void;
   updateSession: (accessToken: string, refreshToken?: string) => void;
 }
@@ -49,10 +57,16 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 type JwtPayload = {
   id?: string;
+  name?: string;
   username?: string;
   email?: string;
   isSuperAdmin?: boolean;
   profilePicture?: string;
+  onboarding?: {
+    completed: boolean;
+    currentStep: number;
+    steps: Record<string, boolean>;
+  };
 };
 
 function parseJwt(token: string): JwtPayload | null {
@@ -64,7 +78,7 @@ function parseJwt(token: string): JwtPayload | null {
   }
 }
 
-function getStoredUser(): AdminUser | null {
+function getStoredUser(): User | null {
   const token = getAdminAccessToken();
   if (!token) return null;
 
@@ -75,11 +89,13 @@ function getStoredUser(): AdminUser | null {
   }
 
   return {
-    id: decoded.id ?? "unknown-admin",
-    username: decoded.username ?? decoded.email?.split("@")[0] ?? "Admin",
+    id: decoded.id ?? "unknown-user",
+    name: decoded.name ?? "User",
+    username: decoded.username ?? decoded.email?.split("@")[0] ?? "User",
     email: decoded.email ?? "",
     isSuperAdmin: decoded.isSuperAdmin ?? false,
     profilePicture: decoded.profilePicture,
+    onboarding: decoded.onboarding,
   };
 }
 
@@ -90,7 +106,7 @@ function getStoredUser(): AdminUser | null {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const qc = useQueryClient();
 
-  const { data: user, isLoading } = useQuery<AdminUser | null>({
+  const { data: user, isLoading } = useQuery<User | null>({
     queryKey: ["admin-session"],
     queryFn: async () => getStoredUser(),
     staleTime: 60_000,
@@ -140,10 +156,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: decoded.email ?? "",
         isSuperAdmin: decoded.isSuperAdmin ?? false,
         profilePicture: decoded.profilePicture,
-      } as AdminUser;
+        onboarding: decoded.onboarding,
+      } as User;
     },
-    onSuccess: async (adminUser) => {
-      qc.setQueryData(["admin-session"], adminUser);
+    onSuccess: async (user) => {
+      qc.setQueryData(["admin-session"], user);
       // Post-login, prompt once for permission so authenticated sessions can receive pushes.
       await ensurePushSubscription({ promptForPermission: true });
     },
@@ -159,6 +176,57 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         })
         .then(() => undefined),
     [loginMutation],
+  );
+
+  const signupMutation = useMutation({
+    mutationFn: async ({
+      name,
+      email,
+      username,
+      password,
+    }: {
+      name: string;
+      email: string;
+      username: string;
+      password: string;
+    }) => {
+      const res = await api.post("/auth/signup", { name, email, username, password });
+      const resData = res.data;
+      const accessToken: string = resData?.accessToken;
+      const refreshToken: string = resData?.refreshToken;
+      if (!accessToken) throw new Error("No access token returned from signup");
+      setAdminSession({ accessToken, refreshToken: refreshToken ?? null }, { persist: false });
+      const decoded = parseJwt(accessToken);
+      if (!decoded) {
+        throw new Error("Invalid access token returned from signup");
+      }
+
+      return {
+        id: decoded.id ?? username,
+        name: decoded.name ?? name,
+        username: decoded.username ?? username,
+        email: decoded.email ?? email,
+        isSuperAdmin: decoded.isSuperAdmin ?? false,
+        profilePicture: decoded.profilePicture,
+        onboarding: decoded.onboarding,
+      } as User;
+    },
+    onSuccess: (user) => {
+      qc.setQueryData(["admin-session"], user);
+    },
+  });
+
+  const signup = useCallback(
+    (name: string, email: string, username: string, password: string) =>
+      signupMutation
+        .mutateAsync({
+          name,
+          email: email.trim().toLowerCase(),
+          username: username.trim().toLowerCase(),
+          password,
+        })
+        .then(() => undefined),
+    [signupMutation],
   );
 
   const logout = useCallback(() => {
@@ -179,14 +247,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Update local state by re-parsing the new token
       const decoded = parseJwt(accessToken);
       if (decoded) {
-        const adminUser: AdminUser = {
-          id: decoded.id ?? "unknown-admin",
-          username: decoded.username ?? decoded.email?.split("@")[0] ?? "Admin",
+        const user: User = {  
+          id: decoded.id ?? "unknown-user",
+          name: decoded.name ?? "User",
+          username: decoded.username ?? decoded.email?.split("@")[0] ?? "User",
           email: decoded.email ?? "",
           isSuperAdmin: decoded.isSuperAdmin ?? false,
           profilePicture: decoded.profilePicture,
+          onboarding: decoded.onboarding,
         };
-        qc.setQueryData(["admin-session"], adminUser);
+        qc.setQueryData(["admin-session"], user);
       }
     },
     [qc],
@@ -199,6 +269,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         isSuperAdmin: user?.isSuperAdmin ?? false,
         login,
+        signup,
         logout,
         updateSession,
       }}
