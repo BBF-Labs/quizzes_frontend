@@ -2,12 +2,20 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
+import {
+  motion,
+  AnimatePresence,
+  useScroll,
+  useTransform,
+} from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
 import { Menu, X, User, LayoutDashboard, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/contexts/auth-context";
+import OnboardingBanner from "./onboarding/OnboardingBanner";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -16,49 +24,88 @@ export function Navbar() {
   const { user, logout } = useAuth();
   const { scrollY } = useScroll();
 
+  const { data: onboardingStatus, isLoading: onboardingStatusLoading } =
+    useQuery({
+      queryKey: ["onboarding-status"],
+      queryFn: async () => {
+        const res = await api.get("/users/onboarding/status");
+        return res.data?.data;
+      },
+      enabled: !!user,
+      staleTime: 30_000,
+    });
+
+  const isOnboardingPath = pathname?.startsWith("/onboarding");
+  const onboardingCompleted =
+    onboardingStatus?.completed ?? user?.onboarding?.completed ?? false;
+
+  const showBanner =
+    !!user &&
+    !isOnboardingPath &&
+    !onboardingStatusLoading &&
+    !onboardingCompleted;
+
   const backgroundColor = useTransform(
     scrollY,
     [0, 100],
-    ["rgba(var(--navbar-bg), 0)", "rgba(var(--navbar-bg), 0.7)"]
+    ["rgba(var(--navbar-bg), 0)", "rgba(var(--navbar-bg), 0.7)"],
   );
 
-  const backdropBlur = useTransform(scrollY, [0, 100], ["blur(0px)", "blur(16px)"]);
+  const backdropBlur = useTransform(
+    scrollY,
+    [0, 100],
+    ["blur(0px)", "blur(16px)"],
+  );
   const borderBottom = useTransform(
     scrollY,
     [0, 100],
-    ["1px solid rgba(var(--navbar-border), 0)", "1px solid rgba(var(--navbar-border), 0.1)"]
+    [
+      "1px solid rgba(var(--navbar-border), 0)",
+      "1px solid rgba(var(--navbar-border), 0.1)",
+    ],
   );
 
   const scrollToHero = () => {
     if (pathname !== "/") {
       router.push("/#waitlist-form");
     } else {
-      document.getElementById("waitlist-form")?.scrollIntoView({ behavior: "smooth" });
+      document
+        .getElementById("waitlist-form")
+        ?.scrollIntoView({ behavior: "smooth" });
     }
     setIsOpen(false);
   };
 
   return (
     <>
+      <OnboardingBanner />
       <motion.header
         style={{ backgroundColor, backdropFilter: backdropBlur, borderBottom }}
-        className="fixed top-0 left-0 right-0 z-50 h-16"
+        className={`fixed left-0 right-0 z-50 h-16 transition-all duration-300 ${
+          showBanner ? "top-12.25" : "top-0"
+        }`}
       >
         <div className="container mx-auto px-4 max-w-6xl h-16 flex items-center justify-between">
           <Link href="/" className="flex items-end space-x-2 group">
-            <span className="text-xl font-bold tracking-widest text-foreground leading-none group-hover:text-primary transition-colors">Qz.</span>
-            <span className="text-[10px] font-mono tracking-widest text-muted-foreground/60 uppercase leading-none mb-[2px] hidden sm:inline-block">/ BetaForge Labs</span>
+            <span className="text-xl font-bold tracking-widest text-foreground leading-none group-hover:text-primary transition-colors">
+              Qz.
+            </span>
+            <span className="text-[10px] font-mono tracking-widest text-muted-foreground/60 uppercase leading-none mb-0.5 hidden sm:inline-block">
+              / BetaForge Labs
+            </span>
           </Link>
 
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center space-x-8">
             <nav className="flex items-center space-x-8">
-              <span className="text-xs font-mono font-medium tracking-[0.15em] text-muted-foreground hover:text-foreground cursor-pointer transition-colors uppercase">Features</span>
+              <span className="text-xs font-mono font-medium tracking-[0.15em] text-muted-foreground hover:text-foreground cursor-pointer transition-colors uppercase">
+                Features
+              </span>
             </nav>
             <div className="flex items-center space-x-4">
               <ThemeToggle />
-              <Button 
-                onClick={scrollToHero} 
+              <Button
+                onClick={scrollToHero}
                 variant="outline"
                 className="rounded-none border-primary/40 bg-primary/5 text-primary text-xs font-mono font-bold tracking-[0.15em] uppercase hover:bg-primary hover:text-primary-foreground transition-all duration-300 shadow-[0_0_15px_rgba(0,110,255,0.1)]"
               >
@@ -67,7 +114,7 @@ export function Navbar() {
               {user ? (
                 <div className="flex items-center space-x-4">
                   <Link href="/admin">
-                    <Button 
+                    <Button
                       variant="ghost"
                       className="rounded-none text-muted-foreground hover:bg-primary hover:text-white hover:shadow-[0_0_20px_rgba(0,110,255,0.3)] text-xs font-mono font-bold tracking-[0.15em] uppercase transition-all duration-500 px-6 border border-border/50 hover:border-primary flex items-center gap-2 group"
                     >
@@ -75,7 +122,7 @@ export function Navbar() {
                       DASHBOARD
                     </Button>
                   </Link>
-                  <Button 
+                  <Button
                     variant="ghost"
                     onClick={() => logout()}
                     className="rounded-none text-muted-foreground hover:bg-red-500/10 hover:text-red-500 hover:shadow-[0_0_20px_rgba(239,68,68,0.1)] text-xs font-mono font-bold tracking-[0.15em] uppercase transition-all duration-500 px-6 border border-border/50 hover:border-red-500/50 flex items-center gap-2 group"
@@ -86,7 +133,7 @@ export function Navbar() {
                 </div>
               ) : (
                 <Link href="/login">
-                  <Button 
+                  <Button
                     variant="ghost"
                     className="rounded-none text-muted-foreground hover:bg-primary hover:text-white hover:shadow-[0_0_20px_rgba(0,110,255,0.3)] text-xs font-mono font-bold tracking-[0.15em] uppercase transition-all duration-500 px-6 border border-border/50 hover:border-primary"
                   >
@@ -109,7 +156,7 @@ export function Navbar() {
             </button>
           </div>
         </div>
-        
+
         {/* Mobile Drawer - Now nested inside header for perfect alignment */}
         <AnimatePresence>
           {isOpen && (
@@ -119,12 +166,15 @@ export function Navbar() {
               exit={{ opacity: 0, y: -10 }}
               className="absolute top-full left-0 right-0 bg-background border-b border-border z-40 md:hidden pb-6 pt-4 px-4 flex flex-col space-y-4 shadow-xl"
             >
-              <Button variant="ghost" className="w-full justify-start rounded-none font-mono tracking-widest uppercase">
+              <Button
+                variant="ghost"
+                className="w-full justify-start rounded-none font-mono tracking-widest uppercase"
+              >
                 Features
               </Button>
-              <Button 
+              <Button
                 variant="outline"
-                className="w-full rounded-none border-primary/40 bg-primary/5 text-primary font-mono tracking-widest uppercase hover:bg-primary hover:text-primary-foreground transition-all duration-300" 
+                className="w-full rounded-none border-primary/40 bg-primary/5 text-primary font-mono tracking-widest uppercase hover:bg-primary hover:text-primary-foreground transition-all duration-300"
                 onClick={scrollToHero}
               >
                 WAITLIST
@@ -132,13 +182,16 @@ export function Navbar() {
               {user ? (
                 <div className="flex flex-col space-y-3 pt-2">
                   <Link href="/admin" className="w-full">
-                    <Button variant="ghost" className="w-full justify-start rounded-none font-mono font-bold tracking-widest uppercase gap-3 hover:bg-primary hover:text-white transition-all duration-300 h-12">
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start rounded-none font-mono font-bold tracking-widest uppercase gap-3 hover:bg-primary hover:text-white transition-all duration-300 h-12"
+                    >
                       <LayoutDashboard className="size-4" />
                       Dashboard
                     </Button>
                   </Link>
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     className="w-full justify-start rounded-none font-mono font-bold tracking-widest uppercase gap-3 text-red-500 hover:bg-red-500/10 transition-all duration-300 h-12 border border-transparent hover:border-red-500/20"
                     onClick={() => {
                       logout();
@@ -151,7 +204,10 @@ export function Navbar() {
                 </div>
               ) : (
                 <Link href="/login" className="w-full pt-2">
-                  <Button variant="ghost" className="w-full justify-start rounded-none font-mono font-bold tracking-widest uppercase hover:bg-primary hover:text-white transition-all h-12">
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start rounded-none font-mono font-bold tracking-widest uppercase hover:bg-primary hover:text-white transition-all h-12"
+                  >
                     LOGIN
                   </Button>
                 </Link>
