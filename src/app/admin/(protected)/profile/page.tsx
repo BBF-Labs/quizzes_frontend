@@ -27,7 +27,7 @@ import { toast } from "sonner";
 import { useRef } from "react";
 
 export default function ProfilePage() {
-  const { user, isSuperAdmin } = useAuth();
+  const { user, isSuperAdmin, updateSession } = useAuth();
   const checkProfile = useCheckProfile();
   const updateProfile = useUpdateProfile();
 
@@ -79,6 +79,7 @@ export default function ProfilePage() {
     try {
       const res = await uploadMutation.mutateAsync({ file, folder: "avatars" });
       setUploadedPicture(res);
+      toast.success("Identity block processed");
     } catch (error) {
       toast.error("Failed to process image block");
       setLocalPreview(null);
@@ -113,8 +114,14 @@ export default function ProfilePage() {
         profilePicture: uploadedPicture ? uploadedPicture._id : undefined,
       },
       {
-        onSuccess: () => {
+        onSuccess: (data: any) => {
           toast.success("Profile synchronized successfully");
+          
+          const resData = data.data ?? data;
+          if (resData.accessToken) {
+             updateSession(resData.accessToken, resData.refreshToken);
+          }
+
           setCurrentPassword("");
           setNewPassword("");
           setConfirmPassword("");
