@@ -77,7 +77,7 @@ export function HowZWorks() {
         >
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
             <div>
-              <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-2 uppercase">
+              <h2 className="text-2xl md:text-3xl font-black tracking-[-0.04em] text-foreground mb-4 uppercase">
                 Deterministic Execution
               </h2>
               <p className="text-muted-foreground text-sm font-mono uppercase tracking-widest text-[10px] md:text-xs">
@@ -104,7 +104,7 @@ export function HowZWorks() {
               <div className="w-10 h-10 border border-primary/20 bg-primary/10 text-primary flex items-center justify-center mb-6">
                 {step.icon}
               </div>
-              <h3 className="text-sm font-bold tracking-wider text-foreground mb-3 font-mono">{step.title}</h3>
+              <h3 className="text-sm font-black tracking-[-0.02em] text-foreground mb-4 uppercase">{step.title}</h3>
               <p className="text-muted-foreground text-[15px] leading-relaxed font-light">{step.desc}</p>
             </motion.div>
           ))}

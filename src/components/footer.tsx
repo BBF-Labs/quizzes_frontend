@@ -32,7 +32,7 @@ export function Footer() {
           {/* Column 1: Brand */}
           <div className="flex flex-col items-start">
             <Link href="/" className="flex items-end space-x-2 mb-6 group">
-              <span className="text-xl font-bold tracking-widest text-foreground uppercase leading-none group-hover:text-primary transition-colors">Qz.</span>
+              <span className="text-xl font-bold tracking-widest text-foreground leading-none group-hover:text-primary transition-colors">Qz.</span>
               <span className="text-[10px] font-mono tracking-widest text-muted-foreground/60 uppercase leading-none mb-[2px]">/ BetaForge Labs</span>
             </Link>
             <p className="text-[13px] font-mono text-muted-foreground leading-relaxed max-w-[200px]">

@@ -53,10 +53,10 @@ export function MeetZ() {
         <div className="mb-16">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
             <div>
-              <motion.h2 variants={itemVariants} className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-2 uppercase">
-                Agent Z
+              <motion.h2 variants={itemVariants} className="text-2xl md:text-3xl font-black tracking-[-0.04em] text-foreground mb-3 uppercase">
+                Meet Z
               </motion.h2>
-              <motion.p variants={itemVariants} className="text-muted-foreground text-sm font-mono uppercase tracking-widest text-[10px] md:text-xs">
+              <motion.p variants={itemVariants} className="text-muted-foreground text-[10px] md:text-xs font-mono uppercase tracking-[0.15em] opacity-80">
                 A system that comprehends your curriculum, memorises your weaknesses, and tests you prior to advancement.
               </motion.p>
             </div>
@@ -66,15 +66,15 @@ export function MeetZ() {
           </div>
           <div className="h-px w-full bg-border/50 mb-10" />
           <motion.div variants={itemVariants} className="flex flex-wrap justify-start gap-4 font-mono text-[10px] sm:text-xs">
-            <div className="border border-border/80 px-4 py-2 flex items-center gap-2 uppercase tracking-widest">
+            <div className="border border-border/80 px-4 py-2 flex items-center gap-2 uppercase tracking-widest font-bold">
               <Brain className="w-3.5 h-3.5 text-primary" />
               <span>Curriculum Aware</span>
             </div>
-            <div className="border border-border/80 px-4 py-2 flex items-center gap-2 uppercase tracking-widest">
+            <div className="border border-border/80 px-4 py-2 flex items-center gap-2 uppercase tracking-widest font-bold">
               <Target className="w-3.5 h-3.5 text-primary" />
               <span>Gatekeeper Testing</span>
             </div>
-            <div className="border border-border/80 px-4 py-2 flex items-center gap-2 uppercase tracking-widest">
+            <div className="border border-border/80 px-4 py-2 flex items-center gap-2 uppercase tracking-widest font-bold">
               <TrendingUp className="w-3.5 h-3.5 text-primary" />
               <span>Adaptive Memory</span>
             </div>

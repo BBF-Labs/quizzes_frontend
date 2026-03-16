@@ -50,7 +50,7 @@ export function ExamTimetablePreview() {
           viewport={{ once: true }}
           className="mb-12"
         >
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground uppercase mb-2">
+          <h2 className="text-3xl md:text-4xl font-mono font-bold tracking-[0.2em] text-foreground uppercase mb-4">
             Exam Protocol
           </h2>
           <p className="text-muted-foreground text-sm font-mono uppercase tracking-widest text-[10px] md:text-xs">
@@ -73,7 +73,7 @@ export function ExamTimetablePreview() {
                 <span className="w-1.5 h-1.5 bg-primary block animate-pulse" />
                 Next Exam
               </div>
-              <h3 className="text-xl font-bold text-foreground uppercase tracking-tight mb-1">
+              <h3 className="text-lg font-mono font-bold text-foreground uppercase tracking-[0.1em] mb-2">
                 {nextExam.code}
               </h3>
               <p className="text-muted-foreground font-mono text-xs uppercase tracking-wider mb-8">
@@ -118,7 +118,7 @@ export function ExamTimetablePreview() {
                   {/* Left — course info */}
                   <div className="flex-1 p-8 md:p-10">
                     <div className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mb-1">{exam.code}</div>
-                    <h4 className="text-xl font-bold text-foreground mb-3">{exam.name}</h4>
+                    <h4 className="text-lg font-mono font-bold text-foreground mb-4 uppercase tracking-tight">{exam.name}</h4>
                     <div className="flex flex-wrap gap-y-2 gap-x-5 text-sm text-muted-foreground font-mono mb-6">
                       <div className="flex items-center gap-1.5">
                         <CalendarClock className="w-3.5 h-3.5 text-primary/80" />
