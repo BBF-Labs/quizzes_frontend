@@ -6,14 +6,10 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Mail,
-  Users,
   UserPlus,
   Radio,
   Settings,
-  ChevronRight,
-  Zap,
   LogOut,
-  ShieldCheck,
   GraduationCap,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
@@ -28,11 +24,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
   SidebarRail,
-  SidebarMenuAction,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
@@ -107,12 +99,16 @@ export function AdminSidebar() {
     <Sidebar collapsible="icon" className="border-r border-border/50">
       <SidebarHeader className="h-14 flex items-center px-4">
         <div className="flex items-center gap-3 w-full">
-            <div className="flex items-end space-x-1.5 px-0.5">
-               <span className="text-lg font-bold tracking-widest text-foreground leading-none">Qz.</span>
-               {state === "expanded" && (
-                 <span className="text-[10px] font-mono tracking-widest text-muted-foreground/60 uppercase leading-none mb-[1px]">/ Admin</span>
-               )}
-            </div>
+          <div className="flex items-end space-x-1.5 px-0.5">
+            <span className="text-lg font-bold tracking-widest text-foreground leading-none">
+              Qz.
+            </span>
+            {state === "expanded" && (
+              <span className="text-[10px] font-mono tracking-widest text-muted-foreground/60 uppercase leading-none mb-px">
+                / Admin
+              </span>
+            )}
+          </div>
         </div>
       </SidebarHeader>
 
@@ -125,9 +121,11 @@ export function AdminSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 {group.items.map((item) => {
-                  const isActive = item.url === "/admin" 
-                    ? pathname === "/admin" 
-                    : pathname === item.url || pathname.startsWith(item.url + "/");
+                  const isActive =
+                    item.url === "/admin"
+                      ? pathname === "/admin"
+                      : pathname === item.url ||
+                        pathname.startsWith(item.url + "/");
                   return (
                     <SidebarMenuItem key={item.url}>
                       <SidebarMenuButton
@@ -138,11 +136,13 @@ export function AdminSidebar() {
                           "h-9 px-4 rounded-none transition-all duration-200",
                           isActive
                             ? "bg-primary/5 text-primary border-r-2 border-primary"
-                            : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                            : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
                         )}
                       >
                         <Link href={item.url}>
-                          <item.icon className={cn("size-4", isActive && "text-primary")} />
+                          <item.icon
+                            className={cn("size-4", isActive && "text-primary")}
+                          />
                           <span className="font-mono text-[11px] uppercase tracking-widest">
                             {item.title}
                           </span>
@@ -159,52 +159,68 @@ export function AdminSidebar() {
 
       <SidebarFooter className="p-0  overflow-hidden">
         {/* User Profile & Actions */}
-        <div className={cn(
-          "flex items-stretch gap-0 border-t border-border/50",
-          state === "expanded" ? "h-12" : "h-10"
-        )}>
-          <Link 
+        <div
+          className={cn(
+            "flex items-stretch gap-0 border-t border-border/50",
+            state === "expanded" ? "h-12" : "h-10",
+          )}
+        >
+          <Link
             href="/admin/profile"
             className={cn(
               "flex-1 flex items-center gap-3 p-2 hover:bg-secondary/10 transition-colors overflow-hidden",
-              pathname === "/admin/profile" && "bg-primary/5 border-l-2 border-primary"
+              pathname === "/admin/profile" &&
+                "bg-primary/5 border-l-2 border-primary",
             )}
           >
             <Avatar className="size-8 rounded-none border border-border/50 bg-secondary/20 shrink-0">
-               <AvatarImage src={user?.profilePicture} className="object-cover" />
-               <AvatarFallback className="rounded-none bg-zinc-800 font-mono text-[10px] font-bold text-zinc-400">
-                  {user?.username?.[0]?.toUpperCase() || "A"}
-               </AvatarFallback>
+              <AvatarImage
+                src={user?.profilePicture}
+                className="object-cover"
+              />
+              <AvatarFallback className="rounded-none bg-zinc-800 font-mono text-[10px] font-bold text-zinc-400">
+                {user?.username?.[0]?.toUpperCase() || "A"}
+              </AvatarFallback>
             </Avatar>
             {state === "expanded" && (
               <div className="flex flex-col flex-1 overflow-hidden">
-                 <span className="text-[10px] font-mono font-bold text-foreground uppercase truncate">{user?.username || "Admin"}</span>
-                 <div className="flex items-center gap-1.5 min-w-0">
-                    <div className={cn("size-1 shrink-0", isSuperAdmin ? "bg-blue-500" : "bg-zinc-500")} />
-                    <span className="text-[8px] font-mono tracking-widest text-muted-foreground uppercase truncate">{isSuperAdmin ? "Superadmin" : "Staff"}</span>
-                 </div>
+                <span className="text-[10px] font-mono font-bold text-foreground uppercase truncate">
+                  {user?.username || "Admin"}
+                </span>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <div
+                    className={cn(
+                      "size-1 shrink-0",
+                      isSuperAdmin ? "bg-blue-500" : "bg-zinc-500",
+                    )}
+                  />
+                  <span className="text-[8px] font-mono tracking-widest text-muted-foreground uppercase truncate">
+                    {isSuperAdmin ? "Superadmin" : "Staff"}
+                  </span>
+                </div>
               </div>
             )}
           </Link>
-          <button 
+          <button
             onClick={logout}
             className={cn(
-               "flex items-center justify-center hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-all group/logout border-l border-border/50",
-               state === "expanded" ? "w-10" : "w-full"
+              "flex items-center justify-center hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-all group/logout border-l border-border/50",
+              state === "expanded" ? "w-10" : "w-full",
             )}
             title="Logout"
           >
             <LogOut className="size-3.5 group-hover/logout:-translate-x-0.5 transition-transform" />
           </button>
         </div>
-        
 
         {/* Engine Status */}
         <div className="flex items-center gap-3 px-4 py-2 bg-secondary/5 border-t border-border/50">
           <div
             className={cn(
               "size-1.5 rounded-none transition-colors duration-500",
-              isConnected ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]" : "bg-destructive animate-pulse"
+              isConnected
+                ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]"
+                : "bg-destructive animate-pulse",
             )}
           />
           {state === "expanded" && (

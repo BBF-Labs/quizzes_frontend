@@ -11,6 +11,12 @@ interface MessageBubbleProps {
 }
 
 const typeConfig = {
+  text: {
+    icon: MessageSquare,
+    label: "Z",
+    className: "border-border/50 bg-card text-foreground",
+    iconClass: "text-muted-foreground",
+  },
   thinking: {
     icon: Zap,
     label: "THOUGHT",
@@ -23,16 +29,22 @@ const typeConfig = {
     className: "border-amber-500/30 bg-amber-500/5 text-foreground",
     iconClass: "text-amber-500",
   },
-  message: {
+  tool_call: {
     icon: MessageSquare,
-    label: "Z",
+    label: "TOOL",
+    className: "border-border/50 bg-card text-foreground",
+    iconClass: "text-muted-foreground",
+  },
+  tool_result: {
+    icon: MessageSquare,
+    label: "RESULT",
     className: "border-border/50 bg-card text-foreground",
     iconClass: "text-muted-foreground",
   },
 };
 
 export function MessageBubble({ message, isUser = false }: MessageBubbleProps) {
-  const cfg = typeConfig[message.type];
+  const cfg = typeConfig[message.type as keyof typeof typeConfig] || typeConfig.text;
   const Icon = cfg.icon;
 
   if (isUser) {

@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext, useCallback } from "react";
+import React, { createContext, useContext, useCallback, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import {
@@ -7,29 +7,25 @@ import {
   getCurrentPushEndpoint,
 } from "@/lib/push-notifications";
 import {
-  clearAdminSession,
-  getAdminAccessToken,
-  setAdminSession,
-} from "@/lib/admin-session";
+  clearSession,
+  setSession,
+} from "@/lib/session";
+import { queryKeys } from "@/lib/query-keys";
+import {
+  hydrateSessionUserFromToken,
+  SessionUser,
+} from "@/hooks/use-session-hydration";
+import {
+  isInvalidSessionError,
+  useSessionValidation,
+} from "@/hooks/use-session-validation";
+import { useSessionSync } from "@/hooks/use-session-sync";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-interface User {
-  id: string;
-  name: string;
-  username: string;
-  email: string;
-  bio?: string;
-  isSuperAdmin: boolean;
-  profilePicture?: string;
-  onboarding?: {
-    completed: boolean;
-    currentStep: number;
-    steps: Record<string, boolean>;
-  };
-}
+type User = SessionUser;
 
 // ---------------------------------------------------------------------------
 // AuthContext
@@ -38,6 +34,9 @@ interface User {
 interface AuthContextValue {
   user: User | null;
   isLoading: boolean;
+  isHydrating: boolean;
+  isValidating: boolean;
+  isAuthenticated: boolean;
   isSuperAdmin: boolean;
   login: (
     username: string,
@@ -52,65 +51,43 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 // ---------------------------------------------------------------------------
-// JWT helpers
-// ---------------------------------------------------------------------------
-
-type JwtPayload = {
-  id?: string;
-  name?: string;
-  username?: string;
-  email?: string;
-  isSuperAdmin?: boolean;
-  profilePicture?: string;
-  onboarding?: {
-    completed: boolean;
-    currentStep: number;
-    steps: Record<string, boolean>;
-  };
-};
-
-function parseJwt(token: string): JwtPayload | null {
-  try {
-    const base64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
-    return JSON.parse(atob(base64)) as JwtPayload;
-  } catch {
-    return null;
-  }
-}
-
-function getStoredUser(): User | null {
-  const token = getAdminAccessToken();
-  if (!token) return null;
-
-  const decoded = parseJwt(token);
-  if (!decoded) {
-    clearAdminSession();
-    return null;
-  }
-
-  return {
-    id: decoded.id ?? "unknown-user",
-    name: decoded.name ?? "User",
-    username: decoded.username ?? decoded.email?.split("@")[0] ?? "User",
-    email: decoded.email ?? "",
-    isSuperAdmin: decoded.isSuperAdmin ?? false,
-    profilePicture: decoded.profilePicture,
-    onboarding: decoded.onboarding,
-  };
-}
-
-// ---------------------------------------------------------------------------
 // Provider
 // ---------------------------------------------------------------------------
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const qc = useQueryClient();
 
-  const { data: user, isLoading } = useQuery<User | null>({
-    queryKey: ["admin-session"],
-    queryFn: async () => getStoredUser(),
+  const { data: user, isLoading: isHydrating } = useQuery<User | null>({
+    queryKey: queryKeys.authSession,
+    queryFn: async () => hydrateSessionUserFromToken(),
     staleTime: 60_000,
   });
+
+  const validationQuery = useSessionValidation(Boolean(user));
+
+  useEffect(() => {
+    if (validationQuery.error && isInvalidSessionError(validationQuery.error)) {
+      clearSession();
+      qc.setQueryData(queryKeys.authSession, null);
+      qc.removeQueries({ queryKey: queryKeys.onboardingStatus });
+    }
+  }, [validationQuery.error, qc]);
+
+  useSessionSync(
+    useCallback(() => {
+      const sessionUser = hydrateSessionUserFromToken();
+      qc.setQueryData(queryKeys.authSession, sessionUser);
+      qc.invalidateQueries({ queryKey: [...queryKeys.authSession, "validation"] });
+      if (!sessionUser) {
+        qc.removeQueries({ queryKey: queryKeys.onboardingStatus });
+      }
+    }, [qc]),
+  );
+
+  const isValidating =
+    Boolean(user) && (validationQuery.isLoading || validationQuery.isFetching);
+  const isAuthenticated = Boolean(user);
+  const isLoading = isHydrating || isValidating;
 
   const loginMutation = useMutation({
     mutationFn: async ({
@@ -137,7 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!accessToken) throw new Error("No access token returned from login");
 
-      setAdminSession(
+      setSession(
         {
           accessToken,
           refreshToken: refreshToken ?? null,
@@ -145,22 +122,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         { persist: rememberMe },
       );
 
-      const decoded = parseJwt(accessToken);
-      if (!decoded) {
+      const sessionUser = hydrateSessionUserFromToken();
+      if (!sessionUser) {
         throw new Error("Invalid access token returned from login");
       }
 
-      return {
-        id: decoded.id ?? username,
-        username: decoded.username ?? decoded.email?.split("@")[0] ?? username,
-        email: decoded.email ?? "",
-        isSuperAdmin: decoded.isSuperAdmin ?? false,
-        profilePicture: decoded.profilePicture,
-        onboarding: decoded.onboarding,
-      } as User;
+      return sessionUser;
     },
     onSuccess: async (user) => {
-      qc.setQueryData(["admin-session"], user);
+      qc.setQueryData(queryKeys.authSession, user);
+      await qc.invalidateQueries({ queryKey: [...queryKeys.authSession, "validation"] });
       // Post-login, prompt once for permission so authenticated sessions can receive pushes.
       await ensurePushSubscription({ promptForPermission: true });
     },
@@ -195,24 +166,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const accessToken: string = resData?.accessToken;
       const refreshToken: string = resData?.refreshToken;
       if (!accessToken) throw new Error("No access token returned from signup");
-      setAdminSession({ accessToken, refreshToken: refreshToken ?? null }, { persist: false });
-      const decoded = parseJwt(accessToken);
-      if (!decoded) {
+      setSession({ accessToken, refreshToken: refreshToken ?? null }, { persist: false });
+      const sessionUser = hydrateSessionUserFromToken();
+      if (!sessionUser) {
         throw new Error("Invalid access token returned from signup");
       }
 
       return {
-        id: decoded.id ?? username,
-        name: decoded.name ?? name,
-        username: decoded.username ?? username,
-        email: decoded.email ?? email,
-        isSuperAdmin: decoded.isSuperAdmin ?? false,
-        profilePicture: decoded.profilePicture,
-        onboarding: decoded.onboarding,
+        ...sessionUser,
+        name: sessionUser.name || name,
+        username: sessionUser.username || username,
+        email: sessionUser.email || email,
       } as User;
     },
     onSuccess: (user) => {
-      qc.setQueryData(["admin-session"], user);
+      qc.setQueryData(queryKeys.authSession, user);
+      qc.invalidateQueries({ queryKey: [...queryKeys.authSession, "validation"] });
     },
   });
 
@@ -230,34 +199,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const logout = useCallback(() => {
-    clearAdminSession();
+    clearSession();
 
-    qc.setQueryData(["admin-session"], null);
-    qc.invalidateQueries({ queryKey: ["admin-session"] });
+    qc.setQueryData(queryKeys.authSession, null);
+    qc.removeQueries({ queryKey: queryKeys.onboardingStatus });
+    qc.invalidateQueries({ queryKey: queryKeys.authSession });
   }, [qc]);
 
   const updateSession = useCallback(
     (accessToken: string, refreshToken?: string) => {
       // Re-persist tokens
-      setAdminSession({
+      setSession({
         accessToken,
         refreshToken: refreshToken ?? null,
       });
 
       // Update local state by re-parsing the new token
-      const decoded = parseJwt(accessToken);
-      if (decoded) {
-        const user: User = {  
-          id: decoded.id ?? "unknown-user",
-          name: decoded.name ?? "User",
-          username: decoded.username ?? decoded.email?.split("@")[0] ?? "User",
-          email: decoded.email ?? "",
-          isSuperAdmin: decoded.isSuperAdmin ?? false,
-          profilePicture: decoded.profilePicture,
-          onboarding: decoded.onboarding,
-        };
-        qc.setQueryData(["admin-session"], user);
+      const sessionUser = hydrateSessionUserFromToken();
+      if (sessionUser) {
+        qc.setQueryData(queryKeys.authSession, sessionUser);
       }
+      qc.invalidateQueries({ queryKey: [...queryKeys.authSession, "validation"] });
     },
     [qc],
   );
@@ -267,6 +229,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         user: user ?? null,
         isLoading,
+        isHydrating,
+        isValidating,
+        isAuthenticated,
         isSuperAdmin: user?.isSuperAdmin ?? false,
         login,
         signup,

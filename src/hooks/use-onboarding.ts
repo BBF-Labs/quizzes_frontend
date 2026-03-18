@@ -3,14 +3,16 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
+import { queryKeys } from "@/lib/query-keys";
+import { useAuthQuery } from "@/hooks/use-auth-query";
 
 export function useOnboarding() {
   const { user, isLoading: authLoading } = useAuth();
   const queryClient = useQueryClient();
 
   // Get current onboarding status
-  const { data: status, isLoading: statusLoading, error: statusError } = useQuery({
-    queryKey: ["onboarding-status"],
+  const { data: status, isLoading: statusLoading, error: statusError } = useAuthQuery({
+    queryKey: queryKeys.onboardingStatus,
     queryFn: async () => {
       const res = await api.get("/users/onboarding/status");
       return res.data.data;
@@ -30,7 +32,7 @@ export function useOnboarding() {
     },
     onSuccess: (data) => {
       // Update local cache with new status returned from backend
-      queryClient.setQueryData(["onboarding-status"], data.data);
+      queryClient.setQueryData(queryKeys.onboardingStatus, data.data);
     },
   });
 
