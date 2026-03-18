@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import type {
   ConnectionType,
+  ZDirective,
   ZSession,
   ZSessionMessage,
   ZSessionMessageType,
@@ -22,7 +23,8 @@ function makeMessage(
   type: ZSessionMessageType,
   content: string,
 ): ZSessionMessage {
-  return { id: makeId(), type, content, timestamp: new Date().toISOString() };
+  const id = makeId();
+  return { id, messageId: id, type, content, timestamp: new Date().toISOString() };
 }
 
 export function useSessionStream(
@@ -110,10 +112,20 @@ export function useSessionStream(
     // --- directive ---
     es.addEventListener("directive", (e: MessageEvent) => {
       try {
-        const parsed = JSON.parse(e.data);
-        appendMessage(
-          makeMessage("directive", parsed.content ?? JSON.stringify(parsed)),
-        );
+        const parsed: { id?: string; directive?: ZDirective; content?: string } =
+          JSON.parse(e.data);
+        const id = makeId();
+        const msg: ZSessionMessage = {
+          id,
+          messageId: parsed.id ?? id,
+          type: "directive",
+          content:
+            parsed.content ??
+            (parsed.directive ? `Directive: ${parsed.directive.type}` : e.data),
+          timestamp: new Date().toISOString(),
+          directive: parsed.directive,
+        };
+        appendMessage(msg);
       } catch {
         appendMessage(makeMessage("directive", e.data));
       }
