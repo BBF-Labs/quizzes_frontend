@@ -14,8 +14,9 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/contexts/auth-context";
 import OnboardingBanner from "./onboarding/OnboardingBanner";
-import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { useAuthQuery } from "@/hooks/use-auth-query";
+import { queryKeys } from "@/lib/query-keys";
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -25,8 +26,8 @@ export function Navbar() {
   const { scrollY } = useScroll();
 
   const { data: onboardingStatus, isLoading: onboardingStatusLoading } =
-    useQuery({
-      queryKey: ["onboarding-status"],
+    useAuthQuery({
+      queryKey: queryKeys.onboardingStatus,
       queryFn: async () => {
         const res = await api.get("/users/onboarding/status");
         return res.data?.data;

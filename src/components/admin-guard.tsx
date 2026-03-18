@@ -9,7 +9,7 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!isLoading && (!user || !isSuperAdmin)) {
-      router.replace("/admin/login");
+      router.replace("/login");
     }
   }, [user, isLoading, isSuperAdmin, router]);
 

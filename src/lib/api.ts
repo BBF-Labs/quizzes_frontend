@@ -1,10 +1,10 @@
 import axios from "axios";
 import {
-  clearAdminSession,
-  getAdminAccessToken,
-  getAdminRefreshToken,
-  setAdminSession,
-} from "@/lib/admin-session";
+  clearSession,
+  getAccessToken,
+  getRefreshToken,
+  setSession,
+} from "@/lib/session";
 
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -16,7 +16,7 @@ export const api = axios.create({
 // Inject Bearer token on every request
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
-    const token = getAdminAccessToken();
+    const token = getAccessToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -45,10 +45,7 @@ api.interceptors.response.use(
     const originalRequest = config;
 
     if (response?.status === 401 && typeof window !== "undefined") {
-      const isAdminRoute = window.location.pathname.startsWith("/admin");
-      if (!isAdminRoute) return Promise.reject(error);
-
-      const refreshToken = getAdminRefreshToken();
+      const refreshToken = getRefreshToken();
 
       if (refreshToken && !originalRequest._retry) {
         if (isRefreshing) {
@@ -74,7 +71,7 @@ api.interceptors.response.use(
 
           const newToken = res.data?.accessToken;
           if (newToken) {
-            setAdminSession({ accessToken: newToken });
+            setSession({ accessToken: newToken });
             isRefreshing = false;
             onTokenRefreshed(newToken);
 
@@ -85,14 +82,14 @@ api.interceptors.response.use(
         } catch (refreshError) {
           isRefreshing = false;
           // Refresh failed -> clear memory session and redirect to login
-          clearAdminSession();
-          window.location.href = "/admin/login";
+          clearSession();
+          window.location.href = "/login";
           return Promise.reject(refreshError);
         }
       } else {
         // No refresh token or retry failed -> logout
-        clearAdminSession();
-        window.location.href = "/admin/login";
+        clearSession();
+        window.location.href = "/login";
       }
     }
     return Promise.reject(error);

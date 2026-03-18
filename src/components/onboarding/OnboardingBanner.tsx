@@ -4,8 +4,9 @@ import { useAuth } from "@/contexts/auth-context";
 import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, ArrowRight } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { queryKeys } from "@/lib/query-keys";
+import { useAuthQuery } from "@/hooks/use-auth-query";
 
 export default function OnboardingBanner() {
   const { user } = useAuth();
@@ -13,8 +14,8 @@ export default function OnboardingBanner() {
   const pathname = usePathname();
 
   const { data: onboardingStatus, isLoading: onboardingStatusLoading } =
-    useQuery({
-      queryKey: ["onboarding-status"],
+    useAuthQuery({
+      queryKey: queryKeys.onboardingStatus,
       queryFn: async () => {
         const res = await api.get("/users/onboarding/status");
         return res.data?.data;
