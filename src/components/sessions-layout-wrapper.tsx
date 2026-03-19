@@ -23,9 +23,15 @@ export function SessionsLayoutWrapper({ children }: { children: ReactNode }) {
   const sessionId = routePart && !staticRoutes.has(routePart) ? routePart : "";
   const isSessionDetail = !!sessionId;
 
+  // Always call hooks unconditionally (Rules of Hooks)
   const { data: session } = useSession(sessionId, isSessionDetail);
   const stream = useSessionStream(sessionId, undefined, isSessionDetail);
   const { isConnected: isSocketConnected } = useSocket();
+
+  // For session detail pages the [id]/layout.tsx handles everything
+  if (isSessionDetail) {
+    return <>{children}</>;
+  }
 
   return (
     <SidebarProvider>
@@ -37,15 +43,15 @@ export function SessionsLayoutWrapper({ children }: { children: ReactNode }) {
             <div className="ml-3 flex min-w-0 items-center gap-2">
               {isSessionDetail && (
                 <Link
-                  href="/sessions"
+                  href="/app"
                   className="flex size-7 items-center justify-center rounded border border-border/50 hover:border-primary/50 text-muted-foreground hover:text-primary transition-colors"
-                  aria-label="Back to sessions"
+                  aria-label="Back to app"
                 >
                   <ArrowLeft className="size-3.5" />
                 </Link>
               )}
               <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/70 truncate max-w-[45vw]">
-                {isSessionDetail ? session?.title || "New Chat" : "Qz Sessions"}
+                {isSessionDetail ? session?.title || "New Chat" : "Qz App"}
               </span>
             </div>
             <div className="ml-auto flex items-center gap-2">
