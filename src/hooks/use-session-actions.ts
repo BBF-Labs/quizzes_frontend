@@ -32,10 +32,13 @@ export const useCreateSession = () => {
         input,
       );
       const session = response.data.data;
-      // Map _id to id for frontend consistency
+      // Map _id to id for frontend consistency, converting to string if needed
       return {
         ...session,
-        id: (session as any)._id || session.id,
+        id:
+          typeof (session as any)._id === "string"
+            ? (session as any)._id
+            : (session as any)._id?.toString() || session.id,
       };
     },
     onSuccess: () => {
@@ -55,6 +58,9 @@ export const useStartSession = () => {
 
   return useMutation({
     mutationFn: async (sessionId: string) => {
+      if (!sessionId || sessionId === "undefined") {
+        throw new Error("Invalid session ID for startSession");
+      }
       const response = await api.post<StepResponse>(
         `/sessions/${sessionId}/start`,
       );
@@ -83,6 +89,9 @@ export const useSessionStep = () => {
       sessionId: string;
       step: StepInput;
     }) => {
+      if (!sessionId || sessionId === "undefined") {
+        throw new Error("Invalid session ID for session step");
+      }
       const response = await api.post<StepResponse>(
         `/sessions/${sessionId}/step`,
         step,
@@ -112,6 +121,9 @@ export const useEditSessionPlan = () => {
       sessionId: string;
       plan: ZAgentPlan;
     }) => {
+      if (!sessionId || sessionId === "undefined") {
+        throw new Error("Invalid session ID for plan edit");
+      }
       const response = await api.post<StepResponse>(
         `/sessions/${sessionId}/plan/edit`,
         plan,
