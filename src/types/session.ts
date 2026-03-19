@@ -219,6 +219,7 @@ export interface ZMaterial {
 export interface ZSession {
   id: string;
   title?: string;
+  name?: string;
   courseId?: string;
   mode: "ai" | "peer";
   zMessages: ZSessionMessage[];
