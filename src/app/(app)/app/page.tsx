@@ -37,7 +37,7 @@ function getGreeting(name: string): string {
 
   const lateNight = [
     `It's late, ${first} 🦉`,
-    `${first[-1] === "s" ? first : first + "'s"}, shenanigans! 🌌`,
+    `${first.slice(-1) === "s" ? first : first + "'s"}, shenanigans! 🌌`,
     `Quiet hours, ${first} 🎧`,
   ];
 
@@ -67,7 +67,7 @@ const SESSION_MODES = [
 
 type SessionMode = (typeof SESSION_MODES)[number]["value"];
 
-export default function SessionsPage() {
+export default function AppHomePage() {
   const router = useRouter();
   const { user } = useAuth();
   const { data: sessions = [], isLoading: sessionsLoading } = useSessions();
@@ -135,7 +135,7 @@ export default function SessionsPage() {
         );
       }
 
-      router.push(`/sessions/${resolvedSessionId}`);
+      router.push(`/app/${resolvedSessionId}`);
     } catch (err) {
       console.error("Failed to create session", err);
       setIsSubmitting(false);
@@ -193,7 +193,7 @@ export default function SessionsPage() {
                 {recentSessions.map((s) => (
                   <Link
                     key={s._id}
-                    href={`/sessions/${s._id}`}
+                    href={`/app/${s._id}`}
                     className="group flex items-center gap-3 border border-border/40 bg-card/30 px-3 py-2.5 hover:border-primary/40 hover:bg-primary/5 transition-all"
                   >
                     <Clock3 className="size-3.5 text-muted-foreground/50 shrink-0" />
@@ -213,7 +213,7 @@ export default function SessionsPage() {
               </div>
               {sessions.length > 5 && (
                 <Link
-                  href="/sessions/all"
+                  href="/app/all"
                   className="mt-2 inline-block text-[10px] font-mono uppercase tracking-widest text-primary/70 hover:text-primary transition-colors"
                 >
                   View all {sessions.length} chats →
@@ -253,7 +253,7 @@ export default function SessionsPage() {
                 className="mb-2 flex items-center gap-2 border border-border/50 bg-card/60 px-3 py-1.5 w-fit"
               >
                 <Paperclip className="size-3 text-muted-foreground" />
-                <span className="text-[11px] font-mono text-muted-foreground truncate max-w-50">
+                <span className="text-[11px] font-mono text-muted-foreground truncate max-w-[200px]">
                   {attachedFile.name}
                 </span>
                 <button

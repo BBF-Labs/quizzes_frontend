@@ -47,7 +47,7 @@ export function SessionsSidebar() {
             </span>
             {state === "expanded" && (
               <span className="text-[10px] font-mono tracking-widest text-muted-foreground/60 uppercase leading-none mb-px">
-                / Sessions
+                / App
               </span>
             )}
           </div>
@@ -61,16 +61,16 @@ export function SessionsSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  isActive={pathname === "/sessions"}
+                  isActive={pathname === "/app"}
                   tooltip="Start Chat"
                   className={cn(
                     "h-9 px-4 rounded-none transition-all duration-200",
-                    pathname === "/sessions"
+                    pathname === "/app"
                       ? "bg-primary/5 text-primary border-r-2 border-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
                   )}
                 >
-                  <Link href="/sessions">
+                  <Link href="/app">
                     <Plus className="size-4" />
                     <span className="font-mono text-[11px] uppercase tracking-widest">
                       Start Chat
@@ -82,16 +82,16 @@ export function SessionsSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  isActive={pathname === "/sessions/all"}
+                  isActive={pathname === "/app/all"}
                   tooltip="All Chats"
                   className={cn(
                     "h-9 px-4 rounded-none transition-all duration-200",
-                    pathname === "/sessions/all"
+                    pathname === "/app/all"
                       ? "bg-primary/5 text-primary border-r-2 border-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
                   )}
                 >
-                  <Link href="/sessions/all">
+                  <Link href="/app/all">
                     <MessageSquare className="size-4" />
                     <span className="font-mono text-[11px] uppercase tracking-widest">
                       All Chats
@@ -103,16 +103,16 @@ export function SessionsSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  isActive={pathname === "/sessions/memory"}
+                  isActive={pathname === "/app/memory"}
                   tooltip="Memory"
                   className={cn(
                     "h-9 px-4 rounded-none transition-all duration-200",
-                    pathname === "/sessions/memory"
+                    pathname === "/app/memory"
                       ? "bg-primary/5 text-primary border-r-2 border-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
                   )}
                 >
-                  <Link href="/sessions/memory">
+                  <Link href="/app/memory">
                     <Brain className="size-4" />
                     <span className="font-mono text-[11px] uppercase tracking-widest">
                       Memory
@@ -124,16 +124,16 @@ export function SessionsSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  isActive={pathname === "/sessions/settings"}
+                  isActive={pathname === "/app/settings"}
                   tooltip="Settings"
                   className={cn(
                     "h-9 px-4 rounded-none transition-all duration-200",
-                    pathname === "/sessions/settings"
+                    pathname === "/app/settings"
                       ? "bg-primary/5 text-primary border-r-2 border-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
                   )}
                 >
-                  <Link href="/sessions/settings">
+                  <Link href="/app/settings">
                     <Settings className="size-4" />
                     <span className="font-mono text-[11px] uppercase tracking-widest">
                       Settings
@@ -145,16 +145,16 @@ export function SessionsSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  isActive={pathname === "/sessions/usage"}
+                  isActive={pathname === "/app/usage"}
                   tooltip="Usage"
                   className={cn(
                     "h-9 px-4 rounded-none transition-all duration-200",
-                    pathname === "/sessions/usage"
+                    pathname === "/app/usage"
                       ? "bg-primary/5 text-primary border-r-2 border-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
                   )}
                 >
-                  <Link href="/sessions/usage">
+                  <Link href="/app/usage">
                     <Timer className="size-4" />
                     <span className="font-mono text-[11px] uppercase tracking-widest">
                       Usage
@@ -182,7 +182,7 @@ export function SessionsSidebar() {
                 recentChats.map((session) => {
                   const title =
                     session.title || `Chat ${session._id.slice(0, 6)}`;
-                  const href = `/sessions/${session._id}`;
+                  const href = `/app/${session._id}`;
                   const isActive = pathname === href;
 
                   return (
@@ -240,3 +240,4 @@ export function SessionsSidebar() {
     </Sidebar>
   );
 }
+

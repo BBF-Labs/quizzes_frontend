@@ -24,7 +24,7 @@ function makeMessage(
   content: string,
 ): ZSessionMessage {
   const id = makeId();
-  return { id, messageId: id, type, content, timestamp: new Date().toISOString() };
+  return { id, messageId: id, role: "z", type, content, timestamp: new Date().toISOString() };
 }
 
 export function useSessionStream(
@@ -118,6 +118,7 @@ export function useSessionStream(
         const msg: ZSessionMessage = {
           id,
           messageId: parsed.id ?? id,
+          role: "z",
           type: "directive",
           content:
             parsed.content ??
@@ -136,10 +137,10 @@ export function useSessionStream(
       try {
         const parsed = JSON.parse(e.data);
         appendMessage(
-          makeMessage("message", parsed.content ?? JSON.stringify(parsed)),
+          makeMessage("text", parsed.content ?? JSON.stringify(parsed)),
         );
       } catch {
-        appendMessage(makeMessage("message", e.data));
+        appendMessage(makeMessage("text", e.data));
       }
     });
 

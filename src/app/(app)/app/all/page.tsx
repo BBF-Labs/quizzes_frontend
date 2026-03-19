@@ -83,7 +83,7 @@ export default function AllChatsPage() {
             </p>
             {!query && (
               <Link
-                href="/sessions"
+                href="/app"
                 className="mt-1 inline-block text-[10px] font-mono uppercase tracking-widest text-primary hover:underline"
               >
                 Start your first session →
@@ -109,7 +109,7 @@ export default function AllChatsPage() {
                   transition={{ delay: i * 0.03 }}
                 >
                   <Link
-                    href={`/sessions/${session._id}`}
+                    href={`/app/${session._id}`}
                     className="group flex items-center gap-3 border border-border/40 bg-card/30 px-4 py-3.5 hover:border-primary/40 hover:bg-primary/5 transition-all"
                   >
                     <Clock3 className="size-4 text-muted-foreground/40 shrink-0" />
