@@ -135,6 +135,17 @@
   }
 }
 
+@layer utilities {
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* Prevent iOS Safari from zooming in on focused input fields */
 @supports (-webkit-touch-callout: none) {
   input,
@@ -142,4 +153,80 @@
   textarea {
     font-size: 16px !important;
   }
+}
+
+@layer utilities {
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+html, body {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar, body::-webkit-scrollbar {
+  display: none;
+}
+
+/* 
+ * Custom Prose Overrides 
+ * Reduces vertical margins for a more compact "chat" feel.
+ */
+.prose {
+  --tw-prose-body: currentColor;
+  max-width: none;
+}
+
+.prose p, 
+.prose ul, 
+.prose ol, 
+.prose li {
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.5rem !important;
+  line-height: 1.6;
+}
+
+.prose p:first-child {
+  margin-top: 0 !important;
+}
+
+.prose p:last-child {
+  margin-bottom: 0 !important;
+}
+
+.prose pre {
+  margin-top: 1rem !important;
+  margin-bottom: 1rem !important;
+  padding: 1rem !important;
+  border-radius: 0px !important;
+  background-color: color-mix(in srgb, var(--background), #000 5%) !important;
+  border: 1px solid var(--border);
+}
+
+.dark .prose pre {
+  background-color: color-mix(in srgb, var(--background), #fff 5%) !important;
+}
+
+.prose code {
+  font-weight: 500;
+  padding: 0.2em 0.4em;
+  border-radius: 0px;
+  background-color: color-mix(in srgb, var(--muted), transparent 50%);
+}
+
+.prose code::before,
+.prose code::after {
+  content: "" !important;
+}
+
+.prose h1, .prose h2, .prose h3, .prose h4 {
+  margin-top: 1.5rem !important;
+  margin-bottom: 0.75rem !important;
+  font-weight: 700;
 }

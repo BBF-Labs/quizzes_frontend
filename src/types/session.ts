@@ -190,7 +190,10 @@ export type StepInput =
       payload: { taskId?: string; answers: string[] };
     }
   | { stepType: "approve_plan" }
-  | { stepType: "message"; payload: { content: string } }
+  | {
+      stepType: "message";
+      payload: { content: string; clientMessageId?: string };
+    }
   | { stepType: "task_skipped"; payload: { taskId?: string } };
 
 // ─── Create Session Input ─────────────────────────────────────────────────────

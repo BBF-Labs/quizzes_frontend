@@ -20,7 +20,7 @@ function getGreeting(name: string): string {
   const morning = [
     `${first} is up early! 🌅`,
     `Morning focus mode, ${first} ☀️`,
-    `${first}, ready to cook this syllabus? 📚`,
+    `${first}, let's cook? 📚`,
   ];
 
   const afternoon = [
@@ -31,13 +31,13 @@ function getGreeting(name: string): string {
 
   const evening = [
     `Good evening, ${first} 🌙`,
-    `${first}, night session unlocked ✨`,
+    `${first}, returns! ✨`,
     `Prime study hours, ${first} 📖`,
   ];
 
   const lateNight = [
     `It's late, ${first} 🦉`,
-    `${first}, midnight scholar mode 🌌`,
+    `${first[-1] === "s" ? first : first + "'s"}, shenanigans! 🌌`,
     `Quiet hours, ${first} 🎧`,
   ];
 
@@ -118,19 +118,26 @@ export default function SessionsPage() {
         courseId: courseId ? courseId : undefined,
         mode,
       });
+      const resolvedSessionId = session?.id || (session as { _id?: string })?._id;
+
+      if (!resolvedSessionId || resolvedSessionId === "undefined") {
+        console.error("No valid session ID returned", session);
+        throw new Error("Failed to create session: Invalid ID returned");
+      }
 
       // Pass first message via sessionStorage so [id]/page picks it up
-      sessionStorage.setItem(`qz_first_msg_${session.id}`, message);
+      sessionStorage.setItem(`qz_first_msg_${resolvedSessionId}`, message);
       if (attachedFile) {
         // File name stored for display; actual upload wired later
         sessionStorage.setItem(
-          `qz_first_file_${session.id}`,
+          `qz_first_file_${resolvedSessionId}`,
           attachedFile.name,
         );
       }
 
-      router.push(`/sessions/${session.id}`);
-    } catch {
+      router.push(`/sessions/${resolvedSessionId}`);
+    } catch (err) {
+      console.error("Failed to create session", err);
       setIsSubmitting(false);
     }
   }, [input, course, mode, attachedFile, isSubmitting, createSession, router]);
@@ -157,7 +164,7 @@ export default function SessionsPage() {
         >
           {/* Badge */}
           <div className="inline-flex items-center gap-2 border border-primary/40 bg-primary/5 px-3 py-1 mb-6">
-            <span className="size-1.5 rounded-full bg-primary animate-pulse" />
+            <span className="size-1.5 rounded-none bg-primary animate-pulse" />
             <span className="text-[9px] font-mono uppercase tracking-[0.25em] text-primary">
               Z Study Partner
             </span>

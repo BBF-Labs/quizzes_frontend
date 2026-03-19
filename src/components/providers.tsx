@@ -5,6 +5,7 @@ import { useState } from "react";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/contexts/auth-context";
+import { SocketProvider } from "@/contexts/socket-context";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -23,8 +24,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
         <AuthProvider>
-          {children}
-          <Toaster />
+          <SocketProvider>
+            {children}
+            <Toaster />
+          </SocketProvider>
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>

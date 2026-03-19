@@ -45,17 +45,17 @@ export function ConnectionStatus({
   const Icon = cfg.icon;
 
   return (
-    <div className={cn("flex items-center gap-1.5", className)}>
-      <span className={cn("size-1.5 rounded-none", cfg.dot)} />
-      <Icon className={cn("size-3", cfg.text)} />
-      <span
-        className={cn(
-          "text-[9px] font-mono font-bold uppercase tracking-widest",
-          cfg.text,
-        )}
-      >
-        {cfg.label}
-      </span>
+    <div 
+      className={cn(
+        "flex items-center justify-center w-9 h-9 border border-border bg-transparent transition-colors",
+        className
+      )}
+      title={`${cfg.label} Connection`}
+    >
+      <div className="relative">
+        <Icon className={cn("size-4", cfg.text)} />
+        <span className={cn("absolute -top-1 -right-1 size-1.5 rounded-none", cfg.dot)} />
+      </div>
     </div>
   );
 }
