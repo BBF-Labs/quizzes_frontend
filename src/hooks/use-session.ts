@@ -19,7 +19,7 @@ export const useSession = (sessionId: string, enabled = true) => {
   return useQuery({
     queryKey: queryKeys.sessions.detail(sessionId),
     queryFn: async () => {
-      const response = await api.get<GetSessionResponse>(`/sessions/${sessionId}`);
+      const response = await api.get<GetSessionResponse>(`/app/${sessionId}`);
       return response.data.data;
     },
     enabled: enabled && !!sessionId,
