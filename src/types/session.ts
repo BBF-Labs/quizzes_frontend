@@ -5,6 +5,29 @@ export type ZSessionMessageType =
   | "tool_call"
   | "tool_result";
 
+// ─── Session Material (Sources Panel) ────────────────────────────────────────
+
+export type SessionMaterialProcessingStatus = "pending" | "ready" | "failed";
+
+export interface ISessionMaterial {
+  id: string;
+  filename: string;
+  type: "pdf" | "docx" | "txt" | "md" | string;
+  /** File size in bytes */
+  size: number;
+  processingStatus: SessionMaterialProcessingStatus;
+  url?: string;
+}
+
+// ─── Source Citation ──────────────────────────────────────────────────────────
+
+export interface ISourceCitation {
+  id: string;
+  materialId: string;
+  excerpt: string;
+  page?: number;
+}
+
 // ─── Directive Payload Types ──────────────────────────────────────────────────
 
 export interface ZAskQuestionPayload {
@@ -236,4 +259,167 @@ export interface ZSessionSummary {
   startedAt?: string;
   status: "active" | "completed";
   lastMessage?: string;
+}
+
+// ─── Studio Types ─────────────────────────────────────────────────────────────
+
+export interface StudioNote {
+  id: string;
+  title: string;
+  content: string;
+  generatedByZ: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SharedNote {
+  id: string;
+  content: string;
+  authorName: string;
+  createdAt: string;
+}
+
+export interface StudioFlashcard {
+  id: string;
+  front: string;
+  back: string;
+  savedToLibrary: boolean;
+  createdAt: string;
+}
+
+export interface StudioFlashcardSet {
+  id: string;
+  title: string;
+  flashcards: StudioFlashcard[];
+  savedToLibrary: boolean;
+  createdAt: string;
+}
+
+export interface StudioQuiz {
+  id: string;
+  title: string;
+  topicTitle: string;
+  questionCount: number;
+  generatedAt: string;
+  savedToBank: boolean;
+}
+
+export interface MindMapNode {
+  id: string;
+  label: string;
+  type: "concept" | "topic" | "detail" | "question";
+  position: { x: number; y: number };
+}
+
+export interface MindMapEdge {
+  id: string;
+  source: string;
+  target: string;
+  label?: string;
+}
+
+export interface StudioMindMap {
+  nodes: MindMapNode[];
+  edges: MindMapEdge[];
+  updatedAt: string;
+}
+
+export interface StudioExport {
+  id: string;
+  type: "markdown" | "pdf";
+  url: string;
+  createdAt: string;
+}
+
+// ─── Library: Flashcard Sets ──────────────────────────────────────────────────
+
+export interface FlashcardSetSummary {
+  id: string;
+  title: string;
+  courseTitle?: string;
+  courseCode?: string;
+  cardCount: number;
+  tags?: string[];
+  createdAt: string;
+}
+
+export interface LibraryFlashcard {
+  id: string;
+  front: string;
+  back: string;
+  createdAt: string;
+}
+
+export interface FlashcardSetDetail {
+  id: string;
+  title: string;
+  courseTitle?: string;
+  courseCode?: string;
+  cards: LibraryFlashcard[];
+  tags?: string[];
+  createdAt: string;
+}
+
+// ─── Library: Quizzes ─────────────────────────────────────────────────────────
+
+export interface QuizSummary {
+  id: string;
+  title: string;
+  courseTitle?: string;
+  courseCode?: string;
+  questionCount: number;
+  averageScore?: number;
+  totalAttempts?: number;
+  createdAt: string;
+}
+
+export interface QuizQuestion {
+  id: string;
+  question: string;
+  type: "mcq" | "free_text";
+  options?: string[];
+  correctAnswer?: string;
+}
+
+export interface QuizTopic {
+  topicTitle: string;
+  questions: QuizQuestion[];
+}
+
+export interface QuizLecture {
+  lectureTitle: string;
+  topics: QuizTopic[];
+}
+
+export interface QuizDetail {
+  id: string;
+  title: string;
+  courseTitle?: string;
+  courseCode?: string;
+  lectures: QuizLecture[];
+  createdAt: string;
+}
+
+// ─── Library: Notes ───────────────────────────────────────────────────────────
+
+export interface NoteSummary {
+  id: string;
+  sessionId: string;
+  title: string;
+  contentPreview: string;
+  generatedByZ: boolean;
+  sessionName?: string;
+  courseTitle?: string;
+  createdAt: string;
+}
+
+// ─── Study Partner Session (superset of ZSession with studio workspace) ───────
+
+export interface IZStudyPartnerSession extends ZSession {
+  notes?: StudioNote[];
+  sharedNotes?: SharedNote[];
+  flashcards?: StudioFlashcard[];
+  quizzes?: StudioQuiz[];
+  mindMap?: StudioMindMap;
+  exports?: StudioExport[];
 }

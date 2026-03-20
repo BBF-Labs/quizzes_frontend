@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -9,13 +9,11 @@ import {
   X,
   Settings2,
   Plus,
-  Sparkles,
   ArrowUp,
 } from "lucide-react";
 import { useAppLayout } from "./layout";
 import { cn } from "@/lib/utils";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { MessageFeed } from "@/components/app/center/MessageFeed";
 
 export default function ChatPage() {
   const router = useRouter();
@@ -28,7 +26,6 @@ export default function ChatPage() {
     stepMutation,
   } = useAppLayout();
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const plusMenuRef = useRef<HTMLDivElement>(null);
@@ -40,11 +37,6 @@ export default function ChatPage() {
   const [courseNote, setCourseNote] = useState("");
   const [enableHints, setEnableHints] = useState(true);
   const [pendingAutoSend, setPendingAutoSend] = useState<string | null>(null);
-
-  // Auto-scroll to bottom
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
 
   // Auto-grow textarea
   useEffect(() => {
@@ -114,7 +106,6 @@ export default function ChatPage() {
         timestamp: new Date().toISOString(),
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [input, stepMutation, sessionId, pushMessage]);
 
   // Hydrate first message from landing page handoff
@@ -153,6 +144,70 @@ export default function ChatPage() {
     }
   };
 
+  // ── Derive the most-recent unresolved directive messageId ────────────────
+  const activeDirectiveMessageId = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].type === "directive" && messages[i].directive) {
+        return messages[i].messageId;
+      }
+    }
+    return null;
+  }, [messages]);
+
+  // ── Directive action helpers ─────────────────────────────────────────────
+  const sendMessage = useCallback(
+    (content: string) => {
+      if (!sessionId) return;
+      stepMutation
+        .mutateAsync({ sessionId, step: { stepType: "message", payload: { content } } })
+        .catch((err) => console.error("[sendMessage] failed", err));
+    },
+    [sessionId, stepMutation],
+  );
+
+  const handleSubmitAnswer = useCallback(
+    (answers: string[]) => {
+      if (!sessionId) return;
+      stepMutation
+        .mutateAsync({
+          sessionId,
+          step: { stepType: "answer_submitted", payload: { answers } },
+        })
+        .catch((err) => console.error("[submitAnswer] failed", err));
+    },
+    [sessionId, stepMutation],
+  );
+  const handleApprove = useCallback(() => {
+    if (!sessionId) return;
+    stepMutation
+      .mutateAsync({ sessionId, step: { stepType: "approve_plan" } })
+      .catch((err) => console.error("[approvePlan] failed", err));
+  }, [sessionId, stepMutation]);
+  const handleContinue = useCallback(() => sendMessage("Continue"), [sendMessage]);
+  const handleRetry = useCallback(() => sendMessage("Retry"), [sendMessage]);
+  const handleSkip = useCallback(() => {
+    if (!sessionId) return;
+    stepMutation
+      .mutateAsync({ sessionId, step: { stepType: "task_skipped", payload: {} } })
+      .catch((err) => console.error("[taskSkipped] failed", err));
+  }, [sessionId, stepMutation]);
+  const handleExplainDifferently = useCallback(
+    () => sendMessage("Explain this differently"),
+    [sendMessage],
+  );
+  const handleTestMe = useCallback(
+    (topicTitle: string) => sendMessage(`Test me on ${topicTitle}`),
+    [sendMessage],
+  );
+  const handleTryMyself = useCallback(
+    (topicTitle: string) => sendMessage(`I'll try ${topicTitle} myself`),
+    [sendMessage],
+  );
+  const handleAction = useCallback(
+    (actionType: string) => sendMessage(actionType),
+    [sendMessage],
+  );
+
   // Guard: invalid session
   if (!sessionId || sessionId === "undefined") {
     return (
@@ -173,73 +228,22 @@ export default function ChatPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-6 md:px-12 pt-12 pb-4 scrollbar-none scroll-smooth">
-        <div className="w-full flex flex-col gap-10">
-          {messages.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="flex flex-col items-center justify-center p-12 text-center border border-dashed border-border/30"
-            >
-              <div className="size-16 bg-primary/5 border border-primary/20 flex items-center justify-center mb-6">
-                <Sparkles className="size-8 text-primary/60" />
-              </div>
-              <div>
-                <h2 className="text-xl font-mono uppercase tracking-[0.3em] font-bold mb-3">
-                  Study Partner
-                </h2>
-                <p className="text-muted-foreground max-w-sm">
-                  I&apos;m here to help you study, explain concepts, and prepare
-                  for your exams.
-                </p>
-              </div>
-            </motion.div>
-          ) : (
-            messages.map((msg, idx) => (
-              <motion.div
-                key={msg.id}
-                initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{
-                  duration: 0.3,
-                  delay: idx * 0.05,
-                  ease: "easeOut",
-                }}
-                className={cn(
-                  "flex gap-3 px-4",
-                  msg.role === "user" ? "justify-end" : "justify-start",
-                )}
-              >
-                <div
-                  className={cn(
-                    "max-w-[90%] px-6 py-4 text-sm prose prose-sm dark:prose-invert border transition-colors",
-                    msg.role === "user"
-                      ? "bg-primary/5 border-primary/40 text-foreground"
-                      : "bg-muted/20 text-foreground border-border/40",
-                  )}
-                >
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {msg.content}
-                  </ReactMarkdown>
-                </div>
-              </motion.div>
-            ))
-          )}
-
-          {isThinking && !!thinkingBuffer && (
-            <div className="flex justify-start">
-              <div className="max-w-[90%] px-6 py-4 text-sm bg-muted/10 text-muted-foreground border border-border/20 italic prose prose-sm dark:prose-invert opacity-70">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {thinkingBuffer}
-                </ReactMarkdown>
-              </div>
-            </div>
-          )}
-
-          <div ref={messagesEndRef} />
-        </div>
-      </div>
+      {/* Message feed */}
+      <MessageFeed
+        messages={messages}
+        isThinking={isThinking}
+        thinkingBuffer={thinkingBuffer}
+        activeDirectiveMessageId={activeDirectiveMessageId}
+        onSubmitAnswer={handleSubmitAnswer}
+        onApprove={handleApprove}
+        onContinue={handleContinue}
+        onRetry={handleRetry}
+        onSkip={handleSkip}
+        onExplainDifferently={handleExplainDifferently}
+        onTestMe={handleTestMe}
+        onTryMyself={handleTryMyself}
+        onAction={handleAction}
+      />
 
       {/* Input */}
       <div className="px-6 md:px-12 pb-12 pt-4 bg-background border-t border-border/5 animate-in fade-in slide-in-from-bottom-2">
