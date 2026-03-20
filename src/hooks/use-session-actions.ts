@@ -93,7 +93,7 @@ export const useSessionStep = () => {
         throw new Error("Invalid session ID for session step");
       }
       const response = await api.post<StepResponse>(
-        `/sessions/${sessionId}/step`,
+        `/app/${sessionId}/step`,
         step,
       );
       return response.data;

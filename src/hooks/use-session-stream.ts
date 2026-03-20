@@ -63,8 +63,10 @@ export const useSessionStream = (
           // IMPORTANT: If we are CURRENTLY streaming this message in the buffer,
           // we do NOT want to overwrite the local "streaming" content with the "raw" database content
           // UNLESS the database content is significantly different or the stream has finished.
-          const isStreaming = !!streamingBufferRef.current[im.id] || (im.messageId && !!streamingBufferRef.current[im.messageId]);
-          
+          const isStreaming =
+            !!streamingBufferRef.current[im.id] ||
+            (im.messageId && !!streamingBufferRef.current[im.messageId]);
+
           if (!isStreaming && next[existingIdx].content !== im.content) {
             next[existingIdx] = im;
             changed = true;
@@ -105,15 +107,17 @@ export const useSessionStream = (
     try {
       const token = getAccessToken();
       const url = token
-        ? `${process.env.NEXT_PUBLIC_API_URL}/sessions/${sessionId}/stream?token=${encodeURIComponent(token)}`
-        : `${process.env.NEXT_PUBLIC_API_URL}/sessions/${sessionId}/stream`;
+        ? `${process.env.NEXT_PUBLIC_API_URL}/app/${sessionId}/stream?token=${encodeURIComponent(token)}`
+        : `${process.env.NEXT_PUBLIC_API_URL}/app/${sessionId}/stream`;
 
       const eventSource = new EventSource(url);
       eventSourceRef.current = eventSource;
       console.log(`[useSessionStream] Connecting to SSE: ${url}`);
 
       eventSource.addEventListener("open", () => {
-        console.log(`[useSessionStream] SSE connected for session ${sessionId}`);
+        console.log(
+          `[useSessionStream] SSE connected for session ${sessionId}`,
+        );
         retryCountRef.current = 0; // Reset retry counter on successful connection
         setIsConnected(true);
         setConnectionType("sse");
@@ -125,7 +129,10 @@ export const useSessionStream = (
       eventSource.addEventListener("message", (event) => {
         try {
           const signal = JSON.parse(event.data);
-          console.log(`[useSessionStream] Received signal: ${signal.type}`, signal.payload);
+          console.log(
+            `[useSessionStream] Received signal: ${signal.type}`,
+            signal.payload,
+          );
 
           switch (signal.type) {
             // Streaming signals from AI response
@@ -149,27 +156,36 @@ export const useSessionStream = (
               break;
 
             case "text_chunk":
-              if (signal.payload?.text !== undefined || signal.payload?.chunk !== undefined) {
+              if (
+                signal.payload?.text !== undefined ||
+                signal.payload?.chunk !== undefined
+              ) {
                 setIsThinking(false); // Text started, stop thinking indicator
-                setThinkingBuffer(""); 
-                const text = signal.payload?.text ?? signal.payload?.chunk ?? "";
+                setThinkingBuffer("");
+                const text =
+                  signal.payload?.text ?? signal.payload?.chunk ?? "";
                 const msgId = signal.payload?.messageId;
 
                 setMessages((prev) => {
                   const msgs = [...prev];
                   // Search all messages for a matching messageId
-                  const existingIdx = msgId 
-                    ? msgs.findIndex(m => m.messageId === msgId) 
+                  const existingIdx = msgId
+                    ? msgs.findIndex((m) => m.messageId === msgId)
                     : -1;
 
                   if (existingIdx >= 0) {
                     // Append to buffer for smooth release
-                    const currentBuffer = streamingBufferRef.current[msgId] || "";
+                    const currentBuffer =
+                      streamingBufferRef.current[msgId] || "";
                     streamingBufferRef.current[msgId] = currentBuffer + text;
-                    console.log(`[useSessionStream] Buffered for ${msgId}: ${text}`);
+                    console.log(
+                      `[useSessionStream] Buffered for ${msgId}: ${text}`,
+                    );
                   } else {
                     // Start new message
-                    console.log(`[useSessionStream] Starting new message ${msgId}`);
+                    console.log(
+                      `[useSessionStream] Starting new message ${msgId}`,
+                    );
                     const stableId = msgId || uuidv4();
                     const newMsg: ZSessionMessage = {
                       id: stableId,

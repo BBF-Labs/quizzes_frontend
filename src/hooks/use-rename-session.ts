@@ -15,7 +15,7 @@ export const useRenameSession = () => {
 
   return useMutation({
     mutationFn: async ({ sessionId, name }: RenameSessionInput) => {
-      const response = await api.patch(`/sessions/${sessionId}/name`, { name });
+      const response = await api.patch(`/app/${sessionId}/name`, { name });
       return response.data;
     },
     onSuccess: (_, { sessionId }) => {
