@@ -5,6 +5,29 @@ export type ZSessionMessageType =
   | "tool_call"
   | "tool_result";
 
+// ─── Session Material (Sources Panel) ────────────────────────────────────────
+
+export type SessionMaterialProcessingStatus = "pending" | "ready" | "failed";
+
+export interface ISessionMaterial {
+  id: string;
+  filename: string;
+  type: "pdf" | "docx" | "txt" | "md" | string;
+  /** File size in bytes */
+  size: number;
+  processingStatus: SessionMaterialProcessingStatus;
+  url?: string;
+}
+
+// ─── Source Citation ──────────────────────────────────────────────────────────
+
+export interface ISourceCitation {
+  id: string;
+  materialId: string;
+  excerpt: string;
+  page?: number;
+}
+
 // ─── Directive Payload Types ──────────────────────────────────────────────────
 
 export interface ZAskQuestionPayload {
