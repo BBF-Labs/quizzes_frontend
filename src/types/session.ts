@@ -331,6 +331,88 @@ export interface StudioExport {
   createdAt: string;
 }
 
+// ─── Library: Flashcard Sets ──────────────────────────────────────────────────
+
+export interface FlashcardSetSummary {
+  id: string;
+  title: string;
+  courseTitle?: string;
+  courseCode?: string;
+  cardCount: number;
+  tags?: string[];
+  createdAt: string;
+}
+
+export interface LibraryFlashcard {
+  id: string;
+  front: string;
+  back: string;
+  createdAt: string;
+}
+
+export interface FlashcardSetDetail {
+  id: string;
+  title: string;
+  courseTitle?: string;
+  courseCode?: string;
+  cards: LibraryFlashcard[];
+  tags?: string[];
+  createdAt: string;
+}
+
+// ─── Library: Quizzes ─────────────────────────────────────────────────────────
+
+export interface QuizSummary {
+  id: string;
+  title: string;
+  courseTitle?: string;
+  courseCode?: string;
+  questionCount: number;
+  averageScore?: number;
+  totalAttempts?: number;
+  createdAt: string;
+}
+
+export interface QuizQuestion {
+  id: string;
+  question: string;
+  type: "mcq" | "free_text";
+  options?: string[];
+  correctAnswer?: string;
+}
+
+export interface QuizTopic {
+  topicTitle: string;
+  questions: QuizQuestion[];
+}
+
+export interface QuizLecture {
+  lectureTitle: string;
+  topics: QuizTopic[];
+}
+
+export interface QuizDetail {
+  id: string;
+  title: string;
+  courseTitle?: string;
+  courseCode?: string;
+  lectures: QuizLecture[];
+  createdAt: string;
+}
+
+// ─── Library: Notes ───────────────────────────────────────────────────────────
+
+export interface NoteSummary {
+  id: string;
+  sessionId: string;
+  title: string;
+  contentPreview: string;
+  generatedByZ: boolean;
+  sessionName?: string;
+  courseTitle?: string;
+  createdAt: string;
+}
+
 // ─── Study Partner Session (superset of ZSession with studio workspace) ───────
 
 export interface IZStudyPartnerSession extends ZSession {
