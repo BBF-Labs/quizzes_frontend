@@ -5,7 +5,6 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -23,10 +22,19 @@ import { useSessionStream } from "@/hooks/use-session-stream";
 import { useSocket } from "@/hooks/use-socket";
 import { useRenameSession } from "@/hooks/use-rename-session";
 import { useSessionStep } from "@/hooks/use-session-actions";
-import { MaterialManager } from "@/components/session/MaterialManager";
+import { StudioPanel } from "@/components/app/right";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import type { ZSessionMessage } from "@/types/session";
+import type {
+  ZSessionMessage,
+  IZStudyPartnerSession,
+  StudioNote,
+  SharedNote,
+  StudioFlashcard,
+  StudioQuiz,
+  StudioMindMap,
+  StudioExport,
+} from "@/types/session";
 
 // ─── Panel dimensions ─────────────────────────────────────────────────────────
 
@@ -43,6 +51,8 @@ interface AppLayoutContextValue {
   toggleRight: () => void;
   messages: ZSessionMessage[];
   pushMessage: (msg: ZSessionMessage) => void;
+  /** Send a plain-text user message (pushes locally + calls the API) */
+  sendMessage: (content: string) => Promise<void>;
   isThinking: boolean;
   thinkingBuffer: string;
   stepMutation: ReturnType<typeof useSessionStep>;
@@ -71,14 +81,17 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
   // ── Panel state — collapsed on mobile, expanded on lg ──────────────────────
   const [leftOpen, setLeftOpen] = useState(false);
   const [rightOpen, setRightOpen] = useState(false);
-  const initializedRef = useRef(false);
 
   useEffect(() => {
-    if (initializedRef.current) return;
-    initializedRef.current = true;
-    const isLg = window.matchMedia("(min-width: 1024px)").matches;
-    setLeftOpen(isLg);
-    setRightOpen(isLg);
+    const mql = window.matchMedia("(min-width: 1024px)");
+    const onMqlChange = ({ matches }: MediaQueryListEvent | MediaQueryList) => {
+      setLeftOpen(matches);
+      setRightOpen(matches);
+    };
+    // Initialize from the current match, then track changes
+    mql.addEventListener("change", onMqlChange);
+    onMqlChange(mql);
+    return () => mql.removeEventListener("change", onMqlChange);
   }, []);
 
   const toggleLeft = useCallback(() => setLeftOpen((v) => !v), []);
@@ -89,6 +102,26 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
   const stream = useSessionStream(sessionId, undefined, !!sessionId);
   const { isConnected: isSocketConnected } = useSocket();
   const stepMutation = useSessionStep();
+
+  // ── Studio workspace state ──────────────────────────────────────────────────
+  const [studioNotes, setStudioNotes] = useState<StudioNote[]>([]);
+  const [studioSharedNotes, setStudioSharedNotes] = useState<SharedNote[]>([]);
+  const [studioFlashcards, setStudioFlashcards] = useState<StudioFlashcard[]>([]);
+  const [studioQuizzes, setStudioQuizzes] = useState<StudioQuiz[]>([]);
+  const [studioMindMap, setStudioMindMap] = useState<StudioMindMap | undefined>(undefined);
+  const [studioExports, setStudioExports] = useState<StudioExport[]>([]);
+
+  const handleSessionChange = useCallback(
+    (updated: Partial<IZStudyPartnerSession>) => {
+      if (updated.notes !== undefined) setStudioNotes(updated.notes);
+      if (updated.sharedNotes !== undefined) setStudioSharedNotes(updated.sharedNotes);
+      if (updated.flashcards !== undefined) setStudioFlashcards(updated.flashcards);
+      if (updated.quizzes !== undefined) setStudioQuizzes(updated.quizzes);
+      if (updated.mindMap !== undefined) setStudioMindMap(updated.mindMap);
+      if (updated.exports !== undefined) setStudioExports(updated.exports);
+    },
+    [],
+  );
 
   // ── Inline session name editing ─────────────────────────────────────────────
   const [isEditingName, setIsEditingName] = useState(false);
@@ -114,6 +147,34 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
     }
   }
 
+  // ── Send a plain-text message ────────────────────────────────────────────────
+  const sendMessage = useCallback(
+    async (content: string) => {
+      if (!content.trim() || stepMutation.isPending) return;
+      const msgId = Date.now().toString();
+      stream.pushMessage({
+        id: msgId,
+        messageId: msgId,
+        role: "user",
+        type: "text",
+        content: content.trim(),
+        timestamp: new Date().toISOString(),
+      });
+      try {
+        await stepMutation.mutateAsync({
+          sessionId,
+          step: {
+            stepType: "message",
+            payload: { content: content.trim(), clientMessageId: msgId },
+          },
+        });
+      } catch (err) {
+        console.error("[AppLayout] sendMessage failed", err);
+      }
+    },
+    [sessionId, stepMutation, stream],
+  );
+
   // ── Context value ───────────────────────────────────────────────────────────
   const contextValue: AppLayoutContextValue = {
     sessionId,
@@ -123,6 +184,7 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
     toggleRight,
     messages: stream.messages,
     pushMessage: stream.pushMessage,
+    sendMessage,
     isThinking: stream.isThinking,
     thinkingBuffer: stream.thinkingBuffer,
     stepMutation,
@@ -303,13 +365,22 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
               >
                 <div
                   style={{ width: RIGHT_PANEL_WIDTH }}
-                  className="h-full overflow-y-auto p-4"
+                  className="h-full flex flex-col"
                 >
                   {session && (
-                    <MaterialManager
+                    <StudioPanel
                       sessionId={sessionId}
-                      materials={session.materials || []}
-                      courseId={session.courseId || ""}
+                      session={{
+                        ...session,
+                        notes: studioNotes,
+                        sharedNotes: studioSharedNotes,
+                        flashcards: studioFlashcards,
+                        quizzes: studioQuizzes,
+                        mindMap: studioMindMap,
+                        exports: studioExports,
+                      }}
+                      onSendMessage={sendMessage}
+                      onSessionChange={handleSessionChange}
                     />
                   )}
                 </div>
