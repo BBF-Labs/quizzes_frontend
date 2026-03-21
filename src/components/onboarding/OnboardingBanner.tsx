@@ -42,7 +42,7 @@ export default function OnboardingBanner() {
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         exit={{ y: -100 }}
-        className="fixed top-0 left-0 w-full bg-primary/10 border-b border-primary/20 backdrop-blur-md z-100 h-12.25"
+        className="fixed top-0 left-0 w-full bg-primary/10 border-b border-primary/20 backdrop-blur-md z-100 h-[49px]"
       >
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">

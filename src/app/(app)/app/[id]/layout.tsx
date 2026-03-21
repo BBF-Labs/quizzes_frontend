@@ -12,17 +12,21 @@ import { use } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import {
-  Activity,
-  PanelLeft,
-  PanelRight,
+  Menu,
+  MessageSquare,
+  MoreVertical,
+  PanelLeftClose,
   PanelLeftOpen,
+  PanelRightClose,
   PanelRightOpen,
-  Settings,
+  Plus,
 } from "lucide-react";
 import { useSession, useSessionStream, useRenameSession, useSessionStep } from "@/hooks";
 import { useSocket } from "@/hooks";
 import { StudioPanel } from "@/components/app/right";
 import { SourcesPanel } from "@/components/app/left/SourcesPanel";
+import { UserProfileDropdown } from "@/components/common";
+import { useAuth } from "@/contexts/auth-context";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type {
@@ -96,6 +100,7 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
   const toggleRight = useCallback(() => setRightOpen((v) => !v), []);
 
   // ── Session data ────────────────────────────────────────────────────────────
+  const { user, logout } = useAuth();
   const { data: session } = useSession(sessionId);
   const stream = useSessionStream(sessionId, undefined, !!sessionId);
   const { isConnected: isSocketConnected } = useSocket();
@@ -239,9 +244,14 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
                     </button>
                   )}
                   {!leftOpen && (
-                    <Link href="/app/all" className="flex items-center gap-1.5 shrink-0 hover:opacity-80 transition-opacity ml-2">
-                      <span className="text-xl font-bold tracking-widest text-foreground">Qz.</span>
-                    </Link>
+                    <div className="flex items-center gap-2 min-w-0 flex-1 ml-2">
+                       <Link href="/app/all" className="flex items-center gap-1.5 shrink-0 hover:opacity-80 transition-opacity">
+                         <span className="text-xl font-bold tracking-widest text-foreground">Qz.</span>
+                       </Link>
+                       <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/60 shrink-0">
+                         / APP
+                       </span>
+                    </div>
                   )}
                 </div>
 
@@ -272,14 +282,12 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
 
                 {/* Right controls: Badges & Open Studio if closed */}
                 <div className="flex items-center gap-2 pointer-events-auto">
-                    <div className="hidden md:flex rounded-md border border-border/40 bg-card/60 backdrop-blur-md h-8 px-2.5 items-center gap-1.5 shadow-sm">
+                    <div className="hidden md:flex rounded-none border border-border/40 bg-card/60 backdrop-blur-md h-8 px-2.5 items-center gap-1.5 shadow-sm">
                       <div className={cn("size-2 rounded-full", isSocketConnected ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]" : "bg-destructive animate-pulse")} />
                       <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/80">Socket</p>
                     </div>
                     
-                    <Link href="/app/settings" className="flex size-8 items-center justify-center border border-border/40 bg-card/60 backdrop-blur-md rounded-md text-muted-foreground hover:text-foreground transition-colors shadow-sm" title="Settings">
-                      <Settings className="size-4" />
-                    </Link>
+                    <UserProfileDropdown user={user} onLogout={logout} />
 
                     {!rightOpen && (
                       <button onClick={toggleRight} className="flex size-8 items-center justify-center rounded-md border border-border/40 bg-card/60 backdrop-blur-md text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors shadow-sm" title="Open Studio">

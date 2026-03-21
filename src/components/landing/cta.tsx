@@ -36,7 +36,7 @@ export function CTA() {
           whileInView={{ opacity: 1, y: 0, transition: { ease: "easeOut", duration: 0.5 } }}
           viewport={{ once: true, margin: "-100px" }}
         >
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-mono font-bold tracking-[0.15em] text-foreground mb-8 uppercase leading-[1.1]">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-black tracking-[-0.04em] text-foreground mb-6 uppercase leading-[1.1]">
             Ready to Start Mastering?
           </h2>
           <p className="text-[15px] text-muted-foreground mb-10 max-w-2xl mx-auto font-light leading-relaxed">

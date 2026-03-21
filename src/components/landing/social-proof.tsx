@@ -32,7 +32,7 @@ export function SocialProof() {
         >
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
             <div>
-              <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-2 uppercase">
+              <h2 className="text-2xl md:text-3xl font-black tracking-[-0.04em] text-foreground mb-4 uppercase">
                 Testimonials
               </h2>
               <p className="text-muted-foreground text-sm font-mono uppercase tracking-widest text-[10px] md:text-xs">

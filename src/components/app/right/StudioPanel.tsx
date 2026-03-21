@@ -104,7 +104,7 @@ export function StudioPanel({
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "flex items-center flex-col gap-3 rounded-2xl border p-4 transition-all duration-200 text-left group relative",
+                  "flex items-center flex-col gap-3 rounded-none border p-4 transition-all duration-200 text-left group relative",
                   isActive
                     ? "bg-muted/70 border-primary/20 shadow-sm"
                     : "bg-muted/30 border-transparent hover:bg-muted/60 hover:border-border/50",
@@ -112,7 +112,7 @@ export function StudioPanel({
                 title={tab.label}
               >
                 <div className="flex w-full items-start justify-between">
-                  <div className={cn("p-2.5 rounded-xl flex items-center justify-center shrink-0", iconBgClass)}>
+                  <div className={cn("p-2.5 rounded-none flex items-center justify-center shrink-0", iconBgClass)}>
                     <Icon className={cn("size-6", colorClass)} />
                   </div>
                   <div className="shrink-0 opacity-0 group-hover:opacity-60 transition-opacity">

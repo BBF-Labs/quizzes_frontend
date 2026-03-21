@@ -133,7 +133,9 @@ function ResetPasswordContent() {
                   </span>
                 </div>
                 <div className="flex items-end space-x-2 mb-2">
-                  <span className="text-xl font-bold tracking-widest text-foreground leading-none">Qz.</span>
+                  <Link href="/">
+                    <span className="text-xl font-bold tracking-widest text-foreground leading-none hover:text-primary transition-colors cursor-pointer">Qz.</span>
+                  </Link>
                 </div>
                 <h1 className="text-3xl font-mono font-bold tracking-[0.2em] uppercase text-foreground">
                   Reset.
