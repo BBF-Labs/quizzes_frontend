@@ -23,7 +23,6 @@ function LoginForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [isSuper, setIsSuper] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,15 +31,19 @@ function LoginForm() {
     try {
       await login(username, password, rememberMe);
       setIsSuccess(true);
-    } catch (err: any) {
-      setError(err.response?.data?.message ?? err.message ?? "Login failed");
+    } catch (err: unknown) {
+      setError(
+        (err instanceof Error ? err.message : undefined) ??
+          (err as unknown as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+          "Login failed",
+      );
     } finally {
       setLoading(false);
     }
   };
 
   const { user } = useAuth();
-  
+
   // Logic: When successful login happens, redirect to the provided origin URL or home.
   if (isSuccess && user) {
     router.replace(redirectUrl);
@@ -76,7 +79,9 @@ function LoginForm() {
           </div>
           <div className="flex items-end space-x-2 mb-2">
             <Link href="/">
-              <span className="text-xl font-bold tracking-widest text-foreground leading-none hover:text-primary transition-colors cursor-pointer">Qz.</span>
+              <span className="text-xl font-bold tracking-widest text-foreground leading-none hover:text-primary transition-colors cursor-pointer">
+                Qz.
+              </span>
             </Link>
           </div>
           <h1 className="text-3xl font-mono font-bold tracking-[0.2em] text-foreground uppercase">
@@ -161,7 +166,7 @@ function LoginForm() {
           </Button>
 
           <div className="flex justify-center pt-2">
-            <Link 
+            <Link
               href="/forgot-password"
               className="text-[10px] font-mono text-muted-foreground/60 hover:text-primary transition-colors uppercase tracking-widest"
             >
@@ -184,11 +189,13 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="size-8 animate-spin text-primary" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <Loader2 className="size-8 animate-spin text-primary" />
+        </div>
+      }
+    >
       <LoginForm />
     </Suspense>
   );
