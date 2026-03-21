@@ -11,17 +11,13 @@ import {
 import { use } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { PanelLeftOpen, PanelRightOpen } from "lucide-react";
 import {
-  Menu,
-  MessageSquare,
-  MoreVertical,
-  PanelLeftClose,
-  PanelLeftOpen,
-  PanelRightClose,
-  PanelRightOpen,
-  Plus,
-} from "lucide-react";
-import { useSession, useSessionStream, useRenameSession, useSessionStep } from "@/hooks";
+  useSession,
+  useSessionStream,
+  useRenameSession,
+  useSessionStep,
+} from "@/hooks";
 import { useSocket } from "@/hooks";
 import { StudioPanel } from "@/components/app/right";
 import { SourcesPanel } from "@/components/app/left/SourcesPanel";
@@ -110,16 +106,22 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
   // ── Studio workspace state ──────────────────────────────────────────────────
   const [studioNotes, setStudioNotes] = useState<StudioNote[]>([]);
   const [studioSharedNotes, setStudioSharedNotes] = useState<SharedNote[]>([]);
-  const [studioFlashcards, setStudioFlashcards] = useState<StudioFlashcard[]>([]);
+  const [studioFlashcards, setStudioFlashcards] = useState<StudioFlashcard[]>(
+    [],
+  );
   const [studioQuizzes, setStudioQuizzes] = useState<StudioQuiz[]>([]);
-  const [studioMindMap, setStudioMindMap] = useState<StudioMindMap | undefined>(undefined);
+  const [studioMindMap, setStudioMindMap] = useState<StudioMindMap | undefined>(
+    undefined,
+  );
   const [studioExports, setStudioExports] = useState<StudioExport[]>([]);
 
   const handleSessionChange = useCallback(
     (updated: Partial<IZStudyPartnerSession>) => {
       if (updated.notes !== undefined) setStudioNotes(updated.notes);
-      if (updated.sharedNotes !== undefined) setStudioSharedNotes(updated.sharedNotes);
-      if (updated.flashcards !== undefined) setStudioFlashcards(updated.flashcards);
+      if (updated.sharedNotes !== undefined)
+        setStudioSharedNotes(updated.sharedNotes);
+      if (updated.flashcards !== undefined)
+        setStudioFlashcards(updated.flashcards);
       if (updated.quizzes !== undefined) setStudioQuizzes(updated.quizzes);
       if (updated.mindMap !== undefined) setStudioMindMap(updated.mindMap);
       if (updated.exports !== undefined) setStudioExports(updated.exports);
@@ -132,8 +134,7 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
   const [nameInput, setNameInput] = useState("");
   const renameSession = useRenameSession();
 
-  const sessionName =
-    session?.name || session?.title || "New Session";
+  const sessionName = session?.name || session?.title || "New Session";
 
   function handleNameClick() {
     setNameInput(sessionName);
@@ -199,7 +200,6 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
       <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden">
         {/* ── Three-panel NotebookLM body ─────────────────────────────────────────────── */}
         <div className="flex flex-1 min-h-0 overflow-hidden relative">
-          
           {/* ── Left panel (Sources) ─────────────────────────────────────────────── */}
           <AnimatePresence initial={false}>
             {leftOpen && (
@@ -212,19 +212,27 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
                 style={{ overflow: "hidden" }}
                 className="shrink-0 border-r border-border/50 bg-card/10 flex flex-col"
               >
-                <div style={{ width: LEFT_PANEL_WIDTH }} className="h-full flex flex-col">
+                <div
+                  style={{ width: LEFT_PANEL_WIDTH }}
+                  className="h-full flex flex-col"
+                >
                   {/* Top Left Logo Area */}
                   <div className="h-14 shrink-0 flex items-center px-4">
-                    <Link href="/app/all" className="flex items-center gap-1.5 shrink-0 hover:opacity-80 transition-opacity">
-                      <span className="text-xl font-bold tracking-widest text-foreground">Qz.</span>
+                    <Link
+                      href="/app/all"
+                      className="flex items-center gap-1.5 shrink-0 hover:opacity-80 transition-opacity"
+                    >
+                      <span className="text-xl font-bold tracking-widest text-foreground">
+                        Qz.
+                      </span>
                     </Link>
                   </div>
                   <div className="flex-1 min-h-0">
-                     <SourcesPanel 
-                       sessionId={sessionId} 
-                       activeCitationId={null} 
-                       onClose={toggleLeft} 
-                     />
+                    <SourcesPanel
+                      sessionId={sessionId}
+                      activeCitationId={null}
+                      onClose={toggleLeft}
+                    />
                   </div>
                 </div>
               </motion.div>
@@ -233,68 +241,89 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
 
           {/* ── Center panel (Chat) ──────────────────────────────────────────────── */}
           <div className="flex-1 min-w-0 flex flex-col overflow-hidden relative">
-            
             {/* Center Header Overlay */}
-            <div className="absolute top-0 inset-x-0 h-14 flex items-center justify-between px-4 z-40 bg-gradient-to-b from-background/90 to-transparent pointer-events-none">
-                {/* Left controls: Open Sources if closed */}
-                <div className="flex items-center gap-3 pointer-events-auto">
-                  {!leftOpen && (
-                    <button onClick={toggleLeft} className="flex size-8 items-center justify-center rounded-md border border-border/40 bg-card/60 backdrop-blur-md text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors shadow-sm" title="Open Sources">
-                       <PanelLeftOpen className="size-4.5" />
-                    </button>
-                  )}
-                  {!leftOpen && (
-                    <div className="flex items-center gap-2 min-w-0 flex-1 ml-2">
-                       <Link href="/app/all" className="flex items-center gap-1.5 shrink-0 hover:opacity-80 transition-opacity">
-                         <span className="text-xl font-bold tracking-widest text-foreground">Qz.</span>
-                       </Link>
-                       <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/60 shrink-0">
-                         / APP
-                       </span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Session Title (Center) */}
-                <div className="flex flex-1 justify-center items-center pointer-events-auto">
-                  {isEditingName ? (
-                    <Input
-                      autoFocus
-                      value={nameInput}
-                      onChange={(e) => setNameInput(e.target.value)}
-                      onBlur={handleNameBlur}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") e.currentTarget.blur();
-                        if (e.key === "Escape") setIsEditingName(false);
-                      }}
-                      className="h-8 text-sm font-semibold max-w-[300px] border-primary/40 text-center bg-card/60 backdrop-blur-md shadow-sm"
-                    />
-                  ) : (
-                    <button
-                      onClick={handleNameClick}
-                      className="text-sm font-semibold text-foreground/80 hover:text-foreground transition-colors truncate max-w-[300px] px-3 py-1.5 rounded-md hover:bg-muted/40"
-                      title="Click to rename"
+            <div className="absolute top-0 inset-x-0 h-14 flex items-center justify-between px-4 z-40 bg-linear-to-b from-background/90 to-transparent pointer-events-none">
+              {/* Left controls: Open Sources if closed */}
+              <div className="flex items-center gap-3 pointer-events-auto">
+                {!leftOpen && (
+                  <button
+                    onClick={toggleLeft}
+                    className="flex size-8 items-center justify-center rounded-md border border-border/40 bg-card/60 backdrop-blur-md text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors shadow-sm"
+                    title="Open Sources"
+                  >
+                    <PanelLeftOpen className="size-4.5" />
+                  </button>
+                )}
+                {!leftOpen && (
+                  <div className="flex items-center gap-2 min-w-0 flex-1 ml-2">
+                    <Link
+                      href="/app/all"
+                      className="flex items-center gap-1.5 shrink-0 hover:opacity-80 transition-opacity"
                     >
-                      {sessionName}
-                    </button>
-                  )}
-                </div>
+                      <span className="text-xl font-bold tracking-widest text-foreground">
+                        Qz.
+                      </span>
+                    </Link>
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/60 shrink-0">
+                      / APP
+                    </span>
+                  </div>
+                )}
+              </div>
 
-                {/* Right controls: Badges & Open Studio if closed */}
-                <div className="flex items-center gap-2 pointer-events-auto">
-                    <div className="hidden md:flex rounded-none border border-border/40 bg-card/60 backdrop-blur-md h-8 px-2.5 items-center gap-1.5 shadow-sm">
-                      <div className={cn("size-2 rounded-full", isSocketConnected ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]" : "bg-destructive animate-pulse")} />
-                      <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/80">Socket</p>
-                    </div>
-                    
-                    <UserProfileDropdown user={user} onLogout={logout} />
+              {/* Session Title (Center) */}
+              <div className="flex flex-1 justify-center items-center pointer-events-auto">
+                {isEditingName ? (
+                  <Input
+                    autoFocus
+                    value={nameInput}
+                    onChange={(e) => setNameInput(e.target.value)}
+                    onBlur={handleNameBlur}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") e.currentTarget.blur();
+                      if (e.key === "Escape") setIsEditingName(false);
+                    }}
+                    className="h-8 text-sm font-semibold max-w-75 border-primary/40 text-center bg-card/60 backdrop-blur-md shadow-sm"
+                  />
+                ) : (
+                  <button
+                    onClick={handleNameClick}
+                    className="text-sm font-semibold text-foreground/80 hover:text-foreground transition-colors truncate max-w-75 px-3 py-1.5 rounded-md hover:bg-muted/40"
+                    title="Click to rename"
+                  >
+                    {sessionName}
+                  </button>
+                )}
+              </div>
 
-                    {!rightOpen && (
-                      <button onClick={toggleRight} className="flex size-8 items-center justify-center rounded-md border border-border/40 bg-card/60 backdrop-blur-md text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors shadow-sm" title="Open Studio">
-                         <PanelRightOpen className="size-4.5" />
-                      </button>
+              {/* Right controls: Badges & Open Studio if closed */}
+              <div className="flex items-center gap-2 pointer-events-auto">
+                <div className="hidden md:flex rounded-none border border-border/40 bg-card/60 backdrop-blur-md h-8 px-2.5 items-center gap-1.5 shadow-sm">
+                  <div
+                    className={cn(
+                      "size-2 rounded-full",
+                      isSocketConnected
+                        ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]"
+                        : "bg-destructive animate-pulse",
                     )}
+                  />
+                  <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/80">
+                    Socket
+                  </p>
                 </div>
+
+                <UserProfileDropdown user={user} onLogout={logout} />
+
+                {!rightOpen && (
+                  <button
+                    onClick={toggleRight}
+                    className="flex size-8 items-center justify-center rounded-md border border-border/40 bg-card/60 backdrop-blur-md text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors shadow-sm"
+                    title="Open Studio"
+                  >
+                    <PanelRightOpen className="size-4.5" />
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Main Chat Page Content */}
