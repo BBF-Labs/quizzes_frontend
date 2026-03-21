@@ -6,8 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { BookOpen, Clock3, Plus, Paperclip, X } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
-import { useSessions } from "@/hooks/use-sessions";
-import { useCreateSession } from "@/hooks/use-session-actions";
+import { useSessions, useCreateSession } from "@/hooks";
 import { cn } from "@/lib/utils";
 
 // ─── Time-aware rotating greetings ───────────────────────────────────────────

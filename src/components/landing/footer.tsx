@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import React, { useState } from "react";
-import { useSubscribeNewsletter } from "@/hooks/use-newsletter";
+import { useSubscribeNewsletter } from "@/hooks";
 
 export function Footer() {
   const [email, setEmail] = useState("");

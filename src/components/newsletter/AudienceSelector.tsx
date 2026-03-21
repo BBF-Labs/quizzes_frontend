@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { Check, Info, Users, Building2, School, MapPin, X } from "lucide-react";
-import { IAudienceFilter } from "@/hooks/use-campaigns";
-import { useUniversities } from "@/hooks/use-universities";
+import { IAudienceFilter } from "@/hooks";
+import { useUniversities } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import {

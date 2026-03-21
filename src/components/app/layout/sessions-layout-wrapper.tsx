@@ -9,11 +9,10 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { SessionsSidebar } from "@/components/sessions-sidebar";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { useSession } from "@/hooks/use-session";
-import { useSessionStream } from "@/hooks/use-session-stream";
-import { useSocket } from "@/hooks/use-socket";
+import { SessionsSidebar } from "@/components/app/layout";
+import { ThemeToggle } from "@/components/common";
+import { useSession, useSessionStream } from "@/hooks";
+import { useSocket } from "@/hooks";
 import { cn } from "@/lib/utils";
 
 export function SessionsLayoutWrapper({ children }: { children: ReactNode }) {

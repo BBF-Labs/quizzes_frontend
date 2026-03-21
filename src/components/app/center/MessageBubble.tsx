@@ -1,3 +1,3 @@
 "use client";
 
-export { MessageBubble } from "@/components/session/MessageBubble";
+export { MessageBubble } from "@/components/app/session";

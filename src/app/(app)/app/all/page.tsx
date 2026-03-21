@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { BookOpen, Clock3, Search } from "lucide-react";
-import { useSessions } from "@/hooks/use-sessions";
+import { useSessions } from "@/hooks";
 import { cn } from "@/lib/utils";
 
 export default function AllChatsPage() {

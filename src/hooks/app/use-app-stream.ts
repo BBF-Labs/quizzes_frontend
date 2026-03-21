@@ -37,11 +37,9 @@ export const useSessionStream = (
 
   const lastSyncedRef = useRef<string>("");
 
-  // Sync with initialMessages when they change (backend polling)
   useEffect(() => {
     if (initialMessages.length === 0) return;
 
-    // Create a stable key representing the state of initialMessages
     const syncKey = initialMessages
       .map((m) => `${m.id}-${m.content.length}`)
       .join("|");
@@ -60,9 +58,6 @@ export const useSessionStream = (
         );
 
         if (existingIdx >= 0) {
-          // IMPORTANT: If we are CURRENTLY streaming this message in the buffer,
-          // we do NOT want to overwrite the local "streaming" content with the "raw" database content
-          // UNLESS the database content is significantly different or the stream has finished.
           const isStreaming =
             !!streamingBufferRef.current[im.id] ||
             (im.messageId && !!streamingBufferRef.current[im.messageId]);
@@ -89,16 +84,13 @@ export const useSessionStream = (
 
   const eventSourceRef = useRef<EventSource | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const messageQueueRef = useRef<ZSessionMessage[]>([]);
   const connectRef = useRef<(() => void) | null>(null);
   const retryCountRef = useRef(0);
   const maxRetriesRef = useRef(5);
 
-  // Smooth streaming buffer
   const streamingBufferRef = useRef<Record<string, string>>({});
   const lastTickRef = useRef<number>(0);
 
-  // Establish SSE connection
   const connect = useCallback(() => {
     if (eventSourceRef.current) {
       return;
@@ -112,30 +104,18 @@ export const useSessionStream = (
 
       const eventSource = new EventSource(url);
       eventSourceRef.current = eventSource;
-      console.log(`[useSessionStream] Connecting to SSE: ${url}`);
 
       eventSource.addEventListener("open", () => {
-        console.log(
-          `[useSessionStream] SSE connected for session ${sessionId}`,
-        );
-        retryCountRef.current = 0; // Reset retry counter on successful connection
+        retryCountRef.current = 0;
         setIsConnected(true);
         setConnectionType("sse");
         options?.onConnectionChange?.(true, "sse");
       });
 
-      // Handle message events
-      // Backend sends SSE signals: { type, payload, timestamp }
       eventSource.addEventListener("message", (event) => {
         try {
           const signal = JSON.parse(event.data);
-          console.log(
-            `[useSessionStream] Received signal: ${signal.type}`,
-            signal.payload,
-          );
-
           switch (signal.type) {
-            // Streaming signals from AI response
             case "tool_called":
               if (signal.payload?.tool === "thinking") {
                 setIsThinking(true);
@@ -160,7 +140,7 @@ export const useSessionStream = (
                 signal.payload?.text !== undefined ||
                 signal.payload?.chunk !== undefined
               ) {
-                setIsThinking(false); // Text started, stop thinking indicator
+                setIsThinking(false);
                 setThinkingBuffer("");
                 const text =
                   signal.payload?.text ?? signal.payload?.chunk ?? "";
@@ -168,35 +148,25 @@ export const useSessionStream = (
 
                 setMessages((prev) => {
                   const msgs = [...prev];
-                  // Search all messages for a matching messageId
                   const existingIdx = msgId
                     ? msgs.findIndex((m) => m.messageId === msgId)
                     : -1;
 
                   if (existingIdx >= 0) {
-                    // Append to buffer for smooth release
                     const currentBuffer =
                       streamingBufferRef.current[msgId] || "";
                     streamingBufferRef.current[msgId] = currentBuffer + text;
-                    console.log(
-                      `[useSessionStream] Buffered for ${msgId}: ${text}`,
-                    );
                   } else {
-                    // Start new message
-                    console.log(
-                      `[useSessionStream] Starting new message ${msgId}`,
-                    );
                     const stableId = msgId || uuidv4();
                     const newMsg: ZSessionMessage = {
                       id: stableId,
-                      messageId: stableId, // Ensure messageId is set to prevent duplication in findIndex
+                      messageId: stableId,
                       role: "z",
                       type: "text" as ZSessionMessageType,
-                      content: "", // Start empty, will be filled by smooth release
+                      content: "",
                       timestamp: signal.timestamp || new Date().toISOString(),
                       isStreaming: true,
                     };
-                    // Only add the new message if the component is still mounted
                     if (isMountedRef.current) {
                       msgs.push(newMsg);
                     }
@@ -205,10 +175,6 @@ export const useSessionStream = (
                   return msgs;
                 });
               }
-              break;
-
-            case "text_done":
-              // Message streaming complete
               break;
 
             case "error":
@@ -230,27 +196,18 @@ export const useSessionStream = (
         setConnectionType("disconnected");
         options?.onConnectionChange?.(false, "disconnected");
 
-        // Exponential backoff: 1s, 2s, 4s, 8s, 16s
         if (retryCountRef.current < maxRetriesRef.current) {
           const delayMs = Math.min(
             1000 * Math.pow(2, retryCountRef.current),
             16000,
           );
           retryCountRef.current++;
-          console.warn(
-            `SSE connection failed. Retrying in ${delayMs}ms (attempt ${retryCountRef.current}/${maxRetriesRef.current})`,
-          );
           reconnectTimeoutRef.current = setTimeout(() => {
             if (connectRef.current) connectRef.current();
           }, delayMs);
-        } else {
-          console.error(
-            "SSE connection failed after max retries. Session may be offline.",
-          );
         }
       });
     } catch (err) {
-      console.error("Failed to establish SSE connection:", err);
       setIsConnected(false);
 
       if (retryCountRef.current < maxRetriesRef.current) {
@@ -266,12 +223,10 @@ export const useSessionStream = (
     }
   }, [sessionId, options]);
 
-  // Store connect function in ref to avoid circular dependency
   useEffect(() => {
     connectRef.current = connect;
   }, [connect]);
 
-  // Clean up SSE connection
   const disconnect = useCallback(() => {
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
@@ -280,12 +235,11 @@ export const useSessionStream = (
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
     }
-    retryCountRef.current = 0; // Reset retry counter on disconnect
+    retryCountRef.current = 0;
     setIsConnected(false);
     setConnectionType("disconnected");
   }, []);
 
-  // Establish connection on mount
   useEffect(() => {
     if (sessionId && enabled) {
       connect();
@@ -295,12 +249,10 @@ export const useSessionStream = (
     };
   }, [sessionId, enabled, connect, disconnect]);
 
-  // Smooth release effect (the "typing" generator)
   useEffect(() => {
     let animationFrame: number;
 
     const tick = (time: number) => {
-      // Aim for ~30ms per character release for "smooth" feel
       if (time - lastTickRef.current > 25) {
         lastTickRef.current = time;
 
@@ -316,7 +268,6 @@ export const useSessionStream = (
 
               const idx = next.findIndex((m) => m.id === id);
               if (idx >= 0) {
-                // Adaptive release based on buffer size
                 let releaseCount = 1;
                 if (buffer.length > 200) releaseCount = 12;
                 else if (buffer.length > 100) releaseCount = 6;
@@ -333,7 +284,6 @@ export const useSessionStream = (
                 };
                 changed = true;
 
-                // If buffer for this message is now empty, cleanup
                 if (streamingBufferRef.current[id] === "") {
                   delete streamingBufferRef.current[id];
                 }
@@ -351,7 +301,6 @@ export const useSessionStream = (
     return () => cancelAnimationFrame(animationFrame);
   }, []);
 
-  // Optimistic update for user messages
   const pushMessage = useCallback((msg: ZSessionMessage) => {
     setMessages((prev) => [...prev, msg]);
   }, []);

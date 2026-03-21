@@ -2,8 +2,8 @@
 
 import { useEffect, useRef } from "react";
 import type { ZSessionMessage } from "@/types/session";
-import { MessageBubble } from "@/components/session/MessageBubble";
-import { ThinkingTrace } from "@/components/session/ThinkingTrace";
+import { MessageBubble } from "@/components/app/session";
+import { ThinkingTrace } from "@/components/app/session";
 import { motion } from "framer-motion";
 import { Brain } from "lucide-react";
 

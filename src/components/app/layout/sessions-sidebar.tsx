@@ -13,7 +13,7 @@ import {
   Sparkles,
   Timer,
 } from "lucide-react";
-import { useSessions } from "@/hooks/use-sessions";
+import { useSessions } from "@/hooks";
 import {
   Sidebar,
   SidebarContent,
@@ -35,7 +35,7 @@ export function SessionsSidebar() {
   const { state } = useSidebar();
   const { data: sessions = [] } = useSessions();
 
-  const recentChats = useMemo(() => sessions.slice(0, 6), [sessions]);
+  const recentSessions = useMemo(() => sessions.slice(0, 6), [sessions]);
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border/50">
@@ -62,7 +62,7 @@ export function SessionsSidebar() {
                 <SidebarMenuButton
                   asChild
                   isActive={pathname === "/app"}
-                  tooltip="Start Chat"
+                  tooltip="New Session"
                   className={cn(
                     "h-9 px-4 rounded-none transition-all duration-200",
                     pathname === "/app"
@@ -73,7 +73,7 @@ export function SessionsSidebar() {
                   <Link href="/app">
                     <Plus className="size-4" />
                     <span className="font-mono text-[11px] uppercase tracking-widest">
-                      Start Chat
+                      New Session
                     </span>
                   </Link>
                 </SidebarMenuButton>
@@ -83,7 +83,7 @@ export function SessionsSidebar() {
                 <SidebarMenuButton
                   asChild
                   isActive={pathname === "/app/all"}
-                  tooltip="All Chats"
+                  tooltip="All Sessions"
                   className={cn(
                     "h-9 px-4 rounded-none transition-all duration-200",
                     pathname === "/app/all"
@@ -94,7 +94,7 @@ export function SessionsSidebar() {
                   <Link href="/app/all">
                     <MessageSquare className="size-4" />
                     <span className="font-mono text-[11px] uppercase tracking-widest">
-                      All Chats
+                      All Sessions
                     </span>
                   </Link>
                 </SidebarMenuButton>
@@ -168,20 +168,20 @@ export function SessionsSidebar() {
 
         <SidebarGroup>
           <SidebarGroupLabel className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground/50 px-4 mb-2">
-            Recent Chats
+            Recent Sessions
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {recentChats.length === 0 ? (
+              {recentSessions.length === 0 ? (
                 <SidebarMenuItem>
                   <div className="px-4 py-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground/60">
-                    No chats yet
+                    No sessions yet
                   </div>
                 </SidebarMenuItem>
               ) : (
-                recentChats.map((session) => {
+                recentSessions.map((session) => {
                   const title =
-                    session.title || `Chat ${session._id.slice(0, 6)}`;
+                    session.title || `Session ${session._id.slice(0, 6)}`;
                   const href = `/app/${session._id}`;
                   const isActive = pathname === href;
 

@@ -7,7 +7,7 @@ import { Plus, Search, UploadCloud, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { getAccessToken } from "@/lib/session";
-import { useSocket } from "@/hooks/use-socket";
+import { useSocket } from "@/hooks";
 import type { ISessionMaterial } from "@/types/session";
 import { MaterialCard } from "@/components/app/left/MaterialCard";
 
@@ -42,6 +42,7 @@ interface SourcesPanelProps {
   sessionId: string;
   activeCitationId: string | null;
   highlightedExcerpt?: string;
+  onClose?: () => void;
 }
 
 // ─── Stagger animation ────────────────────────────────────────────────────────
@@ -62,6 +63,7 @@ export function SourcesPanel({
   sessionId,
   activeCitationId,
   highlightedExcerpt,
+  onClose,
 }: SourcesPanelProps) {
   const { socket } = useSocket();
 
@@ -223,18 +225,33 @@ export function SourcesPanel({
   // ─────────────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex flex-col h-full gap-3">
+    <div className="flex flex-col h-full gap-3 p-4">
       {/* Heading + add button */}
-      <div className="flex items-center justify-between">
-        <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground/50">
-          Sources
-        </p>
+      <div className="flex items-center justify-between pb-1 border-b border-border/40">
+        <div className="flex items-center gap-2">
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="flex size-6 items-center justify-center rounded-md text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
+               title="Close Panel"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect width="18" height="18" x="3" y="3" rx="2"></rect>
+                <path d="M9 3v18"></path>
+                <path d="m16 15-3-3 3-3"></path>
+              </svg>
+            </button>
+          )}
+          <span className="text-sm font-semibold tracking-wide text-foreground">
+            Sources
+          </span>
+        </div>
         <button
           type="button"
           onClick={open}
-          className="flex items-center gap-1 text-[10px] font-mono uppercase tracking-widest border border-border/50 px-2 py-1 text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors"
+          className="flex items-center gap-1.5 text-[11px] font-medium border border-border/50 rounded-md px-2 py-1 text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors hover:bg-muted/30"
         >
-          <Plus className="size-2.5" />
+          <Plus className="size-3" />
           Add
         </button>
       </div>

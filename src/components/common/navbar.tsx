@@ -11,11 +11,11 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import { Menu, X, User, LayoutDashboard, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { ThemeToggle } from "@/components/common";
 import { useAuth } from "@/contexts/auth-context";
-import OnboardingBanner from "./onboarding/OnboardingBanner";
+import OnboardingBanner from "@/components/onboarding/OnboardingBanner";
 import { api } from "@/lib/api";
-import { useAuthQuery } from "@/hooks/use-auth-query";
+import { useAuthQuery } from "@/hooks";
 import { queryKeys } from "@/lib/query-keys";
 
 export function Navbar() {

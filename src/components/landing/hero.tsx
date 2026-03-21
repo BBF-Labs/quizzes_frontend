@@ -7,8 +7,8 @@ import { Input } from "@/components/ui/input";
 import Image from "next/image";
 import { Variants } from "framer-motion";
 import confetti from "canvas-confetti";
-import { useJoinWaitlist } from "@/hooks/use-waitlist";
-import { useUniversities } from "@/hooks/use-universities";
+import { useJoinWaitlist } from "@/hooks";
+import { useUniversities } from "@/hooks";
 import { ArrowRight } from "lucide-react";
 
 const containerVariants: Variants = {
