@@ -1,9 +1,9 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { AdminGuard } from "@/components/admin-guard";
-import { AdminUserActions } from "@/components/admin-user-actions";
-import { AdminSidebar } from "@/components/admin-sidebar";
+import { AdminGuard } from "@/components/admin";
+import { AdminUserActions } from "@/components/admin";
+import { AdminSidebar } from "@/components/admin";
 import {
   SidebarProvider,
   SidebarTrigger,

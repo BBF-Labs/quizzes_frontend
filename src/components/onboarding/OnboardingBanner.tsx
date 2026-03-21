@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, ArrowRight } from "lucide-react";
 import { api } from "@/lib/api";
 import { queryKeys } from "@/lib/query-keys";
-import { useAuthQuery } from "@/hooks/use-auth-query";
+import { useAuthQuery } from "@/hooks";
 
 export default function OnboardingBanner() {
   const { user } = useAuth();

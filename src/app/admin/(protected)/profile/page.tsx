@@ -21,8 +21,8 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
-import { useCheckProfile, useUpdateProfile } from "@/hooks/use-admin";
-import { useUploadFile, IUpload } from "@/hooks/use-upload";
+import { useCheckProfile, useUpdateProfile } from "@/hooks";
+import { useUploadFile, IUpload } from "@/hooks";
 import { toast } from "sonner";
 import { useRef } from "react";
 

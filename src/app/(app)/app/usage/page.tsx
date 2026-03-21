@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { MessageSquare, BookOpen, CheckCircle, Clock } from "lucide-react";
-import { useSessions } from "@/hooks/use-sessions";
+import { useSessions } from "@/hooks";
 
 function StatCard({
   label,

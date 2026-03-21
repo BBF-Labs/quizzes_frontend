@@ -7,8 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PaginationController } from "@/components/pagination-controller";
-import { useUsers } from "@/hooks/use-admin";
+import { PaginationController } from "@/components/common";
+import { useUsers } from "@/hooks";
 import { cn } from "@/lib/utils";
 
 export default function UsersPage() {

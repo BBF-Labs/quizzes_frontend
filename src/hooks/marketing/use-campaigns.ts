@@ -1,7 +1,7 @@
 "use client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { IUpload } from "./use-upload";
+import { IUpload } from "@/hooks";
 
 const BASE = "/email-campaigns";
 

@@ -29,7 +29,7 @@ import {
   INewsletterImage,
   IAudienceFilter,
   CampaignType,
-} from "@/hooks/use-campaigns";
+} from "@/hooks";
 import { EmailPreview } from "@/components/newsletter/EmailPreview";
 import { LinkBuilder } from "@/components/newsletter/LinkBuilder";
 import { ImageManager } from "@/components/newsletter/ImageManager";
@@ -48,8 +48,8 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { useSocket } from "@/hooks/use-socket";
+import { useIsMobile } from "@/hooks";
+import { useSocket } from "@/hooks";
 
 const STATUS_CLASS: Record<string, string> = {
   draft: "border-border text-muted-foreground",

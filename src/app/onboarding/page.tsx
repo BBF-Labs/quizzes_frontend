@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { useOnboarding } from "@/hooks/use-onboarding";
+import { useOnboarding } from "@/hooks";
 import { useAuth } from "@/contexts/auth-context";
 
 // Step Components

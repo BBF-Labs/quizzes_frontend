@@ -3,8 +3,7 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { Brain, Lightbulb, Sparkles } from "lucide-react";
-import { useSessions } from "@/hooks/use-sessions";
-import { useSession } from "@/hooks/use-session";
+import { useSessions, useSession } from "@/hooks";
 
 // ─── Memory snippet derived from a single session ─────────────────────────────
 

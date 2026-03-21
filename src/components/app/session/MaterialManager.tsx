@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { FileUp, File, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAddSessionMaterial } from "@/hooks/use-session-materials";
+import { useAddSessionMaterial } from "@/hooks";
 import type { ZMaterial } from "@/types/session";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";

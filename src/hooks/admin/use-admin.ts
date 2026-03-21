@@ -1,6 +1,6 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { IUpload } from "./use-upload";
+import { IUpload } from "@/hooks";
 
 export interface IAdminStats {
   users: number;

@@ -14,9 +14,9 @@ import {
   INewsletterImage,
   CampaignType,
   IAudienceFilter
-} from "@/hooks/use-campaigns";
-import { SearchFilterBar } from "@/components/search-filter-bar";
-import { PaginationController } from "@/components/pagination-controller";
+} from "@/hooks";
+import { SearchFilterBar } from "@/components/common";
+import { PaginationController } from "@/components/common";
 import { LinkBuilder } from "@/components/newsletter/LinkBuilder";
 import { ImageManager } from "@/components/newsletter/ImageManager";
 import { AudienceSelector } from "@/components/newsletter/AudienceSelector";

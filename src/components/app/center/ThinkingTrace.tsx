@@ -1,3 +1,3 @@
 "use client";
 
-export { ThinkingTrace } from "@/components/session/ThinkingTrace";
+export { ThinkingTrace } from "@/components/app/session";

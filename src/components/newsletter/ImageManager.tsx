@@ -16,8 +16,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
-import { INewsletterImage, useNewsletterImages } from "@/hooks/use-campaigns";
-import { useUploadFile } from "@/hooks/use-upload";
+import { INewsletterImage, useNewsletterImages } from "@/hooks";
+import { useUploadFile } from "@/hooks";
 import { toast } from "sonner";
 import {
   Sheet,

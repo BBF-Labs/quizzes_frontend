@@ -14,12 +14,12 @@ import { queryKeys } from "@/lib/query-keys";
 import {
   hydrateSessionUserFromToken,
   SessionUser,
-} from "@/hooks/use-session-hydration";
+} from "@/hooks";
 import {
   isInvalidSessionError,
   useSessionValidation,
-} from "@/hooks/use-session-validation";
-import { useSessionSync } from "@/hooks/use-session-sync";
+} from "@/hooks";
+import { useSessionSync } from "@/hooks";
 
 // ---------------------------------------------------------------------------
 // Types

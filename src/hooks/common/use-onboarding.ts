@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
 import { queryKeys } from "@/lib/query-keys";
-import { useAuthQuery } from "@/hooks/use-auth-query";
+import { useAuthQuery } from "@/hooks";
 
 export function useOnboarding() {
   const { user, isLoading: authLoading } = useAuth();

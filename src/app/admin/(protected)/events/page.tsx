@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Zap, Activity, Clock, Trash2, StopCircle, PlayCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useSocket } from "@/hooks/use-socket";
+import { useSocket } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { resubscribeWithFreshKeys, sendTestPushNotification } from "@/lib/push-notifications";
 
