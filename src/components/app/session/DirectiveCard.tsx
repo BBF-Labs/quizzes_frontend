@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import {
-  BookOpen,
   CheckCircle2,
   ChevronRight,
   ClipboardList,
@@ -15,6 +14,8 @@ import {
   Trophy,
   Unlock,
 } from "lucide-react";
+import { SquareLoader } from "@/components/ui/square-loader";
+
 import { cn } from "@/lib/utils";
 import type {
   ZAskQuestionPayload,
@@ -131,8 +132,14 @@ function AskQuestionCard({
   };
 
   return (
-    <CardWrapper resolved={resolved} icon={<HelpCircle className="size-3" />} label="Question">
-      <p className="text-sm text-foreground leading-relaxed">{payload.question}</p>
+    <CardWrapper
+      resolved={resolved}
+      icon={<HelpCircle className="size-3" />}
+      label="Question"
+    >
+      <p className="text-sm text-foreground leading-relaxed">
+        {payload.question}
+      </p>
 
       {!resolved && (
         <>
@@ -165,10 +172,7 @@ function AskQuestionCard({
           )}
 
           <div className="flex flex-wrap items-center gap-2">
-            <ActionButton
-              onClick={handleSubmit}
-              variant="primary"
-            >
+            <ActionButton onClick={handleSubmit} variant="primary">
               Submit Answer
             </ActionButton>
             <ActionButton onClick={onRetry}>
@@ -214,7 +218,11 @@ function AskQuestionsCard({
   };
 
   return (
-    <CardWrapper resolved={resolved} icon={<ClipboardList className="size-3" />} label="Questions">
+    <CardWrapper
+      resolved={resolved}
+      icon={<ClipboardList className="size-3" />}
+      label="Questions"
+    >
       <div className="space-y-4">
         {payload.questions.map((q, i) => (
           <div key={q.id} className="space-y-2">
@@ -224,8 +232,8 @@ function AskQuestionsCard({
               </span>
               {q.question}
             </p>
-            {!resolved && (
-              q.options ? (
+            {!resolved &&
+              (q.options ? (
                 <div className="flex flex-col gap-1">
                   {q.options.map((opt) => (
                     <button
@@ -251,8 +259,7 @@ function AskQuestionsCard({
                   placeholder="Your answer…"
                   className="w-full border border-border/50 bg-background/50 px-3 py-1.5 font-mono text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:outline-none"
                 />
-              )
-            )}
+              ))}
           </div>
         ))}
       </div>
@@ -297,7 +304,11 @@ function ShowQuizCard({
   };
 
   return (
-    <CardWrapper resolved={resolved} icon={<FlaskConical className="size-3" />} label="Quiz">
+    <CardWrapper
+      resolved={resolved}
+      icon={<FlaskConical className="size-3" />}
+      label="Quiz"
+    >
       <div className="space-y-4">
         {payload.questions.map((q, i) => (
           <div key={q.id} className="space-y-2">
@@ -358,32 +369,121 @@ interface ShowPlanCardProps {
   onSkip: () => void;
 }
 
-function ShowPlanCard({ payload, resolved, onApprove, onSkip }: ShowPlanCardProps) {
-  return (
-    <CardWrapper resolved={resolved} icon={<BookOpen className="size-3" />} label="Study Plan">
-      {payload.title && (
-        <p className="text-sm font-bold text-foreground">{payload.title}</p>
-      )}
-      <ol className="space-y-1.5">
-        {payload.steps.map((step, i) => (
-          <li key={step.id} className="flex items-start gap-2">
-            <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center border border-primary/30 bg-primary/10 text-[9px] font-mono text-primary">
-              {i + 1}
-            </span>
-            <div>
-              <p className="text-sm text-foreground">{step.title}</p>
-              {step.description && (
-                <p className="text-[11px] text-muted-foreground mt-0.5">
-                  {step.description}
-                </p>
-              )}
-            </div>
-          </li>
-        ))}
-      </ol>
+function ShowPlanCard({
+  payload,
+  resolved,
+  onApprove,
+  onSkip,
+}: ShowPlanCardProps) {
+  const steps = payload.steps ?? [];
+  const total = steps.length;
+  const done = steps.filter(
+    (s) => s.status === "done" || s.status === "completed",
+  ).length;
+  const progressPct = total > 0 ? Math.round((done / total) * 100) : 0;
 
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+      className={cn(
+        "border overflow-hidden font-mono text-xs",
+        resolved ? "border-border/30 opacity-60" : "border-border/50",
+      )}
+    >
+      {/* Header bar */}
+      <div className="px-4 py-3 border-b border-border/50 bg-background/80 flex items-center gap-3">
+        <div className="w-6 h-6 border border-primary/40 bg-primary/20 flex items-center justify-center text-primary font-bold shrink-0">
+          Z
+        </div>
+        <div className="font-bold text-foreground uppercase tracking-widest flex items-center gap-2 flex-1">
+          {!resolved && (
+            <span className="w-1.5 h-1.5 bg-primary block animate-pulse shrink-0" />
+          )}
+          <span>{payload.title || "Study Plan"}</span>
+        </div>
+        <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest shrink-0">
+          {total} steps
+        </span>
+      </div>
+
+      {/* Step log */}
+      <div className="px-5 py-4 space-y-3 bg-card/20">
+        {steps.map((step, i) => {
+          const isDone = step.status === "done" || step.status === "completed";
+          const isActive = step.status === "active";
+          return (
+            <motion.div
+              key={step.id ?? i}
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.07, duration: 0.25 }}
+              className="flex items-start gap-3"
+            >
+              {/* Status icon */}
+              {isDone && (
+                <div className="mt-0.5 w-4 h-4 border border-primary bg-primary/20 flex items-center justify-center shrink-0">
+                  <CheckCircle2 className="w-2.5 h-2.5 text-primary" />
+                </div>
+              )}
+              {isActive && (
+                <div className="mt-0.5 shrink-0">
+                  <SquareLoader size={16} strokeWidth={1.5} />
+                </div>
+              )}
+              {!isDone && !isActive && (
+                <div className="mt-0.5 w-4 h-4 border border-muted-foreground/30 shrink-0" />
+              )}
+
+              {/* Step text */}
+              <div className="flex-1 min-w-0">
+                <span
+                  className={cn(
+                    "uppercase tracking-wider text-[11px]",
+                    isDone && "text-foreground font-medium",
+                    isActive && "text-primary font-bold",
+                    !isDone && !isActive && "text-muted-foreground/50",
+                  )}
+                >
+                  {step.title}
+                </span>
+                {step.description && !resolved && (
+                  <p className="text-muted-foreground/60 text-[10px] mt-0.5 normal-case tracking-normal">
+                    {step.description}
+                  </p>
+                )}
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      {/* Progress bar */}
+      <div className="px-5 py-3 border-t border-border/50 bg-background/50">
+        <div className="flex justify-between text-[10px] text-muted-foreground mb-2 font-bold uppercase tracking-widest">
+          <span>System Progress</span>
+          <span
+            className={cn(
+              progressPct > 0 ? "text-primary" : "text-muted-foreground/40",
+            )}
+          >
+            {progressPct}% Complete
+          </span>
+        </div>
+        <div className="h-px bg-border/50 overflow-hidden">
+          <motion.div
+            className="h-full bg-primary"
+            initial={{ width: "0%" }}
+            animate={{ width: `${progressPct}%` }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+          />
+        </div>
+      </div>
+
+      {/* Actions */}
       {!resolved && (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="px-5 py-3 border-t border-border/50 flex items-center gap-2">
           <ActionButton onClick={onApprove} variant="primary">
             <CheckCircle2 className="inline size-2.5 mr-1" />
             Approve Plan
@@ -395,8 +495,12 @@ function ShowPlanCard({ payload, resolved, onApprove, onSkip }: ShowPlanCardProp
         </div>
       )}
 
-      {resolved && <ResolvedIndicator />}
-    </CardWrapper>
+      {resolved && (
+        <div className="px-5 py-3 border-t border-border/50">
+          <ResolvedIndicator />
+        </div>
+      )}
+    </motion.div>
   );
 }
 
@@ -408,9 +512,17 @@ interface UnlockTopicCardProps {
   onContinue: () => void;
 }
 
-function UnlockTopicCard({ payload, resolved, onContinue }: UnlockTopicCardProps) {
+function UnlockTopicCard({
+  payload,
+  resolved,
+  onContinue,
+}: UnlockTopicCardProps) {
   return (
-    <CardWrapper resolved={resolved} icon={<Unlock className="size-3" />} label="Topic Unlocked">
+    <CardWrapper
+      resolved={resolved}
+      icon={<Unlock className="size-3" />}
+      label="Topic Unlocked"
+    >
       <p className="text-sm font-bold text-foreground">{payload.topicTitle}</p>
       {payload.description && (
         <p className="text-sm text-muted-foreground leading-relaxed">
@@ -438,12 +550,20 @@ interface ShowResultCardProps {
   onContinue: () => void;
 }
 
-function ShowResultCard({ payload, resolved, onContinue }: ShowResultCardProps) {
+function ShowResultCard({
+  payload,
+  resolved,
+  onContinue,
+}: ShowResultCardProps) {
   const hasScore =
     typeof payload.score === "number" && typeof payload.total === "number";
 
   return (
-    <CardWrapper resolved={resolved} icon={<Trophy className="size-3" />} label="Result">
+    <CardWrapper
+      resolved={resolved}
+      icon={<Trophy className="size-3" />}
+      label="Result"
+    >
       {hasScore && (
         <div className="flex items-center gap-2">
           <span className="text-3xl font-black text-primary">
@@ -460,7 +580,9 @@ function ShowResultCard({ payload, resolved, onContinue }: ShowResultCardProps) 
         </p>
       )}
       {payload.message && (
-        <p className="text-sm text-foreground leading-relaxed">{payload.message}</p>
+        <p className="text-sm text-foreground leading-relaxed">
+          {payload.message}
+        </p>
       )}
 
       {!resolved && (
@@ -495,9 +617,15 @@ function ShowSuggestionCard({
   onAction,
 }: ShowSuggestionCardProps) {
   return (
-    <CardWrapper resolved={resolved} icon={<Lightbulb className="size-3" />} label="Suggestion">
+    <CardWrapper
+      resolved={resolved}
+      icon={<Lightbulb className="size-3" />}
+      label="Suggestion"
+    >
       {payload.topicTitle && (
-        <p className="text-sm font-bold text-foreground">{payload.topicTitle}</p>
+        <p className="text-sm font-bold text-foreground">
+          {payload.topicTitle}
+        </p>
       )}
       {payload.description && (
         <p className="text-sm text-muted-foreground leading-relaxed">
@@ -569,11 +697,21 @@ interface ShowSummaryCardProps {
   onContinue: () => void;
 }
 
-function ShowSummaryCard({ payload, resolved, onContinue }: ShowSummaryCardProps) {
+function ShowSummaryCard({
+  payload,
+  resolved,
+  onContinue,
+}: ShowSummaryCardProps) {
   return (
-    <CardWrapper resolved={resolved} icon={<ClipboardList className="size-3" />} label="Summary">
+    <CardWrapper
+      resolved={resolved}
+      icon={<ClipboardList className="size-3" />}
+      label="Summary"
+    >
       {payload.topicTitle && (
-        <p className="text-sm font-bold text-foreground">{payload.topicTitle}</p>
+        <p className="text-sm font-bold text-foreground">
+          {payload.topicTitle}
+        </p>
       )}
       {payload.content && (
         <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
@@ -583,7 +721,10 @@ function ShowSummaryCard({ payload, resolved, onContinue }: ShowSummaryCardProps
       {payload.keyPoints && payload.keyPoints.length > 0 && (
         <ul className="space-y-1">
           {payload.keyPoints.map((point, i) => (
-            <li key={i} className="flex items-start gap-2 text-sm text-foreground">
+            <li
+              key={i}
+              className="flex items-start gap-2 text-sm text-foreground"
+            >
               <ChevronRight className="mt-0.5 size-3 shrink-0 text-primary" />
               {point}
             </li>

@@ -2,50 +2,37 @@
 
 import { cn } from "@/lib/utils";
 import type { ZSessionMessage } from "@/types/session";
-import { BookOpen, MessageSquare, Zap } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 import { motion } from "framer-motion";
+import { ThinkingTrace } from "@/components/app/session/ThinkingTrace";
 
 interface MessageBubbleProps {
   message: ZSessionMessage;
   isUser?: boolean;
 }
 
-const typeConfig = {
-  text: {
-    icon: MessageSquare,
-    label: "Z",
-    className: "border-border/50 bg-card text-foreground",
-    iconClass: "text-muted-foreground",
-  },
-  thinking: {
-    icon: Zap,
-    label: "THOUGHT",
-    className: "border-primary/30 bg-primary/5 text-foreground",
-    iconClass: "text-primary",
-  },
-  directive: {
-    icon: BookOpen,
-    label: "DIRECTIVE",
-    className: "border-amber-500/30 bg-amber-500/5 text-foreground",
-    iconClass: "text-amber-500",
-  },
-  tool_call: {
-    icon: MessageSquare,
-    label: "TOOL",
-    className: "border-border/50 bg-card text-foreground",
-    iconClass: "text-muted-foreground",
-  },
-  tool_result: {
-    icon: MessageSquare,
-    label: "RESULT",
-    className: "border-border/50 bg-card text-foreground",
-    iconClass: "text-muted-foreground",
-  },
-};
-
 export function MessageBubble({ message, isUser = false }: MessageBubbleProps) {
-  const cfg = typeConfig[message.type as keyof typeof typeConfig] || typeConfig.text;
-  const Icon = cfg.icon;
+  // Render thinking messages via ThinkingTrace (collapsed, not-streaming)
+  if (message.type === "thinking") {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25 }}
+      >
+        <ThinkingTrace
+          content={message.content}
+          isStreaming={false}
+          defaultExpanded={false}
+        />
+      </motion.div>
+    );
+  }
+
+  // Hide tool_call / tool_result noise from the chat feed
+  if (message.type === "tool_call" || message.type === "tool_result") {
+    return null;
+  }
 
   if (isUser) {
     return (
@@ -71,22 +58,16 @@ export function MessageBubble({ message, isUser = false }: MessageBubbleProps) {
     >
       <div
         className={cn(
-          "mt-0.5 flex size-6 shrink-0 items-center justify-center border",
-          cfg.className,
+          "mt-0.5 flex size-6 shrink-0 items-center justify-center border border-border/50 bg-card text-foreground",
         )}
       >
-        <Icon className={cn("size-3", cfg.iconClass)} />
+        <MessageSquare className="size-3 text-muted-foreground" />
       </div>
 
       <div className="flex-1 space-y-1">
         <div className="flex items-center gap-2">
-          <span
-            className={cn(
-              "text-[9px] font-mono font-bold tracking-widest uppercase",
-              cfg.iconClass,
-            )}
-          >
-            {cfg.label}
+          <span className="text-[9px] font-mono font-bold tracking-widest uppercase text-muted-foreground">
+            Z
           </span>
           <span className="text-[9px] font-mono text-muted-foreground/50">
             {new Date(message.timestamp).toLocaleTimeString([], {
@@ -95,15 +76,11 @@ export function MessageBubble({ message, isUser = false }: MessageBubbleProps) {
             })}
           </span>
         </div>
-        <div
-          className={cn(
-            "border px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap break-words",
-            cfg.className,
-          )}
-        >
+        <div className="border border-border/50 bg-card px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap wrap-break-word text-foreground">
           {message.content}
         </div>
       </div>
     </motion.div>
   );
 }
+
