@@ -88,7 +88,7 @@ export function SessionsLayoutWrapper({ children }: { children: ReactNode }) {
               <UserProfileDropdown user={user} onLogout={logout} />
             </div>
           </header>
-          <main className="flex-1 overflow-auto no-scrollbar">{children}</main>
+          <main className="flex-1 overflow-auto no-scrollbar p-4 md:p-8 w-full">{children}</main>
         </SidebarInset>
       </div>
     </SidebarProvider>

@@ -1,11 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Brain, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const DOT_ANIMATION_DELAY = 0.2;
 
 interface ThinkingTraceProps {
   content: string;
@@ -19,40 +17,46 @@ export function ThinkingTrace({
   defaultExpanded,
 }: ThinkingTraceProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded ?? false);
+  const scrollRef = useRef<HTMLPreElement>(null);
+
+  // Auto-scroll to bottom while streaming
+  useEffect(() => {
+    if (isStreaming && isExpanded && scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [content, isStreaming, isExpanded]);
 
   return (
-    <div className="border border-primary/20 bg-primary/5 text-sm w-full">
-      {/* Header / collapsed toggle */}
+    <div className="border border-primary/20 bg-background overflow-hidden font-mono text-xs w-full">
+      {/* Header matches HowZWorks terminal card */}
       <button
         type="button"
         onClick={() => setIsExpanded((v) => !v)}
-        className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-primary/10 transition-colors"
+        className="flex w-full items-center gap-3 px-4 py-2.5 border-b border-primary/10 bg-background/80 text-left hover:bg-primary/5 transition-colors"
       >
-        <Brain
-          className={cn(
-            "size-3.5 shrink-0 text-primary",
-            isStreaming && "animate-pulse",
-          )}
-        />
-        <span className="flex-1 text-[10px] font-mono uppercase tracking-widest text-primary/80">
+        {/* Z badge */}
+        <div className="w-5 h-5 border border-primary/40 bg-primary/20 flex items-center justify-center text-primary font-bold text-[10px] shrink-0">
+          Z
+        </div>
+
+        <span className="flex-1 text-[10px] font-bold uppercase tracking-widest text-primary/80">
           {isStreaming ? "Z is thinking…" : "Thought process"}
         </span>
+
+        {/* Animated dots when streaming */}
         {isStreaming && (
-          <span className="flex gap-0.5">
+          <span className="flex gap-0.5 mr-1">
             {[0, 1, 2].map((i) => (
               <motion.span
                 key={i}
                 className="inline-block size-1 bg-primary"
                 animate={{ opacity: [0.3, 1, 0.3] }}
-                transition={{
-                  duration: 1.2,
-                  repeat: Infinity,
-                  delay: i * DOT_ANIMATION_DELAY,
-                }}
+                transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
               />
             ))}
           </span>
         )}
+
         <ChevronDown
           className={cn(
             "size-3.5 shrink-0 text-muted-foreground transition-transform duration-200",
@@ -72,14 +76,16 @@ export function ThinkingTrace({
             transition={{ duration: 0.2, ease: "easeInOut" }}
             className="overflow-hidden"
           >
-            <div className="border-t border-primary/20 px-3 py-2">
-              <pre className="whitespace-pre-wrap break-words font-mono text-[11px] text-muted-foreground leading-relaxed max-h-64 overflow-y-auto">
-                {content || (isStreaming ? "…" : "—")}
-              </pre>
-            </div>
+            <pre
+              ref={scrollRef}
+              className="px-4 py-3 whitespace-pre-wrap wrap-break-word font-mono text-[11px] text-muted-foreground leading-relaxed max-h-52 overflow-y-auto scrollbar-none bg-card/20"
+            >
+              {content || (isStreaming ? "…" : "—")}
+            </pre>
           </motion.div>
         )}
       </AnimatePresence>
     </div>
   );
 }
+
