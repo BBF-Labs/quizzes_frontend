@@ -10,7 +10,8 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { SessionsSidebar } from "@/components/app/layout";
-import { ThemeToggle } from "@/components/common";
+import { ThemeToggle, UserProfileDropdown } from "@/components/common";
+import { useAuth } from "@/contexts/auth-context";
 import { useSession, useSessionStream } from "@/hooks";
 import { useSocket } from "@/hooks";
 import { cn } from "@/lib/utils";
@@ -23,6 +24,7 @@ export function SessionsLayoutWrapper({ children }: { children: ReactNode }) {
   const isSessionDetail = !!sessionId;
 
   // Always call hooks unconditionally (Rules of Hooks)
+  const { user, logout } = useAuth();
   const { data: session } = useSession(sessionId, isSessionDetail);
   const stream = useSessionStream(sessionId, undefined, isSessionDetail);
   const { isConnected: isSocketConnected } = useSocket();
@@ -83,6 +85,7 @@ export function SessionsLayoutWrapper({ children }: { children: ReactNode }) {
                 </>
               )}
               <ThemeToggle />
+              <UserProfileDropdown user={user} onLogout={logout} />
             </div>
           </header>
           <main className="flex-1 overflow-auto no-scrollbar">{children}</main>

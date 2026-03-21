@@ -50,12 +50,19 @@ export function ExamTimetablePreview() {
           viewport={{ once: true }}
           className="mb-12"
         >
-          <h2 className="text-3xl md:text-4xl font-mono font-bold tracking-[0.2em] text-foreground uppercase mb-4">
-            Exam Protocol
-          </h2>
-          <p className="text-muted-foreground text-sm font-mono uppercase tracking-widest text-[10px] md:text-xs">
-            Qz pulls your university exam timetable and sets automated reminders.
-          </p>
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-black tracking-[-0.04em] text-foreground mb-4 uppercase">
+                Exam Protocol
+              </h2>
+              <p className="text-muted-foreground text-sm font-mono uppercase tracking-widest text-[10px] md:text-xs">
+                Qz pulls your university exam timetable and sets automated reminders.
+              </p>
+            </div>
+            <div className="text-primary font-mono text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+              Time sync
+            </div>
+          </div>
           <div className="h-px w-full bg-border/50 mt-6" />
         </motion.div>
 

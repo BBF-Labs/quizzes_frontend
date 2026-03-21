@@ -11,7 +11,7 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import { Menu, X, User, LayoutDashboard, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/common";
+import { ThemeToggle, UserProfileDropdown } from "@/components/common";
 import { useAuth } from "@/contexts/auth-context";
 import OnboardingBanner from "@/components/onboarding/OnboardingBanner";
 import { api } from "@/lib/api";
@@ -80,10 +80,11 @@ export function Navbar() {
   return (
     <>
       <OnboardingBanner />
+      {showBanner && <div className="h-[49px] w-full shrink-0" />}
       <motion.header
         style={{ backgroundColor, backdropFilter: backdropBlur, borderBottom }}
         className={`fixed left-0 right-0 z-50 h-16 transition-all duration-300 ${
-          showBanner ? "top-12.25" : "top-0"
+          showBanner ? "top-[49px]" : "top-0"
         }`}
       >
         <div className="container mx-auto px-4 max-w-6xl h-16 flex items-center justify-between">
@@ -114,23 +115,7 @@ export function Navbar() {
               </Button>
               {user ? (
                 <div className="flex items-center space-x-4">
-                  <Link href="/admin">
-                    <Button
-                      variant="ghost"
-                      className="rounded-none text-muted-foreground hover:bg-primary hover:text-white hover:shadow-[0_0_20px_rgba(0,110,255,0.3)] text-xs font-mono font-bold tracking-[0.15em] uppercase transition-all duration-500 px-6 border border-border/50 hover:border-primary flex items-center gap-2 group"
-                    >
-                      <LayoutDashboard className="size-4 group-hover:scale-110 transition-transform" />
-                      DASHBOARD
-                    </Button>
-                  </Link>
-                  <Button
-                    variant="ghost"
-                    onClick={() => logout()}
-                    className="rounded-none text-muted-foreground hover:bg-red-500/10 hover:text-red-500 hover:shadow-[0_0_20px_rgba(239,68,68,0.1)] text-xs font-mono font-bold tracking-[0.15em] uppercase transition-all duration-500 px-6 border border-border/50 hover:border-red-500/50 flex items-center gap-2 group"
-                  >
-                    <LogOut className="size-4 group-hover:translate-x-1 transition-transform" />
-                    SIGN OUT
-                  </Button>
+                  <UserProfileDropdown user={user} onLogout={logout} />
                 </div>
               ) : (
                 <Link href="/login">
@@ -148,6 +133,11 @@ export function Navbar() {
           {/* Mobile Toggle & ThemeToggle */}
           <div className="flex items-center space-x-2 md:hidden">
             <ThemeToggle />
+            {user && (
+              <div className="mr-1">
+                <UserProfileDropdown user={user} onLogout={logout} />
+              </div>
+            )}
             <button
               className="p-2 text-foreground"
               onClick={() => setIsOpen(!isOpen)}
@@ -180,30 +170,7 @@ export function Navbar() {
               >
                 WAITLIST
               </Button>
-              {user ? (
-                <div className="flex flex-col space-y-3 pt-2">
-                  <Link href="/admin" className="w-full">
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-start rounded-none font-mono font-bold tracking-widest uppercase gap-3 hover:bg-primary hover:text-white transition-all duration-300 h-12"
-                    >
-                      <LayoutDashboard className="size-4" />
-                      Dashboard
-                    </Button>
-                  </Link>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start rounded-none font-mono font-bold tracking-widest uppercase gap-3 text-red-500 hover:bg-red-500/10 transition-all duration-300 h-12 border border-transparent hover:border-red-500/20"
-                    onClick={() => {
-                      logout();
-                      setIsOpen(false);
-                    }}
-                  >
-                    <LogOut className="size-4" />
-                    Sign Out
-                  </Button>
-                </div>
-              ) : (
+              {!user && (
                 <Link href="/login" className="w-full pt-2">
                   <Button
                     variant="ghost"

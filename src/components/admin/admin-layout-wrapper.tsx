@@ -1,7 +1,8 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { AdminGuard } from "@/components/admin";
+// import { AdminGuard } from "@/components/admin";
+import { AuthGuard } from "@/components/common";
 import { AdminUserActions } from "@/components/admin";
 import { AdminSidebar } from "@/components/admin";
 import {
@@ -30,7 +31,7 @@ export function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps) {
   const segments = pathname.split("/").filter(Boolean);
 
   return (
-    <AdminGuard>
+    <AuthGuard requireSuperAdmin>
       <SocketProvider>
         <SidebarProvider>
           <div className="flex min-h-screen bg-background text-foreground w-full">
@@ -99,6 +100,6 @@ export function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps) {
           </div>
         </SidebarProvider>
       </SocketProvider>
-    </AdminGuard>
+    </AuthGuard>
   );
 }
