@@ -13,6 +13,19 @@ interface UseSessionStreamOptions {
   onConnectionChange?: (connected: boolean, type: ConnectionType) => void;
 }
 
+interface StreamSignal {
+  sessionId: string;
+  type: "text_chunk" | "error" | string;
+  timestamp?: string;
+  payload?: {
+    messageId?: string;
+    text?: string;
+    chunk?: string;
+    error?: string;
+    [key: string]: unknown;
+  };
+}
+
 export const useSessionStream = (
   sessionId: string,
   initialMessages: ZSessionMessage[] = [],
@@ -28,8 +41,6 @@ export const useSessionStream = (
   }, []);
 
   const [messages, setMessages] = useState<ZSessionMessage[]>(initialMessages);
-  const [isThinking, setIsThinking] = useState(false);
-  const [thinkingBuffer, setThinkingBuffer] = useState("");
   const [isConnected, setIsConnected] = useState(false);
   const [connectionType, setConnectionType] = useState<ConnectionType>(
     enabled ? "polling" : "disconnected",
@@ -44,6 +55,12 @@ export const useSessionStream = (
       .map((m) => `${m.id}-${m.content.length}`)
       .join("|");
 
+    console.log("[useSessionStream] Syncing initialMessages:", {
+      count: initialMessages.length,
+      first: initialMessages[0]?.content.slice(0, 20),
+      session: sessionId,
+    });
+
     if (syncKey === lastSyncedRef.current) return;
     lastSyncedRef.current = syncKey;
 
@@ -52,23 +69,50 @@ export const useSessionStream = (
       let changed = false;
 
       initialMessages.forEach((im) => {
-        const existingIdx = next.findIndex(
-          (m) =>
-            m.id === im.id || (m.messageId && m.messageId === im.messageId),
-        );
+        // More robust matching: try ID, then messageId
+        const existingIdx = next.findIndex((m) => {
+          if (m.id === im.id) return true;
+          if (im.messageId && m.messageId === im.messageId) return true;
+          return false;
+        });
 
         if (existingIdx >= 0) {
-          const isStreaming =
-            !!streamingBufferRef.current[im.id] ||
-            (im.messageId && !!streamingBufferRef.current[im.messageId]);
+          const m = next[existingIdx];
 
-          if (!isStreaming && next[existingIdx].content !== im.content) {
-            next[existingIdx] = im;
-            changed = true;
+          // Guard: don't overwrite if message is currently streaming
+          const isStreaming =
+            streamingMessageIds.current.has(m.id) ||
+            streamingMessageIds.current.has(m.messageId) ||
+            !!streamingBufferRef.current[m.id] ||
+            (m.messageId && !!streamingBufferRef.current[m.messageId]);
+
+          if (!isStreaming) {
+            // Update metadata (like server ID) but keep local content if it matches
+            if (m.id !== im.id || m.content !== im.content) {
+              console.log(
+                `[useSessionStream] Syncing message: ${im.messageId || im.id}`,
+              );
+              next[existingIdx] = { ...m, ...im };
+              changed = true;
+            }
           }
         } else {
-          next.push(im);
-          changed = true;
+          // New message from server, but check if we already have it by content + role if ID fails
+          const contentMatch = next.find(
+            (m) => m.role === im.role && m.content === im.content,
+          );
+          if (!contentMatch) {
+            console.log(
+              `[useSessionStream] Adding new message from server: ${im.messageId || im.id}`,
+            );
+            next.push(im);
+            changed = true;
+          } else if (!contentMatch.messageId && im.messageId) {
+            // Update local optimistic message with server's messageId
+            const idx = next.indexOf(contentMatch);
+            next[idx] = { ...contentMatch, ...im };
+            changed = true;
+          }
         }
       });
 
@@ -89,6 +133,7 @@ export const useSessionStream = (
   const maxRetriesRef = useRef(5);
 
   const streamingBufferRef = useRef<Record<string, string>>({});
+  const streamingMessageIds = useRef<Set<string>>(new Set());
   const lastTickRef = useRef<number>(0);
 
   const connect = useCallback(() => {
@@ -114,34 +159,21 @@ export const useSessionStream = (
 
       eventSource.addEventListener("message", (event) => {
         try {
-          const signal = JSON.parse(event.data);
+          const signal: StreamSignal = JSON.parse(event.data);
+          console.log("[useSessionStream] Raw Signal:", signal);
+          if (signal.sessionId !== sessionId) return;
+
+          console.log(
+            "[useSessionStream] Signal received:",
+            signal.type,
+            signal.payload?.messageId,
+          );
           switch (signal.type) {
-            case "tool_called":
-              if (signal.payload?.tool === "thinking") {
-                setIsThinking(true);
-              }
-              break;
-
-            case "thinking_chunk":
-              if (signal.payload?.chunk || signal.payload?.text) {
-                setIsThinking(true);
-                const chunk = signal.payload?.chunk ?? signal.payload?.text;
-                setThinkingBuffer((prev) => prev + chunk);
-              }
-              break;
-
-            case "thinking_done":
-              setIsThinking(false);
-              setThinkingBuffer("");
-              break;
-
             case "text_chunk":
               if (
                 signal.payload?.text !== undefined ||
                 signal.payload?.chunk !== undefined
               ) {
-                setIsThinking(false);
-                setThinkingBuffer("");
                 const text =
                   signal.payload?.text ?? signal.payload?.chunk ?? "";
                 const msgId = signal.payload?.messageId;
@@ -153,11 +185,26 @@ export const useSessionStream = (
                     : -1;
 
                   if (existingIdx >= 0) {
+                    const streamKey =
+                      msgId ||
+                      msgs[existingIdx].messageId ||
+                      msgs[existingIdx].id;
                     const currentBuffer =
-                      streamingBufferRef.current[msgId] || "";
-                    streamingBufferRef.current[msgId] = currentBuffer + text;
+                      streamingBufferRef.current[streamKey] || "";
+                    streamingBufferRef.current[streamKey] =
+                      currentBuffer + text;
+                    streamingMessageIds.current.add(streamKey);
+                    // Ensure the message is marked as streaming
+                    msgs[existingIdx] = {
+                      ...msgs[existingIdx],
+                      isStreaming: true,
+                    };
                   } else {
                     const stableId = msgId || uuidv4();
+                    console.log(
+                      `[useSessionStream] Creating new streaming message: ${stableId}`,
+                    );
+                    streamingMessageIds.current.add(stableId);
                     const newMsg: ZSessionMessage = {
                       id: stableId,
                       messageId: stableId,
@@ -242,6 +289,7 @@ export const useSessionStream = (
 
   useEffect(() => {
     if (sessionId && enabled) {
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
       connect();
     }
     return () => {
@@ -268,24 +316,26 @@ export const useSessionStream = (
 
               const idx = next.findIndex((m) => m.id === id);
               if (idx >= 0) {
-                let releaseCount = 1;
-                if (buffer.length > 200) releaseCount = 12;
-                else if (buffer.length > 100) releaseCount = 6;
-                else if (buffer.length > 50) releaseCount = 3;
-                else if (buffer.length > 20) releaseCount = 2;
+                let releaseCount = 2; // Increased base release
+                if (buffer.length > 200) releaseCount = 15;
+                else if (buffer.length > 100) releaseCount = 8;
+                else if (buffer.length > 50) releaseCount = 4;
+                else if (buffer.length > 20) releaseCount = 3;
 
                 const toRelease = buffer.slice(0, releaseCount);
-                streamingBufferRef.current[id] = buffer.slice(releaseCount);
+                const remaining = buffer.slice(releaseCount);
+                streamingBufferRef.current[id] = remaining;
 
                 next[idx] = {
                   ...next[idx],
                   content: next[idx].content + toRelease,
-                  isStreaming: buffer.length > releaseCount,
+                  isStreaming: remaining.length > 0, // Stay true if more is coming
                 };
                 changed = true;
 
-                if (streamingBufferRef.current[id] === "") {
+                if (remaining.length === 0) {
                   delete streamingBufferRef.current[id];
+                  streamingMessageIds.current.delete(id);
                 }
               }
             }
@@ -307,8 +357,6 @@ export const useSessionStream = (
 
   return {
     messages,
-    isThinking,
-    thinkingBuffer,
     isConnected,
     connectionType,
     pushMessage,

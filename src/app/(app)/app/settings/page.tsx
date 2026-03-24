@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Settings, Brain, Users, Tag } from "lucide-react";
+import { Brain, Users, Tag } from "lucide-react";
 
 // ─── localStorage-backed toggle ───────────────────────────────────────────────
 
@@ -128,10 +128,13 @@ export default function SessionSettingsPage() {
           <p className="mt-2 text-sm text-muted-foreground font-mono">
             Customize how Z behaves in your sessions.
           </p>
+          <p className="mt-2 text-xs text-muted-foreground font-mono">
+            UI styling now lives in the floating button on the right side.
+          </p>
           <div className="mt-4 h-px w-10 bg-primary/40" />
         </motion.div>
 
-        {/* Toggles */}
+        {/* AI toggles */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -186,7 +189,7 @@ export default function SessionSettingsPage() {
         </motion.div>
 
         <p className="mt-8 text-[10px] font-mono uppercase tracking-widest text-muted-foreground/30 text-center">
-          Settings are saved locally on this device
+          AI settings are saved locally on this device
         </p>
       </div>
     </div>

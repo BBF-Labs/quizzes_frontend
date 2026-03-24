@@ -4,7 +4,6 @@ import { cn } from "@/lib/utils";
 import type { ZSessionMessage } from "@/types/session";
 import { MessageSquare } from "lucide-react";
 import { motion } from "framer-motion";
-import { ThinkingTrace } from "@/components/app/session/ThinkingTrace";
 
 interface MessageBubbleProps {
   message: ZSessionMessage;
@@ -12,23 +11,6 @@ interface MessageBubbleProps {
 }
 
 export function MessageBubble({ message, isUser = false }: MessageBubbleProps) {
-  // Render thinking messages via ThinkingTrace (collapsed, not-streaming)
-  if (message.type === "thinking") {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.25 }}
-      >
-        <ThinkingTrace
-          content={message.content}
-          isStreaming={false}
-          defaultExpanded={false}
-        />
-      </motion.div>
-    );
-  }
-
   // Hide tool_call / tool_result noise from the chat feed
   if (message.type === "tool_call" || message.type === "tool_result") {
     return null;

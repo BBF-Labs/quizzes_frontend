@@ -71,7 +71,7 @@ export function EmailPreview({
         className,
       )}
     >
-      <div className="w-full max-w-[600px] mx-auto bg-white dark:bg-zinc-900 border-2 border-black dark:border-zinc-800 shadow-[8px_8px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_rgba(255,255,255,0.05)]">
+      <div className="w-full max-w-150 mx-auto bg-white dark:bg-zinc-900 border-2 border-black dark:border-zinc-800 shadow-[8px_8px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_rgba(255,255,255,0.05)]">
         <div className="p-5 sm:p-8">
           {/* Badge */}
           <div
@@ -79,7 +79,7 @@ export function EmailPreview({
           >
             <span
               className={cn(
-                "text-[11px] font-mono font-bold tracking-[0.1em] uppercase",
+                "text-[11px] font-mono font-bold tracking-widest uppercase",
                 config.color,
               )}
             >
@@ -124,7 +124,7 @@ export function EmailPreview({
                     </h1>
                   ),
                   h2: ({ children }) => (
-                    <h2 className="text-[18px] sm:text-[20px] font-black uppercase tracking-tight mb-2 mt-4 text-black dark:text-white font-mono leading-[1.25]">
+                    <h2 className="text-[18px] sm:text-[20px] font-black uppercase tracking-tight mb-2 mt-4 text-black dark:text-white font-mono leading-tight">
                       {children}
                     </h2>
                   ),
@@ -146,7 +146,7 @@ export function EmailPreview({
                 <a
                   key={idx}
                   href={link.url}
-                  className="bg-[#006eff] text-white text-[13px] font-mono font-bold text-center block py-3 px-4 tracking-[0.15em] uppercase border-2 border-black dark:border-white/10 hover:translate-x-[2px] hover:translate-y-[2px] transition-transform"
+                  className="bg-[#006eff] text-white text-[13px] font-mono font-bold text-center block py-3 px-4 tracking-[0.15em] uppercase border-2 border-black dark:border-white/10 hover:translate-x-0.5 hover:translate-y-0.5 transition-transform"
                 >
                   {link.label}
                 </a>

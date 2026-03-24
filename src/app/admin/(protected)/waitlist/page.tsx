@@ -13,9 +13,16 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { PaginationController } from "@/components/common";
 import { useWaitlist } from "@/hooks";
+import type { IAudienceEntry } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
@@ -29,9 +36,12 @@ export default function WaitlistPage() {
     search: search || undefined,
     waitlistStatus: statusFilter || undefined,
   });
-  
+
   const waitlistEntries = waitlistData?.data || [];
-  const totalPages = waitlistData?.page && waitlistData?.limit ? Math.ceil(waitlistData.total / waitlistData.limit) : 1;
+  const totalPages =
+    waitlistData?.page && waitlistData?.limit
+      ? Math.ceil(waitlistData.total / waitlistData.limit)
+      : 1;
 
   return (
     <div className="space-y-8">
@@ -68,17 +78,35 @@ export default function WaitlistPage() {
             }}
           />
         </div>
-        <Select value={statusFilter || "all"} onValueChange={(value) => {
-          setStatusFilter(value === "all" ? "" : value);
-          setPage(1);
-        }}>
+        <Select
+          value={statusFilter || "all"}
+          onValueChange={(value) => {
+            setStatusFilter(value === "all" ? "" : value);
+            setPage(1);
+          }}
+        >
           <SelectTrigger className="w-full sm:w-auto sm:min-w-140 rounded-none bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
             <SelectValue placeholder="All Statuses" />
           </SelectTrigger>
           <SelectContent className="rounded-none border-border/40 bg-card/95 font-mono text-xs uppercase">
-            <SelectItem value="all" className="rounded-none font-mono text-xs uppercase">All Statuses</SelectItem>
-            <SelectItem value="active" className="rounded-none font-mono text-xs uppercase">Active</SelectItem>
-            <SelectItem value="removed" className="rounded-none font-mono text-xs uppercase">Removed</SelectItem>
+            <SelectItem
+              value="all"
+              className="rounded-none font-mono text-xs uppercase"
+            >
+              All Statuses
+            </SelectItem>
+            <SelectItem
+              value="active"
+              className="rounded-none font-mono text-xs uppercase"
+            >
+              Active
+            </SelectItem>
+            <SelectItem
+              value="removed"
+              className="rounded-none font-mono text-xs uppercase"
+            >
+              Removed
+            </SelectItem>
           </SelectContent>
         </Select>
         <Button
@@ -94,7 +122,8 @@ export default function WaitlistPage() {
       <Card className="rounded-none border-border/50 bg-card/40 overflow-hidden">
         <CardHeader className="border-b border-border/10">
           <CardTitle className="text-[11px] font-mono tracking-[0.2em] uppercase text-muted-foreground">
-            Queue Status {waitlistEntries?.length ? `(${waitlistEntries.length})` : ""}
+            Queue Status{" "}
+            {waitlistEntries?.length ? `(${waitlistEntries.length})` : ""}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
@@ -104,9 +133,6 @@ export default function WaitlistPage() {
                 <tr className="border-b border-border/5 bg-secondary/5">
                   <th className="px-6 py-4 font-bold text-muted-foreground">
                     Entry
-                  </th>
-                  <th className="px-6 py-4 font-bold text-muted-foreground">
-                    University
                   </th>
                   <th className="px-6 py-4 font-bold text-muted-foreground">
                     Joined
@@ -123,7 +149,7 @@ export default function WaitlistPage() {
                 {isLoading ? (
                   <tr>
                     <td
-                      colSpan={5}
+                      colSpan={4}
                       className="px-6 py-12 text-center text-muted-foreground animate-pulse"
                     >
                       Retrieving waitlist from engine…
@@ -132,7 +158,7 @@ export default function WaitlistPage() {
                 ) : waitlistEntries.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={5}
+                      colSpan={4}
                       className="px-6 py-12 text-center space-y-3"
                     >
                       <UserPlus className="size-8 text-muted-foreground/30 mx-auto" />
@@ -142,7 +168,7 @@ export default function WaitlistPage() {
                     </td>
                   </tr>
                 ) : (
-                  waitlistEntries.map((entry: any) => (
+                  waitlistEntries.map((entry: IAudienceEntry) => (
                     <tr
                       key={entry._id}
                       className="hover:bg-primary/5 transition-colors group"
@@ -156,9 +182,6 @@ export default function WaitlistPage() {
                             {entry.email}
                           </span>
                         </div>
-                      </td>
-                      <td className="px-6 py-4 text-muted-foreground">
-                        {entry.university || "Not specified"}
                       </td>
                       <td className="px-6 py-4 text-muted-foreground">
                         <div className="flex items-center gap-2">

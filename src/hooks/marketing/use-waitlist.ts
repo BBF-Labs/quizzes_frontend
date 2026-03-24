@@ -6,8 +6,6 @@ import { api } from "@/lib/api";
 interface WaitlistData {
   name: string;
   email: string;
-  university?: string;
-  universityId?: string;
 }
 
 export function useJoinWaitlist() {
@@ -18,18 +16,6 @@ export function useJoinWaitlist() {
         email: data.email.trim().toLowerCase(),
         name: data.name.trim(),
       };
-
-      if (!payload.university?.trim()) {
-        delete payload.university;
-      } else {
-        payload.university = payload.university.trim();
-      }
-
-      if (!payload.universityId?.trim()) {
-        delete payload.universityId;
-      } else {
-        payload.universityId = payload.universityId.trim();
-      }
 
       const response = await api.post("/system/waitlist", payload);
       return response.data;

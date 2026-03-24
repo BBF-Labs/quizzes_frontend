@@ -17,7 +17,9 @@ export const useSessions = () => {
   return useQuery({
     queryKey: queryKeys.sessions.lists(),
     queryFn: async () => {
+      console.log("[useSessions] Requesting list");
       const response = await api.get<ListSessionsResponse>("/app");
+      console.log("[useSessions] Raw Response:", response.data);
       return response.data.data ?? [];
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
@@ -29,7 +31,9 @@ export const useSession = (sessionId: string, enabled = true) => {
   return useQuery({
     queryKey: queryKeys.sessions.detail(sessionId),
     queryFn: async () => {
+      console.log(`[useSession] Requesting detail: ${sessionId}`);
       const response = await api.get<GetSessionResponse>(`/app/${sessionId}`);
+      console.log("[useSession] Raw Response:", response.data);
       return response.data.data;
     },
     enabled: enabled && !!sessionId,

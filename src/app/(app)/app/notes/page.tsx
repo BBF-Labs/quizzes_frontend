@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { BookMarked, Brain, Search, Trash2, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import { api } from "@/lib/api";
+import { useDeleteLibraryNote, useLibraryNotes } from "@/hooks/app";
 import { cn } from "@/lib/utils";
 import type { NoteSummary } from "@/types/session";
 
@@ -111,10 +111,10 @@ function NoteRow({
               </div>
               <div className="mt-3 flex items-center gap-3">
                 <Link
-                  href={`/app/${note.sessionId}`}
+                  href={`/app/notes/${note.id}`}
                   className="text-[10px] font-mono uppercase tracking-widest text-primary hover:underline"
                 >
-                  Back to session →
+                  Open note →
                 </Link>
               </div>
             </div>
@@ -128,23 +128,17 @@ function NoteRow({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function NotesPage() {
-  const [notes, setNotes] = useState<NoteSummary[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data, isLoading, error } = useLibraryNotes();
+  const deleteNoteMutation = useDeleteLibraryNote();
   const [search, setSearch] = useState("");
   const [courseFilter, setCourseFilter] = useState("");
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
 
+  const [notes, setNotes] = useState<NoteSummary[]>([]);
+
   useEffect(() => {
-    api
-      .get<{ data: NoteSummary[] }>("/app/notes")
-      .then((res) => setNotes(res.data?.data ?? []))
-      .catch((err) => {
-        console.error("[NotesPage] load failed", err);
-        setError("Failed to load notes.");
-      })
-      .finally(() => setIsLoading(false));
-  }, []);
+    setNotes(data ?? []);
+  }, [data]);
 
   // Client-side filtering — search on title + contentPreview
   const searchLower = search.trim().toLowerCase();
@@ -169,7 +163,10 @@ export default function NotesPage() {
     if (deletingIds.has(key)) return;
     setDeletingIds((p) => new Set([...p, key]));
     try {
-      await api.delete(`/app/notes/${note.sessionId}/${note.id}`);
+      await deleteNoteMutation.mutateAsync({
+        noteId: note.id,
+        sessionId: note.sessionId,
+      });
       setNotes((p) => p.filter((n) => n.id !== note.id));
     } catch (err) {
       console.error("[NotesPage] delete failed", err);
@@ -252,7 +249,7 @@ export default function NotesPage() {
         {/* Error */}
         {!isLoading && error && (
           <div className="border border-destructive/40 bg-destructive/5 px-4 py-3 font-mono text-sm text-destructive">
-            {error}
+            Failed to load notes.
           </div>
         )}
 
@@ -292,7 +289,11 @@ export default function NotesPage() {
                   key={note.id}
                   variants={{
                     hidden: { opacity: 0, y: 8 },
-                    visible: { opacity: 1, y: 0, transition: { duration: 0.2 } },
+                    visible: {
+                      opacity: 1,
+                      y: 0,
+                      transition: { duration: 0.2 },
+                    },
                   }}
                 >
                   <NoteRow

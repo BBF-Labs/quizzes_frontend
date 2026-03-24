@@ -58,10 +58,10 @@ export function InstitutionSection() {
         >
           <motion.div
             variants={itemVariants}
-            className="border border-border/50 bg-card p-8 md:p-10 hover:border-primary transition-colors relative group overflow-hidden"
+            className="border border-border/50 bg-card p-8 md:p-10 hover:border-primary transition-colors relative group overflow-hidden rounded-(--radius)"
           >
             <div className="absolute top-0 left-0 w-full h-0.5 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300" />
-            <div className="w-10 h-10 border border-border/80 bg-background flex items-center justify-center mb-6 group-hover:border-primary/50 transition-colors">
+            <div className="w-10 h-10 border border-border/80 bg-background flex items-center justify-center mb-6 group-hover:border-primary/50 transition-colors rounded-(--radius)">
               <Building2 className="w-5 h-5 text-primary" />
             </div>
             <h3 className="text-lg font-bold text-foreground uppercase tracking-widest mb-3">
@@ -75,10 +75,10 @@ export function InstitutionSection() {
 
           <motion.div
             variants={itemVariants}
-            className="border border-border/50 bg-card p-8 md:p-10 hover:border-primary transition-colors relative group overflow-hidden"
+            className="border border-border/50 bg-card p-8 md:p-10 hover:border-primary transition-colors relative group overflow-hidden rounded-(--radius)"
           >
             <div className="absolute top-0 left-0 w-full h-0.5 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300" />
-            <div className="w-10 h-10 border border-border/80 bg-background flex items-center justify-center mb-6 group-hover:border-primary/50 transition-colors">
+            <div className="w-10 h-10 border border-border/80 bg-background flex items-center justify-center mb-6 group-hover:border-primary/50 transition-colors rounded-(--radius)">
               <Shield className="w-5 h-5 text-primary" />
             </div>
             <h3 className="text-lg font-bold text-foreground uppercase tracking-widest mb-3">
@@ -92,10 +92,10 @@ export function InstitutionSection() {
 
           <motion.div
             variants={itemVariants}
-            className="border border-border/50 bg-card p-8 md:p-10 hover:border-primary transition-colors relative group overflow-hidden"
+            className="border border-border/50 bg-card p-8 md:p-10 hover:border-primary transition-colors relative group overflow-hidden rounded-(--radius)"
           >
             <div className="absolute top-0 left-0 w-full h-0.5 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300" />
-            <div className="w-10 h-10 border border-border/80 bg-background flex items-center justify-center mb-6 group-hover:border-primary/50 transition-colors">
+            <div className="w-10 h-10 border border-border/80 bg-background flex items-center justify-center mb-6 group-hover:border-primary/50 transition-colors rounded-(--radius)">
               <GitBranch className="w-5 h-5 text-primary" />
             </div>
             <h3 className="text-lg font-bold text-foreground uppercase tracking-widest mb-3">
@@ -109,10 +109,10 @@ export function InstitutionSection() {
 
           <motion.div
             variants={itemVariants}
-            className="border border-border/50 bg-card p-8 md:p-10 hover:border-primary transition-colors relative group overflow-hidden"
+            className="border border-border/50 bg-card p-8 md:p-10 hover:border-primary transition-colors relative group overflow-hidden rounded-(--radius)"
           >
             <div className="absolute top-0 left-0 w-full h-0.5 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300" />
-            <div className="w-10 h-10 border border-border/80 bg-background flex items-center justify-center mb-6 group-hover:border-primary/50 transition-colors">
+            <div className="w-10 h-10 border border-border/80 bg-background flex items-center justify-center mb-6 group-hover:border-primary/50 transition-colors rounded-(--radius)">
               <Share2 className="w-5 h-5 text-primary" />
             </div>
             <h3 className="text-lg font-bold text-foreground uppercase tracking-widest mb-3">

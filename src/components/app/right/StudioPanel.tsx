@@ -58,7 +58,7 @@ export function StudioPanel({
 }: StudioPanelProps) {
   const [activeTab, setActiveTab] = useState<TabId>("notes");
 
-  const isPeerMode = session.mode === "peer";
+  const isPeerMode = session.mode === "structured";
 
   return (
     <div className="flex flex-col h-full bg-card/20">

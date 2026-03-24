@@ -10,7 +10,7 @@ interface AuthGuardProps {
 }
 
 export function AuthGuard({ children, requireSuperAdmin = false }: AuthGuardProps) {
-  const { user, isLoading, isHydrating, isValidating, isSuperAdmin } = useAuth();
+  const { user, isLoading, isHydrating, isValidating, isSuperAdminRole } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -21,13 +21,13 @@ export function AuthGuard({ children, requireSuperAdmin = false }: AuthGuardProp
     if (!isAuthLoading) {
       if (!user) {
         router.replace(`/login?redirectUrl=${encodeURIComponent(pathname)}`);
-      } else if (requireSuperAdmin && !isSuperAdmin) {
+      } else if (requireSuperAdmin && !isSuperAdminRole) {
         router.replace(`/app`);
       } else {
         setShowChildren(true);
       }
     }
-  }, [user, isSuperAdmin, isAuthLoading, requireSuperAdmin, pathname, router]);
+  }, [user, isSuperAdminRole, isAuthLoading, requireSuperAdmin, pathname, router]);
 
   if (!showChildren) {
     return (

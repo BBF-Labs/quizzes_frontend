@@ -377,10 +377,8 @@ function ShowPlanCard({
 }: ShowPlanCardProps) {
   const steps = payload.steps ?? [];
   const total = steps.length;
-  const done = steps.filter(
-    (s) => s.status === "done" || s.status === "completed",
-  ).length;
-  const progressPct = total > 0 ? Math.round((done / total) * 100) : 0;
+  // SHOW_PLAN steps are always pending before approval
+  const progressPct = 0;
 
   return (
     <motion.div
@@ -411,8 +409,9 @@ function ShowPlanCard({
       {/* Step log */}
       <div className="px-5 py-4 space-y-3 bg-card/20">
         {steps.map((step, i) => {
-          const isDone = step.status === "done" || step.status === "completed";
-          const isActive = step.status === "active";
+          // SHOW_PLAN steps do not have status until they become tasks
+          const isDone = false;
+          const isActive = false;
           return (
             <motion.div
               key={step.id ?? i}

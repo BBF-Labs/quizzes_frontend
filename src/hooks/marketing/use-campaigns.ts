@@ -48,11 +48,6 @@ export type CampaignStatus =
 
 export type AudienceLevel =
   | "platform"
-  | "university"
-  | "campus"
-  | "college"
-  | "school"
-  | "department"
   | "course"
   | "role"
   | "individual";
@@ -65,21 +60,8 @@ export interface IAudienceFilter {
     waitlistStatus?: ("active" | "removed")[];
     newsletterStatus?: ("pending" | "active" | "unsubscribed" | "bounced")[];
   };
-  universityId?: string;
-  campusId?: string;
-  collegeId?: string;
-  schoolId?: string;
-  departmentId?: string;
-  roles?: (
-    | "super_admin"
-    | "uni_admin"
-    | "admin"
-    | "staff"
-    | "moderator"
-    | "student"
-  )[];
+  roles?: ("super_admin" | "creator" | "moderator" | "student")[];
   courseIds?: string[];
-  contactUniversityId?: string;
   specificUserIds?: string[];
   specificEmails?: string[];
   excludeUnsubscribed?: boolean;

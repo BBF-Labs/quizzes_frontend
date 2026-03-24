@@ -16,7 +16,7 @@ import {
   useSession,
   useSessionStream,
   useRenameSession,
-  useSessionStep,
+  useSessionMessage,
 } from "@/hooks";
 import { useSocket } from "@/hooks";
 import { StudioPanel } from "@/components/app/right";
@@ -50,11 +50,9 @@ interface AppLayoutContextValue {
   toggleLeft: () => void;
   toggleRight: () => void;
   messages: ZSessionMessage[];
-  pushMessage: (msg: ZSessionMessage) => void;
+  pushMessage: (message: ZSessionMessage) => void;
   sendMessage: (content: string) => Promise<void>;
-  isThinking: boolean;
-  thinkingBuffer: string;
-  stepMutation: ReturnType<typeof useSessionStep>;
+  messageMutation: ReturnType<typeof useSessionMessage>;
 }
 
 const AppLayoutContext = createContext<AppLayoutContextValue | null>(null);
@@ -98,10 +96,14 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
   // ── Session data ────────────────────────────────────────────────────────────
   const { user, logout } = useAuth();
   const { data: session } = useSession(sessionId);
-  const stream = useSessionStream(sessionId, undefined, !!sessionId);
+  const stream = useSessionStream(
+    sessionId,
+    session?.zMessages || [],
+    !!sessionId,
+  );
   const { isConnected: isSocketConnected } = useSocket();
 
-  const stepMutation = useSessionStep();
+  const messageMutation = useSessionMessage();
 
   // ── Studio workspace state ──────────────────────────────────────────────────
   const [studioNotes, setStudioNotes] = useState<StudioNote[]>([]);
@@ -129,6 +131,48 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
     [],
   );
 
+  // ── Sync artifacts from session data ────────────────────────────────────────
+  useEffect(() => {
+    if (session?.artifacts) {
+      // Find the latest mindmap artifact
+      const mmArtifact = [...session.artifacts]
+        .reverse()
+        .find((a) => a.type === "mindmap");
+      if (mmArtifact) {
+        setStudioMindMap(mmArtifact.content as StudioMindMap);
+      }
+
+      // Sync quizzes
+      const quizzes = session.artifacts
+        .filter((a) => a.type === "quiz")
+        .map((a) => a.content as StudioQuiz);
+      if (quizzes.length > 0) {
+        setStudioQuizzes(quizzes);
+      }
+
+      // Sync flashcards (aggregated from all flashcard sets)
+      const flashcards = session.artifacts
+        .filter((a) => a.type === "flashcard_set")
+        .flatMap((a: any) => (a.content as any).cards || []);
+      if (flashcards.length > 0) {
+        setStudioFlashcards(flashcards);
+      }
+
+      // Sync notes (aggregated from all notes artifacts)
+      const notes = session.artifacts
+        .filter((a) => a.type === "notes")
+        .flatMap((a: any) => (a.content as any).sections || []);
+      if (notes.length > 0) {
+        setStudioNotes(notes);
+      }
+
+      // Sync exports from session.studio
+      if (session.studio?.exportedFiles) {
+        setStudioExports(session.studio.exportedFiles);
+      }
+    }
+  }, [session?.artifacts, session?.studio?.exportedFiles]);
+
   // ── Inline session name editing ─────────────────────────────────────────────
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameInput, setNameInput] = useState("");
@@ -155,7 +199,7 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
   // ── Send a plain-text message ────────────────────────────────────────────────
   const sendMessage = useCallback(
     async (content: string) => {
-      if (!content.trim() || stepMutation.isPending) return;
+      if (!content.trim() || messageMutation.isPending) return;
       const msgId = Date.now().toString();
       stream.pushMessage({
         id: msgId,
@@ -166,18 +210,16 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
         timestamp: new Date().toISOString(),
       });
       try {
-        await stepMutation.mutateAsync({
+        await messageMutation.mutateAsync({
           sessionId,
-          step: {
-            stepType: "message",
-            payload: { content: content.trim(), clientMessageId: msgId },
-          },
+          message: content.trim(),
+          messageId: msgId,
         });
       } catch (err) {
         console.error("[AppLayout] sendMessage failed", err);
       }
     },
-    [sessionId, stepMutation, stream],
+    [sessionId, messageMutation, stream],
   );
 
   // ── Context value ───────────────────────────────────────────────────────────
@@ -190,9 +232,7 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
     messages: stream.messages,
     pushMessage: stream.pushMessage,
     sendMessage,
-    isThinking: stream.isThinking,
-    thinkingBuffer: stream.thinkingBuffer,
-    stepMutation,
+    messageMutation,
   };
 
   return (

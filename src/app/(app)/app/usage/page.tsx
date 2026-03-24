@@ -98,8 +98,8 @@ export default function UsagePage() {
               delay={0.1}
             />
             <StatCard
-              label="AI Sessions"
-              value={sessions.filter((s) => s.mode === "ai").length}
+              label="Free Chat"
+              value={sessions.filter((s) => s.mode === "free").length}
               icon={MessageSquare}
               delay={0.15}
             />
