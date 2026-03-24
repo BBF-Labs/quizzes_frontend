@@ -5,6 +5,8 @@ import { use } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import {
+  ChevronLeft,
+  ChevronRight,
   CheckCircle,
   Pencil,
   Plus,
@@ -36,31 +38,31 @@ function FlipCard({
   return (
     <div
       className="relative group cursor-pointer"
-      style={{ perspective: 800 }}
+      style={{ perspective: 1200 }}
       onClick={onFlip}
     >
       <motion.div
         animate={{ rotateY: flipped ? 180 : 0 }}
         transition={{ duration: 0.35, ease: "easeInOut" }}
         style={{ transformStyle: "preserve-3d" }}
-        className="relative h-[120px]"
+        className="relative h-95 sm:h-110 md:h-125 w-full"
       >
         {/* Front */}
         <div
-          className="absolute inset-0 flex items-center justify-center border border-border/50 bg-card/60 px-3 py-2"
+          className="absolute inset-0 flex items-center justify-center border border-border/50 bg-card/70 px-8 py-10"
           style={{ backfaceVisibility: "hidden" }}
         >
-          <p className="text-[11px] font-mono text-center text-foreground leading-relaxed">
+          <p className="text-lg sm:text-xl md:text-2xl font-mono text-center text-foreground leading-relaxed max-w-3xl">
             {card.front}
           </p>
         </div>
 
         {/* Back */}
         <div
-          className="absolute inset-0 flex items-center justify-center border border-primary/30 bg-primary/5 px-3 py-2"
+          className="absolute inset-0 flex items-center justify-center border border-primary/30 bg-primary/10 px-8 py-10"
           style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
         >
-          <p className="text-[11px] font-mono text-center text-foreground leading-relaxed">
+          <p className="text-lg sm:text-xl md:text-2xl font-mono text-center text-foreground leading-relaxed max-w-3xl">
             {card.back}
           </p>
         </div>
@@ -69,24 +71,24 @@ function FlipCard({
       {/* Edit / Delete buttons — only on front face */}
       {!flipped && (
         <div
-          className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+          className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
           onClick={(e) => e.stopPropagation()}
         >
           <button
             type="button"
             onClick={onEdit}
-            className="p-1 text-muted-foreground/40 hover:text-foreground transition-colors"
+            className="p-1.5 border border-border/40 bg-background/70 text-muted-foreground/50 hover:text-foreground transition-colors"
             aria-label="Edit card"
           >
-            <Pencil className="size-3" />
+            <Pencil className="size-3.5" />
           </button>
           <button
             type="button"
             onClick={onDelete}
-            className="p-1 text-muted-foreground/40 hover:text-destructive transition-colors"
+            className="p-1.5 border border-border/40 bg-background/70 text-muted-foreground/50 hover:text-destructive transition-colors"
             aria-label="Delete card"
           >
-            <Trash2 className="size-3" />
+            <Trash2 className="size-3.5" />
           </button>
         </div>
       )}
@@ -171,6 +173,7 @@ export default function FlashcardSetDetailPage({
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
   const [editLoading, setEditLoading] = useState(false);
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
     api
@@ -182,6 +185,15 @@ export default function FlashcardSetDetailPage({
       })
       .finally(() => setIsLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    const total = set?.cards.length ?? 0;
+    if (total === 0) {
+      setCurrentIndex(0);
+      return;
+    }
+    setCurrentIndex((prev) => Math.min(prev, total - 1));
+  }, [set?.cards.length]);
 
   const toggleFlip = (cardId: string) =>
     setFlippedIds((prev) => {
@@ -268,6 +280,7 @@ export default function FlashcardSetDetailPage({
   };
 
   const isFull = (set?.cards.length ?? 0) >= MAX_CARDS;
+  const currentCard = set?.cards[currentIndex] ?? null;
 
   return (
     <div className="min-h-full px-4 py-8">
@@ -286,7 +299,7 @@ export default function FlashcardSetDetailPage({
             {[...Array(6)].map((_, i) => (
               <div
                 key={i}
-                className="h-[120px] animate-pulse bg-card/40 border border-border/30"
+                className="h-30 animate-pulse bg-card/40 border border-border/30"
               />
             ))}
           </div>
@@ -376,63 +389,67 @@ export default function FlashcardSetDetailPage({
               </motion.div>
             )}
 
-            {/* Card grid */}
-            {set.cards.length > 0 && (
-              <motion.div
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-                variants={{
-                  hidden: {},
-                  visible: { transition: { staggerChildren: 0.06 } },
-                }}
-                initial="hidden"
-                animate="visible"
-              >
-                {set.cards.map((card) =>
-                  editingCardId === card.id ? (
-                    <motion.div
-                      key={card.id}
-                      variants={{
-                        hidden: { opacity: 0, y: 10 },
-                        visible: {
-                          opacity: 1,
-                          y: 0,
-                          transition: { duration: 0.2 },
-                        },
-                      }}
-                    >
-                      <CardForm
-                        initial={{ front: card.front, back: card.back }}
-                        onSave={(f, b) => handleEditCard(card.id, f, b)}
-                        onCancel={() => setEditingCardId(null)}
-                        loading={editLoading}
-                      />
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      key={card.id}
-                      variants={{
-                        hidden: { opacity: 0, y: 10 },
-                        visible: {
-                          opacity: 1,
-                          y: 0,
-                          transition: { duration: 0.2 },
-                        },
-                      }}
-                      className={cn(
-                        deletingIds.has(card.id) ? "opacity-40 pointer-events-none" : "",
-                      )}
-                    >
-                      <FlipCard
-                        card={card}
-                        flipped={flippedIds.has(card.id)}
-                        onFlip={() => toggleFlip(card.id)}
-                        onEdit={() => setEditingCardId(card.id)}
-                        onDelete={() => handleDeleteCard(card.id)}
-                      />
-                    </motion.div>
-                  ),
+            {set.cards.length > 0 && currentCard && (
+              <>
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCurrentIndex((prev) => Math.max(0, prev - 1))
+                    }
+                    disabled={currentIndex === 0}
+                    className="h-7 px-2 border border-border/50 bg-card/30 text-[10px] font-mono uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed hover:border-primary/40 transition-colors flex items-center gap-1"
+                  >
+                    <ChevronLeft className="size-3" /> Prev
+                  </button>
+
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/60">
+                    Card {currentIndex + 1} of {set.cards.length}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCurrentIndex((prev) =>
+                        Math.min((set.cards.length || 1) - 1, prev + 1),
+                      )
+                    }
+                    disabled={currentIndex >= set.cards.length - 1}
+                    className="h-7 px-2 border border-border/50 bg-card/30 text-[10px] font-mono uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed hover:border-primary/40 transition-colors flex items-center gap-1"
+                  >
+                    Next <ChevronRight className="size-3" />
+                  </button>
+                </div>
+
+                {editingCardId === currentCard.id ? (
+                  <CardForm
+                    initial={{
+                      front: currentCard.front,
+                      back: currentCard.back,
+                    }}
+                    onSave={(f, b) => handleEditCard(currentCard.id, f, b)}
+                    onCancel={() => setEditingCardId(null)}
+                    loading={editLoading}
+                  />
+                ) : (
+                  <div
+                    className={cn(
+                      "mx-auto max-w-4xl",
+                      deletingIds.has(currentCard.id)
+                        ? "opacity-40 pointer-events-none"
+                        : "",
+                    )}
+                  >
+                    <FlipCard
+                      card={currentCard}
+                      flipped={flippedIds.has(currentCard.id)}
+                      onFlip={() => toggleFlip(currentCard.id)}
+                      onEdit={() => setEditingCardId(currentCard.id)}
+                      onDelete={() => handleDeleteCard(currentCard.id)}
+                    />
+                  </div>
                 )}
-              </motion.div>
+              </>
             )}
           </>
         )}

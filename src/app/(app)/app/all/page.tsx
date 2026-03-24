@@ -100,16 +100,16 @@ export default function AllChatsPage() {
             className="flex flex-col gap-2"
           >
             {filtered.map((session, i) => {
-              const title = session.title || `Chat ${session._id.slice(0, 8)}`;
+              const title = session.title || `Chat ${session.id.slice(0, 8)}`;
               return (
                 <motion.div
-                  key={session._id}
+                  key={session.id}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.03 }}
                 >
                   <Link
-                    href={`/app/${session._id}`}
+                    href={`/app/${session.id}`}
                     className="group flex items-center gap-3 border border-border/40 bg-card/30 px-4 py-3.5 hover:border-primary/40 hover:bg-primary/5 transition-all"
                   >
                     <Clock3 className="size-4 text-muted-foreground/40 shrink-0" />

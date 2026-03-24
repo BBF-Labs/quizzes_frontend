@@ -3,14 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Loader2,
-  Paperclip,
-  X,
-  Settings2,
-  Plus,
-  ArrowUp,
-} from "lucide-react";
+import { Loader2, Paperclip, X, Settings2, Plus, ArrowUp } from "lucide-react";
+import { useSessionApprove } from "@/hooks";
 import { useAppLayout } from "./layout";
 import { cn } from "@/lib/utils";
 import { MessageFeed } from "@/components/app/center/MessageFeed";
@@ -20,11 +14,11 @@ export default function ChatPage() {
   const {
     sessionId,
     messages,
-    pushMessage,
-    isThinking,
-    thinkingBuffer,
-    stepMutation,
+    sendMessage,
+    messageMutation,
   } = useAppLayout();
+
+  const approveMutation = useSessionApprove();
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -66,47 +60,15 @@ export default function ChatPage() {
       !sessionId ||
       sessionId === "undefined" ||
       !input.trim() ||
-      stepMutation.isPending
+      messageMutation.isPending
     ) {
       return;
     }
 
     const userMessage = input.trim();
-    const userMessageId = Date.now().toString();
-
-    pushMessage({
-      id: userMessageId,
-      messageId: userMessageId,
-      role: "user",
-      type: "text",
-      content: userMessage,
-      timestamp: new Date().toISOString(),
-    });
     setInput("");
-
-    try {
-      await stepMutation.mutateAsync({
-        sessionId,
-        step: {
-          stepType: "message",
-          payload: {
-            content: userMessage,
-            clientMessageId: userMessageId,
-          },
-        },
-      });
-    } catch (err) {
-      console.error("Failed to send message", err);
-      pushMessage({
-        id: `error-${Date.now()}`,
-        messageId: `error-${Date.now()}`,
-        role: "z",
-        type: "text",
-        content: "Sorry, something went wrong. Please try again.",
-        timestamp: new Date().toISOString(),
-      });
-    }
-  }, [input, stepMutation, sessionId, pushMessage]);
+    await sendMessage(userMessage);
+  }, [input, messageMutation, sessionId, sendMessage]);
 
   // Hydrate first message from landing page handoff
   useEffect(() => {
@@ -127,7 +89,7 @@ export default function ChatPage() {
     if (
       pendingAutoSend &&
       input === pendingAutoSend &&
-      !stepMutation.isPending
+      !messageMutation.isPending
     ) {
       setTimeout(() => {
         setPendingAutoSend(null);
@@ -135,7 +97,7 @@ export default function ChatPage() {
       }, 0);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingAutoSend, handleSend, stepMutation.isPending]);
+  }, [pendingAutoSend, handleSend, messageMutation.isPending]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -155,42 +117,33 @@ export default function ChatPage() {
   }, [messages]);
 
   // ── Directive action helpers ─────────────────────────────────────────────
-  const sendMessage = useCallback(
-    (content: string) => {
-      if (!sessionId) return;
-      stepMutation
-        .mutateAsync({ sessionId, step: { stepType: "message", payload: { content } } })
-        .catch((err) => console.error("[sendMessage] failed", err));
-    },
-    [sessionId, stepMutation],
-  );
 
   const handleSubmitAnswer = useCallback(
     (answers: string[]) => {
       if (!sessionId) return;
-      stepMutation
+      const joined = answers.join(", ");
+      messageMutation
         .mutateAsync({
           sessionId,
-          step: { stepType: "answer_submitted", payload: { answers } },
+          message:
+            Object.keys(answers).length > 1 ? `Answers: ${joined}` : joined,
         })
-        .catch((err) => console.error("[submitAnswer] failed", err));
+        .catch((err: unknown) => console.error("[submitAnswer] failed", err));
     },
-    [sessionId, stepMutation],
+    [sessionId, messageMutation],
   );
   const handleApprove = useCallback(() => {
     if (!sessionId) return;
-    stepMutation
-      .mutateAsync({ sessionId, step: { stepType: "approve_plan" } })
-      .catch((err) => console.error("[approvePlan] failed", err));
-  }, [sessionId, stepMutation]);
-  const handleContinue = useCallback(() => sendMessage("Continue"), [sendMessage]);
+    approveMutation
+      .mutateAsync(sessionId)
+      .catch((err: unknown) => console.error("[approvePlan] failed", err));
+  }, [sessionId, approveMutation]);
+  const handleContinue = useCallback(
+    () => sendMessage("Continue"),
+    [sendMessage],
+  );
   const handleRetry = useCallback(() => sendMessage("Retry"), [sendMessage]);
-  const handleSkip = useCallback(() => {
-    if (!sessionId) return;
-    stepMutation
-      .mutateAsync({ sessionId, step: { stepType: "task_skipped", payload: {} } })
-      .catch((err) => console.error("[taskSkipped] failed", err));
-  }, [sessionId, stepMutation]);
+  const handleSkip = useCallback(() => sendMessage("Skip"), [sendMessage]);
   const handleExplainDifferently = useCallback(
     () => sendMessage("Explain this differently"),
     [sendMessage],
@@ -231,8 +184,6 @@ export default function ChatPage() {
       {/* Message feed */}
       <MessageFeed
         messages={messages}
-        isThinking={isThinking}
-        thinkingBuffer={thinkingBuffer}
         activeDirectiveMessageId={activeDirectiveMessageId}
         onSubmitAnswer={handleSubmitAnswer}
         onApprove={handleApprove}
@@ -257,7 +208,7 @@ export default function ChatPage() {
                 className="mb-2 flex items-center gap-2 border border-border/50 bg-card/60 px-3 py-1.5 w-fit"
               >
                 <Paperclip className="size-3 text-muted-foreground" />
-                <span className="text-[11px] font-mono text-muted-foreground truncate max-w-[200px]">
+                <span className="text-[11px] font-mono text-muted-foreground truncate max-w-50">
                   {attachedFile.name}
                 </span>
                 <button
@@ -356,7 +307,7 @@ export default function ChatPage() {
                 onKeyDown={handleKeyDown}
                 placeholder="Ask me anything…"
                 rows={1}
-                disabled={stepMutation.isPending || !sessionId}
+                disabled={messageMutation.isPending || !sessionId}
                 className="w-full resize-none bg-transparent py-1.5 text-sm placeholder:text-muted-foreground/50 focus:outline-none disabled:opacity-50 font-mono scrollbar-none"
                 style={{ minHeight: "24px", maxHeight: "160px" }}
               />
@@ -364,16 +315,16 @@ export default function ChatPage() {
 
             <button
               onClick={handleSend}
-              disabled={stepMutation.isPending || !input.trim()}
+              disabled={messageMutation.isPending || !input.trim()}
               className={cn(
                 "size-10 flex items-center justify-center shrink-0 transition-all self-end border",
-                stepMutation.isPending || !input.trim()
+                messageMutation.isPending || !input.trim()
                   ? "bg-muted/10 text-muted-foreground/30 border-border/20"
                   : "bg-primary/10 border-primary/50 text-primary hover:bg-primary hover:text-primary-foreground",
               )}
               title="Send message (or press Enter)"
             >
-              {stepMutation.isPending ? (
+              {messageMutation.isPending ? (
                 <Loader2 className="size-4 animate-spin" />
               ) : (
                 <ArrowUp className="size-5" />

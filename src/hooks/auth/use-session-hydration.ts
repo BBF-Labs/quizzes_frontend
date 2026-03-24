@@ -9,19 +9,9 @@ export type SessionUser = {
   username: string;
   email: string;
   bio?: string;
-  isSuperAdmin: boolean;
+  role?: "student" | "creator" | "moderator" | "super_admin";
+  isSubscribed?: boolean;
   profilePicture?: string;
-  memberships?: Array<{
-    nodeId?: string;
-    nodeLevel?: string;
-    role?: string;
-    isActive?: boolean;
-    universityId?: string;
-    campusId?: string;
-    collegeId?: string;
-    schoolId?: string;
-    departmentId?: string;
-  }>;
   onboarding?: {
     completed: boolean;
     currentStep: number;
@@ -35,19 +25,9 @@ type JwtPayload = {
   username?: string;
   email?: string;
   exp?: number;
-  isSuperAdmin?: boolean;
+  role?: "student" | "creator" | "moderator" | "super_admin";
+  isSubscribed?: boolean;
   profilePicture?: string;
-  memberships?: Array<{
-    nodeId?: string;
-    nodeLevel?: string;
-    role?: string;
-    isActive?: boolean;
-    universityId?: string;
-    campusId?: string;
-    collegeId?: string;
-    schoolId?: string;
-    departmentId?: string;
-  }>;
   onboarding?: {
     completed: boolean;
     currentStep: number;
@@ -84,9 +64,9 @@ export function hydrateSessionUserFromToken(): SessionUser | null {
     name: decoded.name ?? "User",
     username: decoded.username ?? decoded.email?.split("@")[0] ?? "User",
     email: decoded.email ?? "",
-    isSuperAdmin: decoded.isSuperAdmin ?? false,
+    role: decoded.role ?? "student",
+    isSubscribed: decoded.isSubscribed ?? false,
     profilePicture: decoded.profilePicture,
-    memberships: decoded.memberships,
     onboarding: decoded.onboarding,
   };
 }

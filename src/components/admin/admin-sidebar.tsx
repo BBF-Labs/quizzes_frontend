@@ -92,7 +92,8 @@ const navigation = [
 export function AdminSidebar() {
   const pathname = usePathname();
   const { isConnected } = useGlobalSocket();
-  const { logout, user, isSuperAdmin } = useAuth();
+  const { logout, user } = useAuth();
+  const isSuperAdminRole = user?.role === "super_admin";
   const { state } = useSidebar();
 
   return (
@@ -191,11 +192,11 @@ export function AdminSidebar() {
                   <div
                     className={cn(
                       "size-1 shrink-0",
-                      isSuperAdmin ? "bg-blue-500" : "bg-zinc-500",
+                      isSuperAdminRole ? "bg-blue-500" : "bg-zinc-500",
                     )}
                   />
                   <span className="text-[8px] font-mono tracking-widest text-muted-foreground uppercase truncate">
-                    {isSuperAdmin ? "Superadmin" : "Staff"}
+                    {user?.role ? user.role.replace("_", " ") : "Staff"}
                   </span>
                 </div>
               </div>

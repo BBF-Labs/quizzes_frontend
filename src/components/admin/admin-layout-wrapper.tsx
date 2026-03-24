@@ -1,7 +1,6 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-// import { AdminGuard } from "@/components/admin";
 import { AuthGuard } from "@/components/common";
 import { AdminUserActions } from "@/components/admin";
 import { AdminSidebar } from "@/components/admin";
@@ -58,7 +57,8 @@ export function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps) {
                           <>
                             <BreadcrumbSeparator className="hidden md:block" />
                             {segments.slice(1).map((segment, index) => {
-                              const isLast = index === segments.slice(1).length - 1;
+                              const isLast =
+                                index === segments.slice(1).length - 1;
                               const pathSegments = segments.slice(0, index + 2);
                               const href = `/${pathSegments.join("/")}`;
                               const label = segment.replace(/-/g, " ");

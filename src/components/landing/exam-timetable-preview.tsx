@@ -46,7 +46,11 @@ export function ExamTimetablePreview() {
       <div className="container mx-auto px-4 max-w-6xl">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0, transition: { ease: "easeOut", duration: 0.5 } }}
+          whileInView={{
+            opacity: 1,
+            y: 0,
+            transition: { ease: "easeOut", duration: 0.5 },
+          }}
           viewport={{ once: true }}
           className="mb-12"
         >
@@ -56,7 +60,8 @@ export function ExamTimetablePreview() {
                 Exam Protocol
               </h2>
               <p className="text-muted-foreground text-sm font-mono uppercase tracking-widest text-[10px] md:text-xs">
-                Qz pulls your university exam timetable and sets automated reminders.
+                Qz pulls your university exam timetable and sets automated
+                reminders.
               </p>
             </div>
             <div className="text-primary font-mono text-xs font-bold uppercase tracking-widest flex items-center gap-2">
@@ -71,7 +76,7 @@ export function ExamTimetablePreview() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="grid grid-cols-1 lg:grid-cols-3 gap-0 border border-border/50"
+          className="grid grid-cols-1 lg:grid-cols-3 gap-0 border border-border/50 rounded-(--radius) overflow-hidden"
         >
           {/* Left 1/3 — Countdown panel */}
           <div className="border-b lg:border-b-0 lg:border-r border-border/50 p-8 md:p-10 flex flex-col justify-between bg-card">
@@ -80,7 +85,7 @@ export function ExamTimetablePreview() {
                 <span className="w-1.5 h-1.5 bg-primary block animate-pulse" />
                 Next Exam
               </div>
-              <h3 className="text-lg font-mono font-bold text-foreground uppercase tracking-[0.1em] mb-2">
+              <h3 className="text-lg font-mono font-bold text-foreground uppercase tracking-widest mb-2">
                 {nextExam.code}
               </h3>
               <p className="text-muted-foreground font-mono text-xs uppercase tracking-wider mb-8">
@@ -96,12 +101,20 @@ export function ExamTimetablePreview() {
 
             <div className="mt-10 pt-6 border-t border-border/50 grid grid-cols-2 gap-4">
               <div>
-                <div className="text-2xl font-black text-foreground font-mono">{nextExam.time}</div>
-                <div className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase mt-1">Start Time</div>
+                <div className="text-2xl font-black text-foreground font-mono">
+                  {nextExam.time}
+                </div>
+                <div className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase mt-1">
+                  Start Time
+                </div>
               </div>
               <div>
-                <div className="text-2xl font-black text-foreground font-mono">{nextExam.duration}</div>
-                <div className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase mt-1">Duration</div>
+                <div className="text-2xl font-black text-foreground font-mono">
+                  {nextExam.duration}
+                </div>
+                <div className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase mt-1">
+                  Duration
+                </div>
               </div>
             </div>
           </div>
@@ -110,7 +123,7 @@ export function ExamTimetablePreview() {
           <div className="col-span-1 lg:col-span-2">
             {/* Terminal header */}
             <div className="p-4 border-b border-border/50 bg-background/80 flex items-center gap-4 font-mono text-xs">
-              <div className="w-6 h-6 border border-primary/40 bg-primary/20 flex items-center justify-center text-primary font-bold shrink-0">
+              <div className="w-6 h-6 border border-primary/40 bg-primary/20 flex items-center justify-center text-primary font-bold shrink-0 rounded-(--radius)">
                 Z
               </div>
               <div className="font-bold text-foreground uppercase tracking-widest flex items-center gap-3">
@@ -121,15 +134,25 @@ export function ExamTimetablePreview() {
 
             <div className="divide-y divide-border/50">
               {exams.map((exam, i) => (
-                <motion.div key={i} variants={itemVariants} className="flex hover:bg-secondary/10 transition-colors">
+                <motion.div
+                  key={i}
+                  variants={itemVariants}
+                  className="flex hover:bg-secondary/10 transition-colors"
+                >
                   {/* Left — course info */}
                   <div className="flex-1 p-8 md:p-10">
-                    <div className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mb-1">{exam.code}</div>
-                    <h4 className="text-lg font-mono font-bold text-foreground mb-4 uppercase tracking-tight">{exam.name}</h4>
+                    <div className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mb-1">
+                      {exam.code}
+                    </div>
+                    <h4 className="text-lg font-mono font-bold text-foreground mb-4 uppercase tracking-tight">
+                      {exam.name}
+                    </h4>
                     <div className="flex flex-wrap gap-y-2 gap-x-5 text-sm text-muted-foreground font-mono mb-6">
                       <div className="flex items-center gap-1.5">
                         <CalendarClock className="w-3.5 h-3.5 text-primary/80" />
-                        <span>{exam.date} · {exam.time}</span>
+                        <span>
+                          {exam.date} · {exam.time}
+                        </span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <MapPin className="w-3.5 h-3.5 text-primary/80" />
@@ -140,20 +163,27 @@ export function ExamTimetablePreview() {
                         <span>{exam.duration}</span>
                       </div>
                     </div>
-                    <div className="bg-primary/5 p-3 flex items-center gap-3 border border-primary/10">
+                    <div className="bg-primary/5 p-3 flex items-center gap-3 border border-primary/10 rounded-(--radius)">
                       <Bell className="w-3.5 h-3.5 text-primary shrink-0" />
                       <span className="text-xs font-mono text-primary">
-                        Reminders: {exam.urgent ? "7 days, 3 days, 1 day before" : "3 days, 1 day before"}
+                        Reminders:{" "}
+                        {exam.urgent
+                          ? "7 days, 3 days, 1 day before"
+                          : "3 days, 1 day before"}
                       </span>
                     </div>
                   </div>
 
                   {/* Right — countdown */}
-                  <div className="border-l border-border/50 flex flex-col items-center justify-center px-8 min-w-[120px] text-center">
-                    <div className={`text-5xl md:text-6xl font-black font-mono tracking-tight leading-none ${exam.urgent ? "text-primary" : "text-foreground"}`}>
+                  <div className="border-l border-border/50 flex flex-col items-center justify-center px-8 min-w-30 text-center">
+                    <div
+                      className={`text-5xl md:text-6xl font-black font-mono tracking-tight leading-none ${exam.urgent ? "text-primary" : "text-foreground"}`}
+                    >
                       {exam.daysAway}
                     </div>
-                    <div className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase mt-2">days</div>
+                    <div className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase mt-2">
+                      days
+                    </div>
                   </div>
                 </motion.div>
               ))}

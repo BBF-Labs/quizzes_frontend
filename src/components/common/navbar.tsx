@@ -9,7 +9,7 @@ import {
   useTransform,
 } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, X, User, LayoutDashboard, LogOut } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle, UserProfileDropdown } from "@/components/common";
 import { useAuth } from "@/contexts/auth-context";
@@ -80,11 +80,11 @@ export function Navbar() {
   return (
     <>
       <OnboardingBanner />
-      {showBanner && <div className="h-[49px] w-full shrink-0" />}
+      {showBanner && <div className="h-12.25 w-full shrink-0" />}
       <motion.header
         style={{ backgroundColor, backdropFilter: backdropBlur, borderBottom }}
         className={`fixed left-0 right-0 z-50 h-16 transition-all duration-300 ${
-          showBanner ? "top-[49px]" : "top-0"
+          showBanner ? "top-12.25" : "top-0"
         }`}
       >
         <div className="container mx-auto px-4 max-w-6xl h-16 flex items-center justify-between">

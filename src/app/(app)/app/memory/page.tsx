@@ -10,19 +10,19 @@ import { useSessions, useSession } from "@/hooks";
 function SessionMemorySnippets({ sessionId }: { sessionId: string }) {
   const { data: session } = useSession(sessionId);
 
-  const thinkingMessages = useMemo(
+  const memoryMessages = useMemo(
     () =>
       (session?.zMessages ?? [])
-        .filter((m) => m.type === "thinking")
+        .filter((m) => m.role === "z" && m.type === "text" && m.content.trim())
         .slice(0, 3),
     [session],
   );
 
-  if (!thinkingMessages.length) return null;
+  if (!memoryMessages.length) return null;
 
   return (
     <>
-      {thinkingMessages.map((m) => (
+      {memoryMessages.map((m) => (
         <motion.div
           key={m.id}
           initial={{ opacity: 0, y: 8 }}
@@ -41,7 +41,7 @@ function SessionMemorySnippets({ sessionId }: { sessionId: string }) {
 
 export default function MemoryPage() {
   const { data: sessions = [], isLoading } = useSessions();
-  const recentSessionIds = sessions.slice(0, 5).map((s) => s._id);
+  const recentSessionIds = sessions.slice(0, 5).map((s) => s.id);
 
   return (
     <div className="min-h-full px-4 py-8">

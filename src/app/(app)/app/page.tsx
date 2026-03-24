@@ -4,9 +4,25 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { BookOpen, Clock3, Plus, Paperclip, X } from "lucide-react";
+import {
+  BookOpen,
+  Brain,
+  Clock3,
+  FileText,
+  MessageSquare,
+  Network,
+  Plus,
+  Paperclip,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
-import { useSessions, useCreateSession } from "@/hooks";
+import {
+  useSessions,
+  useCreateSession,
+  useCourseSearch,
+  useDebounce,
+} from "@/hooks";
 import { cn } from "@/lib/utils";
 
 // ─── Time-aware rotating greetings ───────────────────────────────────────────
@@ -60,8 +76,8 @@ function getGreeting(name: string): string {
 // ─── Session mode options ─────────────────────────────────────────────────────
 
 const SESSION_MODES = [
-  { value: "ai", label: "AI Tutor" },
-  { value: "peer", label: "Peer Study" },
+  { value: "structured", label: "Structured Study" },
+  { value: "free", label: "Free Chat" },
 ] as const;
 
 type SessionMode = (typeof SESSION_MODES)[number]["value"];
@@ -75,7 +91,12 @@ export default function AppHomePage() {
   // ── Composer state ──────────────────────────────────────────────────────────
   const [input, setInput] = useState("");
   const [course, setCourse] = useState("");
-  const [mode, setMode] = useState<SessionMode>("ai");
+  const [mode, setMode] = useState<SessionMode>("structured");
+  const [courseSearch, setCourseSearch] = useState("");
+  const debouncedSearch = useDebounce(courseSearch, 400);
+  const { data: searchResults = [], isLoading: isSearchingByText } =
+    useCourseSearch(debouncedSearch);
+
   const [showPlusMenu, setShowPlusMenu] = useState(false);
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -117,7 +138,8 @@ export default function AppHomePage() {
         courseId: courseId ? courseId : undefined,
         mode,
       });
-      const resolvedSessionId = session?.id || (session as { _id?: string })?._id;
+      const resolvedSessionId =
+        session?.id || (session as { _id?: string })?._id;
 
       if (!resolvedSessionId || resolvedSessionId === "undefined") {
         console.error("No valid session ID returned", session);
@@ -177,6 +199,48 @@ export default function AppHomePage() {
             Start typing below to begin a new session.
           </p>
 
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.12 }}
+            className="mt-8"
+          >
+            <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground/50 mb-3 text-left">
+              Desktop
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {[
+                { href: "/app/all", label: "Sessions", Icon: MessageSquare },
+                {
+                  href: "/app/flashcards",
+                  label: "Flashcards",
+                  Icon: BookOpen,
+                },
+                { href: "/app/quizzes", label: "Quizzes", Icon: Clock3 },
+                { href: "/app/mindmaps", label: "Mind Maps", Icon: Network },
+                { href: "/app/notes", label: "Notes", Icon: FileText },
+                {
+                  href: recentSessions[0]
+                    ? `/app/${recentSessions[0].id}`
+                    : "/app/all",
+                  label: "Studio",
+                  Icon: Sparkles,
+                },
+              ].map(({ href, label, Icon }) => (
+                <Link
+                  key={label}
+                  href={href}
+                  className="group flex items-center gap-2 border border-border/40 bg-card/30 px-3 py-2 text-left hover:border-primary/40 hover:bg-primary/5 transition-all"
+                >
+                  <Icon className="size-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <span className="text-[11px] font-mono tracking-wide text-muted-foreground group-hover:text-foreground transition-colors">
+                    {label}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </motion.div>
+
           {/* Recent sessions */}
           {!sessionsLoading && recentSessions.length > 0 && (
             <motion.div
@@ -191,13 +255,13 @@ export default function AppHomePage() {
               <div className="flex flex-col gap-1.5">
                 {recentSessions.map((s) => (
                   <Link
-                    key={s._id}
-                    href={`/app/${s._id}`}
+                    key={s.id}
+                    href={`/app/${s.id}`}
                     className="group flex items-center gap-3 border border-border/40 bg-card/30 px-3 py-2.5 hover:border-primary/40 hover:bg-primary/5 transition-all"
                   >
                     <Clock3 className="size-3.5 text-muted-foreground/50 shrink-0" />
                     <span className="flex-1 truncate text-[11px] font-mono text-muted-foreground group-hover:text-foreground transition-colors">
-                      {s.title || `Chat ${s._id.slice(0, 8)}`}
+                      {s.title || `Chat ${s.id.slice(0, 8)}`}
                     </span>
                     <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40">
                       {s.startedAt
@@ -252,7 +316,7 @@ export default function AppHomePage() {
                 className="mb-2 flex items-center gap-2 border border-border/50 bg-card/60 px-3 py-1.5 w-fit"
               >
                 <Paperclip className="size-3 text-muted-foreground" />
-                <span className="text-[11px] font-mono text-muted-foreground truncate max-w-[200px]">
+                <span className="text-[11px] font-mono text-muted-foreground truncate max-w-50">
                   {attachedFile.name}
                 </span>
                 <button
@@ -293,13 +357,59 @@ export default function AppHomePage() {
                       <label className="block text-[10px] font-mono uppercase tracking-widest text-muted-foreground/60 mb-1">
                         Course
                       </label>
-                      <input
-                        type="text"
-                        value={course}
-                        onChange={(e) => setCourse(e.target.value)}
-                        placeholder="Course (optional)"
-                        className="w-full bg-transparent border border-border/40 px-2.5 py-1.5 text-[11px] font-mono placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/40 transition-colors mb-3"
-                      />
+                      <div className="relative mb-3">
+                        <input
+                          type="text"
+                          value={courseSearch}
+                          onChange={(e) => setCourseSearch(e.target.value)}
+                          placeholder="Search for a course..."
+                          className="w-full bg-transparent border border-border/40 px-2.5 py-1.5 text-[11px] font-mono placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/40 transition-colors"
+                        />
+                        {course && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCourse("");
+                              setCourseSearch("");
+                            }}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-mono text-primary hover:text-primary/70"
+                          >
+                            CLEAR
+                          </button>
+                        )}
+
+                        <AnimatePresence>
+                          {courseSearch.length >= 2 &&
+                            searchResults.length > 0 &&
+                            !course && (
+                              <motion.div
+                                initial={{ opacity: 0, y: -4 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -4 }}
+                                className="absolute top-full left-0 right-0 z-60 mt-1 border border-border/60 bg-popover shadow-xl max-h-48 overflow-y-auto"
+                              >
+                                {searchResults.map((c) => (
+                                  <button
+                                    key={c._id}
+                                    type="button"
+                                    onClick={() => {
+                                      setCourse(c._id);
+                                      setCourseSearch(c.title || c.code);
+                                    }}
+                                    className="w-full text-left px-3 py-2 hover:bg-primary/5 transition-colors border-b border-border/20 last:border-0"
+                                  >
+                                    <p className="text-[11px] font-mono text-foreground truncate">
+                                      {c.title}
+                                    </p>
+                                    <p className="text-[9px] font-mono text-muted-foreground uppercase">
+                                      {c.code}
+                                    </p>
+                                  </button>
+                                ))}
+                              </motion.div>
+                            )}
+                        </AnimatePresence>
+                      </div>
 
                       <label className="block text-[10px] font-mono uppercase tracking-widest text-muted-foreground/60 mb-1">
                         Mode

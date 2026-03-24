@@ -13,7 +13,6 @@ export interface IAudienceEntry {
   _id: string;
   email: string;
   name?: string;
-  university?: string;
   source: string;
   isWaitlist: boolean;
   isNewsletter: boolean;
@@ -44,9 +43,7 @@ function normalizePaginatedAudience(
     // Some endpoints currently return data arrays without total metadata.
     // Estimate totals so pager controls can still move forward/backward.
     const estimatedTotal =
-      pageSize === limit
-        ? page * limit + 1
-        : (page - 1) * limit + pageSize;
+      pageSize === limit ? page * limit + 1 : (page - 1) * limit + pageSize;
 
     return {
       data: payload as IAudienceEntry[],

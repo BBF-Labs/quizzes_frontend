@@ -7,14 +7,11 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "@/lib/utils";
 import type { ZSessionMessage } from "@/types/session";
-import { ThinkingTrace } from "@/components/app/center/ThinkingTrace";
 import { DirectiveCard } from "@/components/app/center/DirectiveCard";
 import type { DirectiveCardCallbacks } from "@/components/app/center/DirectiveCard";
 
 export interface MessageFeedProps extends DirectiveCardCallbacks {
   messages: ZSessionMessage[];
-  isThinking: boolean;
-  thinkingBuffer: string;
   /**
    * The messageId of the most-recent, still-unresolved directive.
    * All directives whose messageId does NOT match this are treated as resolved.
@@ -24,8 +21,6 @@ export interface MessageFeedProps extends DirectiveCardCallbacks {
 
 export function MessageFeed({
   messages,
-  isThinking,
-  thinkingBuffer,
   activeDirectiveMessageId,
   onSubmitAnswer,
   onApprove,
@@ -41,9 +36,9 @@ export function MessageFeed({
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length, isThinking, thinkingBuffer]);
+  }, [messages.length]);
 
-  if (messages.length === 0 && !isThinking) {
+  if (messages.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-4 py-16 text-center">
         <motion.div
@@ -96,18 +91,6 @@ export function MessageFeed({
           );
         }
 
-        /* ── Thinking messages (historical) ── */
-        if (msg.type === "thinking") {
-          return (
-            <ThinkingTrace
-              key={msg.id}
-              content={msg.content}
-              isStreaming={false}
-              defaultExpanded={false}
-            />
-          );
-        }
-
         /* ── User messages ── */
         if (msg.role === "user") {
           return (
@@ -130,15 +113,6 @@ export function MessageFeed({
           <ZMessageBubble key={msg.id} message={msg} />
         );
       })}
-
-      {/* Live thinking trace while Z is processing */}
-      {isThinking && (
-        <ThinkingTrace
-          content={thinkingBuffer}
-          isStreaming
-          defaultExpanded
-        />
-      )}
 
       <div ref={bottomRef} />
     </div>

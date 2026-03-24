@@ -6,8 +6,11 @@ import { usePathname } from "next/navigation";
 import {
   ArrowLeft,
   Brain,
+  BookOpen,
   Clock3,
+  FileText,
   MessageSquare,
+  Network,
   Plus,
   Settings,
   Sparkles,
@@ -103,6 +106,90 @@ export function SessionsSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
+                  isActive={pathname.startsWith("/app/flashcards")}
+                  tooltip="Flashcards"
+                  className={cn(
+                    "h-9 px-4 rounded-none transition-all duration-200",
+                    pathname.startsWith("/app/flashcards")
+                      ? "bg-primary/5 text-primary border-r-2 border-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
+                  )}
+                >
+                  <Link href="/app/flashcards">
+                    <BookOpen className="size-4" />
+                    <span className="font-mono text-[11px] uppercase tracking-widest">
+                      Flashcards
+                    </span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname.startsWith("/app/quizzes")}
+                  tooltip="Quizzes"
+                  className={cn(
+                    "h-9 px-4 rounded-none transition-all duration-200",
+                    pathname.startsWith("/app/quizzes")
+                      ? "bg-primary/5 text-primary border-r-2 border-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
+                  )}
+                >
+                  <Link href="/app/quizzes">
+                    <MessageSquare className="size-4" />
+                    <span className="font-mono text-[11px] uppercase tracking-widest">
+                      Quizzes
+                    </span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname.startsWith("/app/mindmaps")}
+                  tooltip="Mind Maps"
+                  className={cn(
+                    "h-9 px-4 rounded-none transition-all duration-200",
+                    pathname.startsWith("/app/mindmaps")
+                      ? "bg-primary/5 text-primary border-r-2 border-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
+                  )}
+                >
+                  <Link href="/app/mindmaps">
+                    <Network className="size-4" />
+                    <span className="font-mono text-[11px] uppercase tracking-widest">
+                      Mind Maps
+                    </span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname.startsWith("/app/notes")}
+                  tooltip="Notes"
+                  className={cn(
+                    "h-9 px-4 rounded-none transition-all duration-200",
+                    pathname.startsWith("/app/notes")
+                      ? "bg-primary/5 text-primary border-r-2 border-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
+                  )}
+                >
+                  <Link href="/app/notes">
+                    <FileText className="size-4" />
+                    <span className="font-mono text-[11px] uppercase tracking-widest">
+                      Notes
+                    </span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
                   isActive={pathname === "/app/memory"}
                   tooltip="Memory"
                   className={cn(
@@ -181,12 +268,12 @@ export function SessionsSidebar() {
               ) : (
                 recentSessions.map((session) => {
                   const title =
-                    session.title || `Session ${session._id.slice(0, 6)}`;
-                  const href = `/app/${session._id}`;
+                    session.title || `Session ${session.id.slice(0, 6)}`;
+                  const href = `/app/${session.id}`;
                   const isActive = pathname === href;
 
                   return (
-                    <SidebarMenuItem key={session._id}>
+                    <SidebarMenuItem key={session.id}>
                       <SidebarMenuButton
                         asChild
                         isActive={isActive}
@@ -240,4 +327,3 @@ export function SessionsSidebar() {
     </Sidebar>
   );
 }
-

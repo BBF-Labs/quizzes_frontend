@@ -4,14 +4,14 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 
 export function AdminGuard({ children }: { children: React.ReactNode }) {
-  const { user, isLoading, isSuperAdmin } = useAuth();
+  const { user, isLoading, hasAdminAccess } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && (!user || !isSuperAdmin)) {
+    if (!isLoading && (!user || !hasAdminAccess)) {
       router.replace("/login");
     }
-  }, [user, isLoading, isSuperAdmin, router]);
+  }, [user, isLoading, hasAdminAccess, router]);
 
   if (isLoading) {
     return (
@@ -23,6 +23,6 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user || !isSuperAdmin) return null;
+  if (!user || !hasAdminAccess) return null;
   return <>{children}</>;
 }

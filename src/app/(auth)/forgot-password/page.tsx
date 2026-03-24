@@ -93,7 +93,7 @@ export default function ForgotPasswordPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="rounded-none font-mono bg-secondary/40 dark:bg-input/30 border-border focus-visible:ring-ring/50 h-11"
+                    className="rounded-(--radius) font-mono bg-secondary/40 dark:bg-input/30 border-border focus-visible:ring-ring/50 h-11"
                     placeholder="name@example.com"
                   />
                 </div>
@@ -114,7 +114,7 @@ export default function ForgotPasswordPage() {
                   <Button
                     type="submit"
                     disabled={mutation.isPending}
-                    className="w-full rounded-none font-mono text-xs tracking-[0.2em] uppercase h-11 shadow-[0_0_20px_rgba(0,110,255,0.1)] hover:shadow-[0_0_30px_rgba(0,110,255,0.2)] transition-all"
+                    className="w-full rounded-(--radius) font-mono text-xs tracking-[0.2em] uppercase h-11 shadow-[0_0_20px_rgba(0,110,255,0.1)] hover:shadow-[0_0_30px_rgba(0,110,255,0.2)] transition-all"
                   >
                     {mutation.isPending ? "Processing…" : "Send Reset Link"}
                   </Button>
@@ -166,7 +166,7 @@ export default function ForgotPasswordPage() {
 
               <div className="space-y-4">
                 <Link href="/login" className="block w-full">
-                  <Button className="w-full rounded-none bg-primary px-8 py-6 text-primary-foreground font-mono text-xs font-bold uppercase tracking-[0.2em] hover:bg-white hover:text-primary hover:ring-1 hover:ring-inset hover:ring-primary transition-all duration-300 group shadow-[0_0_20px_rgba(0,110,255,0.15)]">
+                  <Button className="w-full rounded-(--radius) bg-primary px-8 py-6 text-primary-foreground font-mono text-xs font-bold uppercase tracking-[0.2em] hover:bg-white hover:text-primary hover:ring-1 hover:ring-inset hover:ring-primary transition-all duration-300 group shadow-[0_0_20px_rgba(0,110,255,0.15)]">
                     <span>RETURN TO BASE</span>
                   </Button>
                 </Link>

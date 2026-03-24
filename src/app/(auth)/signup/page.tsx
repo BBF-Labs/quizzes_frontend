@@ -182,7 +182,7 @@ function SignupForm() {
               onChange={(e) => setName(e.target.value)}
               required
               autoComplete="name"
-              className="rounded-none font-mono bg-secondary/40 dark:bg-input/30 border-border focus-visible:ring-ring/50"
+              className="rounded-(--radius) font-mono bg-secondary/40 dark:bg-input/30 border-border focus-visible:ring-ring/50"
               placeholder="Jane Doe"
             />
           </div>
@@ -216,7 +216,7 @@ function SignupForm() {
               onChange={(e) => setEmail(e.target.value.toLowerCase())}
               required
               autoComplete="email"
-              className={`rounded-none font-mono bg-secondary/40 dark:bg-input/30 border-border focus-visible:ring-ring/50 ${
+              className={`rounded-(--radius) font-mono bg-secondary/40 dark:bg-input/30 border-border focus-visible:ring-ring/50 ${
                 emailStatus === "taken" ? "border-destructive/50" : ""
               }`}
               placeholder="jane@university.edu"
@@ -256,7 +256,7 @@ function SignupForm() {
               }
               required
               autoComplete="username"
-              className={`rounded-none font-mono bg-secondary/40 dark:bg-input/30 border-border focus-visible:ring-ring/50 ${
+              className={`rounded-(--radius) font-mono bg-secondary/40 dark:bg-input/30 border-border focus-visible:ring-ring/50 ${
                 usernameStatus === "taken" ? "border-destructive/50" : ""
               }`}
               placeholder="janedoe"
@@ -274,7 +274,7 @@ function SignupForm() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="new-password"
-                className="rounded-none font-mono bg-secondary/40 dark:bg-input/30 border-border pr-10"
+                className="rounded-(--radius) font-mono bg-secondary/40 dark:bg-input/30 border-border pr-10"
                 placeholder="••••••••"
               />
               <button
@@ -302,7 +302,7 @@ function SignupForm() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               autoComplete="new-password"
-              className="rounded-none font-mono bg-secondary/40 dark:bg-input/30 border-border"
+              className="rounded-(--radius) font-mono bg-secondary/40 dark:bg-input/30 border-border"
               placeholder="••••••••"
             />
           </div>
@@ -322,7 +322,7 @@ function SignupForm() {
               emailStatus === "taken" ||
               usernameStatus === "taken"
             }
-            className="w-full rounded-none font-mono text-[10px] tracking-[0.2em] uppercase h-11 bg-primary text-primary-foreground shadow-[0_0_20px_rgba(0,110,255,0.15)] hover:shadow-[0_0_30px_rgba(0,110,255,0.25)] transition-all"
+            className="w-full rounded-(--radius) font-mono text-[10px] tracking-[0.2em] uppercase h-11 bg-primary text-primary-foreground shadow-[0_0_20px_rgba(0,110,255,0.15)] hover:shadow-[0_0_30px_rgba(0,110,255,0.25)] transition-all"
           >
             {loading ? "Creating Account…" : "Create Account"}
           </Button>

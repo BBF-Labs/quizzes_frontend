@@ -23,7 +23,11 @@ interface MindMapTabProps {
 
 // ─── Custom node ──────────────────────────────────────────────────────────────
 
-function MindMapNodeComponent({ data }: { data: { label: string; type: MindMapNode["type"] } }) {
+function MindMapNodeComponent({
+  data,
+}: {
+  data: { label: string; type: MindMapNode["type"] };
+}) {
   const colorClass: Record<MindMapNode["type"], string> = {
     concept: "border-primary/60 bg-primary/10 text-primary",
     topic: "border-border/60 bg-card/60 text-foreground",
@@ -34,13 +38,21 @@ function MindMapNodeComponent({ data }: { data: { label: string; type: MindMapNo
   return (
     <div
       className={cn(
-        "px-2 py-1 border text-[10px] font-mono leading-tight max-w-[120px] text-center",
+        "px-2 py-1 border text-[10px] font-mono leading-tight max-w-30 text-center",
         colorClass[data.type] ?? colorClass.topic,
       )}
     >
-      <Handle type="target" position={Position.Left} className="!size-1.5 !bg-border/60" />
+      <Handle
+        type="target"
+        position={Position.Left}
+        className="size-1.5! bg-border/60!"
+      />
       {data.label}
-      <Handle type="source" position={Position.Right} className="!size-1.5 !bg-border/60" />
+      <Handle
+        type="source"
+        position={Position.Right}
+        className="size-1.5! bg-border/60!"
+      />
     </div>
   );
 }
@@ -121,7 +133,7 @@ export function MindMapTab({ mindMap }: MindMapTabProps) {
           No mind map yet — Z will build one as you study
         </p>
       ) : (
-        <div className="h-[320px] border border-border/30 bg-card/10">
+        <div className="h-80 border border-border/30 bg-card/10">
           <ReactFlowProvider>
             <MindMapGraph mindMap={mindMap} />
           </ReactFlowProvider>

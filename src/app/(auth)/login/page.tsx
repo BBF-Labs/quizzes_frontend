@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
@@ -34,7 +34,8 @@ function LoginForm() {
     } catch (err: unknown) {
       setError(
         (err instanceof Error ? err.message : undefined) ??
-          (err as unknown as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+          (err as unknown as { response?: { data?: { message?: string } } })
+            ?.response?.data?.message ??
           "Login failed",
       );
     } finally {
@@ -45,10 +46,11 @@ function LoginForm() {
   const { user } = useAuth();
 
   // Logic: When successful login happens, redirect to the provided origin URL or home.
-  if (isSuccess && user) {
-    router.replace(redirectUrl);
-    return null;
-  }
+  useEffect(() => {
+    if (isSuccess && user) {
+      router.replace(redirectUrl);
+    }
+  }, [isSuccess, user, router, redirectUrl]);
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4 relative overflow-hidden">
@@ -106,7 +108,7 @@ function LoginForm() {
               onChange={(e) => setUsername(e.target.value)}
               required
               autoComplete="username"
-              className="rounded-none font-mono bg-secondary/40 dark:bg-input/30 border-border focus-visible:ring-ring/50"
+              className="rounded-(--radius) font-mono bg-secondary/40 dark:bg-input/30 border-border focus-visible:ring-ring/50"
               placeholder="superadmin"
             />
           </div>
@@ -121,7 +123,7 @@ function LoginForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="rounded-none font-mono bg-secondary/40 dark:bg-input/30 border-border pr-10"
+                className="rounded-(--radius) font-mono bg-secondary/40 dark:bg-input/30 border-border pr-10"
                 placeholder="••••••••"
               />
               <button
@@ -142,7 +144,7 @@ function LoginForm() {
           <div className="flex items-center gap-2">
             <Checkbox
               id="remember-me"
-              className="rounded-none border-border/50"
+              className="rounded-(--radius) border-border/50"
               checked={rememberMe}
               onCheckedChange={(checked) => setRememberMe(Boolean(checked))}
             />
@@ -160,7 +162,7 @@ function LoginForm() {
           <Button
             type="submit"
             disabled={loading}
-            className="w-full rounded-none font-mono text-[10px] tracking-[0.2em] uppercase h-11 bg-primary text-primary-foreground shadow-[0_0_20px_rgba(0,110,255,0.15)] hover:shadow-[0_0_30px_rgba(0,110,255,0.25)] transition-all"
+            className="w-full rounded-(--radius) font-mono text-[10px] tracking-[0.2em] uppercase h-11 bg-primary text-primary-foreground shadow-[0_0_20px_rgba(0,110,255,0.15)] hover:shadow-[0_0_30px_rgba(0,110,255,0.25)] transition-all"
           >
             {loading ? "Authenticating…" : "Login"}
           </Button>

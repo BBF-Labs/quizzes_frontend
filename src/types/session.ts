@@ -1,6 +1,5 @@
 export type ZSessionMessageType =
   | "text"
-  | "thinking"
   | "directive"
   | "tool_call"
   | "tool_result";
@@ -107,8 +106,6 @@ export interface ZSessionMessage {
   timestamp: string;
   /** Present only when type === "directive" */
   directive?: ZDirective;
-  /** Present only when type === "thinking" */
-  thinking?: string;
   /** Present only when type === "tool_call" */
   toolCall?: { name: string; input: Record<string, unknown> };
   /** Present only when type === "tool_result" */
@@ -223,7 +220,8 @@ export type StepInput =
 
 export interface CreateSessionInput {
   courseId?: string;
-  mode: "ai" | "peer";
+  mode: "free" | "structured";
+  planningMode?: "planning" | "fast";
   gatingSettings?: GatingSettings;
 }
 
@@ -244,18 +242,23 @@ export interface ZSession {
   title?: string;
   name?: string;
   courseId?: string;
-  mode: "ai" | "peer";
+  mode: "free" | "structured";
+  planningMode?: "planning" | "fast";
   zMessages: ZSessionMessage[];
   materials?: ZMaterial[];
+  artifacts?: Array<{ type: string; content: unknown }>;
+  studio?: {
+    exportedFiles?: StudioExport[];
+  };
   startedAt?: string;
   status: "active" | "completed";
 }
 
 export interface ZSessionSummary {
-  _id: string;
+  id: string;
   title?: string;
   courseId?: string;
-  mode: "ai" | "peer";
+  mode: "free" | "structured";
   startedAt?: string;
   status: "active" | "completed";
   lastMessage?: string;
@@ -411,6 +414,41 @@ export interface NoteSummary {
   sessionName?: string;
   courseTitle?: string;
   createdAt: string;
+}
+
+export interface NoteDetail {
+  id: string;
+  sessionId: string;
+  sourceNoteId: string;
+  title: string;
+  content: string;
+  generatedByZ: boolean;
+  sessionName?: string;
+  courseTitle?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+// ─── Library: Mind Maps ──────────────────────────────────────────────────────
+
+export interface MindMapSummary {
+  id: string;
+  sessionId: string;
+  sessionName?: string;
+  title: string;
+  nodeCount: number;
+  edgeCount: number;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface MindMapDetail {
+  id: string;
+  title: string;
+  sessionId?: string;
+  mindMap: StudioMindMap;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 // ─── Study Partner Session (superset of ZSession with studio workspace) ───────

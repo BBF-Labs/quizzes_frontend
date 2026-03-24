@@ -1,8 +1,10 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { queryKeys } from "@/lib/query-keys";
-import { toast } from "sonner";
-import type { CreateSessionInput, ZSession, ZAgentPlan } from "@/types/session";
+import type {
+  CreateSessionInput,
+  ZSession,
+} from "@/types/session";
 
 interface CreateSessionResponse {
   data: ZSession;
@@ -15,13 +17,22 @@ interface StepResponse {
   code: string;
 }
 
+/**
+ * Hook to create a new study session.
+ */
 export const useCreateSession = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (input: CreateSessionInput): Promise<ZSession> => {
-      const response = await api.post<CreateSessionResponse>("/app", input);
+      console.log("[useCreateSession] Request:", input);
+      const response = await api.post<CreateSessionResponse>(
+        "/app/sessions",
+        input,
+      );
+      console.log("[useCreateSession] Raw Response:", response.data);
       const session = response.data.data;
+      // Map _id to id for frontend consistency, converting to string if needed
       return {
         ...session,
         id:
@@ -31,6 +42,7 @@ export const useCreateSession = () => {
       };
     },
     onSuccess: () => {
+      // Invalidate sessions list to refetch
       return queryClient.invalidateQueries({
         queryKey: queryKeys.sessions.lists(),
       });
@@ -38,17 +50,24 @@ export const useCreateSession = () => {
   });
 };
 
+/**
+ * Hook to start a study session.
+ */
 export const useStartSession = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (sessionId: string) => {
-      if (!sessionId || sessionId === "undefined")
+      if (!sessionId || sessionId === "undefined") {
         throw new Error("Invalid session ID for startSession");
+      }
+      console.log(`[useStartSession] Request: sessionId=${sessionId}`);
       const response = await api.post<StepResponse>(`/app/${sessionId}/start`);
+      console.log("[useStartSession] Raw Response:", response.data);
       return response.data;
     },
     onSuccess: (_, sessionId) => {
+      // Invalidate this session's detail query to refetch latest state
       return queryClient.invalidateQueries({
         queryKey: queryKeys.sessions.detail(sessionId),
       });
@@ -56,6 +75,9 @@ export const useStartSession = () => {
   });
 };
 
+/**
+ * Hook to submit a plain-text message in an active session.
+ */
 export const useSessionMessage = () => {
   const queryClient = useQueryClient();
 
@@ -69,18 +91,19 @@ export const useSessionMessage = () => {
       message: string;
       messageId?: string;
     }) => {
-      if (!sessionId || sessionId === "undefined")
+      if (!sessionId || sessionId === "undefined") {
         throw new Error("Invalid session ID for session message");
+      }
+      console.log("[useSessionMessage] Request:", { sessionId, messageId, length: message.length });
       const response = await api.post<StepResponse>(
         `/app/${sessionId}/message`,
-        {
-          message,
-          messageId,
-        },
+        { message, messageId },
       );
+      console.log("[useSessionMessage] Raw Response:", response.data);
       return response.data;
     },
     onSuccess: (_, { sessionId }) => {
+      // Invalidate this session's detail query
       return queryClient.invalidateQueries({
         queryKey: queryKeys.sessions.detail(sessionId),
       });
@@ -88,6 +111,9 @@ export const useSessionMessage = () => {
   });
 };
 
+/**
+ * Hook to send a steering instruction for a session plan.
+ */
 export const useSessionSteer = () => {
   const queryClient = useQueryClient();
 
@@ -99,14 +125,17 @@ export const useSessionSteer = () => {
       sessionId: string;
       instruction: string;
     }) => {
-      if (!sessionId || sessionId === "undefined")
+      if (!sessionId || sessionId === "undefined") {
         throw new Error("Invalid session ID for steer");
-      const response = await api.post<StepResponse>(`/app/${sessionId}/steer`, {
-        instruction,
-      });
+      }
+      const response = await api.post<StepResponse>(
+        `/app/${sessionId}/steer`,
+        { instruction },
+      );
       return response.data;
     },
     onSuccess: (_, { sessionId }) => {
+      // Invalidate this session's detail query
       return queryClient.invalidateQueries({
         queryKey: queryKeys.sessions.detail(sessionId),
       });
@@ -114,97 +143,24 @@ export const useSessionSteer = () => {
   });
 };
 
+/**
+ * Hook to approve a session plan.
+ */
 export const useSessionApprove = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (sessionId: string) => {
-      if (!sessionId || sessionId === "undefined")
+      if (!sessionId || sessionId === "undefined") {
         throw new Error("Invalid session ID for approve");
+      }
       const response = await api.post<StepResponse>(
         `/app/${sessionId}/approve`,
       );
       return response.data;
     },
     onSuccess: (_, sessionId) => {
-      return queryClient.invalidateQueries({
-        queryKey: queryKeys.sessions.detail(sessionId),
-      });
-    },
-  });
-};
-
-export const useAddSessionMaterial = (sessionId: string) => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (materialId: string) => {
-      const response = await api.post(`/app/${sessionId}/materials`, {
-        materialId,
-      });
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.sessions.detail(sessionId),
-      });
-      toast.success("Material added to session");
-    },
-    onError: (error: unknown) => {
-      const message =
-        (error as { response?: { data?: { message?: string } } })?.response
-          ?.data?.message || "Failed to add material";
-      toast.error(message);
-    },
-  });
-};
-
-interface RenameSessionInput {
-  sessionId: string;
-  name: string;
-}
-
-export const useRenameSession = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ sessionId, name }: RenameSessionInput) => {
-      const response = await api.patch(`/app/${sessionId}/name`, { name });
-      return response.data;
-    },
-    onSuccess: (_, { sessionId }) => {
-      return queryClient.invalidateQueries({
-        queryKey: queryKeys.sessions.detail(sessionId),
-      });
-    },
-  });
-};
-
-export const useDeleteSession = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (sessionId: string) => {
-      const response = await api.delete(`/app/${sessionId}`);
-      return response.data;
-    },
-    onSuccess: () => {
-      return queryClient.invalidateQueries({
-        queryKey: queryKeys.sessions.lists(),
-      });
-    },
-  });
-};
-
-export const useResumeSession = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (sessionId: string) => {
-      const response = await api.post(`/app/${sessionId}/resume`);
-      return response.data;
-    },
-    onSuccess: (_, sessionId) => {
+      // Invalidate this session's detail query
       return queryClient.invalidateQueries({
         queryKey: queryKeys.sessions.detail(sessionId),
       });

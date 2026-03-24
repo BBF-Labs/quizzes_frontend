@@ -68,7 +68,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
           "--info-text": "var(--card-foreground)",
           "--info-border":
             "color-mix(in oklab, var(--primary) 55%, var(--border) 45%)",
-          "--border-radius": "0px",
+          "--border-radius": "var(--radius)",
         } as React.CSSProperties
       }
       {...props}

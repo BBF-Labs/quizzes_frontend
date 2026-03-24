@@ -27,7 +27,8 @@ import { toast } from "sonner";
 import { useRef } from "react";
 
 export default function ProfilePage() {
-  const { user, isSuperAdmin, updateSession } = useAuth();
+  const { user, updateSession } = useAuth();
+  const isSuperAdminRole = user?.role === "super_admin";
   const checkProfile = useCheckProfile();
   const updateProfile = useUpdateProfile();
 
@@ -116,10 +117,10 @@ export default function ProfilePage() {
       {
         onSuccess: (data: any) => {
           toast.success("Profile synchronized successfully");
-          
+
           const resData = data.data ?? data;
           if (resData.accessToken) {
-             updateSession(resData.accessToken, resData.refreshToken);
+            updateSession(resData.accessToken, resData.refreshToken);
           }
 
           setCurrentPassword("");
@@ -178,9 +179,16 @@ export default function ProfilePage() {
                 {/* Avatar Section */}
                 <div className="flex flex-col items-center gap-4 shrink-0 mt-2">
                   <Avatar className="size-24 border border-border/50 rounded-none bg-secondary/20 hover:border-primary/50 transition-colors">
-                    <AvatarImage src={localPreview || uploadedPicture?.url || user?.profilePicture} className="object-cover" />
+                    <AvatarImage
+                      src={
+                        localPreview ||
+                        uploadedPicture?.url ||
+                        user?.profilePicture
+                      }
+                      className="object-cover"
+                    />
                     <AvatarFallback className="rounded-none bg-transparent font-mono text-xl text-primary uppercase">
-                       {user?.username?.substring(0, 2) || "AD"}
+                      {user?.username?.substring(0, 2) || "AD"}
                     </AvatarFallback>
                   </Avatar>
                   <Button
@@ -192,7 +200,9 @@ export default function ProfilePage() {
                   >
                     {uploadMutation.isPending
                       ? "Uploading..."
-                      : localPreview || uploadedPicture?.url || user?.profilePicture
+                      : localPreview ||
+                          uploadedPicture?.url ||
+                          user?.profilePicture
                         ? "Change Image"
                         : "Upload Image"}
                   </Button>
@@ -206,115 +216,115 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 flex-1 w-full">
-                {/* General Info */}
-                <div className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                      <Mail className="size-3" /> Registered Email
-                    </label>
-                    <div className="h-11 flex items-center px-4 bg-secondary/20 border border-border/50 font-mono text-xs text-muted-foreground/60 cursor-not-allowed uppercase truncate">
-                      {user?.email || "internal@qz.engine"}
+                  {/* General Info */}
+                  <div className="space-y-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                        <Mail className="size-3" /> Registered Email
+                      </label>
+                      <div className="h-11 flex items-center px-4 bg-secondary/20 border border-border/50 font-mono text-xs text-muted-foreground/60 cursor-not-allowed uppercase truncate">
+                        {user?.email || "internal@qz.engine"}
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 flex items-center gap-2">
+                        <Shield className="size-3" /> Access Permissions
+                      </label>
+                      <div className="h-11 flex items-center px-4 bg-secondary/10 border border-border/30 font-mono text-[11px] uppercase tracking-widest italic opacity-40">
+                        {isSuperAdminRole
+                          ? "Level 0 // Superadmin"
+                          : "Level 1 // Admin"}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 flex items-center gap-2">
-                      <Shield className="size-3" /> Access Permissions
-                    </label>
-                    <div className="h-11 flex items-center px-4 bg-secondary/10 border border-border/30 font-mono text-[11px] uppercase tracking-widest italic opacity-40">
-                      {isSuperAdmin
-                        ? "Level 0 // Superadmin"
-                        : "Level 1 // Staff"}
+                  {/* Username & Credentials */}
+                  <div className="space-y-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Fingerprint className="size-3" /> Username
+                        </div>
+                        {username !== user?.username && (
+                          <div className="flex items-center gap-1">
+                            {isChecking ? (
+                              <LoaderCircle className="size-2 animate-spin" />
+                            ) : isUsernameTaken ? (
+                              <span className="text-[9px] text-destructive italic lowercase">
+                                unavailable
+                              </span>
+                            ) : (
+                              <span className="text-[9px] text-green-500 italic lowercase">
+                                available
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </label>
+                      <Input
+                        value={username}
+                        onChange={(e) =>
+                          setUsername(
+                            e.target.value.toLowerCase().replace(/\s+/g, "_"),
+                          )
+                        }
+                        placeholder="node_alias"
+                        className={cn(
+                          "rounded-none font-mono text-xs h-11 bg-background/50 transition-colors uppercase",
+                          username !== user?.username &&
+                            !isUsernameTaken &&
+                            !isChecking &&
+                            "border-green-500/50 bg-green-500/5",
+                          username !== user?.username &&
+                            isUsernameTaken &&
+                            "border-destructive/50 bg-destructive/5",
+                        )}
+                      />
                     </div>
-                  </div>
-                </div>
 
-                {/* Username & Credentials */}
-                <div className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Fingerprint className="size-3" /> Username
-                      </div>
-                      {username !== user?.username && (
-                        <div className="flex items-center gap-1">
-                          {isChecking ? (
-                            <LoaderCircle className="size-2 animate-spin" />
-                          ) : isUsernameTaken ? (
-                            <span className="text-[9px] text-destructive italic lowercase">
-                              unavailable
-                            </span>
-                          ) : (
-                            <span className="text-[9px] text-green-500 italic lowercase">
-                              available
-                            </span>
-                          )}
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <KeyRound className="size-3" /> Current security
+                          password
                         </div>
-                      )}
-                    </label>
-                    <Input
-                      value={username}
-                      onChange={(e) =>
-                        setUsername(
-                          e.target.value.toLowerCase().replace(/\s+/g, "_"),
-                        )
-                      }
-                      placeholder="node_alias"
-                      className={cn(
-                        "rounded-none font-mono text-xs h-11 bg-background/50 transition-colors uppercase",
-                        username !== user?.username &&
-                          !isUsernameTaken &&
-                          !isChecking &&
-                          "border-green-500/50 bg-green-500/5",
-                        username !== user?.username &&
-                          isUsernameTaken &&
-                          "border-destructive/50 bg-destructive/5",
-                      )}
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <KeyRound className="size-3" /> Current security
-                        password
-                      </div>
-                      {currentPassword && (
-                        <div className="flex items-center gap-1">
-                          {isChecking ? (
-                            <LoaderCircle className="size-2 animate-spin" />
-                          ) : isPasswordValid ? (
-                            <span className="text-[9px] text-green-500 lowercase">
-                              verified
-                            </span>
-                          ) : (
-                            <span className="text-[9px] text-destructive lowercase">
-                              invalid
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </label>
-                    <Input
-                      id="current-password"
-                      name="current-password"
-                      type="password"
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className={cn(
-                        "rounded-none font-mono text-xs h-11 bg-background/50 uppercase",
-                        currentPassword &&
-                          isPasswordValid &&
-                          "border-green-500/50 bg-green-500/5",
-                      )}
-                    />
+                        {currentPassword && (
+                          <div className="flex items-center gap-1">
+                            {isChecking ? (
+                              <LoaderCircle className="size-2 animate-spin" />
+                            ) : isPasswordValid ? (
+                              <span className="text-[9px] text-green-500 lowercase">
+                                verified
+                              </span>
+                            ) : (
+                              <span className="text-[9px] text-destructive lowercase">
+                                invalid
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </label>
+                      <Input
+                        id="current-password"
+                        name="current-password"
+                        type="password"
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className={cn(
+                          "rounded-none font-mono text-xs h-11 bg-background/50 uppercase",
+                          currentPassword &&
+                            isPasswordValid &&
+                            "border-green-500/50 bg-green-500/5",
+                        )}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div className="pt-8 border-t border-dashed border-border/50">
+              <div className="pt-8 border-t border-dashed border-border/50">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
@@ -400,13 +410,17 @@ export default function ProfilePage() {
                 },
                 {
                   label: "Global Database",
-                  status: isSuperAdmin ? "GRANTED" : "DENIED",
-                  color: isSuperAdmin ? "text-green-500" : "text-destructive",
+                  status: isSuperAdminRole ? "GRANTED" : "DENIED",
+                  color: isSuperAdminRole
+                    ? "text-green-500"
+                    : "text-destructive",
                 },
                 {
                   label: "Financial Records",
-                  status: isSuperAdmin ? "GRANTED" : "DENIED",
-                  color: isSuperAdmin ? "text-green-500" : "text-destructive",
+                  status: isSuperAdminRole ? "GRANTED" : "DENIED",
+                  color: isSuperAdminRole
+                    ? "text-green-500"
+                    : "text-destructive",
                 },
               ].map((scope) => (
                 <div

@@ -132,6 +132,41 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+  }
+
+  html[data-ui-customized="true"] :where(.font-sans) {
+    font-family: var(--font-sans) !important;
+  }
+
+  html[data-ui-customized="true"] body,
+  html[data-ui-customized="true"]
+    body
+    *:not(.font-mono):not(code):not(pre):not(kbd):not(samp) {
+    font-family: var(--font-sans) !important;
+  }
+
+  html[data-ui-customized="true"] :where(.font-mono, code, pre, kbd, samp) {
+    font-family: var(--font-mono) !important;
+  }
+
+  html[data-ui-customized="true"]
+    :where(
+      button,
+      input,
+      select,
+      textarea,
+      [role="button"],
+      [class*="rounded"],
+      [data-slot],
+      [class*="border border-"]
+    ):not(.rounded-full):not([class*="rounded-full"]) {
+    border-radius: var(--radius) !important;
+  }
+
+  html[data-ui-customized="true"] .prose pre,
+  html[data-ui-customized="true"] .prose code {
+    border-radius: var(--radius) !important;
   }
 }
 
@@ -165,12 +200,14 @@
   }
 }
 
-html, body {
+html,
+body {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
 
-html::-webkit-scrollbar, body::-webkit-scrollbar {
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
   display: none;
 }
 
@@ -183,9 +220,9 @@ html::-webkit-scrollbar, body::-webkit-scrollbar {
   max-width: none;
 }
 
-.prose p, 
-.prose ul, 
-.prose ol, 
+.prose p,
+.prose ul,
+.prose ol,
 .prose li {
   margin-top: 0.5rem !important;
   margin-bottom: 0.5rem !important;
@@ -225,8 +262,20 @@ html::-webkit-scrollbar, body::-webkit-scrollbar {
   content: "" !important;
 }
 
-.prose h1, .prose h2, .prose h3, .prose h4 {
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4 {
   margin-top: 1.5rem !important;
   margin-bottom: 0.75rem !important;
   font-weight: 700;
+}
+
+html[data-ui-customized="true"] .prose pre,
+html[data-ui-customized="true"] .prose code {
+  border-radius: var(--radius) !important;
+}
+
+html[data-ui-customized="true"] .toaster {
+  --border-radius: var(--radius) !important;
 }

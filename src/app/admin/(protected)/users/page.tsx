@@ -70,9 +70,9 @@ export default function UsersPage() {
           <SelectContent className="rounded-none border-border/40 bg-card/95 font-mono text-xs uppercase">
             <SelectItem value="all" className="rounded-none font-mono text-xs uppercase">All Roles</SelectItem>
             <SelectItem value="student" className="rounded-none font-mono text-xs uppercase">Student</SelectItem>
-            <SelectItem value="admin" className="rounded-none font-mono text-xs uppercase">Admin</SelectItem>
+            <SelectItem value="creator" className="rounded-none font-mono text-xs uppercase">Creator</SelectItem>
             <SelectItem value="moderator" className="rounded-none font-mono text-xs uppercase">Moderator</SelectItem>
-            <SelectItem value="staff" className="rounded-none font-mono text-xs uppercase">Staff</SelectItem>
+            <SelectItem value="super_admin" className="rounded-none font-mono text-xs uppercase">Super Admin</SelectItem>
           </SelectContent>
         </Select>
         <Button variant="outline" size="sm" className="rounded-none font-mono text-[10px] tracking-widest uppercase gap-2">
@@ -128,7 +128,7 @@ export default function UsersPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-1.5">
-                          {user.role === 'admin' || user.role === 'super_admin' ? (
+                          {user.role === 'creator' || user.role === 'moderator' || user.role === 'super_admin' ? (
                             <Shield className="size-3 text-blue-500" />
                           ) : (
                             <GraduationCap className="size-3 text-zinc-500" />
