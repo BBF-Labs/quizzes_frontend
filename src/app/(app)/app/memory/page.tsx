@@ -46,24 +46,6 @@ export default function MemoryPage() {
   return (
     <div className="min-h-full px-4 py-8">
       <div className="mx-auto max-w-2xl">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <div className="inline-block border border-primary/40 bg-primary/5 px-2 py-1 mb-4">
-            <span className="text-[9px] font-mono uppercase tracking-[0.25em] text-primary">
-              Memory
-            </span>
-          </div>
-          <h1 className="text-3xl font-black tracking-tighter">Z Remembers</h1>
-          <p className="mt-2 text-sm text-muted-foreground font-mono">
-            Key insights Z has gathered from your past sessions.
-          </p>
-          <div className="mt-4 h-px w-10 bg-primary/40" />
-        </motion.div>
-
         {/* Memory enabled badge */}
         <div className="mb-6 flex items-center gap-2 border border-primary/20 bg-primary/5 px-3 py-2 w-fit">
           <Sparkles className="size-3 text-primary" />

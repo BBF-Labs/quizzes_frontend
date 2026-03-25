@@ -78,18 +78,8 @@ export default function FlashcardsPage() {
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <div className="inline-block border border-primary/40 bg-primary/5 px-2 py-1 mb-4">
-            <span className="text-[9px] font-mono uppercase tracking-[0.25em] text-primary">
-              Library
-            </span>
-          </div>
-          <h1 className="text-3xl font-black tracking-tighter">
-            Flashcard Sets
-          </h1>
-          <div className="mt-4 h-px w-10 bg-primary/40" />
-        </motion.div>
+          className="mb-2"
+        ></motion.div>
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-3 mb-6">
@@ -205,7 +195,10 @@ export default function FlashcardsPage() {
                     <Trash2 className="size-3.5" />
                   </button>
 
-                  <Link href={`/app/flashcards/${set.id}`} className="block p-4">
+                  <Link
+                    href={`/app/flashcards/${set.id}`}
+                    className="block p-4"
+                  >
                     <p className="font-mono font-bold text-sm text-foreground line-clamp-2 pr-6">
                       {set.title}
                     </p>

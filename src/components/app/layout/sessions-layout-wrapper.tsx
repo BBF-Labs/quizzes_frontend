@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowLeft, Activity } from "lucide-react";
+import React from "react";
 import {
   SidebarInset,
   SidebarProvider,
@@ -12,27 +12,67 @@ import {
 import { SessionsSidebar } from "@/components/app/layout";
 import { ThemeToggle, UserProfileDropdown } from "@/components/common";
 import { useAuth } from "@/contexts/auth-context";
-import { useSession, useSessionStream } from "@/hooks";
-import { useSocket } from "@/hooks";
-import { cn } from "@/lib/utils";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 
 export function SessionsLayoutWrapper({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const routePart = pathname.split("/")[2] || "";
-  const staticRoutes = new Set(["all", "memory", "settings", "usage"]);
+  const segments = pathname.split("/").filter(Boolean);
+  const routePart = segments[1] || "";
+  const staticRoutes = new Set([
+    "all",
+    "memory",
+    "settings",
+    "usage",
+    "flashcards",
+    "quizzes",
+    "notes",
+    "mindmaps",
+  ]);
   const sessionId = routePart && !staticRoutes.has(routePart) ? routePart : "";
   const isSessionDetail = !!sessionId;
+  const routeLabelMap: Record<string, string> = {
+    all: "All Chats",
+    memory: "Memory",
+    settings: "Settings",
+    usage: "Usage",
+    flashcards: "Flashcards",
+    quizzes: "Quizzes",
+    notes: "Notes",
+    mindmaps: "Mind Maps",
+  };
+  const detailLabelMap: Record<string, string> = {
+    flashcards: "Set",
+    quizzes: "Quiz",
+    notes: "Note",
+    mindmaps: "Mind Map",
+  };
 
   // Always call hooks unconditionally (Rules of Hooks)
   const { user, logout } = useAuth();
-  const { data: session } = useSession(sessionId, isSessionDetail);
-  const stream = useSessionStream(sessionId, undefined, isSessionDetail);
-  const { isConnected: isSocketConnected } = useSocket();
 
   // For session detail pages the [id]/layout.tsx handles everything
   if (isSessionDetail) {
     return <>{children}</>;
   }
+
+  const breadcrumbSegments = segments.slice(1);
+  const parentSegment = breadcrumbSegments[0] || "";
+
+  const formatSegment = (segment: string, index: number) => {
+    if (routeLabelMap[segment]) return routeLabelMap[segment];
+    const isNestedDetail = index > 0 && detailLabelMap[parentSegment];
+    if (isNestedDetail) return detailLabelMap[parentSegment];
+    const isLikelyId = index > 0 && /^[a-f0-9-]{8,}$/i.test(segment);
+    if (isLikelyId) return "Details";
+    return segment.replace(/-/g, " ");
+  };
 
   return (
     <SidebarProvider>
@@ -41,49 +81,56 @@ export function SessionsLayoutWrapper({ children }: { children: ReactNode }) {
         <SidebarInset className="flex flex-col flex-1">
           <header className="border-b border-border/50 bg-background/80 backdrop-blur-sm sticky top-0 z-40 h-14 shrink-0 flex items-center px-4">
             <SidebarTrigger className="-ml-1" />
-            <div className="ml-3 flex min-w-0 items-center gap-2">
-              {isSessionDetail && (
-                <Link
-                  href="/app"
-                  className="flex size-7 items-center justify-center rounded border border-border/50 hover:border-primary/50 text-muted-foreground hover:text-primary transition-colors"
-                  aria-label="Back to app"
-                >
-                  <ArrowLeft className="size-3.5" />
-                </Link>
-              )}
-              <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/70 truncate max-w-[45vw]">
-                {isSessionDetail ? session?.title || "New Chat" : "Qz App"}
-              </span>
+            <div className="ml-3 min-w-0 flex items-center gap-2">
+              <div className="h-4 w-px bg-border/50" />
+              <Breadcrumb>
+                <BreadcrumbList>
+                  <BreadcrumbItem>
+                    <BreadcrumbLink asChild>
+                      <Link
+                        href="/app"
+                        className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground/50 hover:text-primary transition-colors"
+                      >
+                        App
+                      </Link>
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                  {breadcrumbSegments.length > 0 && (
+                    <>
+                      <BreadcrumbSeparator />
+                      {breadcrumbSegments.map((segment, index) => {
+                        const isLast = index === breadcrumbSegments.length - 1;
+                        const href = `/${segments.slice(0, index + 2).join("/")}`;
+                        const label = formatSegment(segment, index);
+
+                        return (
+                          <React.Fragment key={`${href}-${segment}`}>
+                            <BreadcrumbItem>
+                              {isLast ? (
+                                <BreadcrumbPage className="text-[10px] font-mono tracking-widest uppercase text-foreground">
+                                  {label}
+                                </BreadcrumbPage>
+                              ) : (
+                                <BreadcrumbLink asChild>
+                                  <Link
+                                    href={href}
+                                    className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground/50 hover:text-primary transition-colors"
+                                  >
+                                    {label}
+                                  </Link>
+                                </BreadcrumbLink>
+                              )}
+                            </BreadcrumbItem>
+                            {!isLast && <BreadcrumbSeparator />}
+                          </React.Fragment>
+                        );
+                      })}
+                    </>
+                  )}
+                </BreadcrumbList>
+              </Breadcrumb>
             </div>
             <div className="ml-auto flex items-center gap-2">
-              {isSessionDetail && (
-                <>
-                  <div className="rounded-(--radius) border border-border/50 bg-card/40 h-6 px-2 flex items-center gap-1.5">
-                    <div
-                      className={cn(
-                        "size-1.5 rounded-(--radius)",
-                        isSocketConnected
-                          ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]"
-                          : "bg-destructive animate-pulse",
-                      )}
-                    />
-                    <p className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground">
-                      Socket {isSocketConnected ? "Live" : "Offline"}
-                    </p>
-                  </div>
-                  <div className="rounded-(--radius) border border-border/50 bg-card/40 h-6 px-2 flex items-center gap-1.5">
-                    <Activity
-                      className={cn(
-                        "size-3 text-muted-foreground",
-                        stream.isConnected && "text-primary animate-pulse",
-                      )}
-                    />
-                    <p className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground">
-                      SSE {stream.isConnected ? "Live" : "Offline"}
-                    </p>
-                  </div>
-                </>
-              )}
               <ThemeToggle />
               <UserProfileDropdown user={user} onLogout={logout} />
             </div>
