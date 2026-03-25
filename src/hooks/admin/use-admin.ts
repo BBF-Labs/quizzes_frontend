@@ -1,6 +1,5 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { IUpload } from "@/hooks";
 
 export interface IAdminStats {
   users: number;
@@ -142,32 +141,6 @@ export function useUsers(
       const response = await api.get("/admin/users/users", { params: options });
       const payload = response.data?.data ?? response.data;
       return normalizePaginatedAudience(payload, options); // Reuse for now or define IUserPayload
-    },
-  });
-}
-
-export function useCheckProfile() {
-  return useMutation({
-    mutationFn: async (data: {
-      username?: string;
-      currentPassword?: string;
-    }) => {
-      const response = await api.post("/users/check", data);
-      return response.data.data;
-    },
-  });
-}
-
-export function useUpdateProfile() {
-  return useMutation({
-    mutationFn: async (data: {
-      username?: string;
-      password?: string;
-      currentPassword?: string;
-      profilePicture?: string | IUpload;
-    }) => {
-      const response = await api.put("/admin/users/profile", data);
-      return response.data.data;
     },
   });
 }

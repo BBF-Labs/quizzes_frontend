@@ -173,7 +173,7 @@ export function StudioPanel({
       </div>
 
       {/* ── Tab content ─────────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto p-3">
+      <div className="flex-1 overflow-y-auto no-scrollbar p-3">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}

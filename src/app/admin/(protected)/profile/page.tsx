@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
-import { useCheckProfile, useUpdateProfile } from "@/hooks";
+import { useProfileCheck, useProfileUpdate } from "@/hooks";
 import { useUploadFile, IUpload } from "@/hooks";
 import { toast } from "sonner";
 import { useRef } from "react";
@@ -29,8 +29,8 @@ import { useRef } from "react";
 export default function ProfilePage() {
   const { user, updateSession } = useAuth();
   const isSuperAdminRole = user?.role === "super_admin";
-  const checkProfile = useCheckProfile();
-  const updateProfile = useUpdateProfile();
+  const checkProfile = useProfileCheck();
+  const updateProfile = useProfileUpdate();
 
   // Unified State
   const [username, setUsername] = useState(user?.username || "");
@@ -141,7 +141,7 @@ export default function ProfilePage() {
         className="flex flex-col sm:flex-row sm:items-end justify-between gap-4"
       >
         <div>
-          <div className="inline-block border border-primary/60 px-2 py-1 mb-3 bg-primary/5">
+          <div className="inline-block border border-primary/60 px-2 py-1 mb-3 bg-primary/5 rounded-(--radius)">
             <span className="text-[10px] font-mono tracking-widest uppercase text-primary">
               Security
             </span>
@@ -167,7 +167,7 @@ export default function ProfilePage() {
                     Core Identity Details
                   </CardTitle>
                 </div>
-                <div className="px-2 py-0.5 border border-primary/20 bg-primary/5">
+                <div className="px-2 py-0.5 border border-primary/20 bg-primary/5 rounded-(--radius)">
                   <span className="text-[8px] font-mono text-primary uppercase">
                     Active Session
                   </span>
@@ -222,7 +222,7 @@ export default function ProfilePage() {
                       <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                         <Mail className="size-3" /> Registered Email
                       </label>
-                      <div className="h-11 flex items-center px-4 bg-secondary/20 border border-border/50 font-mono text-xs text-muted-foreground/60 cursor-not-allowed uppercase truncate">
+                      <div className="h-11 flex items-center px-4 bg-secondary/20 border border-border/50 font-mono text-xs text-muted-foreground/60 cursor-not-allowed uppercase truncate rounded-(--radius)">
                         {user?.email || "internal@qz.engine"}
                       </div>
                     </div>
@@ -231,7 +231,7 @@ export default function ProfilePage() {
                       <label className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 flex items-center gap-2">
                         <Shield className="size-3" /> Access Permissions
                       </label>
-                      <div className="h-11 flex items-center px-4 bg-secondary/10 border border-border/30 font-mono text-[11px] uppercase tracking-widest italic opacity-40">
+                      <div className="h-11 flex items-center px-4 bg-secondary/10 border border-border/30 font-mono text-[11px] uppercase tracking-widest italic opacity-40 rounded-(--radius)">
                         {isSuperAdminRole
                           ? "Level 0 // Superadmin"
                           : "Level 1 // Admin"}
@@ -432,7 +432,7 @@ export default function ProfilePage() {
                   </span>
                   <span
                     className={cn(
-                      "text-[8px] font-mono font-bold px-1.5 py-0.5 border uppercase",
+                      "text-[8px] font-mono font-bold px-1.5 py-0.5 border uppercase rounded-(--radius)",
                       scope.color === "text-green-500"
                         ? "border-green-500/30"
                         : "border-destructive/30",
@@ -446,7 +446,7 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          <div className="p-5 border border-blue-500/20 bg-blue-500/5 space-y-3">
+          <div className="p-5 border border-blue-500/20 bg-blue-500/5 space-y-3 rounded-(--radius)">
             <div className="flex items-center gap-2 text-blue-400">
               <Shield className="size-4" />
               <span className="text-[10px] font-mono font-bold uppercase">
