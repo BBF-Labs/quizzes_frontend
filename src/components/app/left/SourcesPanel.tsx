@@ -344,7 +344,7 @@ export function SourcesPanel({
         </p>
       ) : (
         <motion.div
-          className="flex flex-col gap-2 overflow-y-auto flex-1"
+          className="flex flex-col gap-2 overflow-y-auto no-scrollbar flex-1"
           variants={listVariants}
           initial="hidden"
           animate="visible"

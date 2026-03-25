@@ -163,7 +163,7 @@ export function UiCustomizationFab() {
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="fixed right-4 top-1/2 z-70 -translate-y-1/2 border border-border/70 bg-card/95 backdrop-blur px-3 py-3 text-foreground hover:border-primary/60 transition-colors rounded-(--radius)"
+        className="fixed right-4 top-1/2 z-110 -translate-y-1/2 border border-border/70 bg-card/95 backdrop-blur px-3 py-3 text-foreground hover:border-primary/60 transition-colors rounded-(--radius)"
         aria-label="Open UI customization"
       >
         <Settings2 className="size-4" />
@@ -172,14 +172,14 @@ export function UiCustomizationFab() {
       {isOpen && (
         <button
           type="button"
-          className="fixed inset-0 z-75 bg-black/50"
+          className="fixed inset-0 z-115 bg-black/50"
           onClick={() => setIsOpen(false)}
           aria-label="Close panel overlay"
         />
       )}
 
       <aside
-        className={`fixed right-0 top-0 z-80 h-full w-[92vw] max-w-md border-l border-border/60 bg-background/95 backdrop-blur transition-transform duration-200 rounded-l-(--radius) ${
+        className={`fixed right-0 top-0 z-120 h-full w-[92vw] max-w-md border-l border-border/60 bg-background/95 backdrop-blur transition-transform duration-200 rounded-l-(--radius) ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
         aria-hidden={!isOpen}
@@ -216,7 +216,7 @@ export function UiCustomizationFab() {
           </div>
         </div>
 
-        <div className="p-4 space-y-4 overflow-auto h-[calc(100%-56px)] font-sans">
+        <div className="p-4 space-y-4 overflow-auto no-scrollbar h-[calc(100%-56px)] font-sans">
           <div className="border border-border/40 bg-card/30 px-4 py-4 rounded-(--radius)">
             <div className="flex gap-3 mb-3">
               <Type className="size-4 text-muted-foreground/70 shrink-0 mt-0.5" />

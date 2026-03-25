@@ -191,7 +191,7 @@ export function AdminSidebar() {
                 <div className="flex items-center gap-1.5 min-w-0">
                   <div
                     className={cn(
-                      "size-1 shrink-0",
+                      "size-1 shrink-0 rounded-(--radius)",
                       isSuperAdminRole ? "bg-blue-500" : "bg-zinc-500",
                     )}
                   />
