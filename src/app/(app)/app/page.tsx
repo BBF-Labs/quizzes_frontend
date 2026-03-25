@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import {
   BookOpen,
-  Brain,
   Clock3,
   FileText,
   MessageSquare,
