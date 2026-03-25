@@ -39,11 +39,11 @@ export function UserProfileDropdown({
         <Button
           variant="ghost"
           size="icon"
-          className="rounded-none size-9 border border-border/40 hover:border-primary/50 text-muted-foreground hover:text-foreground bg-card/60 backdrop-blur-md transition-colors overflow-hidden p-0"
+          className="rounded-(--radius) size-9 border border-border/40 hover:border-primary/50 text-muted-foreground hover:text-foreground bg-card/60 backdrop-blur-md transition-colors overflow-hidden p-0"
         >
-          <Avatar className="size-full rounded-none">
+          <Avatar className="size-full rounded-(--radius)">
             <AvatarImage src={user.profilePicture} className="object-cover" />
-            <AvatarFallback className="rounded-none bg-zinc-800 font-mono text-[10px] font-bold text-zinc-400">
+            <AvatarFallback className="rounded-(--radius) bg-zinc-800 font-mono text-[10px] font-bold text-zinc-400">
               {user?.username?.[0]?.toUpperCase() || "U"}
             </AvatarFallback>
           </Avatar>
@@ -52,7 +52,7 @@ export function UserProfileDropdown({
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align={align}
-        className="w-56 rounded-none border border-border/50"
+        className="w-56 rounded-(--radius) border border-border/50"
       >
         <DropdownMenuLabel className="font-mono text-[10px] tracking-widest uppercase text-muted-foreground/80 py-2">
           {user.username || "My Account"}
@@ -61,7 +61,7 @@ export function UserProfileDropdown({
         <DropdownMenuSeparator />
 
         {/* App Dashboard Link */}
-        <DropdownMenuItem asChild className="rounded-none cursor-pointer">
+        <DropdownMenuItem asChild className="rounded-(--radius) cursor-pointer">
           <Link href="/app" className="w-full flex items-center gap-2 group">
             <LayoutDashboard className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
             <span className="font-mono text-xs uppercase tracking-widest">
@@ -71,7 +71,7 @@ export function UserProfileDropdown({
         </DropdownMenuItem>
 
         {/* Global Settings */}
-        <DropdownMenuItem asChild className="rounded-none cursor-pointer">
+        <DropdownMenuItem asChild className="rounded-(--radius) cursor-pointer">
           <Link
             href="/app/settings"
             className="w-full flex items-center gap-2 group"
@@ -91,7 +91,10 @@ export function UserProfileDropdown({
             <DropdownMenuLabel className="font-mono text-[10px] tracking-widest uppercase text-primary/80 py-2">
               Admin
             </DropdownMenuLabel>
-            <DropdownMenuItem asChild className="rounded-none cursor-pointer">
+            <DropdownMenuItem
+              asChild
+              className="rounded-(--radius) cursor-pointer"
+            >
               <Link
                 href="/admin"
                 className="w-full flex items-center gap-2 group"
@@ -109,7 +112,7 @@ export function UserProfileDropdown({
 
         <DropdownMenuItem
           onClick={onLogout}
-          className="rounded-none cursor-pointer focus:bg-red-500/10 focus:text-red-500 group"
+          className="rounded-(--radius) cursor-pointer focus:bg-red-500/10 focus:text-red-500 group"
         >
           <LogOut className="size-4 mt-0.5" />
           <span className="font-mono text-xs uppercase tracking-widest ml-2">

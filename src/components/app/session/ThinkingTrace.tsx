@@ -27,7 +27,7 @@ export function ThinkingTrace({
   }, [content, isStreaming, isExpanded]);
 
   return (
-    <div className="border border-primary/20 bg-background overflow-hidden font-mono text-xs w-full">
+    <div className="border border-primary/20 bg-background overflow-hidden font-mono text-xs w-full rounded-(--radius)">
       {/* Header matches HowZWorks terminal card */}
       <button
         type="button"
@@ -35,7 +35,7 @@ export function ThinkingTrace({
         className="flex w-full items-center gap-3 px-4 py-2.5 border-b border-primary/10 bg-background/80 text-left hover:bg-primary/5 transition-colors"
       >
         {/* Z badge */}
-        <div className="w-5 h-5 border border-primary/40 bg-primary/20 flex items-center justify-center text-primary font-bold text-[10px] shrink-0">
+        <div className="w-5 h-5 border border-primary/40 bg-primary/20 flex items-center justify-center text-primary font-bold text-[10px] shrink-0 rounded-(--radius)">
           Z
         </div>
 
@@ -88,4 +88,3 @@ export function ThinkingTrace({
     </div>
   );
 }
-

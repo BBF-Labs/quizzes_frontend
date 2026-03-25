@@ -185,7 +185,7 @@ export default function AppHomePage() {
         >
           {/* Badge */}
           <div className="inline-flex items-center gap-2 border border-primary/40 bg-primary/5 px-3 py-1 mb-6">
-            <span className="size-1.5 rounded-none bg-primary animate-pulse" />
+            <span className="size-1.5 rounded-(--radius) bg-primary animate-pulse" />
             <span className="text-[9px] font-mono uppercase tracking-[0.25em] text-primary">
               Z Study Partner
             </span>

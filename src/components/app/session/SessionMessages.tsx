@@ -32,7 +32,7 @@ export function SessionMessages({
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.4 }}
-          className="flex size-16 items-center justify-center border border-primary/30 bg-primary/10"
+          className="flex size-16 items-center justify-center border border-primary/30 bg-primary/10 rounded-(--radius)"
         >
           <Brain className="size-8 text-primary" />
         </motion.div>

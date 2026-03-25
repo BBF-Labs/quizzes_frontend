@@ -475,7 +475,7 @@ export function AudienceSelector({
                           parseInt(e.target.value) || 0,
                       })
                     }
-                    className="rounded-none h-9 w-20 font-mono text-xs"
+                    className="rounded-(--radius) h-9 w-20 font-mono text-xs"
                     disabled={disabled}
                   />
                   <span className="text-[9px] font-mono uppercase text-muted-foreground">
@@ -505,7 +505,7 @@ export function AudienceSelector({
                           onChange={(e) => setEditingValue(e.target.value)}
                           onBlur={saveEditedEmail}
                           onKeyDown={handleEditKeyDown}
-                          className="h-7 py-0 px-2 min-w-40 w-auto inline-block rounded-none font-mono text-[10px] bg-background border-primary"
+                          className="h-7 py-0 px-2 min-w-40 w-auto inline-block rounded-(--radius) font-mono text-[10px] bg-background border-primary"
                         />
                       ) : (
                         <div
@@ -558,7 +558,7 @@ export function AudienceSelector({
                       onKeyDown={handleEmailInputKeyDown}
                       onBlur={() => addEmail(newEmailInput)}
                       placeholder="user@example.com (press Enter to add)"
-                      className="rounded-none h-9 font-mono text-[10px] bg-background/50 focus:bg-background transition-colors"
+                      className="rounded-(--radius) h-9 font-mono text-[10px] bg-background/50 focus:bg-background transition-colors"
                     />
                     <p className="text-[8px] font-mono text-muted-foreground/50 italic">
                       Press Enter or click outside to add. Click any email to

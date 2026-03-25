@@ -5,7 +5,13 @@ import { motion, Variants } from "framer-motion";
 import { Plus, ArrowRight, RefreshCw, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   useCampaigns,
   useCreateCampaign,
@@ -13,7 +19,7 @@ import {
   ILinkContext,
   INewsletterImage,
   CampaignType,
-  IAudienceFilter
+  IAudienceFilter,
 } from "@/hooks";
 import { SearchFilterBar } from "@/components/common";
 import { PaginationController } from "@/components/common";
@@ -57,7 +63,11 @@ export default function AdminPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
-  const { data: campaignsData, isLoading, refetch } = useCampaigns({
+  const {
+    data: campaignsData,
+    isLoading,
+    refetch,
+  } = useCampaigns({
     page,
     limit: 10,
     search: search || undefined,
@@ -146,14 +156,14 @@ export default function AdminPage() {
             onClick={() => refetch()}
             variant="outline"
             size="icon"
-            className="rounded-none h-9 w-9"
+            className="rounded-(--radius) h-9 w-9"
           >
             <RefreshCw className="size-4" />
           </Button>
           <Button
             id="new-campaign-btn"
             onClick={() => setShowNewForm(true)}
-            className="flex-1 sm:flex-initial rounded-none font-mono text-xs h-9 tracking-[0.15em] uppercase shadow-[0_0_15px_rgba(0,110,255,0.1)] hover:shadow-[0_0_25px_rgba(0,110,255,0.2)] transition-all"
+            className="flex-1 sm:flex-initial rounded-(--radius) font-mono text-xs h-9 tracking-[0.15em] uppercase shadow-[0_0_15px_rgba(0,110,255,0.1)] hover:shadow-[0_0_25px_rgba(0,110,255,0.2)] transition-all"
           >
             <Plus className="size-3.5" />
             New Campaign
@@ -220,7 +230,7 @@ export default function AdminPage() {
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                   required
-                  className="rounded-none font-mono"
+                  className="rounded-(--radius) font-mono"
                   placeholder="March 2026 Update"
                 />
               </div>
@@ -234,7 +244,7 @@ export default function AdminPage() {
                     setForm({ ...form, subjectLine: e.target.value })
                   }
                   required
-                  className="rounded-none font-mono"
+                  className="rounded-(--radius) font-mono"
                   placeholder="What's new at Qz this month"
                 />
               </div>
@@ -248,7 +258,7 @@ export default function AdminPage() {
                 onChange={(e) =>
                   setForm({ ...form, previewText: e.target.value })
                 }
-                className="rounded-none font-mono"
+                className="rounded-(--radius) font-mono"
                 placeholder="Inbox preview snippet…"
               />
             </div>
@@ -262,7 +272,7 @@ export default function AdminPage() {
                   setForm({ ...form, promptInstruction: e.target.value })
                 }
                 rows={4}
-                className="w-full rounded-none font-mono text-sm border border-input bg-transparent px-3 py-2 text-foreground shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 resize-none dark:bg-input/30"
+                className="w-full rounded-(--radius) font-mono text-sm border border-input bg-transparent px-3 py-2 text-foreground shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 resize-none dark:bg-input/30"
                 placeholder="Write a newsletter announcing our new exam timetable feature…"
               />
             </div>
@@ -276,37 +286,71 @@ export default function AdminPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-               <div className="space-y-1.5">
-                  <label className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground">Campaign Type</label>
-                  <Select value={form.campaignType} onValueChange={(value) => setForm({ ...form, campaignType: value as CampaignType })}>
-                    <SelectTrigger className="w-full rounded-none bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-none border-border/40 bg-card/95 font-mono text-xs uppercase">
-                      <SelectItem value="newsletter" className="rounded-none font-mono text-xs uppercase">Newsletter</SelectItem>
-                      <SelectItem value="announcement" className="rounded-none font-mono text-xs uppercase">Announcement</SelectItem>
-                      <SelectItem value="product_update" className="rounded-none font-mono text-xs uppercase">Product Update</SelectItem>
-                      <SelectItem value="waitlist_update" className="rounded-none font-mono text-xs uppercase">Waitlist Update</SelectItem>
-                      <SelectItem value="system_update" className="rounded-none font-mono text-xs uppercase">System Update</SelectItem>
-                    </SelectContent>
-                  </Select>
-               </div>
-               <div className="space-y-1.5">
-                  <label className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground">Broadcast Mode</label>
-                  <div className="flex gap-2">
-                    {["broadcast", "single"].map((opt) => (
-                      <Button
-                        key={opt}
-                        type="button"
-                        variant={form.audience === opt ? "default" : "outline"}
-                        onClick={() => setForm({ ...form, audience: opt as any })}
-                        className="flex-1 rounded-none font-mono text-[10px] uppercase h-10"
-                      >
-                         {opt}
-                      </Button>
-                    ))}
-                  </div>
-               </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground">
+                  Campaign Type
+                </label>
+                <Select
+                  value={form.campaignType}
+                  onValueChange={(value) =>
+                    setForm({ ...form, campaignType: value as CampaignType })
+                  }
+                >
+                  <SelectTrigger className="w-full rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
+                    <SelectItem
+                      value="newsletter"
+                      className="rounded-(--radius) font-mono text-xs uppercase"
+                    >
+                      Newsletter
+                    </SelectItem>
+                    <SelectItem
+                      value="announcement"
+                      className="rounded-(--radius) font-mono text-xs uppercase"
+                    >
+                      Announcement
+                    </SelectItem>
+                    <SelectItem
+                      value="product_update"
+                      className="rounded-(--radius) font-mono text-xs uppercase"
+                    >
+                      Product Update
+                    </SelectItem>
+                    <SelectItem
+                      value="waitlist_update"
+                      className="rounded-(--radius) font-mono text-xs uppercase"
+                    >
+                      Waitlist Update
+                    </SelectItem>
+                    <SelectItem
+                      value="system_update"
+                      className="rounded-(--radius) font-mono text-xs uppercase"
+                    >
+                      System Update
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground">
+                  Broadcast Mode
+                </label>
+                <div className="flex gap-2">
+                  {["broadcast", "single"].map((opt) => (
+                    <Button
+                      key={opt}
+                      type="button"
+                      variant={form.audience === opt ? "default" : "outline"}
+                      onClick={() => setForm({ ...form, audience: opt as any })}
+                      className="flex-1 rounded-(--radius) font-mono text-[10px] uppercase h-10"
+                    >
+                      {opt}
+                    </Button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             {/* Target Audience / Filters */}
@@ -314,9 +358,11 @@ export default function AdminPage() {
               <label className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground">
                 Target Audience Filter
               </label>
-              <AudienceSelector 
+              <AudienceSelector
                 value={form.audienceFilter}
-                onChange={(filter) => setForm({ ...form, audienceFilter: filter })}
+                onChange={(filter) =>
+                  setForm({ ...form, audienceFilter: filter })
+                }
               />
             </div>
 
@@ -331,7 +377,7 @@ export default function AdminPage() {
               <Button
                 type="submit"
                 disabled={createMutation.isPending}
-                className="rounded-none font-mono text-xs tracking-[0.15em] uppercase"
+                className="rounded-(--radius) font-mono text-xs tracking-[0.15em] uppercase"
               >
                 {createMutation.isPending ? "Creating…" : "Create Draft"}
               </Button>
@@ -339,7 +385,7 @@ export default function AdminPage() {
                 type="button"
                 onClick={() => setShowNewForm(false)}
                 variant="outline"
-                className="rounded-none font-mono text-xs tracking-[0.15em] uppercase"
+                className="rounded-(--radius) font-mono text-xs tracking-[0.15em] uppercase"
               >
                 Cancel
               </Button>
@@ -380,12 +426,12 @@ export default function AdminPage() {
                       {c.title}
                     </h3>
                     <div className="flex items-center gap-2">
-                      <span className="text-[8px] font-mono tracking-widest uppercase border border-primary/30 px-1.5 py-0.5 rounded-none text-primary/70">
+                      <span className="text-[8px] font-mono tracking-widest uppercase border border-primary/30 px-1.5 py-0.5 rounded-(--radius) text-primary/70">
                         {TYPE_LABELS[c.campaignType] || c.campaignType}
                       </span>
                       <span
                         className={cn(
-                          "text-[8px] font-mono tracking-widest uppercase border px-1.5 py-0.5 rounded-none",
+                          "text-[8px] font-mono tracking-widest uppercase border px-1.5 py-0.5 rounded-(--radius)",
                           STATUS_CLASS[c.status],
                         )}
                       >
@@ -404,15 +450,24 @@ export default function AdminPage() {
                         c.status === "failed") && (
                         <p className="text-[10px] font-mono text-muted-foreground/60 flex gap-3">
                           <span>
-                            SENT: <span className="text-foreground">{c.stats.sent}</span>
+                            SENT:{" "}
+                            <span className="text-foreground">
+                              {c.stats.sent}
+                            </span>
                           </span>
                           {c.stats.sent > 0 && (
                             <>
                               <span>
-                                OPEN: <span className="text-green-500">{(c.stats.openRate * 100).toFixed(1)}%</span>
+                                OPEN:{" "}
+                                <span className="text-green-500">
+                                  {(c.stats.openRate * 100).toFixed(1)}%
+                                </span>
                               </span>
                               <span>
-                                CLICK: <span className="text-blue-500">{(c.stats.clickRate * 100).toFixed(1)}%</span>
+                                CLICK:{" "}
+                                <span className="text-blue-500">
+                                  {(c.stats.clickRate * 100).toFixed(1)}%
+                                </span>
                               </span>
                             </>
                           )}

@@ -58,10 +58,10 @@ export function SessionsLayoutWrapper({ children }: { children: ReactNode }) {
             <div className="ml-auto flex items-center gap-2">
               {isSessionDetail && (
                 <>
-                  <div className="rounded-none border border-border/50 bg-card/40 h-6 px-2 flex items-center gap-1.5">
+                  <div className="rounded-(--radius) border border-border/50 bg-card/40 h-6 px-2 flex items-center gap-1.5">
                     <div
                       className={cn(
-                        "size-1.5 rounded-none",
+                        "size-1.5 rounded-(--radius)",
                         isSocketConnected
                           ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]"
                           : "bg-destructive animate-pulse",
@@ -71,7 +71,7 @@ export function SessionsLayoutWrapper({ children }: { children: ReactNode }) {
                       Socket {isSocketConnected ? "Live" : "Offline"}
                     </p>
                   </div>
-                  <div className="rounded-none border border-border/50 bg-card/40 h-6 px-2 flex items-center gap-1.5">
+                  <div className="rounded-(--radius) border border-border/50 bg-card/40 h-6 px-2 flex items-center gap-1.5">
                     <Activity
                       className={cn(
                         "size-3 text-muted-foreground",

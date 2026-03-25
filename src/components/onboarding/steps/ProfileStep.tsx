@@ -56,7 +56,7 @@ export default function ProfileStep({
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="w-full min-w-0 rounded-none font-mono bg-secondary/40 border-border focus-visible:ring-primary/50 h-11"
+            className="w-full min-w-0 rounded-(--radius) font-mono bg-secondary/40 border-border focus-visible:ring-primary/50 h-11"
             placeholder="John Doe"
           />
         </div>
@@ -73,7 +73,7 @@ export default function ProfileStep({
           <Textarea
             value={bio}
             onChange={(e) => setBio(e.target.value.slice(0, 160))}
-            className="w-full min-w-0 rounded-none font-mono bg-secondary/40 border-border focus-visible:ring-primary/50 min-h-25 resize-none"
+            className="w-full min-w-0 rounded-(--radius) font-mono bg-secondary/40 border-border focus-visible:ring-primary/50 min-h-25 resize-none"
             placeholder="Computer Science student interested in AI and distributed systems..."
           />
         </div>
@@ -81,7 +81,7 @@ export default function ProfileStep({
         <Button
           type="submit"
           disabled={isSubmitting || !name}
-          className="w-full rounded-none font-mono text-[11px] sm:text-xs tracking-[0.14em] sm:tracking-[0.2em] uppercase h-12 shadow-[0_0_20px_rgba(var(--primary),0.1)] hover:shadow-[0_0_30px_rgba(var(--primary),0.2)] transition-all"
+          className="w-full rounded-(--radius) font-mono text-[11px] sm:text-xs tracking-[0.14em] sm:tracking-[0.2em] uppercase h-12 shadow-[0_0_20px_rgba(var(--primary),0.1)] hover:shadow-[0_0_30px_rgba(var(--primary),0.2)] transition-all"
         >
           {isSubmitting ? "Saving…" : "Continue"}
         </Button>

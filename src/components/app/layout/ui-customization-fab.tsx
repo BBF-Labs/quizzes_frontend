@@ -187,7 +187,7 @@ export function UiCustomizationFab() {
       {isOpen && (
         <button
           type="button"
-          className="fixed inset-0 z-75 bg-black/50 rounded-none"
+          className="fixed inset-0 z-75 bg-black/50"
           onClick={() => setIsOpen(false)}
           aria-label="Close panel overlay"
         />
