@@ -6,3 +6,4 @@ export * from "./use-onboarding";
 export * from "./useSourceHighlight";
 export * from "./use-debounce";
 export * from "./use-courses";
+export * from "./use-ui-preferences";

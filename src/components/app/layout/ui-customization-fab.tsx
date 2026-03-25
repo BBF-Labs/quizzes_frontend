@@ -3,12 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Settings2, X, Circle, Palette, Type, Sparkles } from "lucide-react";
 import tinycolor from "tinycolor2";
-import { api } from "@/lib/api";
 import {
   applyUiPreferences,
   DEFAULT_UI_PREFERENCES,
   loadUiPreferences,
-  normalizeUiPreferences,
   saveUiPreferences,
   type UiFontPreset,
   type UiPaletteId,
@@ -16,6 +14,7 @@ import {
   UI_PALETTES,
 } from "@/lib/ui-preferences";
 import { useAuth } from "@/contexts/auth-context";
+import { useUiPreferences } from "@/hooks";
 
 const PALETTE_OPTIONS: Array<{ id: UiPaletteId; label: string }> = [
   { id: "blue", label: "Neon Blue" },
@@ -36,10 +35,11 @@ export function UiCustomizationFab() {
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [uiPrefs, setUiPrefs] = useState<UiPreferences>(DEFAULT_UI_PREFERENCES);
-  const [hasLoadedRemote, setHasLoadedRemote] = useState(false);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hydratedRemoteForUserRef = useRef<string | null>(null);
 
   const { isAuthenticated, user } = useAuth();
+  const { remoteUiPreferences, saveRemoteUiPreferences } = useUiPreferences();
 
   useEffect(() => {
     const local = loadUiPreferences();
@@ -48,44 +48,29 @@ export function UiCustomizationFab() {
   }, []);
 
   useEffect(() => {
-    if (!isAuthenticated || !user?.id || hasLoadedRemote) {
+    if (!isAuthenticated || !user?.id) {
+      hydratedRemoteForUserRef.current = null;
       return;
     }
 
-    let mounted = true;
+    if (!remoteUiPreferences) {
+      return;
+    }
 
-    const loadRemote = async () => {
-      try {
-        const response = await api.get(`/users/users/${user.id}`);
-        const remotePrefs = response?.data?.data?.uiPreferences as
-          | unknown
-          | undefined;
+    if (hydratedRemoteForUserRef.current === user.id) {
+      return;
+    }
 
-        if (mounted && remotePrefs) {
-          const normalizedRemote = normalizeUiPreferences(remotePrefs);
-          setUiPrefs(normalizedRemote);
-          saveUiPreferences(normalizedRemote);
-          applyUiPreferences(normalizedRemote);
-        }
-      } catch {
-      } finally {
-        if (mounted) {
-          setHasLoadedRemote(true);
-        }
-      }
-    };
-
-    loadRemote();
-
-    return () => {
-      mounted = false;
-    };
-  }, [hasLoadedRemote, isAuthenticated, user?.id]);
+    setUiPrefs(remoteUiPreferences);
+    saveUiPreferences(remoteUiPreferences);
+    applyUiPreferences(remoteUiPreferences);
+    hydratedRemoteForUserRef.current = user.id;
+  }, [isAuthenticated, user?.id, remoteUiPreferences]);
 
   const persistPreferences = (next: UiPreferences) => {
     saveUiPreferences(next);
 
-    if (!isAuthenticated || !user?.id) {
+    if (!isAuthenticated) {
       return;
     }
 
@@ -96,7 +81,7 @@ export function UiCustomizationFab() {
     saveTimerRef.current = setTimeout(async () => {
       try {
         setIsSaving(true);
-        await api.put(`/users/users/${user.id}`, { uiPreferences: next });
+        await saveRemoteUiPreferences(next);
       } catch {
       } finally {
         setIsSaving(false);
