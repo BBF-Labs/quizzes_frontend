@@ -18,7 +18,13 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   useCampaign,
   useUpdateCampaign,
@@ -29,7 +35,7 @@ import {
   INewsletterImage,
   IAudienceFilter,
   CampaignType,
-} from "@/hooks/use-campaigns";
+} from "@/hooks";
 import { EmailPreview } from "@/components/newsletter/EmailPreview";
 import { LinkBuilder } from "@/components/newsletter/LinkBuilder";
 import { ImageManager } from "@/components/newsletter/ImageManager";
@@ -48,8 +54,8 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { useSocket } from "@/hooks/use-socket";
+import { useIsMobile } from "@/hooks";
+import { useSocket } from "@/hooks";
 
 const STATUS_CLASS: Record<string, string> = {
   draft: "border-border text-muted-foreground",
@@ -131,21 +137,24 @@ export default function CampaignDetailPage() {
 
   // Debounce refetch to prevent socket + polling simultaneous requests
   const refetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const debouncedRefetch = useCallback((source: string) => {
-    // Clear any pending refetch
-    if (refetchTimeoutRef.current) {
-      clearTimeout(refetchTimeoutRef.current);
-    }
+  const debouncedRefetch = useCallback(
+    (source: string) => {
+      // Clear any pending refetch
+      if (refetchTimeoutRef.current) {
+        clearTimeout(refetchTimeoutRef.current);
+      }
 
-    console.log(`[Refetch] Scheduled from ${source}`);
+      console.log(`[Refetch] Scheduled from ${source}`);
 
-    // Schedule new refetch with small delay to batch requests
-    refetchTimeoutRef.current = setTimeout(() => {
-      console.log(`[Refetch] Executing batched refetch from ${source}`);
-      refetch();
-      refetchTimeoutRef.current = null;
-    }, 100); // 100ms debounce window
-  }, [refetch]);
+      // Schedule new refetch with small delay to batch requests
+      refetchTimeoutRef.current = setTimeout(() => {
+        console.log(`[Refetch] Executing batched refetch from ${source}`);
+        refetch();
+        refetchTimeoutRef.current = null;
+      }, 100); // 100ms debounce window
+    },
+    [refetch],
+  );
 
   // Real-time updates
   useEffect(() => {
@@ -176,17 +185,26 @@ export default function CampaignDetailPage() {
         console.log(`[Socket] IDs match! Triggering refetch for ${id}...`);
         debouncedRefetch("socket");
 
-        if (data.type === "email:campaign:generate_body" && data.status === "completed") {
+        if (
+          data.type === "email:campaign:generate_body" &&
+          data.status === "completed"
+        ) {
           toast.success("AI campaign generation completed.");
           return;
         }
 
-        if (data.type === "email:campaign:generate_body" && data.status === "failed") {
+        if (
+          data.type === "email:campaign:generate_body" &&
+          data.status === "failed"
+        ) {
           toast.error("AI campaign generation failed.");
           return;
         }
 
-        if (data.type === "email:campaign:dispatch" && data.status === "started") {
+        if (
+          data.type === "email:campaign:dispatch" &&
+          data.status === "started"
+        ) {
           toast.info("Campaign dispatch started.");
           return;
         }
@@ -339,7 +357,11 @@ export default function CampaignDetailPage() {
 
   const saveChanges = async () => {
     if (!isEditable) {
-      toast.info("Only draft campaigns can be edited. This campaign is " + campaign.status + ".");
+      toast.info(
+        "Only draft campaigns can be edited. This campaign is " +
+          campaign.status +
+          ".",
+      );
       return;
     }
 
@@ -477,12 +499,12 @@ export default function CampaignDetailPage() {
                 {campaign.title}
               </h1>
               <div className="flex items-center gap-2">
-                <span className="text-[9px] font-mono tracking-widest uppercase border border-primary/30 px-1.5 py-0.5 rounded-none text-primary/70">
+                <span className="text-[9px] font-mono tracking-widest uppercase border border-primary/30 px-1.5 py-0.5 rounded-(--radius) text-primary/70">
                   {TYPE_LABELS[campaign.campaignType] || campaign.campaignType}
                 </span>
                 <span
                   className={cn(
-                    "text-[9px] font-mono tracking-widest uppercase border px-1.5 py-0.5 rounded-none",
+                    "text-[9px] font-mono tracking-widest uppercase border px-1.5 py-0.5 rounded-(--radius)",
                     STATUS_CLASS[campaign.status || "draft"],
                   )}
                 >
@@ -496,7 +518,7 @@ export default function CampaignDetailPage() {
               </p>
               {isDirty && (
                 <span
-                  className="size-1.5 rounded-none bg-primary animate-pulse"
+                  className="size-1.5 rounded-(--radius) bg-primary animate-pulse"
                   title="Unsaved changes"
                 />
               )}
@@ -510,7 +532,7 @@ export default function CampaignDetailPage() {
               onClick={() => refetch()}
               variant="outline"
               size="icon"
-              className="rounded-none"
+              className="rounded-(--radius)"
             >
               <RefreshCw className="size-4" />
             </Button>
@@ -519,7 +541,7 @@ export default function CampaignDetailPage() {
               <Button
                 onClick={saveChanges}
                 disabled={updateMutation.isPending}
-                className="rounded-none font-mono text-[10px] tracking-widest uppercase bg-primary/90 hover:bg-primary px-4"
+                className="rounded-(--radius) font-mono text-[10px] tracking-widest uppercase bg-primary/90 hover:bg-primary px-4"
               >
                 {updateMutation.isPending ? (
                   <RefreshCw className="size-4 animate-spin mr-2" />
@@ -536,7 +558,7 @@ export default function CampaignDetailPage() {
                 onClick={handleSendPreview}
                 disabled={sendPreviewMutation.isPending}
                 variant="outline"
-                className="rounded-none font-mono text-[10px] tracking-widest uppercase border-border/60 hover:bg-secondary px-4"
+                className="rounded-(--radius) font-mono text-[10px] tracking-widest uppercase border-border/60 hover:bg-secondary px-4"
               >
                 <RefreshCw
                   className={cn(
@@ -554,7 +576,7 @@ export default function CampaignDetailPage() {
                 onClick={handleGenerate}
                 disabled={generateMutation.isPending}
                 variant="outline"
-                className="rounded-none font-mono text-[10px] tracking-widest uppercase border-primary/50 text-primary bg-primary/5 hover:bg-primary hover:text-primary-foreground shadow-[0_0_10px_rgba(0,110,255,0.1)] hover:shadow-[0_0_20px_rgba(0,110,255,0.2)] transition-all px-4"
+                className="rounded-(--radius) font-mono text-[10px] tracking-widest uppercase border-primary/50 text-primary bg-primary/5 hover:bg-primary hover:text-primary-foreground shadow-[0_0_10px_rgba(0,110,255,0.1)] hover:shadow-[0_0_20px_rgba(0,110,255,0.2)] transition-all px-4"
               >
                 <Sparkles className="size-4" />
                 {generateMutation.isPending
@@ -568,7 +590,7 @@ export default function CampaignDetailPage() {
                 id="approve-campaign"
                 onClick={handleApprove}
                 disabled={approveMutation.isPending}
-                className="rounded-none font-mono text-[10px] tracking-widest uppercase shadow-[0_0_15px_rgba(0,110,255,0.1)] hover:shadow-[0_0_25px_rgba(0,110,255,0.2)] transition-all px-4"
+                className="rounded-(--radius) font-mono text-[10px] tracking-widest uppercase shadow-[0_0_15px_rgba(0,110,255,0.1)] hover:shadow-[0_0_25px_rgba(0,110,255,0.2)] transition-all px-4"
               >
                 <Check className="size-4" />
                 {approveMutation.isPending
@@ -631,7 +653,7 @@ export default function CampaignDetailPage() {
 
             {campaign.status === "dispatching" && (
               <div className="flex items-center gap-2 sm:ml-auto">
-                <div className="size-1.5 rounded-none bg-yellow-400 animate-pulse" />
+                <div className="size-1.5 rounded-(--radius) bg-yellow-400 animate-pulse" />
                 <span className="text-[10px] font-mono text-yellow-400 uppercase tracking-widest">
                   Dispatching —{" "}
                   {campaign.dispatchTotal
@@ -652,29 +674,29 @@ export default function CampaignDetailPage() {
       >
         <TabsList
           variant="line"
-          className="bg-transparent border-b border-border/20 w-auto min-w-full justify-start rounded-none h-auto px-0 mb-6 overflow-x-auto overflow-y-hidden no-scrollbar flex-nowrap shrink-0"
+          className="bg-transparent border-b border-border/20 w-auto min-w-full justify-start rounded-(--radius) h-auto px-0 mb-6 overflow-x-auto overflow-y-hidden no-scrollbar flex-nowrap shrink-0"
         >
           <TabsTrigger
             value="configure"
-            className="rounded-none data-[state=active]:bg-primary/5"
+            className="rounded-(--radius) data-[state=active]:bg-primary/5"
           >
             <Settings2 className="size-3.5 mr-1.5" /> CONFIGURE
           </TabsTrigger>
           <TabsTrigger
             value="assets"
-            className="rounded-none data-[state=active]:bg-primary/5"
+            className="rounded-(--radius) data-[state=active]:bg-primary/5"
           >
             <ImageIcon className="size-3.5 mr-1.5" /> ASSETS
           </TabsTrigger>
           <TabsTrigger
             value="ai-writer"
-            className="rounded-none data-[state=active]:bg-primary/5"
+            className="rounded-(--radius) data-[state=active]:bg-primary/5"
           >
             <Sparkles className="size-3.5 mr-1.5" /> AI WRITER
           </TabsTrigger>
           <TabsTrigger
             value="composing"
-            className="rounded-none data-[state=active]:bg-primary/5"
+            className="rounded-(--radius) data-[state=active]:bg-primary/5"
           >
             <PenTool className="size-3.5 mr-1.5" /> COMPOSING
           </TabsTrigger>
@@ -703,7 +725,7 @@ export default function CampaignDetailPage() {
                           setTitle(e.target.value);
                           setMetaDirty(true);
                         }}
-                        className="rounded-none h-10 bg-background/50 font-mono text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                        className="rounded-(--radius) h-10 bg-background/50 font-mono text-sm disabled:opacity-60 disabled:cursor-not-allowed"
                       />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -711,21 +733,60 @@ export default function CampaignDetailPage() {
                         <label className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground">
                           Campaign Type
                         </label>
-                        <Select value={campaignType} onValueChange={(value) => {
-                          setCampaignType(value as CampaignType);
-                          setMetaDirty(true);
-                        }} disabled={!isEditable}>
-                          <SelectTrigger className="w-full rounded-none bg-background/50 border border-border/40 font-mono text-xs uppercase focus-visible:ring-0 disabled:opacity-50">
+                        <Select
+                          value={campaignType}
+                          onValueChange={(value) => {
+                            setCampaignType(value as CampaignType);
+                            setMetaDirty(true);
+                          }}
+                          disabled={!isEditable}
+                        >
+                          <SelectTrigger className="w-full rounded-(--radius) bg-background/50 border border-border/40 font-mono text-xs uppercase focus-visible:ring-0 disabled:opacity-50">
                             <SelectValue placeholder="Select type" />
                           </SelectTrigger>
-                          <SelectContent className="rounded-none border-border/40 bg-card/95 font-mono text-xs uppercase">
-                            <SelectItem value="newsletter" className="rounded-none font-mono text-xs uppercase">Newsletter</SelectItem>
-                            <SelectItem value="announcement" className="rounded-none font-mono text-xs uppercase">Announcement</SelectItem>
-                            <SelectItem value="product_update" className="rounded-none font-mono text-xs uppercase">Product Update</SelectItem>
-                            <SelectItem value="waitlist_update" className="rounded-none font-mono text-xs uppercase">Waitlist Update</SelectItem>
-                            <SelectItem value="system_update" className="rounded-none font-mono text-xs uppercase">System Update</SelectItem>
-                            <SelectItem value="exam_reminder" className="rounded-none font-mono text-xs uppercase">Exam Reminder</SelectItem>
-                            <SelectItem value="quiz_available" className="rounded-none font-mono text-xs uppercase">Quiz Available</SelectItem>
+                          <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
+                            <SelectItem
+                              value="newsletter"
+                              className="rounded-(--radius) font-mono text-xs uppercase"
+                            >
+                              Newsletter
+                            </SelectItem>
+                            <SelectItem
+                              value="announcement"
+                              className="rounded-(--radius) font-mono text-xs uppercase"
+                            >
+                              Announcement
+                            </SelectItem>
+                            <SelectItem
+                              value="product_update"
+                              className="rounded-(--radius) font-mono text-xs uppercase"
+                            >
+                              Product Update
+                            </SelectItem>
+                            <SelectItem
+                              value="waitlist_update"
+                              className="rounded-(--radius) font-mono text-xs uppercase"
+                            >
+                              Waitlist Update
+                            </SelectItem>
+                            <SelectItem
+                              value="system_update"
+                              className="rounded-(--radius) font-mono text-xs uppercase"
+                            >
+                              System Update
+                            </SelectItem>
+                            <SelectItem
+                              value="exam_reminder"
+                              className="rounded-(--radius) font-mono text-xs uppercase"
+                            >
+                              Exam Reminder
+                            </SelectItem>
+                            <SelectItem
+                              value="quiz_available"
+                              className="rounded-(--radius) font-mono text-xs uppercase"
+                            >
+                              Quiz Available
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -744,7 +805,7 @@ export default function CampaignDetailPage() {
                                 setAudience(opt);
                                 setMetaDirty(true);
                               }}
-                              className="flex-1 rounded-none font-mono text-[10px] uppercase h-10"
+                              className="flex-1 rounded-(--radius) font-mono text-[10px] uppercase h-10"
                             >
                               {opt}
                             </Button>
@@ -817,14 +878,14 @@ export default function CampaignDetailPage() {
                       }}
                       disabled={!isDraft}
                       rows={8}
-                      className="w-full rounded-none font-mono text-sm border border-input bg-background/30 px-3 py-2 text-foreground focus-visible:outline-none focus-visible:border-primary/50 focus-visible:ring-0 resize-none"
+                      className="w-full rounded-(--radius) font-mono text-sm border border-input bg-background/30 px-3 py-2 text-foreground focus-visible:outline-none focus-visible:border-primary/50 focus-visible:ring-0 resize-none"
                       placeholder={`Write a ${campaignType.replace("_", " ")} for our students...`}
                     />
                     <div className="flex items-center gap-4 pt-4 border-t border-border/10">
                       <Button
                         onClick={handleGenerate}
                         disabled={generateMutation.isPending || !isDraft}
-                        className="rounded-none font-mono text-xs tracking-widest uppercase"
+                        className="rounded-(--radius) font-mono text-xs tracking-widest uppercase"
                       >
                         {generateMutation.isPending ? (
                           <RefreshCw className="size-3.5 animate-spin mr-2" />
@@ -905,7 +966,7 @@ export default function CampaignDetailPage() {
                             Email Preview
                           </span>
                           <div className="flex items-center gap-2">
-                            <div className="size-1.5 rounded-none bg-green-500 animate-pulse" />
+                            <div className="size-1.5 rounded-(--radius) bg-green-500 animate-pulse" />
                             <span className="text-[8px] font-mono text-muted-foreground uppercase">
                               Real-time Rendering
                             </span>

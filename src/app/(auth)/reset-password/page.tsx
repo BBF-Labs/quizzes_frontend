@@ -1,17 +1,16 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, CheckCircle2, Eye, EyeOff, Loader2, ShieldCheck, X } from "lucide-react";
+import { Check, CheckCircle2, Eye, EyeOff, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import axios from "axios";
 
 function ResetPasswordContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("t");
   // ... state declarations ...
@@ -24,36 +23,33 @@ function ResetPasswordContent() {
 
   const mutation = useMutation({
     mutationFn: async (newPassword: string) => {
-      await axios.post(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1"}/auth/reset-password`, {
-        token,
-        newPassword,
-      });
+      await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1"}/auth/reset-password`,
+        {
+          token,
+          newPassword,
+        },
+      );
     },
     onSuccess: () => {
       setSubmitted(true);
     },
   });
 
-  const [strength, setStrength] = useState({
-    score: 0,
-    requirements: [
-      { id: "length", label: "Min 8 characters", met: false },
-      { id: "uppercase", label: "Uppercase letter", met: false },
-      { id: "number", label: "A number", met: false },
-      { id: "special", label: "Special character", met: false },
-    ],
-  });
-
-  useEffect(() => {
-    const requirements = [
-      { id: "length", label: "Min 8 characters", met: password.length >= 8 },
-      { id: "uppercase", label: "Uppercase letter", met: /[A-Z]/.test(password) },
-      { id: "number", label: "A number", met: /[0-9]/.test(password) },
-      { id: "special", label: "Special character", met: /[^A-Za-z0-9]/.test(password) },
-    ];
-    const score = requirements.filter((r) => r.met).length;
-    setStrength({ score, requirements });
-  }, [password]);
+  const strengthRequirements = [
+    { id: "length", label: "Min 8 characters", met: password.length >= 8 },
+    { id: "uppercase", label: "Uppercase letter", met: /[A-Z]/.test(password) },
+    { id: "number", label: "A number", met: /[0-9]/.test(password) },
+    {
+      id: "special",
+      label: "Special character",
+      met: /[^A-Za-z0-9]/.test(password),
+    },
+  ];
+  const strength = {
+    score: strengthRequirements.filter((r) => r.met).length,
+    requirements: strengthRequirements,
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,14 +76,14 @@ function ResetPasswordContent() {
         {/* ... error display ... */}
         <div className="max-w-sm w-full text-center space-y-6">
           <div className="size-16 bg-destructive/10 mx-auto flex items-center justify-center border border-destructive/20 text-destructive">
-          <X className="size-8" />
+            <X className="size-8" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight">Invalid Link</h1>
           <p className="text-muted-foreground font-mono text-xs uppercase tracking-widest">
             This reset link is missing or broken.
           </p>
           <Link href="/forgot-password">
-             <Button className="rounded-none font-mono text-xs uppercase tracking-widest h-11 px-8">
+            <Button className="rounded-(--radius) font-mono text-xs uppercase tracking-widest h-11 px-8">
               Request New Link
             </Button>
           </Link>
@@ -133,7 +129,11 @@ function ResetPasswordContent() {
                   </span>
                 </div>
                 <div className="flex items-end space-x-2 mb-2">
-                  <span className="text-xl font-bold tracking-widest text-foreground leading-none">Qz.</span>
+                  <Link href="/">
+                    <span className="text-xl font-bold tracking-widest text-foreground leading-none hover:text-primary transition-colors cursor-pointer">
+                      Qz.
+                    </span>
+                  </Link>
                 </div>
                 <h1 className="text-3xl font-mono font-bold tracking-[0.2em] uppercase text-foreground">
                   Reset.
@@ -158,7 +158,7 @@ function ResetPasswordContent() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
-                        className="rounded-none font-mono bg-secondary/40 dark:bg-input/30 border-border pr-10 h-11"
+                        className="rounded-(--radius) font-mono bg-secondary/40 dark:bg-input/30 border-border pr-10 h-11"
                         placeholder="••••••••"
                       />
                       <button
@@ -167,7 +167,11 @@ function ResetPasswordContent() {
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                         tabIndex={-1}
                       >
-                        {showPassword ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+                        {showPassword ? (
+                          <EyeOff className="size-3.5" />
+                        ) : (
+                          <Eye className="size-3.5" />
+                        )}
                       </button>
                     </div>
                   </div>
@@ -183,7 +187,9 @@ function ResetPasswordContent() {
                           <div
                             key={step}
                             className={`h-1 w-6 transition-all ${
-                              step <= strength.score ? "bg-primary" : "bg-muted/20"
+                              step <= strength.score
+                                ? "bg-primary"
+                                : "bg-muted/20"
                             }`}
                           />
                         ))}
@@ -197,7 +203,9 @@ function ResetPasswordContent() {
                           ) : (
                             <div className="size-2.5 border border-muted-foreground/30" />
                           )}
-                          <span className={`text-[9px] font-mono uppercase tracking-tighter ${req.met ? "text-foreground" : "text-muted-foreground/60"}`}>
+                          <span
+                            className={`text-[9px] font-mono uppercase tracking-tighter ${req.met ? "text-foreground" : "text-muted-foreground/60"}`}
+                          >
                             {req.label}
                           </span>
                         </div>
@@ -216,18 +224,26 @@ function ResetPasswordContent() {
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         required
-                        className={`rounded-none font-mono bg-secondary/40 dark:bg-input/30 border-border pr-10 h-11 ${
-                          confirmPassword && password !== confirmPassword ? "border-destructive/50" : ""
+                        className={`rounded-(--radius) font-mono bg-secondary/40 dark:bg-input/30 border-border pr-10 h-11 ${
+                          confirmPassword && password !== confirmPassword
+                            ? "border-destructive/50"
+                            : ""
                         }`}
                         placeholder="••••••••"
                       />
                       <button
                         type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                         tabIndex={-1}
                       >
-                        {showConfirmPassword ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+                        {showConfirmPassword ? (
+                          <EyeOff className="size-3.5" />
+                        ) : (
+                          <Eye className="size-3.5" />
+                        )}
                       </button>
                     </div>
                   </div>
@@ -235,14 +251,21 @@ function ResetPasswordContent() {
 
                 {(errorStatus || mutation.isError) && (
                   <p className="text-[11px] font-mono text-destructive tracking-wider">
-                    {errorStatus || (mutation.error instanceof Error ? mutation.error.message : (mutation.error as any)?.response?.data?.message || "Reset failed.")}
+                    {errorStatus ||
+                      (mutation.error instanceof Error
+                        ? mutation.error.message
+                        : (
+                            mutation.error as unknown as {
+                              response?: { data?: { message?: string } };
+                            }
+                          )?.response?.data?.message || "Reset failed.")}
                   </p>
                 )}
 
                 <Button
                   type="submit"
                   disabled={mutation.isPending}
-                  className="w-full rounded-none font-mono text-[10px] tracking-[0.2em] uppercase h-11 bg-primary text-primary-foreground shadow-[0_0_20px_rgba(0,110,255,0.15)] hover:shadow-[0_0_30px_rgba(0,110,255,0.25)] transition-all"
+                  className="w-full rounded-(--radius) font-mono text-[10px] tracking-[0.2em] uppercase h-11 bg-primary text-primary-foreground shadow-[0_0_20px_rgba(0,110,255,0.15)] hover:shadow-[0_0_30px_rgba(0,110,255,0.25)] transition-all"
                 >
                   {mutation.isPending ? "Updating..." : "Reset Password"}
                 </Button>
@@ -258,12 +281,12 @@ function ResetPasswordContent() {
             >
               {/* Decorative corners - mirroring newsletter pattern */}
               <div className="absolute top-0 right-0 w-12 h-12 pointer-events-none">
-                <div className="absolute top-0 right-0 w-[2px] h-6 bg-primary" />
-                <div className="absolute top-0 right-0 w-6 h-[2px] bg-primary" />
+                <div className="absolute top-0 right-0 w-0.5 h-6 bg-primary" />
+                <div className="absolute top-0 right-0 w-6 h-0.5 bg-primary" />
               </div>
               <div className="absolute bottom-0 left-0 w-12 h-12 pointer-events-none">
-                <div className="absolute bottom-0 left-0 w-[2px] h-6 bg-primary" />
-                <div className="absolute bottom-0 left-0 w-6 h-[2px] bg-primary" />
+                <div className="absolute bottom-0 left-0 w-0.5 h-6 bg-primary" />
+                <div className="absolute bottom-0 left-0 w-6 h-0.5 bg-primary" />
               </div>
 
               <div className="flex justify-center mb-8">
@@ -271,21 +294,20 @@ function ResetPasswordContent() {
                   <CheckCircle2 className="w-8 h-8 text-primary" />
                 </div>
               </div>
-              
+
               <h1 className="text-3xl font-black tracking-tighter uppercase mb-4 italic">
                 ACCESS GRANTED.
               </h1>
 
               <div className="h-px bg-border/50 w-full mb-8" />
-              
+
               <p className="text-sm font-mono text-muted-foreground uppercase tracking-widest leading-relaxed mb-10">
-                YOUR CREDENTIALS HAVE BEEN SUCCESSFULLY VETTED. YOU ARE NOW SYNCED WITH THE SECURE SYSTEM MODULE.
+                YOUR CREDENTIALS HAVE BEEN SUCCESSFULLY VETTED. YOU ARE NOW
+                SYNCED WITH THE SECURE SYSTEM MODULE.
               </p>
 
               <Link href="/login" className="block w-full">
-                <Button
-                  className="w-full rounded-none bg-primary px-8 py-6 text-primary-foreground font-mono text-xs font-bold uppercase tracking-[0.2em] hover:bg-white hover:text-primary hover:ring-1 hover:ring-inset hover:ring-primary transition-all duration-300 group shadow-[0_0_20px_rgba(0,110,255,0.15)]"
-                >
+                <Button className="w-full rounded-(--radius) bg-primary px-8 py-6 text-primary-foreground font-mono text-xs font-bold uppercase tracking-[0.2em] hover:bg-white hover:text-primary hover:ring-1 hover:ring-inset hover:ring-primary transition-all duration-300 group shadow-[0_0_20px_rgba(0,110,255,0.15)]">
                   <span>RETURN TO BASE</span>
                 </Button>
               </Link>
@@ -299,11 +321,13 @@ function ResetPasswordContent() {
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="size-8 animate-spin text-primary" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <Loader2 className="size-8 animate-spin text-primary" />
+        </div>
+      }
+    >
       <ResetPasswordContent />
     </Suspense>
   );

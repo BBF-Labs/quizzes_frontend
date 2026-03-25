@@ -90,7 +90,7 @@ export default function UniversityStep({
                 setSelectedId("");
                 setShowDropdown(true);
               }}
-              className={`w-full bg-transparent border-border/50 rounded-none uppercase font-mono text-xs placeholder:text-muted-foreground/40 h-14 px-4 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary tracking-wider ${
+              className={`w-full bg-transparent border-border/50 rounded-(--radius) uppercase font-mono text-xs placeholder:text-muted-foreground/40 h-14 px-4 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary tracking-wider ${
                 isFetching
                   ? "animate-pulse border-primary/50"
                   : isConfirmed
@@ -145,7 +145,7 @@ export default function UniversityStep({
             type="button"
             onClick={handleSubmit}
             disabled={!isConfirmed}
-            className="w-14 h-14 rounded-none bg-primary text-primary-foreground hover:bg-white hover:text-primary hover:ring-1 hover:ring-inset hover:ring-primary flex items-center justify-center transition-all duration-300 disabled:opacity-30 group cursor-pointer disabled:cursor-not-allowed shadow-[0_0_20px_rgba(0,110,255,0.2)]"
+            className="w-14 h-14 rounded-(--radius) bg-primary text-primary-foreground hover:bg-white hover:text-primary hover:ring-1 hover:ring-inset hover:ring-primary flex items-center justify-center transition-all duration-300 disabled:opacity-30 group cursor-pointer disabled:cursor-not-allowed shadow-[0_0_20px_rgba(0,110,255,0.2)]"
           >
             <ArrowRight className="w-6 h-6 stroke-[3px] transition-transform duration-300 group-hover:translate-x-1" />
           </button>

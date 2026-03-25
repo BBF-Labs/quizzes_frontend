@@ -123,7 +123,7 @@ export default function ZIntroStep({
             <Button
               onClick={handleFinish}
               disabled={isFinishing}
-              className="w-full rounded-none font-mono text-xs tracking-[0.3em] uppercase h-14 bg-primary text-primary-foreground group overflow-hidden"
+              className="w-full rounded-(--radius) font-mono text-xs tracking-[0.3em] uppercase h-14 bg-primary text-primary-foreground group overflow-hidden"
             >
               <div className="relative z-10 flex items-center gap-2">
                 Enter the App{" "}

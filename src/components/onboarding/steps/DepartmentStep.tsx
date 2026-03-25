@@ -147,7 +147,7 @@ export default function DepartmentStep({
               placeholder={
                 isLoadingColleges ? "LOADING..." : "Search college..."
               }
-              className="w-full rounded-none border-border bg-secondary/40 font-mono text-xs uppercase h-11"
+              className="w-full rounded-(--radius) border-border bg-secondary/40 font-mono text-xs uppercase h-11"
             />
             {showCollegeDropdown &&
               !isLoadingColleges &&
@@ -208,7 +208,7 @@ export default function DepartmentStep({
                     ? "LOADING..."
                     : "Search school / faculty..."
               }
-              className="w-full rounded-none border-border bg-secondary/40 font-mono text-xs uppercase h-11 disabled:opacity-60"
+              className="w-full rounded-(--radius) border-border bg-secondary/40 font-mono text-xs uppercase h-11 disabled:opacity-60"
             />
             {showSchoolDropdown &&
               !isLoadingSchools &&
@@ -267,7 +267,7 @@ export default function DepartmentStep({
                     ? "LOADING..."
                     : "Search department..."
               }
-              className="w-full rounded-none border-border bg-secondary/40 font-mono text-xs uppercase h-11 disabled:opacity-60"
+              className="w-full rounded-(--radius) border-border bg-secondary/40 font-mono text-xs uppercase h-11 disabled:opacity-60"
             />
             {showDepartmentDropdown &&
               !isLoadingDepartments &&
@@ -299,7 +299,7 @@ export default function DepartmentStep({
         <div className="flex flex-col gap-3 pt-4">
           <Button
             onClick={handleSubmit}
-            className="w-full rounded-none font-mono text-xs tracking-[0.2em] uppercase h-12 shadow-[0_0_20px_rgba(var(--primary),0.1)] hover:shadow-[0_0_30px_rgba(var(--primary),0.2)] transition-all"
+            className="w-full rounded-(--radius) font-mono text-xs tracking-[0.2em] uppercase h-12 shadow-[0_0_20px_rgba(var(--primary),0.1)] hover:shadow-[0_0_30px_rgba(var(--primary),0.2)] transition-all"
           >
             Continue
           </Button>
