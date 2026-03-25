@@ -50,7 +50,7 @@ export default function YearOfStudyStep({
           >
             <button
               onClick={() => handleSubmit(yearItem.value)}
-              className={`w-full group relative overflow-hidden flex flex-col items-center justify-center p-5 sm:p-8 border rounded-none transition-all duration-300 min-h-28 sm:min-h-36 ${
+              className={`w-full group relative overflow-hidden flex flex-col items-center justify-center p-5 sm:p-8 border rounded-(--radius) transition-all duration-300 min-h-28 sm:min-h-36 ${
                 year === yearItem.value
                   ? "bg-primary border-primary shadow-[0_0_40px_rgba(var(--primary),0.2)]"
                   : "bg-secondary/20 border-border hover:bg-secondary/40 hover:border-primary/50"

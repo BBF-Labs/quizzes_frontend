@@ -338,7 +338,7 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
 
               {/* Right controls: Badges & Open Studio if closed */}
               <div className="flex items-center gap-2 pointer-events-auto">
-                <div className="hidden md:flex rounded-none border border-border/40 bg-card/60 backdrop-blur-md h-8 px-2.5 items-center gap-1.5 shadow-sm">
+                <div className="hidden md:flex rounded-(--radius) border border-border/40 bg-card/60 backdrop-blur-md h-8 px-2.5 items-center gap-1.5 shadow-sm">
                   <div
                     className={cn(
                       "size-2 rounded-full",

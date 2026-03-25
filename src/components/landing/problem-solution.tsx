@@ -78,14 +78,14 @@ export function ProblemSolution() {
           {pillars.map((p, i) => (
             <motion.div key={i} variants={itemVariants}>
               <div
-                className={`h-full border bg-card rounded-none p-6 hover:border-primary transition-colors flex flex-col group relative overflow-hidden ${p.highlight ? "border-primary/50" : "border-border/50"}`}
+                className={`h-full border bg-card rounded-(--radius) p-6 hover:border-primary transition-colors flex flex-col group relative overflow-hidden ${p.highlight ? "border-primary/50" : "border-border/50"}`}
               >
                 <div
-                  className={`absolute top-0 left-0 w-full h-[2px] bg-primary ${p.highlight ? "opacity-100" : "scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"}`}
+                  className={`absolute top-0 left-0 w-full h-0.5 bg-primary ${p.highlight ? "opacity-100" : "scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"}`}
                 />
                 <div className="flex items-center justify-between mb-6">
                   <div
-                    className={`w-10 h-10 border flex items-center justify-center rounded-none ${p.highlight ? "border-primary/50 bg-primary/10" : "border-border/50 bg-background"}`}
+                    className={`w-10 h-10 border flex items-center justify-center rounded-(--radius) ${p.highlight ? "border-primary/50 bg-primary/10" : "border-border/50 bg-background"}`}
                   >
                     <p.Icon
                       className={`w-5 h-5 ${p.highlight ? "text-primary" : "text-muted-foreground group-hover:text-primary transition-colors"}`}

@@ -67,7 +67,7 @@ export function SessionsSidebar() {
                   isActive={pathname === "/app"}
                   tooltip="New Session"
                   className={cn(
-                    "h-9 px-4 rounded-none transition-all duration-200",
+                    "h-9 px-4 rounded-(--radius) transition-all duration-200",
                     pathname === "/app"
                       ? "bg-primary/5 text-primary border-r-2 border-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
@@ -88,7 +88,7 @@ export function SessionsSidebar() {
                   isActive={pathname === "/app/all"}
                   tooltip="All Sessions"
                   className={cn(
-                    "h-9 px-4 rounded-none transition-all duration-200",
+                    "h-9 px-4 rounded-(--radius) transition-all duration-200",
                     pathname === "/app/all"
                       ? "bg-primary/5 text-primary border-r-2 border-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
@@ -109,7 +109,7 @@ export function SessionsSidebar() {
                   isActive={pathname.startsWith("/app/flashcards")}
                   tooltip="Flashcards"
                   className={cn(
-                    "h-9 px-4 rounded-none transition-all duration-200",
+                    "h-9 px-4 rounded-(--radius) transition-all duration-200",
                     pathname.startsWith("/app/flashcards")
                       ? "bg-primary/5 text-primary border-r-2 border-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
@@ -130,7 +130,7 @@ export function SessionsSidebar() {
                   isActive={pathname.startsWith("/app/quizzes")}
                   tooltip="Quizzes"
                   className={cn(
-                    "h-9 px-4 rounded-none transition-all duration-200",
+                    "h-9 px-4 rounded-(--radius) transition-all duration-200",
                     pathname.startsWith("/app/quizzes")
                       ? "bg-primary/5 text-primary border-r-2 border-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
@@ -151,7 +151,7 @@ export function SessionsSidebar() {
                   isActive={pathname.startsWith("/app/mindmaps")}
                   tooltip="Mind Maps"
                   className={cn(
-                    "h-9 px-4 rounded-none transition-all duration-200",
+                    "h-9 px-4 rounded-(--radius) transition-all duration-200",
                     pathname.startsWith("/app/mindmaps")
                       ? "bg-primary/5 text-primary border-r-2 border-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
@@ -172,7 +172,7 @@ export function SessionsSidebar() {
                   isActive={pathname.startsWith("/app/notes")}
                   tooltip="Notes"
                   className={cn(
-                    "h-9 px-4 rounded-none transition-all duration-200",
+                    "h-9 px-4 rounded-(--radius) transition-all duration-200",
                     pathname.startsWith("/app/notes")
                       ? "bg-primary/5 text-primary border-r-2 border-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
@@ -193,7 +193,7 @@ export function SessionsSidebar() {
                   isActive={pathname === "/app/memory"}
                   tooltip="Memory"
                   className={cn(
-                    "h-9 px-4 rounded-none transition-all duration-200",
+                    "h-9 px-4 rounded-(--radius) transition-all duration-200",
                     pathname === "/app/memory"
                       ? "bg-primary/5 text-primary border-r-2 border-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
@@ -214,7 +214,7 @@ export function SessionsSidebar() {
                   isActive={pathname === "/app/settings"}
                   tooltip="Settings"
                   className={cn(
-                    "h-9 px-4 rounded-none transition-all duration-200",
+                    "h-9 px-4 rounded-(--radius) transition-all duration-200",
                     pathname === "/app/settings"
                       ? "bg-primary/5 text-primary border-r-2 border-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
@@ -235,7 +235,7 @@ export function SessionsSidebar() {
                   isActive={pathname === "/app/usage"}
                   tooltip="Usage"
                   className={cn(
-                    "h-9 px-4 rounded-none transition-all duration-200",
+                    "h-9 px-4 rounded-(--radius) transition-all duration-200",
                     pathname === "/app/usage"
                       ? "bg-primary/5 text-primary border-r-2 border-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
@@ -279,7 +279,7 @@ export function SessionsSidebar() {
                         isActive={isActive}
                         tooltip={title}
                         className={cn(
-                          "h-8 px-4 rounded-none transition-all duration-200",
+                          "h-8 px-4 rounded-(--radius) transition-all duration-200",
                           isActive
                             ? "bg-primary/5 text-primary border-r-2 border-primary"
                             : "text-muted-foreground hover:text-foreground hover:bg-accent/50",

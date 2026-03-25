@@ -152,7 +152,7 @@ export function Hero() {
                               const val = e.target.value;
                               setFormData((prev) => ({ ...prev, email: val }));
                             }}
-                            className="flex-1 bg-transparent border-border/50 rounded-none uppercase font-mono text-xs placeholder:text-muted-foreground/40 h-14 px-4 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary tracking-wider"
+                            className="flex-1 bg-transparent border-border/50 rounded-(--radius) uppercase font-mono text-xs placeholder:text-muted-foreground/40 h-14 px-4 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary tracking-wider"
                           />
                           <motion.button
                             type="button"
@@ -168,7 +168,7 @@ export function Hero() {
                                 ? { scale: 0.95 }
                                 : {}
                             }
-                            className="w-14 h-14 rounded-none bg-primary text-primary-foreground hover:bg-white hover:text-primary hover:ring-1 hover:ring-inset hover:ring-primary flex items-center justify-center transition-all duration-300 disabled:opacity-30 group cursor-pointer disabled:cursor-not-allowed"
+                            className="w-14 h-14 rounded-(--radius) bg-primary text-primary-foreground hover:bg-white hover:text-primary hover:ring-1 hover:ring-inset hover:ring-primary flex items-center justify-center transition-all duration-300 disabled:opacity-30 group cursor-pointer disabled:cursor-not-allowed"
                           >
                             <ArrowRight className="w-6 h-6 stroke-[3px] transition-transform duration-300 group-hover:translate-x-1" />
                           </motion.button>
@@ -192,7 +192,7 @@ export function Hero() {
                               const val = e.target.value;
                               setFormData((prev) => ({ ...prev, name: val }));
                             }}
-                            className="flex-1 bg-transparent border-border/50 rounded-none uppercase font-mono text-xs placeholder:text-muted-foreground/40 h-14 px-4 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary tracking-wider"
+                            className="flex-1 bg-transparent border-border/50 rounded-(--radius) uppercase font-mono text-xs placeholder:text-muted-foreground/40 h-14 px-4 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary tracking-wider"
                           />
                           <motion.button
                             type="button"
@@ -204,7 +204,7 @@ export function Hero() {
                             whileTap={
                               formData.name.length >= 2 ? { scale: 0.95 } : {}
                             }
-                            className="w-14 h-14 rounded-none bg-primary text-primary-foreground hover:bg-white hover:text-primary hover:ring-1 hover:ring-inset hover:ring-primary flex items-center justify-center transition-all duration-300 disabled:opacity-30 group cursor-pointer disabled:cursor-not-allowed"
+                            className="w-14 h-14 rounded-(--radius) bg-primary text-primary-foreground hover:bg-white hover:text-primary hover:ring-1 hover:ring-inset hover:ring-primary flex items-center justify-center transition-all duration-300 disabled:opacity-30 group cursor-pointer disabled:cursor-not-allowed"
                           >
                             <ArrowRight className="w-6 h-6 stroke-[3px] transition-transform duration-300 group-hover:translate-x-1" />
                           </motion.button>
@@ -231,7 +231,7 @@ export function Hero() {
                               const val = e.target.value;
                               setFormData((prev) => ({ ...prev, name: val }));
                             }}
-                            className={`flex-1 bg-transparent border-border/50 rounded-none uppercase font-mono text-xs placeholder:text-muted-foreground/40 h-14 px-4 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary tracking-wider ${isPending ? "animate-pulse border-primary/50" : ""}`}
+                            className={`flex-1 bg-transparent border-border/50 rounded-(--radius) uppercase font-mono text-xs placeholder:text-muted-foreground/40 h-14 px-4 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary tracking-wider ${isPending ? "animate-pulse border-primary/50" : ""}`}
                           />
                           <motion.button
                             type="button"
@@ -247,7 +247,7 @@ export function Hero() {
                                 ? { scale: 0.95 }
                                 : {}
                             }
-                            className="w-14 h-14 rounded-none bg-primary text-primary-foreground hover:bg-white hover:text-primary hover:ring-1 hover:ring-inset hover:ring-primary flex items-center justify-center transition-all duration-300 disabled:opacity-30 group cursor-pointer disabled:cursor-not-allowed shadow-[0_0_20px_rgba(0,110,255,0.2)]"
+                            className="w-14 h-14 rounded-(--radius) bg-primary text-primary-foreground hover:bg-white hover:text-primary hover:ring-1 hover:ring-inset hover:ring-primary flex items-center justify-center transition-all duration-300 disabled:opacity-30 group cursor-pointer disabled:cursor-not-allowed shadow-[0_0_20px_rgba(0,110,255,0.2)]"
                           >
                             <ArrowRight className="w-6 h-6 stroke-[3px] transition-transform duration-300 group-hover:translate-x-1" />
                           </motion.button>
@@ -277,7 +277,7 @@ export function Hero() {
                   key="success"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-primary/5 border border-primary/20 text-primary px-6 py-6 rounded-none font-mono text-sm tracking-wider uppercase font-bold text-center"
+                  className="bg-primary/5 border border-primary/20 text-primary px-6 py-6 rounded-(--radius) font-mono text-sm tracking-wider uppercase font-bold text-center"
                 >
                   <div className="text-2xl mb-2 tracking-tighter">
                     ACCESS GRANTED.

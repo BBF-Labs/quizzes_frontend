@@ -6,7 +6,13 @@ import { Users, Search, Download, Shield, GraduationCap } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { PaginationController } from "@/components/common";
 import { useUsers } from "@/hooks";
 import { cn } from "@/lib/utils";
@@ -23,7 +29,10 @@ export default function UsersPage() {
   });
 
   const users = usersData?.data || [];
-  const totalPages = usersData?.page && usersData?.limit ? Math.ceil(usersData.total / usersData.limit) : 1;
+  const totalPages =
+    usersData?.page && usersData?.limit
+      ? Math.ceil(usersData.total / usersData.limit)
+      : 1;
 
   return (
     <div className="space-y-8">
@@ -50,9 +59,9 @@ export default function UsersPage() {
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search by name, email, or username..." 
-            className="pl-9 rounded-none bg-background/50 font-mono text-xs uppercase tracking-widest"
+          <Input
+            placeholder="Search by name, email, or username..."
+            className="pl-9 rounded-(--radius) bg-background/50 font-mono text-xs uppercase tracking-widest"
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -60,28 +69,60 @@ export default function UsersPage() {
             }}
           />
         </div>
-        <Select value={roleFilter || "all"} onValueChange={(value) => {
-          setRoleFilter(value === "all" ? "" : value);
-          setPage(1);
-        }}>
-          <SelectTrigger className="w-full sm:w-auto sm:min-w-130 rounded-none bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+        <Select
+          value={roleFilter || "all"}
+          onValueChange={(value) => {
+            setRoleFilter(value === "all" ? "" : value);
+            setPage(1);
+          }}
+        >
+          <SelectTrigger className="w-full sm:w-auto sm:min-w-130 rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
             <SelectValue placeholder="All Roles" />
           </SelectTrigger>
-          <SelectContent className="rounded-none border-border/40 bg-card/95 font-mono text-xs uppercase">
-            <SelectItem value="all" className="rounded-none font-mono text-xs uppercase">All Roles</SelectItem>
-            <SelectItem value="student" className="rounded-none font-mono text-xs uppercase">Student</SelectItem>
-            <SelectItem value="creator" className="rounded-none font-mono text-xs uppercase">Creator</SelectItem>
-            <SelectItem value="moderator" className="rounded-none font-mono text-xs uppercase">Moderator</SelectItem>
-            <SelectItem value="super_admin" className="rounded-none font-mono text-xs uppercase">Super Admin</SelectItem>
+          <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
+            <SelectItem
+              value="all"
+              className="rounded-(--radius) font-mono text-xs uppercase"
+            >
+              All Roles
+            </SelectItem>
+            <SelectItem
+              value="student"
+              className="rounded-(--radius) font-mono text-xs uppercase"
+            >
+              Student
+            </SelectItem>
+            <SelectItem
+              value="creator"
+              className="rounded-(--radius) font-mono text-xs uppercase"
+            >
+              Creator
+            </SelectItem>
+            <SelectItem
+              value="moderator"
+              className="rounded-(--radius) font-mono text-xs uppercase"
+            >
+              Moderator
+            </SelectItem>
+            <SelectItem
+              value="super_admin"
+              className="rounded-(--radius) font-mono text-xs uppercase"
+            >
+              Super Admin
+            </SelectItem>
           </SelectContent>
         </Select>
-        <Button variant="outline" size="sm" className="rounded-none font-mono text-[10px] tracking-widest uppercase gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="rounded-(--radius) font-mono text-[10px] tracking-widest uppercase gap-2"
+        >
           <Download className="size-3.5" /> Export
         </Button>
       </div>
 
       {/* List */}
-      <Card className="rounded-none border-border/50 bg-card/40 overflow-hidden">
+      <Card className="rounded-(--radius) border-border/50 bg-card/40 overflow-hidden">
         <CardHeader className="border-b border-border/10">
           <CardTitle className="text-[11px] font-mono tracking-[0.2em] uppercase text-muted-foreground">
             Registered Users {usersData?.total ? `(${usersData.total})` : ""}
@@ -92,74 +133,118 @@ export default function UsersPage() {
             <table className="w-full text-left font-mono text-[10px] uppercase tracking-wider">
               <thead>
                 <tr className="border-b border-border/5 bg-secondary/5">
-                  <th className="px-6 py-4 font-bold text-muted-foreground">User</th>
-                  <th className="px-6 py-4 font-bold text-muted-foreground">Role</th>
-                  <th className="px-6 py-4 font-bold text-muted-foreground">Status</th>
-                  <th className="px-6 py-4 font-bold text-muted-foreground text-right">Actions</th>
+                  <th className="px-6 py-4 font-bold text-muted-foreground">
+                    User
+                  </th>
+                  <th className="px-6 py-4 font-bold text-muted-foreground">
+                    Role
+                  </th>
+                  <th className="px-6 py-4 font-bold text-muted-foreground">
+                    Status
+                  </th>
+                  <th className="px-6 py-4 font-bold text-muted-foreground text-right">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/5">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center text-muted-foreground animate-pulse">
+                    <td
+                      colSpan={4}
+                      className="px-6 py-12 text-center text-muted-foreground animate-pulse"
+                    >
                       Retrieving platform user records…
                     </td>
                   </tr>
                 ) : !users || users.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center space-y-3">
+                    <td
+                      colSpan={4}
+                      className="px-6 py-12 text-center space-y-3"
+                    >
                       <Users className="size-8 text-muted-foreground/30 mx-auto" />
                       <p className="text-xs font-bold">No users found</p>
                     </td>
                   </tr>
                 ) : (
                   users.map((user) => (
-                    <tr key={user._id} className="hover:bg-primary/5 transition-colors group">
+                    <tr
+                      key={user._id}
+                      className="hover:bg-primary/5 transition-colors group"
+                    >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="size-8 bg-zinc-800 border border-border/50 flex items-center justify-center shrink-0">
-                            <span className="text-[10px] font-bold text-zinc-400">{user.name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase()}</span>
+                            <span className="text-[10px] font-bold text-zinc-400">
+                              {user.name?.[0]?.toUpperCase() ||
+                                user.email?.[0]?.toUpperCase()}
+                            </span>
                           </div>
                           <div className="flex flex-col gap-0.5">
-                            <span className="text-foreground font-bold">{user.name || user.email}</span>
-                            <span className="text-[9px] text-muted-foreground lowercase tracking-normal">{user.email}</span>
+                            <span className="text-foreground font-bold">
+                              {user.name || user.email}
+                            </span>
+                            <span className="text-[9px] text-muted-foreground lowercase tracking-normal">
+                              {user.email}
+                            </span>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-1.5">
-                          {user.role === 'creator' || user.role === 'moderator' || user.role === 'super_admin' ? (
+                          {user.role === "creator" ||
+                          user.role === "moderator" ||
+                          user.role === "super_admin" ? (
                             <Shield className="size-3 text-blue-500" />
                           ) : (
                             <GraduationCap className="size-3 text-zinc-500" />
                           )}
-                          <span className="text-muted-foreground">{user.role}</span>
+                          <span className="text-muted-foreground">
+                            {user.role}
+                          </span>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-4">
-                           <div className="space-y-1">
-                              <p className="text-[8px] text-muted-foreground">Subscription</p>
-                              <span className={cn(
+                          <div className="space-y-1">
+                            <p className="text-[8px] text-muted-foreground">
+                              Subscription
+                            </p>
+                            <span
+                              className={cn(
                                 "text-[9px] font-bold",
-                                user.isSubscribed ? "text-green-500" : "text-zinc-500"
-                              )}>
-                                {user.isSubscribed ? "PREMIUM" : "FREE"}
-                              </span>
-                           </div>
-                           <div className="space-y-1">
-                              <p className="text-[8px] text-muted-foreground">Account</p>
-                              <span className={cn(
+                                user.isSubscribed
+                                  ? "text-green-500"
+                                  : "text-zinc-500",
+                              )}
+                            >
+                              {user.isSubscribed ? "PREMIUM" : "FREE"}
+                            </span>
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-[8px] text-muted-foreground">
+                              Account
+                            </p>
+                            <span
+                              className={cn(
                                 "text-[9px] font-bold",
-                                user.isBanned ? "text-destructive" : "text-green-500"
-                              )}>
-                                {user.isBanned ? "BANNED" : "ACTIVE"}
-                              </span>
-                           </div>
+                                user.isBanned
+                                  ? "text-destructive"
+                                  : "text-green-500",
+                              )}
+                            >
+                              {user.isBanned ? "BANNED" : "ACTIVE"}
+                            </span>
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <Button variant="ghost" size="icon" className="size-8 rounded-none group-hover:bg-primary/10 group-hover:text-primary transition-all">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-8 rounded-(--radius) group-hover:bg-primary/10 group-hover:text-primary transition-all"
+                        >
                           <ExternalLink className="size-3.5" />
                         </Button>
                       </td>
@@ -169,7 +254,7 @@ export default function UsersPage() {
               </tbody>
             </table>
           </div>
-          
+
           {/* Pagination */}
           <PaginationController
             page={page}

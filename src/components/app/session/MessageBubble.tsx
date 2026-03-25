@@ -24,7 +24,7 @@ export function MessageBubble({ message, isUser = false }: MessageBubbleProps) {
         transition={{ duration: 0.25 }}
         className="flex justify-end"
       >
-        <div className="max-w-[80%] border border-border/50 bg-secondary px-4 py-3 text-sm text-foreground font-mono">
+        <div className="max-w-[80%] border border-border/50 bg-secondary px-4 py-3 text-sm text-foreground font-mono rounded-(--radius)">
           {message.content}
         </div>
       </motion.div>
@@ -40,7 +40,7 @@ export function MessageBubble({ message, isUser = false }: MessageBubbleProps) {
     >
       <div
         className={cn(
-          "mt-0.5 flex size-6 shrink-0 items-center justify-center border border-border/50 bg-card text-foreground",
+          "mt-0.5 flex size-6 shrink-0 items-center justify-center border border-border/50 bg-card text-foreground rounded-(--radius)",
         )}
       >
         <MessageSquare className="size-3 text-muted-foreground" />
@@ -58,11 +58,10 @@ export function MessageBubble({ message, isUser = false }: MessageBubbleProps) {
             })}
           </span>
         </div>
-        <div className="border border-border/50 bg-card px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap wrap-break-word text-foreground">
+        <div className="border border-border/50 bg-card px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap wrap-break-word text-foreground rounded-(--radius)">
           {message.content}
         </div>
       </div>
     </motion.div>
   );
 }
-

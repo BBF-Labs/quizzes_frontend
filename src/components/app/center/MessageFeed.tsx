@@ -45,7 +45,7 @@ export function MessageFeed({
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.4 }}
-          className="flex size-16 items-center justify-center border border-primary/30 bg-primary/10"
+          className="flex size-16 items-center justify-center border border-primary/30 bg-primary/10 rounded-(--radius)"
         >
           <Brain className="size-8 text-primary" />
         </motion.div>
@@ -109,9 +109,7 @@ export function MessageFeed({
         }
 
         /* ── Z text messages (with markdown) ── */
-        return (
-          <ZMessageBubble key={msg.id} message={msg} />
-        );
+        return <ZMessageBubble key={msg.id} message={msg} />;
       })}
 
       <div ref={bottomRef} />
@@ -137,7 +135,7 @@ function ZMessageBubble({ message }: ZMessageBubbleProps) {
     >
       <div
         className={cn(
-          "mt-0.5 flex size-6 shrink-0 items-center justify-center border",
+          "mt-0.5 flex size-6 shrink-0 items-center justify-center border rounded-(--radius)",
           "border-border/50 bg-card text-foreground",
         )}
       >
@@ -163,7 +161,7 @@ function ZMessageBubble({ message }: ZMessageBubbleProps) {
         </div>
         <div
           className={cn(
-            "border px-4 py-3 text-sm leading-relaxed break-words",
+            "border px-4 py-3 text-sm leading-relaxed wrap-break-word rounded-(--radius)",
             "border-border/50 bg-card text-foreground",
             "prose prose-sm dark:prose-invert max-w-none",
           )}

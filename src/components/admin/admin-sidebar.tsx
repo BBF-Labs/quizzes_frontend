@@ -134,7 +134,7 @@ export function AdminSidebar() {
                         isActive={isActive}
                         tooltip={item.title}
                         className={cn(
-                          "h-9 px-4 rounded-none transition-all duration-200",
+                          "h-9 px-4 rounded-(--radius) transition-all duration-200",
                           isActive
                             ? "bg-primary/5 text-primary border-r-2 border-primary"
                             : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
@@ -174,12 +174,12 @@ export function AdminSidebar() {
                 "bg-primary/5 border-l-2 border-primary",
             )}
           >
-            <Avatar className="size-8 rounded-none border border-border/50 bg-secondary/20 shrink-0">
+            <Avatar className="size-8 rounded-(--radius) border border-border/50 bg-secondary/20 shrink-0">
               <AvatarImage
                 src={user?.profilePicture}
                 className="object-cover"
               />
-              <AvatarFallback className="rounded-none bg-zinc-800 font-mono text-[10px] font-bold text-zinc-400">
+              <AvatarFallback className="rounded-(--radius) bg-zinc-800 font-mono text-[10px] font-bold text-zinc-400">
                 {user?.username?.[0]?.toUpperCase() || "A"}
               </AvatarFallback>
             </Avatar>
@@ -218,7 +218,7 @@ export function AdminSidebar() {
         <div className="flex items-center gap-3 px-4 py-2 bg-secondary/5 border-t border-border/50">
           <div
             className={cn(
-              "size-1.5 rounded-none transition-colors duration-500",
+              "size-1.5 rounded-(--radius) transition-colors duration-500",
               isConnected
                 ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]"
                 : "bg-destructive animate-pulse",

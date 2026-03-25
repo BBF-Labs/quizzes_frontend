@@ -70,7 +70,7 @@ export default function WaitlistPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
             placeholder="Search entries..."
-            className="pl-9 rounded-none bg-background/50 font-mono text-xs uppercase tracking-widest"
+            className="pl-9 rounded-(--radius) bg-background/50 font-mono text-xs uppercase tracking-widest"
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -85,25 +85,25 @@ export default function WaitlistPage() {
             setPage(1);
           }}
         >
-          <SelectTrigger className="w-full sm:w-auto sm:min-w-140 rounded-none bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+          <SelectTrigger className="w-full sm:w-auto sm:min-w-140 rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
             <SelectValue placeholder="All Statuses" />
           </SelectTrigger>
-          <SelectContent className="rounded-none border-border/40 bg-card/95 font-mono text-xs uppercase">
+          <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
             <SelectItem
               value="all"
-              className="rounded-none font-mono text-xs uppercase"
+              className="rounded-(--radius) font-mono text-xs uppercase"
             >
               All Statuses
             </SelectItem>
             <SelectItem
               value="active"
-              className="rounded-none font-mono text-xs uppercase"
+              className="rounded-(--radius) font-mono text-xs uppercase"
             >
               Active
             </SelectItem>
             <SelectItem
               value="removed"
-              className="rounded-none font-mono text-xs uppercase"
+              className="rounded-(--radius) font-mono text-xs uppercase"
             >
               Removed
             </SelectItem>
@@ -112,14 +112,14 @@ export default function WaitlistPage() {
         <Button
           variant="outline"
           size="sm"
-          className="rounded-none font-mono text-[10px] tracking-widest uppercase gap-2"
+          className="rounded-(--radius) font-mono text-[10px] tracking-widest uppercase gap-2"
         >
           <Rocket className="size-3.5" /> Bulk Invite
         </Button>
       </div>
 
       {/* List */}
-      <Card className="rounded-none border-border/50 bg-card/40 overflow-hidden">
+      <Card className="rounded-(--radius) border-border/50 bg-card/40 overflow-hidden">
         <CardHeader className="border-b border-border/10">
           <CardTitle className="text-[11px] font-mono tracking-[0.2em] uppercase text-muted-foreground">
             Queue Status{" "}
@@ -206,7 +206,7 @@ export default function WaitlistPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="size-8 rounded-none group-hover:bg-primary/10 group-hover:text-primary transition-all"
+                            className="size-8 rounded-(--radius) group-hover:bg-primary/10 group-hover:text-primary transition-all"
                             title="Send Invitation"
                           >
                             <Mail className="size-3.5" />
@@ -214,7 +214,7 @@ export default function WaitlistPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="size-8 rounded-none group-hover:bg-green-500/10 group-hover:text-green-500 transition-all"
+                            className="size-8 rounded-(--radius) group-hover:bg-green-500/10 group-hover:text-green-500 transition-all"
                             title="Approve"
                           >
                             <CheckCircle2 className="size-3.5" />

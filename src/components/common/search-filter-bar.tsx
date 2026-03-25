@@ -4,7 +4,13 @@ import React from "react";
 import { Search, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 export interface FilterOption {
@@ -28,7 +34,7 @@ interface SearchFilterBarProps {
 /**
  * Reusable search and filter bar component
  * Handles search input and optional dropdown filter
- * 
+ *
  * Usage:
  * ```tsx
  * <SearchFilterBar
@@ -70,25 +76,27 @@ export function SearchFilterBar({
           placeholder={placeholder}
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-9 rounded-none bg-background/50 border border-input font-mono text-xs uppercase placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-0 transition-colors"
+          className="pl-9 rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-0 transition-colors"
         />
       </div>
 
       {/* Filter Dropdown */}
       {filterOptions.length > 0 && onFilterChange && (
         <Select value={filterValue || ""} onValueChange={onFilterChange}>
-          <SelectTrigger className={cn(
-            "rounded-none bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0",
-            filterLabel ? "min-w-140" : "min-w-130",
-          )}>
+          <SelectTrigger
+            className={cn(
+              "rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0",
+              filterLabel ? "min-w-140" : "min-w-130",
+            )}
+          >
             <SelectValue placeholder={filterLabel || "Select option"} />
           </SelectTrigger>
-          <SelectContent className="rounded-none border-border/40 bg-card/95 font-mono text-xs uppercase">
+          <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
             {filterOptions.map((opt) => (
               <SelectItem
                 key={opt.value}
                 value={opt.value}
-                className="rounded-none font-mono text-xs uppercase"
+                className="rounded-(--radius) font-mono text-xs uppercase"
               >
                 {opt.label}
               </SelectItem>
@@ -103,7 +111,7 @@ export function SearchFilterBar({
           onClick={onRefresh}
           variant="outline"
           size="sm"
-          className="rounded-none font-mono text-[10px] tracking-widest uppercase gap-2"
+          className="rounded-(--radius) font-mono text-[10px] tracking-widest uppercase gap-2"
         >
           <RefreshCw className="size-3" /> Refresh
         </Button>

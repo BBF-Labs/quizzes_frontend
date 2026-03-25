@@ -54,7 +54,7 @@ export function CTA() {
 
           <Button
             onClick={scrollToForm}
-            className="h-14 px-10 rounded-none font-mono text-sm font-bold tracking-widest uppercase bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-[0_0_30px_rgba(0,110,255,0.15)] hover:shadow-[0_0_40px_rgba(0,110,255,0.25)] mb-6"
+            className="h-14 px-10 rounded-(--radius) font-mono text-sm font-bold tracking-widest uppercase bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-[0_0_30px_rgba(0,110,255,0.15)] hover:shadow-[0_0_40px_rgba(0,110,255,0.25)] mb-6"
           >
             JOIN WAITLIST
           </Button>

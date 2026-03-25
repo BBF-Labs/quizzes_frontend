@@ -25,7 +25,7 @@ interface PaginationControllerProps {
 /**
  * Reusable pagination controller component
  * Handles page navigation with prev/next buttons and optional page info display
- * 
+ *
  * Usage:
  * ```tsx
  * <PaginationController
@@ -48,9 +48,7 @@ export function PaginationController({
   if (totalPages <= 1) return null;
 
   const buttonClasses =
-    buttonSize === "sm"
-      ? "h-8 px-2 text-[10px]"
-      : "h-9 px-3 text-xs";
+    buttonSize === "sm" ? "h-8 px-2 text-[10px]" : "h-9 px-3 text-xs";
 
   const pageInfo = (
     <span className="text-[10px] font-mono uppercase text-muted-foreground whitespace-nowrap">
@@ -66,7 +64,7 @@ export function PaginationController({
         disabled={page <= 1}
         onClick={() => onPageChange(Math.max(1, page - 1))}
         className={cn(
-          "rounded-none font-mono tracking-widest uppercase gap-2",
+          "rounded-(--radius) font-mono tracking-widest uppercase gap-2",
           buttonClasses,
         )}
         aria-label="Previous page"
@@ -79,7 +77,7 @@ export function PaginationController({
         disabled={page >= totalPages}
         onClick={() => onPageChange(Math.min(totalPages, page + 1))}
         className={cn(
-          "rounded-none font-mono tracking-widest uppercase gap-2",
+          "rounded-(--radius) font-mono tracking-widest uppercase gap-2",
           buttonClasses,
         )}
         aria-label="Next page"

@@ -28,7 +28,7 @@ function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get("redirectUrl") || null;
-  
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
@@ -47,7 +47,9 @@ function SignupForm() {
   const { data: usernameExists, isFetching: isUsernameChecking } = useQuery({
     queryKey: ["checkUsername", debouncedUsername],
     queryFn: async () => {
-      const res = await api.post("/users/check", { username: debouncedUsername });
+      const res = await api.post("/users/check", {
+        username: debouncedUsername,
+      });
       return res.data?.data?.username?.exists ?? false;
     },
     enabled: isUsernameCheckable,
@@ -67,18 +69,18 @@ function SignupForm() {
   const usernameStatus: AvailabilityStatus = !isUsernameCheckable
     ? "idle"
     : isUsernameChecking
-    ? "checking"
-    : usernameExists === true
-    ? "taken"
-    : "available";
+      ? "checking"
+      : usernameExists === true
+        ? "taken"
+        : "available";
 
   const emailStatus: AvailabilityStatus = !isEmailCheckable
     ? "idle"
     : isEmailChecking
-    ? "checking"
-    : emailExists === true
-    ? "taken"
-    : "available";
+      ? "checking"
+      : emailExists === true
+        ? "taken"
+        : "available";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,7 +110,9 @@ function SignupForm() {
     try {
       await signup(name, email, username, password);
       // Append redirectUrl if it exists so Onboarding page can forward the user along after completion.
-      const dest = redirectUrl ? `/onboarding?redirectUrl=${encodeURIComponent(redirectUrl)}` : "/onboarding";
+      const dest = redirectUrl
+        ? `/onboarding?redirectUrl=${encodeURIComponent(redirectUrl)}`
+        : "/onboarding";
       router.replace(dest);
     } catch (err) {
       const message =
@@ -343,11 +347,13 @@ function SignupForm() {
 
 export default function SignupPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="size-8 animate-spin text-primary" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <Loader2 className="size-8 animate-spin text-primary" />
+        </div>
+      }
+    >
       <SignupForm />
     </Suspense>
   );

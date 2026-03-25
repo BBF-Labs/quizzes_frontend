@@ -82,7 +82,7 @@ export default function PushOptInStep({ onComplete }: PushOptInStepProps) {
           <Button
             onClick={requestPermission}
             disabled={isSubmitting}
-            className="w-full rounded-none font-mono text-xs tracking-[0.2em] uppercase h-14 bg-primary hover:bg-primary/90 shadow-[0_0_30px_rgba(var(--primary),0.15)] group"
+            className="w-full rounded-(--radius) font-mono text-xs tracking-[0.2em] uppercase h-14 bg-primary hover:bg-primary/90 shadow-[0_0_30px_rgba(var(--primary),0.15)] group"
           >
             {isSubmitting ? (
               <div className="flex items-center justify-center">

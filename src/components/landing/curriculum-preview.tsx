@@ -160,9 +160,7 @@ export function CurriculumPreview() {
 
                 <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
                   Electives{" "}
-                  <span className="lowercase normal-case font-normal">
-                    (pick 2 of 4)
-                  </span>
+                  <span className="normal-case font-normal">(pick 2 of 4)</span>
                 </h4>
                 <div className="space-y-4 mb-8">
                   {electives.map((course, i) => (

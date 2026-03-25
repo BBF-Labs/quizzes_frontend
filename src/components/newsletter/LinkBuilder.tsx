@@ -67,7 +67,7 @@ function LinkItem({
               <button
                 type="button"
                 onClick={() => removeLink(index)}
-                className="ml-2 text-muted-foreground/40 hover:text-destructive transition-colors rounded-none"
+                className="ml-2 text-muted-foreground/40 hover:text-destructive transition-colors rounded-(--radius)"
                 title="Remove Node"
               >
                 <X className="size-4" />
@@ -84,7 +84,7 @@ function LinkItem({
                 value={link.label}
                 onChange={(e) => updateLink(index, "label", e.target.value)}
                 disabled={disabled}
-                className="rounded-none font-mono text-xs h-9 bg-background/50 focus:bg-background transition-colors"
+                className="rounded-(--radius) font-mono text-xs h-9 bg-background/50 focus:bg-background transition-colors"
                 placeholder="View Dashboard"
               />
             </div>
@@ -96,7 +96,7 @@ function LinkItem({
                 value={link.baseUrl}
                 onChange={(e) => updateLink(index, "baseUrl", e.target.value)}
                 disabled={disabled}
-                className="rounded-none font-mono text-xs h-9 bg-background/50 focus:bg-background transition-colors"
+                className="rounded-(--radius) font-mono text-xs h-9 bg-background/50 focus:bg-background transition-colors"
                 placeholder="https://app.qz.tech"
               />
             </div>
@@ -162,7 +162,7 @@ function LinkItem({
                           if (e.key === "Escape") setIsEditingPath(-1 as any);
                         }}
                         disabled={disabled}
-                        className="h-7 py-0 px-2 min-w-20 w-auto inline-block rounded-none font-mono text-[11px] bg-background border-primary"
+                        className="h-7 py-0 px-2 min-w-20 w-auto inline-block rounded-(--radius) font-mono text-[11px] bg-background border-primary"
                       />
                     ) : (
                       <div className="relative group/seg inline-block">
@@ -170,14 +170,14 @@ function LinkItem({
                           type="button"
                           onClick={() => !disabled && setIsEditingPath(sIdx)}
                           className={cn(
-                            "px-2 py-1 border transition-all truncate max-w-50 flex items-center gap-1.5 pr-6 rounded-none",
+                            "px-2 py-1 border transition-all truncate max-w-50 flex items-center gap-1.5 pr-6 rounded-(--radius)",
                             seg.startsWith(":")
                               ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground font-bold shadow-[0_0_10px_rgba(0,110,255,0.05)]"
                               : "border-border/60 bg-secondary/10 text-foreground/80 hover:border-primary/40 hover:bg-secondary/30",
                           )}
                         >
                           {seg.startsWith(":") && (
-                            <span className="size-1 bg-primary rounded-none animate-pulse" />
+                            <span className="size-1 bg-primary rounded-(--radius) animate-pulse" />
                           )}
                           {seg}
                         </button>
@@ -196,7 +196,7 @@ function LinkItem({
                                 "/" + segments.join("/"),
                               );
                             }}
-                            className="absolute right-1 top-1/2 -translate-y-1/2 size-4 flex items-center justify-center text-muted-foreground/40 hover:text-destructive transition-colors rounded-none"
+                            className="absolute right-1 top-1/2 -translate-y-1/2 size-4 flex items-center justify-center text-muted-foreground/40 hover:text-destructive transition-colors rounded-(--radius)"
                           >
                             <X className="size-2.5" />
                           </button>
@@ -355,7 +355,7 @@ export function LinkBuilder({ links, onChange, disabled }: LinkBuilderProps) {
             onClick={() => addLink()}
             variant="outline"
             size="xs"
-            className="rounded-none font-mono text-[10px] tracking-widest uppercase border-primary/40 text-primary bg-primary/5 hover:bg-primary hover:text-primary-foreground"
+            className="rounded-(--radius) font-mono text-[10px] tracking-widest uppercase border-primary/40 text-primary bg-primary/5 hover:bg-primary hover:text-primary-foreground"
           >
             <Plus className="size-3" /> New Link
           </Button>

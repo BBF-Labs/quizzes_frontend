@@ -40,7 +40,11 @@ function ResetPasswordContent() {
     { id: "length", label: "Min 8 characters", met: password.length >= 8 },
     { id: "uppercase", label: "Uppercase letter", met: /[A-Z]/.test(password) },
     { id: "number", label: "A number", met: /[0-9]/.test(password) },
-    { id: "special", label: "Special character", met: /[^A-Za-z0-9]/.test(password) },
+    {
+      id: "special",
+      label: "Special character",
+      met: /[^A-Za-z0-9]/.test(password),
+    },
   ];
   const strength = {
     score: strengthRequirements.filter((r) => r.met).length,
@@ -250,8 +254,11 @@ function ResetPasswordContent() {
                     {errorStatus ||
                       (mutation.error instanceof Error
                         ? mutation.error.message
-                        : (mutation.error as unknown as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-                          "Reset failed.")}
+                        : (
+                            mutation.error as unknown as {
+                              response?: { data?: { message?: string } };
+                            }
+                          )?.response?.data?.message || "Reset failed.")}
                   </p>
                 )}
 

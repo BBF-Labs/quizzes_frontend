@@ -158,7 +158,7 @@ export default function ProfilePage() {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Identity & Security Combined Card */}
         <div className="xl:col-span-2 space-y-6">
-          <Card className="rounded-none border-border/50 bg-card/40 shadow-none">
+          <Card className="rounded-(--radius) border-border/50 bg-card/40 shadow-none">
             <CardHeader className="border-b border-border/50 py-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -178,7 +178,7 @@ export default function ProfilePage() {
               <div className="flex flex-col md:flex-row items-start gap-8">
                 {/* Avatar Section */}
                 <div className="flex flex-col items-center gap-4 shrink-0 mt-2">
-                  <Avatar className="size-24 border border-border/50 rounded-none bg-secondary/20 hover:border-primary/50 transition-colors">
+                  <Avatar className="size-24 border border-border/50 rounded-(--radius) bg-secondary/20 hover:border-primary/50 transition-colors">
                     <AvatarImage
                       src={
                         localPreview ||
@@ -187,14 +187,14 @@ export default function ProfilePage() {
                       }
                       className="object-cover"
                     />
-                    <AvatarFallback className="rounded-none bg-transparent font-mono text-xl text-primary uppercase">
+                    <AvatarFallback className="rounded-(--radius) bg-transparent font-mono text-xl text-primary uppercase">
                       {user?.username?.substring(0, 2) || "AD"}
                     </AvatarFallback>
                   </Avatar>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 text-[10px] font-mono uppercase rounded-none px-4 w-full"
+                    className="h-8 text-[10px] font-mono uppercase rounded-(--radius) px-4 w-full"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploadMutation.isPending}
                   >
@@ -271,7 +271,7 @@ export default function ProfilePage() {
                         }
                         placeholder="node_alias"
                         className={cn(
-                          "rounded-none font-mono text-xs h-11 bg-background/50 transition-colors uppercase",
+                          "rounded-(--radius) font-mono text-xs h-11 bg-background/50 transition-colors uppercase",
                           username !== user?.username &&
                             !isUsernameTaken &&
                             !isChecking &&
@@ -313,7 +313,7 @@ export default function ProfilePage() {
                         onChange={(e) => setCurrentPassword(e.target.value)}
                         placeholder="••••••••"
                         className={cn(
-                          "rounded-none font-mono text-xs h-11 bg-background/50 uppercase",
+                          "rounded-(--radius) font-mono text-xs h-11 bg-background/50 uppercase",
                           currentPassword &&
                             isPasswordValid &&
                             "border-green-500/50 bg-green-500/5",
@@ -337,7 +337,7 @@ export default function ProfilePage() {
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="SET NEW ACCESS KEY"
-                      className="rounded-none font-mono text-xs h-11 bg-background/50 uppercase"
+                      className="rounded-(--radius) font-mono text-xs h-11 bg-background/50 uppercase"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -352,7 +352,7 @@ export default function ProfilePage() {
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="REPEAT NEW ACCESS KEY"
                       className={cn(
-                        "rounded-none font-mono text-xs h-11 bg-background/50 uppercase",
+                        "rounded-(--radius) font-mono text-xs h-11 bg-background/50 uppercase",
                         confirmPassword &&
                           newPassword === confirmPassword &&
                           "border-green-500/50 bg-green-500/5",
@@ -374,7 +374,7 @@ export default function ProfilePage() {
                 updateProfile.isPending ||
                 Boolean(newPassword && newPassword !== confirmPassword)
               }
-              className="rounded-none font-mono text-xs tracking-[0.15em] uppercase gap-2 h-11 px-12 shadow-[0_0_15px_rgba(0,110,255,0.1)] hover:shadow-[0_0_25px_rgba(0,110,255,0.2)] transition-all"
+              className="rounded-(--radius) font-mono text-xs tracking-[0.15em] uppercase gap-2 h-11 px-12 shadow-[0_0_15px_rgba(0,110,255,0.1)] hover:shadow-[0_0_25px_rgba(0,110,255,0.2)] transition-all"
             >
               {updateProfile.isPending ? (
                 <LoaderCircle className="size-4 animate-spin" />
@@ -390,7 +390,7 @@ export default function ProfilePage() {
 
         {/* Protocol & Scopes */}
         <div className="space-y-6">
-          <Card className="rounded-none border-border/50 bg-card/40 shadow-none">
+          <Card className="rounded-(--radius) border-border/50 bg-card/40 shadow-none">
             <CardHeader className="py-3 border-b border-border/50 bg-secondary/5">
               <CardTitle className="text-[10px] font-mono uppercase tracking-widest opacity-60">
                 Access Scopes

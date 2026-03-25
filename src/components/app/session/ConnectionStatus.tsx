@@ -39,22 +39,28 @@ export function ConnectionStatus({
   isConnected,
   className,
 }: ConnectionStatusProps) {
-  const effective: ConnectionType =
-    isConnected ? connectionType : "disconnected";
+  const effective: ConnectionType = isConnected
+    ? connectionType
+    : "disconnected";
   const cfg = config[effective];
   const Icon = cfg.icon;
 
   return (
-    <div 
+    <div
       className={cn(
-        "flex items-center justify-center w-9 h-9 border border-border bg-transparent transition-colors",
-        className
+        "flex items-center justify-center w-9 h-9 border border-border bg-transparent transition-colors rounded-(--radius)",
+        className,
       )}
       title={`${cfg.label} Connection`}
     >
       <div className="relative">
         <Icon className={cn("size-4", cfg.text)} />
-        <span className={cn("absolute -top-1 -right-1 size-1.5 rounded-none", cfg.dot)} />
+        <span
+          className={cn(
+            "absolute -top-1 -right-1 size-1.5 rounded-(--radius)",
+            cfg.dot,
+          )}
+        />
       </div>
     </div>
   );

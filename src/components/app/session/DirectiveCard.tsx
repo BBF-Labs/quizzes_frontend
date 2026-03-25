@@ -392,7 +392,7 @@ function ShowPlanCard({
     >
       {/* Header bar */}
       <div className="px-4 py-3 border-b border-border/50 bg-background/80 flex items-center gap-3">
-        <div className="w-6 h-6 border border-primary/40 bg-primary/20 flex items-center justify-center text-primary font-bold shrink-0">
+        <div className="w-6 h-6 border border-primary/40 bg-primary/20 flex items-center justify-center text-primary font-bold shrink-0 rounded-(--radius)">
           Z
         </div>
         <div className="font-bold text-foreground uppercase tracking-widest flex items-center gap-2 flex-1">
@@ -422,7 +422,7 @@ function ShowPlanCard({
             >
               {/* Status icon */}
               {isDone && (
-                <div className="mt-0.5 w-4 h-4 border border-primary bg-primary/20 flex items-center justify-center shrink-0">
+                <div className="mt-0.5 w-4 h-4 border border-primary bg-primary/20 flex items-center justify-center shrink-0 rounded-(--radius)">
                   <CheckCircle2 className="w-2.5 h-2.5 text-primary" />
                 </div>
               )}
@@ -432,7 +432,7 @@ function ShowPlanCard({
                 </div>
               )}
               {!isDone && !isActive && (
-                <div className="mt-0.5 w-4 h-4 border border-muted-foreground/30 shrink-0" />
+                <div className="mt-0.5 w-4 h-4 border border-muted-foreground/30 shrink-0 rounded-(--radius)" />
               )}
 
               {/* Step text */}
