@@ -16,8 +16,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
-import { INewsletterImage, useNewsletterImages } from "@/hooks/use-campaigns";
-import { useUploadFile } from "@/hooks/use-upload";
+import { INewsletterImage, useNewsletterImages } from "@/hooks";
+import { useUploadFile } from "@/hooks";
 import { toast } from "sonner";
 import {
   Sheet,
@@ -42,7 +42,9 @@ export function ImageManager({
 }: ImageManagerProps) {
   const [pendingFiles, setPendingFiles] = useState<Record<number, File>>({});
   const [isUploading, setIsUploading] = useState<Record<number, boolean>>({});
-  const [imageLoadErrors, setImageLoadErrors] = useState<Record<number, boolean>>({});
+  const [imageLoadErrors, setImageLoadErrors] = useState<
+    Record<number, boolean>
+  >({});
   const [imageLoaded, setImageLoaded] = useState<Record<number, boolean>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const activeIndexRef = useRef<number | null>(null);
@@ -69,7 +71,7 @@ export function ImageManager({
   // Cleanup preview URLs when they change
   React.useEffect(() => {
     return () => {
-      Object.values(previewUrls).forEach(url => {
+      Object.values(previewUrls).forEach((url) => {
         URL.revokeObjectURL(url);
       });
     };
@@ -148,7 +150,10 @@ export function ImageManager({
 
         setIsUploading((prev) => ({ ...prev, [i]: true }));
         try {
-          const res = await uploadMutation.mutateAsync({ file, folder: "newsletter" });
+          const res = await uploadMutation.mutateAsync({
+            file,
+            folder: "newsletter",
+          });
           const { _id, url } = res;
 
           // Update the parent state
@@ -173,8 +178,8 @@ export function ImageManager({
             "response" in error &&
             typeof (error as { response?: { data?: { message?: string } } })
               .response?.data?.message === "string"
-              ? (error as { response: { data: { message: string } } }).response.data
-                  .message
+              ? (error as { response: { data: { message: string } } }).response
+                  .data.message
               : null;
 
           toast.error(
@@ -235,7 +240,7 @@ export function ImageManager({
                   type="button"
                   variant="outline"
                   size="xs"
-                  className="rounded-none font-mono text-[9px] tracking-widest uppercase border-border/40 text-muted-foreground bg-secondary/10 hover:bg-secondary h-6"
+                  className="rounded-(--radius) font-mono text-[9px] tracking-widest uppercase border-border/40 text-muted-foreground bg-secondary/10 hover:bg-secondary h-6"
                 >
                   <Search className="size-3" /> Browse System Gallery
                 </Button>
@@ -254,7 +259,7 @@ export function ImageManager({
                           {[...Array(6)].map((_, i) => (
                             <Skeleton
                               key={i}
-                              className="aspect-square rounded-none bg-secondary/30"
+                              className="aspect-square rounded-(--radius) bg-secondary/30"
                             />
                           ))}
                         </div>
@@ -268,42 +273,60 @@ export function ImageManager({
                       ) : (
                         <div className="grid grid-cols-2 gap-3 pb-20">
                           {galleryData?.items?.map((asset) => {
-                            const assetDisplayUrl = asset.url || (typeof asset.upload === 'object' && asset.upload ? asset.upload.url : "");
-                            const assetFilename = typeof asset.upload === 'object' && asset.upload ? asset.upload.originalFilename : "Static Asset";
+                            const assetDisplayUrl =
+                              asset.url ||
+                              (typeof asset.upload === "object" && asset.upload
+                                ? asset.upload.url
+                                : "");
+                            const assetFilename =
+                              typeof asset.upload === "object" && asset.upload
+                                ? asset.upload.originalFilename
+                                : "Static Asset";
                             if (!assetDisplayUrl) return null;
-                            
+
                             return (
-                            <div
-                              key={asset._id}
-                              onClick={() => {
-                                onChange([
-                                  ...images,
-                                  { url: assetDisplayUrl, altText: asset.altText, upload: typeof asset.upload === 'object' && asset.upload ? asset.upload._id : asset.upload },
-                                ]);
-                                setGalleryOpen(false);
-                                toast.success("Image added to this campaign.");
-                              }}
-                              className="group relative aspect-square bg-secondary/20 border border-border/40 cursor-pointer overflow-hidden hover:border-primary/50 transition-all"
-                            >
-                              <NextImage
-                                key={`gallery-${asset._id}`}
-                                src={assetDisplayUrl}
-                                alt={asset.altText || 'Gallery image'}
-                                fill
-                                unoptimized
-                                sizes="(max-width: 768px) 50vw, 25vw"
-                                className="object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
-                              />
-                              <div className="absolute inset-x-0 bottom-0 bg-black/60 p-2 translate-y-full group-hover:translate-y-0 transition-transform">
-                                <p className="text-[8px] font-mono text-white truncate uppercase tracking-widest leading-none mb-1">
-                                  {assetFilename}
-                                </p>
-                                <p className="text-[7px] font-mono text-muted-foreground truncate leading-none">
-                                  {asset.altText}
-                                </p>
+                              <div
+                                key={asset._id}
+                                onClick={() => {
+                                  onChange([
+                                    ...images,
+                                    {
+                                      url: assetDisplayUrl,
+                                      altText: asset.altText,
+                                      upload:
+                                        typeof asset.upload === "object" &&
+                                        asset.upload
+                                          ? asset.upload._id
+                                          : asset.upload,
+                                    },
+                                  ]);
+                                  setGalleryOpen(false);
+                                  toast.success(
+                                    "Image added to this campaign.",
+                                  );
+                                }}
+                                className="group relative aspect-square bg-secondary/20 border border-border/40 cursor-pointer overflow-hidden hover:border-primary/50 transition-all"
+                              >
+                                <NextImage
+                                  key={`gallery-${asset._id}`}
+                                  src={assetDisplayUrl}
+                                  alt={asset.altText || "Gallery image"}
+                                  fill
+                                  unoptimized
+                                  sizes="(max-width: 768px) 50vw, 25vw"
+                                  className="object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
+                                />
+                                <div className="absolute inset-x-0 bottom-0 bg-black/60 p-2 translate-y-full group-hover:translate-y-0 transition-transform">
+                                  <p className="text-[8px] font-mono text-white truncate uppercase tracking-widest leading-none mb-1">
+                                    {assetFilename}
+                                  </p>
+                                  <p className="text-[7px] font-mono text-muted-foreground truncate leading-none">
+                                    {asset.altText}
+                                  </p>
+                                </div>
                               </div>
-                            </div>
-                          )})}
+                            );
+                          })}
                         </div>
                       )}
                     </ScrollArea>
@@ -317,7 +340,7 @@ export function ImageManager({
                         size="xs"
                         disabled={page === 1}
                         onClick={() => setPage((p) => p - 1)}
-                        className="rounded-none text-[8px] h-6 uppercase font-mono tracking-widest"
+                        className="rounded-(--radius) text-[8px] h-6 uppercase font-mono tracking-widest"
                       >
                         PREV
                       </Button>
@@ -329,7 +352,7 @@ export function ImageManager({
                         size="xs"
                         disabled={(galleryData?.total || 0) <= page * 12}
                         onClick={() => setPage((p) => p + 1)}
-                        className="rounded-none text-[8px] h-6 uppercase font-mono tracking-widest"
+                        className="rounded-(--radius) text-[8px] h-6 uppercase font-mono tracking-widest"
                       >
                         NEXT
                       </Button>
@@ -344,7 +367,7 @@ export function ImageManager({
               onClick={addImage}
               variant="outline"
               size="xs"
-              className="rounded-none font-mono text-[9px] tracking-widest uppercase border-primary/40 text-primary bg-primary/5 hover:bg-primary hover:text-primary-foreground h-6"
+              className="rounded-(--radius) font-mono text-[9px] tracking-widest uppercase border-primary/40 text-primary bg-primary/5 hover:bg-primary hover:text-primary-foreground h-6"
             >
               <Plus className="size-3" /> New Image
             </Button>
@@ -364,7 +387,12 @@ export function ImageManager({
           <AnimatePresence initial={false}>
             {images.map((img, i) => {
               const pending = pendingFiles[i];
-              const previewUrl = previewUrls[i] || img.url || (typeof img.upload === 'object' && img.upload ? img.upload.url : "");
+              const previewUrl =
+                previewUrls[i] ||
+                img.url ||
+                (typeof img.upload === "object" && img.upload
+                  ? img.upload.url
+                  : "");
               const isUploaded = !!img.upload || !!img.url;
               const uploading = isUploading[i];
 
@@ -380,7 +408,7 @@ export function ImageManager({
                     <button
                       type="button"
                       onClick={() => removeImage(i)}
-                      className="absolute -top-2 -right-2 size-5 bg-background border border-border rounded-none hover:border-destructive hover:text-destructive flex items-center justify-center transition-all z-10"
+                      className="absolute -top-2 -right-2 size-5 bg-background border border-border rounded-(--radius) hover:border-destructive hover:text-destructive flex items-center justify-center transition-all z-10"
                       title="Remove Image"
                     >
                       <X className="size-3" />
@@ -406,23 +434,37 @@ export function ImageManager({
                           <NextImage
                             key={`img-${i}-${previewUrl}`}
                             src={previewUrl}
-                            alt={img.altText || 'Campaign image'}
+                            alt={img.altText || "Campaign image"}
                             fill
                             unoptimized
                             sizes="96px"
                             onLoad={() => {
-                              setImageLoaded(prev => ({ ...prev, [i]: true }));
-                              setImageLoadErrors(prev => ({ ...prev, [i]: false }));
+                              setImageLoaded((prev) => ({
+                                ...prev,
+                                [i]: true,
+                              }));
+                              setImageLoadErrors((prev) => ({
+                                ...prev,
+                                [i]: false,
+                              }));
                             }}
                             onError={() => {
-                              setImageLoadErrors(prev => ({ ...prev, [i]: true }));
-                              setImageLoaded(prev => ({ ...prev, [i]: false }));
+                              setImageLoadErrors((prev) => ({
+                                ...prev,
+                                [i]: true,
+                              }));
+                              setImageLoaded((prev) => ({
+                                ...prev,
+                                [i]: false,
+                              }));
                             }}
                             className={cn(
                               "object-cover transition-all duration-700 group-hover/preview:scale-110",
                               !pending &&
                                 "grayscale group-hover/preview:grayscale-0",
-                              !imageLoaded[i] && !imageLoadErrors[i] && "opacity-0",
+                              !imageLoaded[i] &&
+                                !imageLoadErrors[i] &&
+                                "opacity-0",
                               imageLoaded[i] && "opacity-100",
                             )}
                           />
@@ -489,7 +531,7 @@ export function ImageManager({
                           }
                           disabled={disabled || !!pending}
                           placeholder="https://cdn.qz.tech/asset.jpg"
-                          className="h-7 text-[10px] font-mono rounded-none bg-secondary/10 border-border/30 focus:border-primary/50 transition-colors"
+                          className="h-7 text-[10px] font-mono rounded-(--radius) bg-secondary/10 border-border/30 focus:border-primary/50 transition-colors"
                         />
                       </div>
 
@@ -505,7 +547,7 @@ export function ImageManager({
                           }
                           disabled={disabled}
                           placeholder="Explain for Z..."
-                          className="h-7 text-[10px] font-mono rounded-none bg-secondary/10 border-border/30 focus:border-primary/50 transition-colors"
+                          className="h-7 text-[10px] font-mono rounded-(--radius) bg-secondary/10 border-border/30 focus:border-primary/50 transition-colors"
                         />
                       </div>
 
@@ -522,7 +564,7 @@ export function ImageManager({
                               type="button"
                               onClick={() => confirmUpload(i)}
                               size="xs"
-                              className="flex-1 rounded-none h-6 font-mono text-[8px] uppercase tracking-widest"
+                              className="flex-1 rounded-(--radius) h-6 font-mono text-[8px] uppercase tracking-widest"
                             >
                               <Check className="size-2.5 mr-1" /> Confirm Upload
                             </Button>
@@ -531,7 +573,7 @@ export function ImageManager({
                               onClick={() => cancelPending(i)}
                               variant="outline"
                               size="xs"
-                              className="rounded-none h-6 font-mono text-[8px] uppercase tracking-widest px-2"
+                              className="rounded-(--radius) h-6 font-mono text-[8px] uppercase tracking-widest px-2"
                             >
                               Cancel
                             </Button>

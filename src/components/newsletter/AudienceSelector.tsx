@@ -1,18 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Info, Users, Building2, School, MapPin, X } from "lucide-react";
-import { IAudienceFilter } from "@/hooks/use-campaigns";
-import { useUniversities } from "@/hooks/use-universities";
+import { Check, Info, Users, X } from "lucide-react";
+import { IAudienceFilter } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 interface AudienceSelectorProps {
   value: IAudienceFilter;
@@ -20,20 +12,7 @@ interface AudienceSelectorProps {
   disabled?: boolean;
 }
 
-type UniversityOption = {
-  _id?: string;
-  id?: string;
-  name: string;
-};
-
-const ROLES = [
-  "super_admin",
-  "uni_admin",
-  "admin",
-  "staff",
-  "moderator",
-  "student",
-] as const;
+const ROLES = ["super_admin", "creator", "moderator", "student"] as const;
 const WAITLIST_STATUS = ["active", "removed"] as const;
 const NEWSLETTER_STATUS = [
   "pending",
@@ -42,15 +21,14 @@ const NEWSLETTER_STATUS = [
   "bounced",
 ] as const;
 
-export function AudienceSelector({ value, onChange, disabled = false }: AudienceSelectorProps) {
-  const { data: universitiesData } = useUniversities();
+export function AudienceSelector({
+  value,
+  onChange,
+  disabled = false,
+}: AudienceSelectorProps) {
   const [activeTab, setActiveTab] = useState<
-    "platform" | "lanes" | "institution" | "overrides"
+    "platform" | "lanes" | "overrides"
   >("platform");
-
-  const universities: UniversityOption[] = Array.isArray(universitiesData?.data)
-    ? (universitiesData.data as UniversityOption[])
-    : [];
 
   const filter = value || {};
   const [newEmailInput, setNewEmailInput] = useState("");
@@ -64,14 +42,14 @@ export function AudienceSelector({ value, onChange, disabled = false }: Audience
   const addEmail = (email: string) => {
     const trimmed = email.trim().toLowerCase();
     if (!trimmed) return;
-    
+
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(trimmed)) return;
-    
+
     const currentEmails = filter.specificEmails || [];
     if (currentEmails.includes(trimmed)) return;
-    
+
     updateFilter({ specificEmails: [...currentEmails, trimmed] });
     setNewEmailInput("");
   };
@@ -88,31 +66,31 @@ export function AudienceSelector({ value, onChange, disabled = false }: Audience
 
   const saveEditedEmail = () => {
     if (!editingEmail) return;
-    
+
     const trimmed = editingValue.trim().toLowerCase();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    
+
     // If empty or invalid, just cancel editing
     if (!trimmed || !emailRegex.test(trimmed)) {
       setEditingEmail(null);
       setEditingValue("");
       return;
     }
-    
+
     const currentEmails = filter.specificEmails || [];
-    
+
     // If it's a duplicate (and not the same email), cancel
     if (trimmed !== editingEmail && currentEmails.includes(trimmed)) {
       setEditingEmail(null);
       setEditingValue("");
       return;
     }
-    
+
     // Update the email
-    const updatedEmails = currentEmails.map((e) => 
-      e === editingEmail ? trimmed : e
+    const updatedEmails = currentEmails.map((e) =>
+      e === editingEmail ? trimmed : e,
     );
-    
+
     updateFilter({ specificEmails: updatedEmails });
     setEditingEmail(null);
     setEditingValue("");
@@ -123,7 +101,9 @@ export function AudienceSelector({ value, onChange, disabled = false }: Audience
     setEditingValue("");
   };
 
-  const handleEmailInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleEmailInputKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
     if (e.key === "Enter") {
       e.preventDefault();
       addEmail(newEmailInput);
@@ -154,22 +134,20 @@ export function AudienceSelector({ value, onChange, disabled = false }: Audience
     <div className="border border-border/40 bg-card/20 overflow-hidden">
       {/* Mini Tabs */}
       <div className="flex border-b border-border/25 bg-secondary/10">
-        {(["platform", "lanes", "institution", "overrides"] as const).map(
-          (tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={cn(
-                "px-4 py-2 text-[10px] font-mono uppercase tracking-widest transition-all border-r border-border/25 last:border-r-0",
-                activeTab === tab
-                  ? "bg-background text-primary"
-                  : "text-muted-foreground hover:bg-secondary/20 hover:text-foreground",
-              )}
-            >
-              {tab}
-            </button>
-          ),
-        )}
+        {(["platform", "lanes", "overrides"] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={cn(
+              "px-4 py-2 text-[10px] font-mono uppercase tracking-widest transition-all border-r border-border/25 last:border-r-0",
+              activeTab === tab
+                ? "bg-background text-primary"
+                : "text-muted-foreground hover:bg-secondary/20 hover:text-foreground",
+            )}
+          >
+            {tab}
+          </button>
+        ))}
       </div>
 
       <div className="p-5 space-y-6">
@@ -414,92 +392,6 @@ export function AudienceSelector({ value, onChange, disabled = false }: Audience
           </div>
         )}
 
-        {/* INSTITUTION SECTION */}
-        {activeTab === "institution" && (
-          <div className="space-y-6 animate-in fade-in slide-in-from-top-1 duration-300">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground flex items-center gap-2">
-                  <Building2 className="size-3" /> University Target
-                </label>
-                <Select
-                  value={filter.universityId || "all"}
-                  onValueChange={(value) =>
-                    updateFilter({
-                      universityId: value === "all" ? undefined : value,
-                    })
-                  }
-                  disabled={disabled}
-                >
-                  <SelectTrigger className="w-full rounded-none bg-background/50 border border-border/40 font-mono text-xs uppercase focus-visible:ring-0">
-                    <SelectValue placeholder="Global (All Universities)" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-none border-border/40 bg-card/95 font-mono text-xs uppercase">
-                    <SelectItem
-                      value="all"
-                      className="rounded-none font-mono text-xs uppercase"
-                    >
-                      Global (All Universities)
-                    </SelectItem>
-                    {universities
-                      .filter((u) => Boolean(u._id ?? u.id))
-                      .map((u) => (
-                        <SelectItem
-                          key={u._id ?? u.id ?? u.name}
-                          value={(u._id ?? u.id) as string}
-                          className="rounded-none font-mono text-xs uppercase"
-                        >
-                          {u.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[9px] font-mono tracking-widest uppercase text-muted-foreground flex items-center gap-2">
-                    <MapPin className="size-3" /> Campus ID
-                  </label>
-                  <Input
-                    value={filter.campusId || ""}
-                    onChange={(e) =>
-                      updateFilter({ campusId: e.target.value || undefined })
-                    }
-                    placeholder="INSTITUTION_ID"
-                    className="rounded-none h-9 font-mono text-[10px]"
-                    disabled={disabled}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[9px] font-mono tracking-widest uppercase text-muted-foreground flex items-center gap-2">
-                    <School className="size-3" /> College ID
-                  </label>
-                  <Input
-                    value={filter.collegeId || ""}
-                    onChange={(e) =>
-                      updateFilter({ collegeId: e.target.value || undefined })
-                    }
-                    placeholder="INSTITUTION_ID"
-                    className="rounded-none h-9 font-mono text-[10px]"
-                    disabled={disabled}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-3 pt-4 border-t border-border/10">
-                <div className="flex items-start gap-2">
-                  <Info className="size-3 text-blue-400 mt-0.5" />
-                  <p className="text-[9px] font-mono text-muted-foreground uppercase leading-relaxed">
-                    Broadcasting to specific institutes will only reach users &
-                    contacts associated with those nodes.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* OVERRIDES SECTION */}
         {activeTab === "overrides" && (
           <div className="space-y-6 animate-in fade-in slide-in-from-top-1 duration-300">
@@ -583,7 +475,7 @@ export function AudienceSelector({ value, onChange, disabled = false }: Audience
                           parseInt(e.target.value) || 0,
                       })
                     }
-                    className="rounded-none h-9 w-20 font-mono text-xs"
+                    className="rounded-(--radius) h-9 w-20 font-mono text-xs"
                     disabled={disabled}
                   />
                   <span className="text-[9px] font-mono uppercase text-muted-foreground">
@@ -601,7 +493,7 @@ export function AudienceSelector({ value, onChange, disabled = false }: Audience
                 <p className="text-[9px] font-mono text-muted-foreground uppercase">
                   Target specific emails:
                 </p>
-                
+
                 {/* Email chips display */}
                 <div className="flex flex-wrap gap-2 min-h-10 p-3 border border-border/40 bg-black/10">
                   {(filter.specificEmails || []).map((email) => (
@@ -613,7 +505,7 @@ export function AudienceSelector({ value, onChange, disabled = false }: Audience
                           onChange={(e) => setEditingValue(e.target.value)}
                           onBlur={saveEditedEmail}
                           onKeyDown={handleEditKeyDown}
-                          className="h-7 py-0 px-2 min-w-40 w-auto inline-block rounded-none font-mono text-[10px] bg-background border-primary"
+                          className="h-7 py-0 px-2 min-w-40 w-auto inline-block rounded-(--radius) font-mono text-[10px] bg-background border-primary"
                         />
                       ) : (
                         <div
@@ -623,9 +515,11 @@ export function AudienceSelector({ value, onChange, disabled = false }: Audience
                             disabled && "opacity-50",
                           )}
                         >
-                          <span 
+                          <span
                             className="truncate max-w-50"
-                            onClick={() => !disabled && startEditingEmail(email)}
+                            onClick={() =>
+                              !disabled && startEditingEmail(email)
+                            }
                           >
                             {email}
                           </span>
@@ -645,9 +539,10 @@ export function AudienceSelector({ value, onChange, disabled = false }: Audience
                       )}
                     </div>
                   ))}
-                  
+
                   {/* Empty state */}
-                  {(!filter.specificEmails || filter.specificEmails.length === 0) && (
+                  {(!filter.specificEmails ||
+                    filter.specificEmails.length === 0) && (
                     <span className="text-[9px] font-mono text-muted-foreground/40 italic">
                       No specific emails set
                     </span>
@@ -663,10 +558,11 @@ export function AudienceSelector({ value, onChange, disabled = false }: Audience
                       onKeyDown={handleEmailInputKeyDown}
                       onBlur={() => addEmail(newEmailInput)}
                       placeholder="user@example.com (press Enter to add)"
-                      className="rounded-none h-9 font-mono text-[10px] bg-background/50 focus:bg-background transition-colors"
+                      className="rounded-(--radius) h-9 font-mono text-[10px] bg-background/50 focus:bg-background transition-colors"
                     />
                     <p className="text-[8px] font-mono text-muted-foreground/50 italic">
-                      Press Enter or click outside to add. Click any email to edit. Invalid or duplicate emails will be ignored.
+                      Press Enter or click outside to add. Click any email to
+                      edit. Invalid or duplicate emails will be ignored.
                     </p>
                   </div>
                 )}

@@ -4,8 +4,9 @@ import { useAuth } from "@/contexts/auth-context";
 import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, ArrowRight } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { queryKeys } from "@/lib/query-keys";
+import { useAuthQuery } from "@/hooks";
 
 export default function OnboardingBanner() {
   const { user } = useAuth();
@@ -13,8 +14,8 @@ export default function OnboardingBanner() {
   const pathname = usePathname();
 
   const { data: onboardingStatus, isLoading: onboardingStatusLoading } =
-    useQuery({
-      queryKey: ["onboarding-status"],
+    useAuthQuery({
+      queryKey: queryKeys.onboardingStatus,
       queryFn: async () => {
         const res = await api.get("/users/onboarding/status");
         return res.data?.data;
@@ -41,7 +42,7 @@ export default function OnboardingBanner() {
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         exit={{ y: -100 }}
-        className="fixed top-0 left-0 w-full bg-primary/10 border-b border-primary/20 backdrop-blur-md z-100 h-12.25"
+        className="fixed top-0 left-0 w-full bg-primary/10 border-b border-primary/20 backdrop-blur-md z-100 h-[49px]"
       >
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">

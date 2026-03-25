@@ -21,15 +21,15 @@ const Toaster = ({ ...props }: ToasterProps) => {
       toastOptions={{
         classNames: {
           toast:
-            "group toast rounded-none border border-border bg-card text-card-foreground font-mono shadow-[6px_6px_0px_rgba(0,0,0,0.25)] dark:shadow-[6px_6px_0px_rgba(255,255,255,0.06)]",
+            "group toast rounded-(--radius) border border-border bg-card text-card-foreground font-mono shadow-[6px_6px_0px_rgba(0,0,0,0.25)] dark:shadow-[6px_6px_0px_rgba(255,255,255,0.06)]",
           title: "text-[11px] font-bold uppercase tracking-widest",
           description: "text-[11px] text-muted-foreground leading-relaxed",
           actionButton:
-            "rounded-none border border-border bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-widest px-3",
+            "rounded-(--radius) border border-border bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-widest px-3",
           cancelButton:
-            "rounded-none border border-border bg-secondary text-secondary-foreground text-[10px] font-bold uppercase tracking-widest px-3",
+            "rounded-(--radius) border border-border bg-secondary text-secondary-foreground text-[10px] font-bold uppercase tracking-widest px-3",
           closeButton:
-            "rounded-none border border-border bg-background text-foreground",
+            "rounded-(--radius) border border-border bg-background text-foreground",
           success: "border-primary/60",
           error: "border-destructive/60 text-destructive",
           warning: "border-yellow-500/60 text-yellow-500",
@@ -68,7 +68,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
           "--info-text": "var(--card-foreground)",
           "--info-border":
             "color-mix(in oklab, var(--primary) 55%, var(--border) 45%)",
-          "--border-radius": "0px",
+          "--border-radius": "var(--radius)",
         } as React.CSSProperties
       }
       {...props}

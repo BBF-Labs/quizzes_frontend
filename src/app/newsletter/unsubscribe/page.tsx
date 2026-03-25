@@ -3,9 +3,9 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { useUnsubscribeNewsletter } from "@/hooks/use-newsletter";
-import { Navbar } from "@/components/navbar";
-import { Footer } from "@/components/footer";
+import { useUnsubscribeNewsletter } from "@/hooks";
+import { Navbar } from "@/components/common";
+import { Footer } from "@/components/landing";
 import Link from "next/link";
 import { ArrowRight, LogOut, CheckCircle2, AlertCircle } from "lucide-react";
 

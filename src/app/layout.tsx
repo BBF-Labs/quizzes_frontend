@@ -4,9 +4,9 @@ import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 
-import { Providers } from "@/components/providers";
+import { Providers } from "@/components/common";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
+import { ServiceWorkerRegistration } from "@/components/common";
 
 export const viewport: Viewport = {
   themeColor: "#006eff",
@@ -77,6 +77,7 @@ export default function RootLayout({
     <html lang="en" className="scroll-smooth" suppressHydrationWarning>
       <body
         className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}
+        suppressHydrationWarning
       >
         <Providers>
           {children}
