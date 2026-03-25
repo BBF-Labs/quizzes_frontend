@@ -61,31 +61,33 @@ export function UserProfileDropdown({
         <DropdownMenuSeparator />
 
         {/* App Dashboard Link */}
-        <DropdownMenuItem asChild className="rounded-(--radius) cursor-pointer">
-          <Link href="/app" className="w-full flex items-center gap-2 group">
-            <LayoutDashboard className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
-            <span className="font-mono text-xs uppercase tracking-widest">
+
+        <DropdownMenuItem
+          asChild
+          className="rounded-(--radius) cursor-pointer group hover:bg-primary/80"
+        >
+          <Link href="/app" className="w-full flex items-center gap-2">
+            <LayoutDashboard className="size-4 text-muted-foreground group-hover:text-white transition-colors" />
+            <span className="font-mono text-xs uppercase tracking-widest group-hover:text-white transition-colors">
               My Sessions
             </span>
           </Link>
         </DropdownMenuItem>
 
         {/* Global Settings */}
-        <DropdownMenuItem asChild className="rounded-(--radius) cursor-pointer">
-          <Link
-            href="/app/settings"
-            className="w-full flex items-center gap-2 group"
-          >
-            <Settings className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
-            <span className="font-mono text-xs uppercase tracking-widest">
+        <DropdownMenuItem
+          asChild
+          className="rounded-(--radius) cursor-pointer group hover:bg-primary/80"
+        >
+          <Link href="/app/settings" className="w-full flex items-center gap-2">
+            <Settings className="size-4 text-muted-foreground group-hover:text-white transition-colors" />
+            <span className="font-mono text-xs uppercase tracking-widest group-hover:text-white transition-colors">
               Settings
             </span>
           </Link>
         </DropdownMenuItem>
 
-        {(user.role === "super_admin" ||
-          user.role === "creator" ||
-          user.role === "moderator") && (
+        {(user.role === "super_admin" || user.role === "moderator") && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuLabel className="font-mono text-[10px] tracking-widest uppercase text-primary/80 py-2">
@@ -93,14 +95,11 @@ export function UserProfileDropdown({
             </DropdownMenuLabel>
             <DropdownMenuItem
               asChild
-              className="rounded-(--radius) cursor-pointer"
+              className="rounded-(--radius) cursor-pointer group hover:bg-primary/80"
             >
-              <Link
-                href="/admin"
-                className="w-full flex items-center gap-2 group"
-              >
-                <LayoutDashboard className="size-4 text-primary opacity-80 group-hover:opacity-100 transition-opacity" />
-                <span className="font-mono text-xs uppercase tracking-widest text-primary">
+              <Link href="/admin" className="w-full flex items-center gap-2">
+                <LayoutDashboard className="size-4 text-primary opacity-80 group-hover:opacity-100 group-hover:text-white transition-colors" />
+                <span className="font-mono text-xs uppercase tracking-widest text-primary group-hover:text-white transition-colors">
                   Admin Panel
                 </span>
               </Link>
@@ -112,10 +111,10 @@ export function UserProfileDropdown({
 
         <DropdownMenuItem
           onClick={onLogout}
-          className="rounded-(--radius) cursor-pointer focus:bg-red-500/10 focus:text-red-500 group"
+          className="rounded-(--radius) cursor-pointer group hover:bg-red-500/10 focus:bg-red-500/10 hover:text-red-500 focus:text-red-500"
         >
-          <LogOut className="size-4 mt-0.5" />
-          <span className="font-mono text-xs uppercase tracking-widest ml-2">
+          <LogOut className="size-4 mt-0.5 text-muted-foreground group-hover:text-red-500 group-focus:text-red-500 transition-colors" />
+          <span className="font-mono text-xs uppercase tracking-widest ml-2 group-hover:text-red-500 group-focus:text-red-500 transition-colors">
             Sign Out
           </span>
         </DropdownMenuItem>
