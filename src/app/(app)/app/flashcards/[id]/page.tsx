@@ -1,73 +1,82 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { use } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Link from "next/link";
 import {
   ChevronLeft,
   ChevronRight,
-  CheckCircle,
+  Check,
+  X,
   Pencil,
-  Plus,
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { useUiPreferences } from "@/hooks/common/use-ui-preferences";
+import confetti from "canvas-confetti";
 import type { FlashcardSetDetail, LibraryFlashcard } from "@/types/session";
 
 const MAX_CARDS = 50;
 
-// ─── Flip Card ────────────────────────────────────────────────────────────────
-
+// ─── Flip Card (Refactored) ────────────────────────────────────────────────
 function FlipCard({
   card,
   flipped,
   onFlip,
   onEdit,
   onDelete,
+  children,
+  style,
+  className,
 }: {
   card: LibraryFlashcard;
   flipped: boolean;
   onFlip: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  children?: React.ReactNode;
+  style?: React.CSSProperties;
+  className?: string;
 }) {
   return (
     <div
-      className="relative group cursor-pointer"
-      style={{ perspective: 1200 }}
+      className={cn(
+        "relative group cursor-pointer flex flex-col items-center justify-center",
+        className,
+      )}
+      style={{ perspective: 1200, ...style }}
       onClick={onFlip}
     >
       <motion.div
         animate={{ rotateY: flipped ? 180 : 0 }}
         transition={{ duration: 0.35, ease: "easeInOut" }}
         style={{ transformStyle: "preserve-3d" }}
-        className="relative h-95 sm:h-110 md:h-125 w-full"
+        className="relative w-full h-85 sm:h-105 md:h-130"
       >
         {/* Front */}
         <div
-          className="absolute inset-0 flex items-center justify-center border border-border/50 bg-card/70 px-8 py-10"
+          className="absolute inset-0 flex flex-col items-center justify-center border border-border/50 bg-card/80 px-8 py-10 rounded-2xl shadow-xl"
           style={{ backfaceVisibility: "hidden" }}
         >
-          <p className="text-lg sm:text-xl md:text-2xl font-mono text-center text-foreground leading-relaxed max-w-3xl">
+          <p className="text-2xl sm:text-3xl md:text-4xl font-mono text-center text-foreground leading-relaxed max-w-3xl select-none">
             {card.front}
           </p>
+          {children}
         </div>
-
         {/* Back */}
         <div
-          className="absolute inset-0 flex items-center justify-center border border-primary/30 bg-primary/10 px-8 py-10"
+          className="absolute inset-0 flex items-center justify-center border border-primary/30 bg-primary/10 px-8 py-10 rounded-2xl shadow-xl"
           style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
         >
-          <p className="text-lg sm:text-xl md:text-2xl font-mono text-center text-foreground leading-relaxed max-w-3xl">
+          <p className="text-2xl sm:text-3xl md:text-4xl font-mono text-center text-foreground leading-relaxed max-w-3xl select-none">
             {card.back}
           </p>
         </div>
       </motion.div>
-
       {/* Edit / Delete buttons — only on front face */}
       {!flipped && (
         <div
@@ -162,6 +171,7 @@ export default function FlashcardSetDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const { remoteUiPreferences } = useUiPreferences();
 
   const [set, setSet] = useState<FlashcardSetDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -174,6 +184,8 @@ export default function FlashcardSetDetailPage({
   const [editLoading, setEditLoading] = useState(false);
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [mastery, setMastery] = useState<Record<string, number>>({});
+  const confettiRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     api
@@ -279,181 +291,193 @@ export default function FlashcardSetDetailPage({
     }
   };
 
+  // Mastery logic: track correct/incorrect for each card
+  const handleMastery = (cardId: string, correct: boolean) => {
+    setMastery((prev) => {
+      const prevVal = prev[cardId] ?? 0;
+      const nextVal = Math.max(
+        0,
+        Math.min(100, prevVal + (correct ? 20 : -20)),
+      );
+      // Confetti on correct
+      if (correct && confettiRef.current) {
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { y: 0.6 },
+        });
+      }
+      return { ...prev, [cardId]: nextVal };
+    });
+  };
+
   const isFull = (set?.cards.length ?? 0) >= MAX_CARDS;
   const currentCard = set?.cards[currentIndex] ?? null;
 
+  // UI preferences
+  const cardStyle = remoteUiPreferences
+    ? {
+        borderRadius: `${remoteUiPreferences.radiusRem ?? 1}rem`,
+        fontFamily: remoteUiPreferences.fontPreset,
+        background:
+          remoteUiPreferences.palette === "custom"
+            ? remoteUiPreferences.customColors.primary
+            : undefined,
+      }
+    : {};
+
   return (
-    <div className="min-h-full px-4 py-8">
-      <div className="mx-auto max-w-5xl">
-        {/* Back link */}
-        <Link
-          href="/app/flashcards"
-          className="inline-block mb-6 text-[10px] font-mono uppercase tracking-widest text-muted-foreground/50 hover:text-primary transition-colors"
-        >
-          ← All Sets
-        </Link>
-
-        {/* Loading */}
-        {isLoading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[...Array(6)].map((_, i) => (
-              <div
-                key={i}
-                className="h-30 animate-pulse bg-card/40 border border-border/30"
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Error */}
-        {!isLoading && error && (
-          <div className="border border-destructive/40 bg-destructive/5 px-4 py-3 font-mono text-sm text-destructive">
-            {error}
-          </div>
-        )}
-
-        {set && (
-          <>
-            {/* Header */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-8"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h1 className="text-2xl font-black tracking-tighter">
-                    {set.title}
-                  </h1>
-                  {(set.courseTitle || set.courseCode) && (
-                    <p className="mt-1 text-[11px] font-mono text-muted-foreground/60">
-                      {[set.courseTitle, set.courseCode]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </p>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-[10px] font-mono text-muted-foreground/40">
-                    {set.cards.length}/{MAX_CARDS} cards
-                  </span>
-                  {!isFull ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 gap-1 text-[10px] font-mono"
-                      onClick={() => setAddingCard(true)}
-                    >
-                      <Plus className="size-3" />
-                      Add Card
-                    </Button>
-                  ) : (
-                    <span className="text-[10px] font-mono text-muted-foreground/40 border border-border/30 px-2 py-1">
-                      Set is full ({MAX_CARDS}/{MAX_CARDS})
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className="mt-4 h-px w-10 bg-primary/40" />
-            </motion.div>
-
-            {/* Add card form */}
-            <AnimatePresence>
-              {addingCard && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="mb-4 overflow-hidden"
-                >
-                  <CardForm
-                    onSave={handleAddCard}
-                    onCancel={() => setAddingCard(false)}
-                    loading={addLoading}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Empty state */}
-            {set.cards.length === 0 && !addingCard && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex flex-col items-center gap-4 py-20 text-center"
-              >
-                <CheckCircle className="size-8 text-muted-foreground/20" />
-                <p className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground/50">
-                  No cards yet — add one above.
-                </p>
-              </motion.div>
-            )}
-
-            {set.cards.length > 0 && currentCard && (
-              <>
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setCurrentIndex((prev) => Math.max(0, prev - 1))
-                    }
-                    disabled={currentIndex === 0}
-                    className="h-7 px-2 border border-border/50 bg-card/30 text-[10px] font-mono uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed hover:border-primary/40 transition-colors flex items-center gap-1"
-                  >
-                    <ChevronLeft className="size-3" /> Prev
-                  </button>
-
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/60">
-                    Card {currentIndex + 1} of {set.cards.length}
-                  </span>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setCurrentIndex((prev) =>
-                        Math.min((set.cards.length || 1) - 1, prev + 1),
-                      )
-                    }
-                    disabled={currentIndex >= set.cards.length - 1}
-                    className="h-7 px-2 border border-border/50 bg-card/30 text-[10px] font-mono uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed hover:border-primary/40 transition-colors flex items-center gap-1"
-                  >
-                    Next <ChevronRight className="size-3" />
-                  </button>
-                </div>
-
-                {editingCardId === currentCard.id ? (
-                  <CardForm
-                    initial={{
-                      front: currentCard.front,
-                      back: currentCard.back,
-                    }}
-                    onSave={(f, b) => handleEditCard(currentCard.id, f, b)}
-                    onCancel={() => setEditingCardId(null)}
-                    loading={editLoading}
-                  />
-                ) : (
-                  <div
-                    className={cn(
-                      "mx-auto max-w-4xl",
-                      deletingIds.has(currentCard.id)
-                        ? "opacity-40 pointer-events-none"
-                        : "",
-                    )}
-                  >
-                    <FlipCard
-                      card={currentCard}
-                      flipped={flippedIds.has(currentCard.id)}
-                      onFlip={() => toggleFlip(currentCard.id)}
-                      onEdit={() => setEditingCardId(currentCard.id)}
-                      onDelete={() => handleDeleteCard(currentCard.id)}
-                    />
-                  </div>
-                )}
-              </>
-            )}
-          </>
+    <div
+      className="min-h-full px-2 py-6 flex flex-col items-center"
+      ref={confettiRef}
+    >
+      {/* Title in top bar (breadcrumb area) */}
+      <div className="w-full max-w-3xl mx-auto mb-8 flex flex-col items-center">
+        <h1 className="text-2xl font-black tracking-tighter text-center">
+          {set?.title}
+        </h1>
+        {(set?.courseTitle || set?.courseCode) && (
+          <p className="mt-1 text-[11px] font-mono text-muted-foreground/60 text-center">
+            {[set.courseTitle, set.courseCode].filter(Boolean).join(" · ")}
+          </p>
         )}
       </div>
+
+      {/* Loading */}
+      {isLoading && (
+        <div className="w-full flex flex-col items-center justify-center py-24">
+          <div className="h-32 w-64 animate-pulse bg-card/40 border border-border/30 rounded-2xl" />
+        </div>
+      )}
+
+      {/* Error */}
+      {!isLoading && error && (
+        <div className="border border-destructive/40 bg-destructive/5 px-4 py-3 font-mono text-sm text-destructive">
+          {error}
+        </div>
+      )}
+
+      {/* Main flashcard UI */}
+      {set && set.cards.length > 0 && currentCard && (
+        <div className="relative flex flex-row items-center justify-center w-full max-w-4xl min-h-105">
+          {/* Left navigation */}
+          <button
+            type="button"
+            onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
+            disabled={currentIndex === 0}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-12 w-12 flex items-center justify-center rounded-(--radius) border border-border/50 bg-card/60 text-2xl text-muted-foreground/60 hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed"
+            aria-label="Previous card"
+          >
+            <ChevronLeft className="size-7" />
+          </button>
+
+          {/* Card */}
+          <div className="flex-1 flex flex-col items-center justify-center">
+            {editingCardId === currentCard.id ? (
+              <CardForm
+                initial={{ front: currentCard.front, back: currentCard.back }}
+                onSave={(f, b) => handleEditCard(currentCard.id, f, b)}
+                onCancel={() => setEditingCardId(null)}
+                loading={editLoading}
+              />
+            ) : (
+              <FlipCard
+                card={currentCard}
+                flipped={flippedIds.has(currentCard.id)}
+                onFlip={() => toggleFlip(currentCard.id)}
+                onEdit={() => setEditingCardId(currentCard.id)}
+                onDelete={() => handleDeleteCard(currentCard.id)}
+                style={cardStyle}
+                className="w-85 sm:w-105 md:w-130 mx-auto"
+              >
+                {/* Mastery controls (only on front) */}
+                {!flippedIds.has(currentCard.id) && (
+                  <div className="mt-8 flex flex-col items-center gap-2 w-full">
+                    <div className="flex flex-row items-center gap-4 justify-center">
+                      <Button
+                        size="icon-lg"
+                        variant="outline"
+                        className="text-green-600 border-green-200 bg-green-50 hover:bg-green-100"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMastery(currentCard.id, true);
+                        }}
+                        aria-label="I knew this"
+                      >
+                        <Check className="size-7" />
+                      </Button>
+                      <Button
+                        size="icon-lg"
+                        variant="outline"
+                        className="text-red-600 border-red-200 bg-red-50 hover:bg-red-100"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMastery(currentCard.id, false);
+                        }}
+                        aria-label="I didn't know this"
+                      >
+                        <X className="size-7" />
+                      </Button>
+                    </div>
+                    <div className="w-40 mt-2">
+                      <Progress value={mastery[currentCard.id] ?? 0} />
+                      <div className="text-center text-xs font-mono mt-1 text-muted-foreground">
+                        Mastery: {mastery[currentCard.id] ?? 0}%
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </FlipCard>
+            )}
+          </div>
+
+          {/* Right navigation */}
+          <button
+            type="button"
+            onClick={() =>
+              setCurrentIndex((prev) =>
+                Math.min((set.cards.length || 1) - 1, prev + 1),
+              )
+            }
+            disabled={currentIndex >= set.cards.length - 1}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-12 w-12 flex items-center justify-center rounded-(--radius) border border-border/50 bg-card/60 text-2xl text-muted-foreground/60 hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed"
+            aria-label="Next card"
+          >
+            <ChevronRight className="size-7" />
+          </button>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {set && set.cards.length === 0 && !addingCard && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex flex-col items-center gap-4 py-20 text-center"
+        >
+          <p className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground/50">
+            No cards yet — add one above.
+          </p>
+        </motion.div>
+      )}
+
+      {/* Add card form */}
+      <AnimatePresence>
+        {addingCard && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mb-4 overflow-hidden"
+          >
+            <CardForm
+              onSave={handleAddCard}
+              onCancel={() => setAddingCard(false)}
+              loading={addLoading}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
