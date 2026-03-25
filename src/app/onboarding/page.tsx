@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { useOnboarding } from "@/hooks/use-onboarding";
+import { useOnboarding } from "@/hooks";
 import { useAuth } from "@/contexts/auth-context";
 
 // Step Components
@@ -197,7 +197,17 @@ export default function OnboardingPage() {
           <span>ONBOARDING</span>
         </div>
 
-        {/* Progress Bar */}
+        {/* Boundary Guard */}
+        {!steps[currentStep] ? (
+          <div className="flex flex-col items-center gap-4 py-20">
+            <div className="size-8 border-2 border-primary border-t-transparent animate-spin" />
+            <p className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground">
+              Finalising Setup…
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Progress Bar */}
         <div className="space-y-4">
           <div className="flex justify-between items-end">
             <div className="space-y-1">
@@ -293,6 +303,8 @@ export default function OnboardingPage() {
             </motion.div>
           </AnimatePresence>
         </div>
+        </>
+        )}
 
         {(internalError || updateError) && (
           <p className="text-center text-[11px] font-mono text-destructive tracking-wider">

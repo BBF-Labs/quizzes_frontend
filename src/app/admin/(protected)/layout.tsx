@@ -1,4 +1,4 @@
-import { AdminLayoutWrapper } from "@/components/admin-layout-wrapper";
+import { AdminLayoutWrapper } from "@/components/admin";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {

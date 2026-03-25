@@ -21,15 +21,16 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
-import { useCheckProfile, useUpdateProfile } from "@/hooks/use-admin";
-import { useUploadFile, IUpload } from "@/hooks/use-upload";
+import { useProfileCheck, useProfileUpdate } from "@/hooks";
+import { useUploadFile, IUpload } from "@/hooks";
 import { toast } from "sonner";
 import { useRef } from "react";
 
 export default function ProfilePage() {
-  const { user, isSuperAdmin, updateSession } = useAuth();
-  const checkProfile = useCheckProfile();
-  const updateProfile = useUpdateProfile();
+  const { user, updateSession } = useAuth();
+  const isSuperAdminRole = user?.role === "super_admin";
+  const checkProfile = useProfileCheck();
+  const updateProfile = useProfileUpdate();
 
   // Unified State
   const [username, setUsername] = useState(user?.username || "");
@@ -116,10 +117,10 @@ export default function ProfilePage() {
       {
         onSuccess: (data: any) => {
           toast.success("Profile synchronized successfully");
-          
+
           const resData = data.data ?? data;
           if (resData.accessToken) {
-             updateSession(resData.accessToken, resData.refreshToken);
+            updateSession(resData.accessToken, resData.refreshToken);
           }
 
           setCurrentPassword("");
@@ -140,7 +141,7 @@ export default function ProfilePage() {
         className="flex flex-col sm:flex-row sm:items-end justify-between gap-4"
       >
         <div>
-          <div className="inline-block border border-primary/60 px-2 py-1 mb-3 bg-primary/5">
+          <div className="inline-block border border-primary/60 px-2 py-1 mb-3 bg-primary/5 rounded-(--radius)">
             <span className="text-[10px] font-mono tracking-widest uppercase text-primary">
               Security
             </span>
@@ -157,7 +158,7 @@ export default function ProfilePage() {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Identity & Security Combined Card */}
         <div className="xl:col-span-2 space-y-6">
-          <Card className="rounded-none border-border/50 bg-card/40 shadow-none">
+          <Card className="rounded-(--radius) border-border/50 bg-card/40 shadow-none">
             <CardHeader className="border-b border-border/50 py-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -166,7 +167,7 @@ export default function ProfilePage() {
                     Core Identity Details
                   </CardTitle>
                 </div>
-                <div className="px-2 py-0.5 border border-primary/20 bg-primary/5">
+                <div className="px-2 py-0.5 border border-primary/20 bg-primary/5 rounded-(--radius)">
                   <span className="text-[8px] font-mono text-primary uppercase">
                     Active Session
                   </span>
@@ -177,22 +178,31 @@ export default function ProfilePage() {
               <div className="flex flex-col md:flex-row items-start gap-8">
                 {/* Avatar Section */}
                 <div className="flex flex-col items-center gap-4 shrink-0 mt-2">
-                  <Avatar className="size-24 border border-border/50 rounded-none bg-secondary/20 hover:border-primary/50 transition-colors">
-                    <AvatarImage src={localPreview || uploadedPicture?.url || user?.profilePicture} className="object-cover" />
-                    <AvatarFallback className="rounded-none bg-transparent font-mono text-xl text-primary uppercase">
-                       {user?.username?.substring(0, 2) || "AD"}
+                  <Avatar className="size-24 border border-border/50 rounded-(--radius) bg-secondary/20 hover:border-primary/50 transition-colors">
+                    <AvatarImage
+                      src={
+                        localPreview ||
+                        uploadedPicture?.url ||
+                        user?.profilePicture
+                      }
+                      className="object-cover"
+                    />
+                    <AvatarFallback className="rounded-(--radius) bg-transparent font-mono text-xl text-primary uppercase">
+                      {user?.username?.substring(0, 2) || "AD"}
                     </AvatarFallback>
                   </Avatar>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 text-[10px] font-mono uppercase rounded-none px-4 w-full"
+                    className="h-8 text-[10px] font-mono uppercase rounded-(--radius) px-4 w-full"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploadMutation.isPending}
                   >
                     {uploadMutation.isPending
                       ? "Uploading..."
-                      : localPreview || uploadedPicture?.url || user?.profilePicture
+                      : localPreview ||
+                          uploadedPicture?.url ||
+                          user?.profilePicture
                         ? "Change Image"
                         : "Upload Image"}
                   </Button>
@@ -206,115 +216,115 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 flex-1 w-full">
-                {/* General Info */}
-                <div className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                      <Mail className="size-3" /> Registered Email
-                    </label>
-                    <div className="h-11 flex items-center px-4 bg-secondary/20 border border-border/50 font-mono text-xs text-muted-foreground/60 cursor-not-allowed uppercase truncate">
-                      {user?.email || "internal@qz.engine"}
+                  {/* General Info */}
+                  <div className="space-y-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                        <Mail className="size-3" /> Registered Email
+                      </label>
+                      <div className="h-11 flex items-center px-4 bg-secondary/20 border border-border/50 font-mono text-xs text-muted-foreground/60 cursor-not-allowed uppercase truncate rounded-(--radius)">
+                        {user?.email || "internal@qz.engine"}
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 flex items-center gap-2">
+                        <Shield className="size-3" /> Access Permissions
+                      </label>
+                      <div className="h-11 flex items-center px-4 bg-secondary/10 border border-border/30 font-mono text-[11px] uppercase tracking-widest italic opacity-40 rounded-(--radius)">
+                        {isSuperAdminRole
+                          ? "Level 0 // Superadmin"
+                          : "Level 1 // Admin"}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 flex items-center gap-2">
-                      <Shield className="size-3" /> Access Permissions
-                    </label>
-                    <div className="h-11 flex items-center px-4 bg-secondary/10 border border-border/30 font-mono text-[11px] uppercase tracking-widest italic opacity-40">
-                      {isSuperAdmin
-                        ? "Level 0 // Superadmin"
-                        : "Level 1 // Staff"}
+                  {/* Username & Credentials */}
+                  <div className="space-y-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Fingerprint className="size-3" /> Username
+                        </div>
+                        {username !== user?.username && (
+                          <div className="flex items-center gap-1">
+                            {isChecking ? (
+                              <LoaderCircle className="size-2 animate-spin" />
+                            ) : isUsernameTaken ? (
+                              <span className="text-[9px] text-destructive italic lowercase">
+                                unavailable
+                              </span>
+                            ) : (
+                              <span className="text-[9px] text-green-500 italic lowercase">
+                                available
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </label>
+                      <Input
+                        value={username}
+                        onChange={(e) =>
+                          setUsername(
+                            e.target.value.toLowerCase().replace(/\s+/g, "_"),
+                          )
+                        }
+                        placeholder="node_alias"
+                        className={cn(
+                          "rounded-(--radius) font-mono text-xs h-11 bg-background/50 transition-colors uppercase",
+                          username !== user?.username &&
+                            !isUsernameTaken &&
+                            !isChecking &&
+                            "border-green-500/50 bg-green-500/5",
+                          username !== user?.username &&
+                            isUsernameTaken &&
+                            "border-destructive/50 bg-destructive/5",
+                        )}
+                      />
                     </div>
-                  </div>
-                </div>
 
-                {/* Username & Credentials */}
-                <div className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Fingerprint className="size-3" /> Username
-                      </div>
-                      {username !== user?.username && (
-                        <div className="flex items-center gap-1">
-                          {isChecking ? (
-                            <LoaderCircle className="size-2 animate-spin" />
-                          ) : isUsernameTaken ? (
-                            <span className="text-[9px] text-destructive italic lowercase">
-                              unavailable
-                            </span>
-                          ) : (
-                            <span className="text-[9px] text-green-500 italic lowercase">
-                              available
-                            </span>
-                          )}
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <KeyRound className="size-3" /> Current security
+                          password
                         </div>
-                      )}
-                    </label>
-                    <Input
-                      value={username}
-                      onChange={(e) =>
-                        setUsername(
-                          e.target.value.toLowerCase().replace(/\s+/g, "_"),
-                        )
-                      }
-                      placeholder="node_alias"
-                      className={cn(
-                        "rounded-none font-mono text-xs h-11 bg-background/50 transition-colors uppercase",
-                        username !== user?.username &&
-                          !isUsernameTaken &&
-                          !isChecking &&
-                          "border-green-500/50 bg-green-500/5",
-                        username !== user?.username &&
-                          isUsernameTaken &&
-                          "border-destructive/50 bg-destructive/5",
-                      )}
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <KeyRound className="size-3" /> Current security
-                        password
-                      </div>
-                      {currentPassword && (
-                        <div className="flex items-center gap-1">
-                          {isChecking ? (
-                            <LoaderCircle className="size-2 animate-spin" />
-                          ) : isPasswordValid ? (
-                            <span className="text-[9px] text-green-500 lowercase">
-                              verified
-                            </span>
-                          ) : (
-                            <span className="text-[9px] text-destructive lowercase">
-                              invalid
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </label>
-                    <Input
-                      id="current-password"
-                      name="current-password"
-                      type="password"
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className={cn(
-                        "rounded-none font-mono text-xs h-11 bg-background/50 uppercase",
-                        currentPassword &&
-                          isPasswordValid &&
-                          "border-green-500/50 bg-green-500/5",
-                      )}
-                    />
+                        {currentPassword && (
+                          <div className="flex items-center gap-1">
+                            {isChecking ? (
+                              <LoaderCircle className="size-2 animate-spin" />
+                            ) : isPasswordValid ? (
+                              <span className="text-[9px] text-green-500 lowercase">
+                                verified
+                              </span>
+                            ) : (
+                              <span className="text-[9px] text-destructive lowercase">
+                                invalid
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </label>
+                      <Input
+                        id="current-password"
+                        name="current-password"
+                        type="password"
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className={cn(
+                          "rounded-(--radius) font-mono text-xs h-11 bg-background/50 uppercase",
+                          currentPassword &&
+                            isPasswordValid &&
+                            "border-green-500/50 bg-green-500/5",
+                        )}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div className="pt-8 border-t border-dashed border-border/50">
+              <div className="pt-8 border-t border-dashed border-border/50">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
@@ -327,7 +337,7 @@ export default function ProfilePage() {
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="SET NEW ACCESS KEY"
-                      className="rounded-none font-mono text-xs h-11 bg-background/50 uppercase"
+                      className="rounded-(--radius) font-mono text-xs h-11 bg-background/50 uppercase"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -342,7 +352,7 @@ export default function ProfilePage() {
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="REPEAT NEW ACCESS KEY"
                       className={cn(
-                        "rounded-none font-mono text-xs h-11 bg-background/50 uppercase",
+                        "rounded-(--radius) font-mono text-xs h-11 bg-background/50 uppercase",
                         confirmPassword &&
                           newPassword === confirmPassword &&
                           "border-green-500/50 bg-green-500/5",
@@ -364,7 +374,7 @@ export default function ProfilePage() {
                 updateProfile.isPending ||
                 Boolean(newPassword && newPassword !== confirmPassword)
               }
-              className="rounded-none font-mono text-xs tracking-[0.15em] uppercase gap-2 h-11 px-12 shadow-[0_0_15px_rgba(0,110,255,0.1)] hover:shadow-[0_0_25px_rgba(0,110,255,0.2)] transition-all"
+              className="rounded-(--radius) font-mono text-xs tracking-[0.15em] uppercase gap-2 h-11 px-12 shadow-[0_0_15px_rgba(0,110,255,0.1)] hover:shadow-[0_0_25px_rgba(0,110,255,0.2)] transition-all"
             >
               {updateProfile.isPending ? (
                 <LoaderCircle className="size-4 animate-spin" />
@@ -380,7 +390,7 @@ export default function ProfilePage() {
 
         {/* Protocol & Scopes */}
         <div className="space-y-6">
-          <Card className="rounded-none border-border/50 bg-card/40 shadow-none">
+          <Card className="rounded-(--radius) border-border/50 bg-card/40 shadow-none">
             <CardHeader className="py-3 border-b border-border/50 bg-secondary/5">
               <CardTitle className="text-[10px] font-mono uppercase tracking-widest opacity-60">
                 Access Scopes
@@ -400,13 +410,17 @@ export default function ProfilePage() {
                 },
                 {
                   label: "Global Database",
-                  status: isSuperAdmin ? "GRANTED" : "DENIED",
-                  color: isSuperAdmin ? "text-green-500" : "text-destructive",
+                  status: isSuperAdminRole ? "GRANTED" : "DENIED",
+                  color: isSuperAdminRole
+                    ? "text-green-500"
+                    : "text-destructive",
                 },
                 {
                   label: "Financial Records",
-                  status: isSuperAdmin ? "GRANTED" : "DENIED",
-                  color: isSuperAdmin ? "text-green-500" : "text-destructive",
+                  status: isSuperAdminRole ? "GRANTED" : "DENIED",
+                  color: isSuperAdminRole
+                    ? "text-green-500"
+                    : "text-destructive",
                 },
               ].map((scope) => (
                 <div
@@ -418,7 +432,7 @@ export default function ProfilePage() {
                   </span>
                   <span
                     className={cn(
-                      "text-[8px] font-mono font-bold px-1.5 py-0.5 border uppercase",
+                      "text-[8px] font-mono font-bold px-1.5 py-0.5 border uppercase rounded-(--radius)",
                       scope.color === "text-green-500"
                         ? "border-green-500/30"
                         : "border-destructive/30",
@@ -432,7 +446,7 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          <div className="p-5 border border-blue-500/20 bg-blue-500/5 space-y-3">
+          <div className="p-5 border border-blue-500/20 bg-blue-500/5 space-y-3 rounded-(--radius)">
             <div className="flex items-center gap-2 text-blue-400">
               <Shield className="size-4" />
               <span className="text-[10px] font-mono font-bold uppercase">

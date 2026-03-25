@@ -42,6 +42,7 @@ next-env.d.ts
 
 # package-lock
 package-lock.json
+yarn.lock
 
 # logs
 *.log
