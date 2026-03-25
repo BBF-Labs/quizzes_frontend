@@ -20,23 +20,6 @@ export default function AllChatsPage() {
   return (
     <div className="min-h-full px-4 py-8">
       <div className="mx-auto max-w-2xl">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <div className="inline-block border border-primary/40 bg-primary/5 px-2 py-1 mb-4">
-            <span className="text-[9px] font-mono uppercase tracking-[0.25em] text-primary">
-              All Chats
-            </span>
-          </div>
-          <h1 className="text-3xl font-black tracking-tighter">
-            Your Sessions
-          </h1>
-          <div className="mt-4 h-px w-10 bg-primary/40" />
-        </motion.div>
-
         {/* Search */}
         <div className="relative mb-6">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/50" />

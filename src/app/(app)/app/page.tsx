@@ -208,7 +208,7 @@ export default function AppHomePage() {
             <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground/50 mb-3 text-left">
               Desktop
             </p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 md:gap-3">
               {[
                 { href: "/app/all", label: "Sessions", Icon: MessageSquare },
                 {
@@ -230,10 +230,10 @@ export default function AppHomePage() {
                 <Link
                   key={label}
                   href={href}
-                  className="group flex items-center gap-2 border border-border/40 bg-card/30 px-3 py-2 text-left hover:border-primary/40 hover:bg-primary/5 transition-all"
+                  className="group flex items-center gap-2 border border-border/40 bg-card/30 px-3 py-2 text-left hover:border-primary/40 hover:bg-primary/5 transition-all md:flex-col md:items-center md:justify-center md:gap-3 md:px-4 md:py-4 md:min-h-28"
                 >
-                  <Icon className="size-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-                  <span className="text-[11px] font-mono tracking-wide text-muted-foreground group-hover:text-foreground transition-colors">
+                  <Icon className="size-3.5 md:size-8 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <span className="text-[11px] md:text-xs font-mono tracking-wide text-muted-foreground group-hover:text-foreground transition-colors md:text-center">
                     {label}
                   </span>
                 </Link>
@@ -304,7 +304,7 @@ export default function AppHomePage() {
       </div>
 
       {/* ── Composer — fixed to bottom of content area ─────────────────────── */}
-      <div className="sticky bottom-0 left-0 right-0 px-4 py-4">
+      <div className="fixed bottom-0 left-0 right-0 z-40 px-4 py-4 bg-background/80 backdrop-blur supports-backdrop-filter:bg-background/60">
         <div className="mx-auto max-w-2xl">
           {/* Attached file pill */}
           <AnimatePresence>
