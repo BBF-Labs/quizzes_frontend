@@ -8,7 +8,7 @@ import React, {
   useMemo,
 } from "react";
 import { io, Socket } from "socket.io-client";
-import { getAdminAccessToken } from "@/lib/admin-session";
+import { getAccessToken } from "@/lib/session";
 
 const getSocketUrl = () => {
   if (process.env.NEXT_PUBLIC_SOCKET_URL) {
@@ -50,7 +50,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const token = getAdminAccessToken();
+    const token = getAccessToken();
 
     if (token) {
       socket.auth = { token: `Bearer ${token}` };

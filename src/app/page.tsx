@@ -1,17 +1,17 @@
-import { Navbar } from "@/components/navbar";
-import { Hero } from "@/components/hero";
-import { MeetZ } from "@/components/meet-z";
-import { ProblemSolution } from "@/components/problem-solution";
-import { Features } from "@/components/features";
-import { HowZWorks } from "@/components/how-z-works";
-import { CurriculumPreview } from "@/components/curriculum-preview";
-import { ExamTimetablePreview } from "@/components/exam-timetable-preview";
-import { RecommendationsPreview } from "@/components/recommendations-preview";
-import { InstitutionSection } from "@/components/institution-section";
-import { SocialProof } from "@/components/social-proof";
-import { CTA } from "@/components/cta";
-import { Footer } from "@/components/footer";
-import { StatsSection } from "@/components/stats-section";
+import { Navbar } from "@/components/common";
+import { Hero } from "@/components/landing";
+import { MeetZ } from "@/components/landing";
+import { ProblemSolution } from "@/components/landing";
+import { Features } from "@/components/landing";
+import { HowZWorks } from "@/components/landing";
+import { CurriculumPreview } from "@/components/landing";
+import { ExamTimetablePreview } from "@/components/landing";
+import { RecommendationsPreview } from "@/components/landing";
+import { InstitutionSection } from "@/components/landing";
+import { SocialProof } from "@/components/landing";
+import { CTA } from "@/components/landing";
+import { Footer } from "@/components/landing";
+import { StatsSection } from "@/components/landing";
 
 export default function Home() {
   return (

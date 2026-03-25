@@ -101,7 +101,7 @@ export default function CampusStep({
                 >
                   <Card
                     onClick={() => setSelectedCampus(campus)}
-                    className={`w-full rounded-none border-border p-4 cursor-pointer transition-all hover:border-primary/50 flex flex-row flex-nowrap items-center justify-between group text-left ${
+                    className={`w-full rounded-(--radius) border-border p-4 cursor-pointer transition-all hover:border-primary/50 flex flex-row flex-nowrap items-center justify-between group text-left ${
                       selectedCampus?._id === campus._id
                         ? "bg-primary/5 border-primary shadow-[0_0_15px_rgba(var(--primary),0.05)]"
                         : "bg-card/50"
@@ -150,7 +150,7 @@ export default function CampusStep({
                 <Button
                   onClick={handleSkip}
                   variant="ghost"
-                  className="mt-4 rounded-none text-[10px] font-mono uppercase tracking-widest"
+                  className="mt-4 rounded-(--radius) text-[10px] font-mono uppercase tracking-widest"
                 >
                   Skip this step
                 </Button>
@@ -163,7 +163,7 @@ export default function CampusStep({
           <Button
             onClick={handleSubmit}
             disabled={!selectedCampus}
-            className="w-full rounded-none font-mono text-xs tracking-[0.2em] uppercase h-12 shadow-[0_0_20px_rgba(var(--primary),0.1)] hover:shadow-[0_0_30px_rgba(var(--primary),0.2)] transition-all"
+            className="w-full rounded-(--radius) font-mono text-xs tracking-[0.2em] uppercase h-12 shadow-[0_0_20px_rgba(var(--primary),0.1)] hover:shadow-[0_0_30px_rgba(var(--primary),0.2)] transition-all"
           >
             Continue
           </Button>

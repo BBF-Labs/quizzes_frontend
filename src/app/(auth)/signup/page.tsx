@@ -16,11 +16,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import { useDebounce } from "@/hooks/common";
+
 type AvailabilityStatus = "idle" | "checking" | "available" | "taken";
 
-export default function SignupPage() {
+function SignupForm() {
   const { signup } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get("redirectUrl") || null;
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
@@ -29,71 +37,50 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [usernameStatus, setUsernameStatus] =
-    useState<AvailabilityStatus>("idle");
-  const [emailStatus, setEmailStatus] = useState<AvailabilityStatus>("idle");
 
-  useEffect(() => {
-    const trimmedUsername = username.trim().toLowerCase();
-    const trimmedEmail = email.trim().toLowerCase();
-    const isUsernameCheckable = trimmedUsername.length >= 3;
-    const isEmailCheckable = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail);
+  const debouncedUsername = useDebounce(username.trim().toLowerCase(), 500);
+  const debouncedEmail = useDebounce(email.trim().toLowerCase(), 500);
 
-    if (!isUsernameCheckable) {
-      setUsernameStatus("idle");
-    }
+  const isUsernameCheckable = debouncedUsername.length >= 3;
+  const isEmailCheckable = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(debouncedEmail);
 
-    if (!isEmailCheckable) {
-      setEmailStatus("idle");
-    }
+  const { data: usernameExists, isFetching: isUsernameChecking } = useQuery({
+    queryKey: ["checkUsername", debouncedUsername],
+    queryFn: async () => {
+      const res = await api.post("/users/check", {
+        username: debouncedUsername,
+      });
+      return res.data?.data?.username?.exists ?? false;
+    },
+    enabled: isUsernameCheckable,
+    staleTime: 1000 * 60,
+  });
 
-    if (!isUsernameCheckable && !isEmailCheckable) {
-      return;
-    }
+  const { data: emailExists, isFetching: isEmailChecking } = useQuery({
+    queryKey: ["checkEmail", debouncedEmail],
+    queryFn: async () => {
+      const res = await api.post("/users/check", { email: debouncedEmail });
+      return res.data?.data?.email?.exists ?? false;
+    },
+    enabled: isEmailCheckable,
+    staleTime: 1000 * 60,
+  });
 
-    if (isUsernameCheckable) {
-      setUsernameStatus("checking");
-    }
+  const usernameStatus: AvailabilityStatus = !isUsernameCheckable
+    ? "idle"
+    : isUsernameChecking
+      ? "checking"
+      : usernameExists === true
+        ? "taken"
+        : "available";
 
-    if (isEmailCheckable) {
-      setEmailStatus("checking");
-    }
-
-    const timer = setTimeout(async () => {
-      try {
-        const payload: { username?: string; email?: string } = {};
-
-        if (isUsernameCheckable) {
-          payload.username = trimmedUsername;
-        }
-
-        if (isEmailCheckable) {
-          payload.email = trimmedEmail;
-        }
-
-        const res = await api.post("/users/check", payload);
-        const results = res.data?.data ?? {};
-
-        if (payload.username) {
-          setUsernameStatus(results.username?.exists ? "taken" : "available");
-        }
-
-        if (payload.email) {
-          setEmailStatus(results.email?.exists ? "taken" : "available");
-        }
-      } catch {
-        if (isUsernameCheckable) {
-          setUsernameStatus("idle");
-        }
-
-        if (isEmailCheckable) {
-          setEmailStatus("idle");
-        }
-      }
-    }, 400);
-
-    return () => clearTimeout(timer);
-  }, [email, username]);
+  const emailStatus: AvailabilityStatus = !isEmailCheckable
+    ? "idle"
+    : isEmailChecking
+      ? "checking"
+      : emailExists === true
+        ? "taken"
+        : "available";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,7 +109,11 @@ export default function SignupPage() {
     setLoading(true);
     try {
       await signup(name, email, username, password);
-      router.replace("/onboarding");
+      // Append redirectUrl if it exists so Onboarding page can forward the user along after completion.
+      const dest = redirectUrl
+        ? `/onboarding?redirectUrl=${encodeURIComponent(redirectUrl)}`
+        : "/onboarding";
+      router.replace(dest);
     } catch (err) {
       const message =
         (
@@ -168,9 +159,11 @@ export default function SignupPage() {
             </span>
           </div>
           <div className="flex items-end space-x-2 mb-2">
-            <span className="text-xl font-bold tracking-widest text-foreground leading-none">
-              Qz.
-            </span>
+            <Link href="/">
+              <span className="text-xl font-bold tracking-widest text-foreground leading-none hover:text-primary transition-colors cursor-pointer">
+                Qz.
+              </span>
+            </Link>
           </div>
           <h1 className="text-3xl font-mono font-bold tracking-[0.2em] text-foreground uppercase">
             Sign Up
@@ -193,7 +186,7 @@ export default function SignupPage() {
               onChange={(e) => setName(e.target.value)}
               required
               autoComplete="name"
-              className="rounded-none font-mono bg-secondary/40 dark:bg-input/30 border-border focus-visible:ring-ring/50"
+              className="rounded-(--radius) font-mono bg-secondary/40 dark:bg-input/30 border-border focus-visible:ring-ring/50"
               placeholder="Jane Doe"
             />
           </div>
@@ -227,7 +220,7 @@ export default function SignupPage() {
               onChange={(e) => setEmail(e.target.value.toLowerCase())}
               required
               autoComplete="email"
-              className={`rounded-none font-mono bg-secondary/40 dark:bg-input/30 border-border focus-visible:ring-ring/50 ${
+              className={`rounded-(--radius) font-mono bg-secondary/40 dark:bg-input/30 border-border focus-visible:ring-ring/50 ${
                 emailStatus === "taken" ? "border-destructive/50" : ""
               }`}
               placeholder="jane@university.edu"
@@ -267,7 +260,7 @@ export default function SignupPage() {
               }
               required
               autoComplete="username"
-              className={`rounded-none font-mono bg-secondary/40 dark:bg-input/30 border-border focus-visible:ring-ring/50 ${
+              className={`rounded-(--radius) font-mono bg-secondary/40 dark:bg-input/30 border-border focus-visible:ring-ring/50 ${
                 usernameStatus === "taken" ? "border-destructive/50" : ""
               }`}
               placeholder="janedoe"
@@ -285,7 +278,7 @@ export default function SignupPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="new-password"
-                className="rounded-none font-mono bg-secondary/40 dark:bg-input/30 border-border pr-10"
+                className="rounded-(--radius) font-mono bg-secondary/40 dark:bg-input/30 border-border pr-10"
                 placeholder="••••••••"
               />
               <button
@@ -313,7 +306,7 @@ export default function SignupPage() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               autoComplete="new-password"
-              className="rounded-none font-mono bg-secondary/40 dark:bg-input/30 border-border"
+              className="rounded-(--radius) font-mono bg-secondary/40 dark:bg-input/30 border-border"
               placeholder="••••••••"
             />
           </div>
@@ -333,7 +326,7 @@ export default function SignupPage() {
               emailStatus === "taken" ||
               usernameStatus === "taken"
             }
-            className="w-full rounded-none font-mono text-[10px] tracking-[0.2em] uppercase h-11 bg-primary text-primary-foreground shadow-[0_0_20px_rgba(0,110,255,0.15)] hover:shadow-[0_0_30px_rgba(0,110,255,0.25)] transition-all"
+            className="w-full rounded-(--radius) font-mono text-[10px] tracking-[0.2em] uppercase h-11 bg-primary text-primary-foreground shadow-[0_0_20px_rgba(0,110,255,0.15)] hover:shadow-[0_0_30px_rgba(0,110,255,0.25)] transition-all"
           >
             {loading ? "Creating Account…" : "Create Account"}
           </Button>
@@ -349,5 +342,19 @@ export default function SignupPage() {
         </form>
       </motion.div>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <Loader2 className="size-8 animate-spin text-primary" />
+        </div>
+      }
+    >
+      <SignupForm />
+    </Suspense>
   );
 }
