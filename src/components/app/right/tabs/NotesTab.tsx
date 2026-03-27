@@ -168,7 +168,7 @@ function NoteCard({ sessionId, note, onUpdate, onDelete }: NoteCardProps) {
                   }}
                   onBlur={handleBlur}
                   autoFocus
-                  className="min-h-[120px] text-[11px] font-mono resize-none bg-background/50"
+                  className="min-h-30 text-[11px] font-mono resize-none bg-background/50"
                 />
               ) : (
                 <div className="prose prose-sm dark:prose-invert max-w-none text-[11px] font-mono">
@@ -284,7 +284,7 @@ export function NotesTab({
               onBlur={handleNewBlur}
               autoFocus
               placeholder="Start typing your note…"
-              className="min-h-[80px] text-[11px] font-mono resize-none bg-background/50"
+              className="min-h-20 text-[11px] font-mono resize-none bg-background/50"
             />
           </motion.div>
         )}
@@ -343,7 +343,7 @@ export function NotesTab({
                   onChange={(e) => setSharedDraft(e.target.value)}
                   autoFocus
                   placeholder="Write a shared note…"
-                  className="min-h-[60px] text-[11px] font-mono resize-none bg-background/50"
+                  className="min-h-15 text-[11px] font-mono resize-none bg-background/50"
                 />
                 <div className="flex gap-1.5">
                   <Button size="sm" className="flex-1 h-6 text-[9px] font-mono" onClick={handleAddShared}>

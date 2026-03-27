@@ -16,7 +16,7 @@ import { QuizTab } from "./tabs/QuizTab";
 import { MindMapTab } from "./tabs/MindMapTab";
 import { ExportTab } from "./tabs/ExportTab";
 import type {
-  IZStudyPartnerSession,
+  IZStudyPartnerApp,
   StudioNote,
   SharedNote,
   StudioFlashcard,
@@ -40,10 +40,10 @@ const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
 
 interface StudioPanelProps {
   sessionId: string;
-  session: IZStudyPartnerSession;
+  app: IZStudyPartnerApp;
   /** Called when the user sends a chat message from within the panel (e.g. "take quiz") */
   onSendMessage: (message: string) => void;
-  onSessionChange: (updated: Partial<IZStudyPartnerSession>) => void;
+  onSessionChange: (updated: Partial<IZStudyPartnerApp>) => void;
   onClose?: () => void;
 }
 
@@ -51,14 +51,14 @@ interface StudioPanelProps {
 
 export function StudioPanel({
   sessionId,
-  session,
+  app,
   onSendMessage,
   onSessionChange,
   onClose,
 }: StudioPanelProps) {
   const [activeTab, setActiveTab] = useState<TabId>("notes");
 
-  const isPeerMode = session.mode === "structured";
+  const isPeerMode = app.mode === "structured";
 
   return (
     <div className="flex flex-col h-full bg-card/20">
@@ -185,9 +185,9 @@ export function StudioPanel({
             {activeTab === "notes" && (
               <NotesTab
                 sessionId={sessionId}
-                notes={session.notes ?? []}
+                notes={app.notes ?? []}
                 isPeerMode={isPeerMode}
-                sharedNotes={session.sharedNotes ?? []}
+                sharedNotes={app.sharedNotes ?? []}
                 onNotesChange={(notes: StudioNote[]) =>
                   onSessionChange({ notes })
                 }
@@ -199,7 +199,7 @@ export function StudioPanel({
             {activeTab === "flashcards" && (
               <FlashcardsTab
                 sessionId={sessionId}
-                flashcards={session.flashcards ?? []}
+                flashcards={app.flashcards ?? []}
                 onFlashcardsChange={(flashcards: StudioFlashcard[]) =>
                   onSessionChange({ flashcards })
                 }
@@ -208,7 +208,7 @@ export function StudioPanel({
             {activeTab === "quiz" && (
               <QuizTab
                 sessionId={sessionId}
-                quizzes={session.quizzes ?? []}
+                quizzes={app.quizzes ?? []}
                 onQuizzesChange={(quizzes: StudioQuiz[]) =>
                   onSessionChange({ quizzes })
                 }
@@ -216,12 +216,12 @@ export function StudioPanel({
               />
             )}
             {activeTab === "mindmap" && (
-              <MindMapTab mindMap={session.mindMap} />
+              <MindMapTab mindMap={app.mindMap} />
             )}
             {activeTab === "export" && (
               <ExportTab
                 sessionId={sessionId}
-                exports={session.exports ?? []}
+                exports={app.exports ?? []}
                 onExportsChange={(exports: StudioExport[]) =>
                   onSessionChange({ exports })
                 }

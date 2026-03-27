@@ -15,7 +15,7 @@ interface StepResponse {
   code: string;
 }
 
-export const useCreateSession = () => {
+export const useCreateApp = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -38,41 +38,41 @@ export const useCreateSession = () => {
   });
 };
 
-export const useStartSession = () => {
+export const useStartApp = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (appId: string) => {
-      if (!appId || appId === "undefined")
+    mutationFn: async (sessionId: string) => {
+      if (!sessionId || sessionId === "undefined")
         throw new Error("Invalid app ID for startApp");
-      const response = await api.post<StepResponse>(`/app/${appId}/start`);
+      const response = await api.post<StepResponse>(`/app/${sessionId}/start`);
       return response.data;
     },
-    onSuccess: (_, appId) => {
+    onSuccess: (_, sessionId) => {
       return queryClient.invalidateQueries({
-        queryKey: queryKeys.app.detail(appId),
+        queryKey: queryKeys.app.detail(sessionId),
       });
     },
   });
 };
 
-export const useSessionMessage = () => {
+export const useAppMessage = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({
-      appId,
+      sessionId,
       message,
       messageId,
     }: {
-      appId: string;
+      sessionId: string;
       message: string;
       messageId?: string;
     }) => {
-      if (!appId || appId === "undefined")
+      if (!sessionId || sessionId === "undefined")
         throw new Error("Invalid app ID for app message");
       const response = await api.post<StepResponse>(
-        `/app/${appId}/message`,
+        `/app/${sessionId}/message`,
         {
           message,
           messageId,
@@ -80,73 +80,73 @@ export const useSessionMessage = () => {
       );
       return response.data;
     },
-    onSuccess: (_, { appId }) => {
+    onSuccess: (_, { sessionId }) => {
       return queryClient.invalidateQueries({
-        queryKey: queryKeys.app.detail(appId),
+        queryKey: queryKeys.app.detail(sessionId),
       });
     },
   });
 };
 
-export const useSessionSteer = () => {
+export const useAppSteer = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({
-      appId,
+      sessionId,
       instruction,
     }: {
-      appId: string;
+      sessionId: string;
       instruction: string;
     }) => {
-      if (!appId || appId === "undefined")
+      if (!sessionId || sessionId === "undefined")
         throw new Error("Invalid app ID for steer");
-      const response = await api.post<StepResponse>(`/app/${appId}/steer`, {
+      const response = await api.post<StepResponse>(`/app/${sessionId}/steer`, {
         instruction,
       });
       return response.data;
     },
-    onSuccess: (_, { appId }) => {
+    onSuccess: (_, { sessionId }) => {
       return queryClient.invalidateQueries({
-        queryKey: queryKeys.app.detail(appId),
+        queryKey: queryKeys.app.detail(sessionId),
       });
     },
   });
 };
 
-export const useSessionApprove = () => {
+export const useAppApprove = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (appId: string) => {
-      if (!appId || appId === "undefined")
+    mutationFn: async (sessionId: string) => {
+      if (!sessionId || sessionId === "undefined")
         throw new Error("Invalid app ID for approve");
       const response = await api.post<StepResponse>(
-        `/app/${appId}/approve`,
+        `/app/${sessionId}/approve`,
       );
       return response.data;
     },
-    onSuccess: (_, appId) => {
+    onSuccess: (_, sessionId) => {
       return queryClient.invalidateQueries({
-        queryKey: queryKeys.app.detail(appId),
+        queryKey: queryKeys.app.detail(sessionId),
       });
     },
   });
 };
 
-export const useAddSessionMaterial = (appId: string) => {
+export const useAddAppMaterial = (sessionId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (materialId: string) => {
-      const response = await api.post(`/app/${appId}/materials`, {
+      const response = await api.post(`/app/${sessionId}/materials`, {
         materialId,
       });
       return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.app.detail(appId),
+        queryKey: queryKeys.app.detail(sessionId),
       });
       toast.success("Material added to app");
     },
@@ -160,32 +160,32 @@ export const useAddSessionMaterial = (appId: string) => {
 };
 
 interface RenameAppInput {
-  appId: string;
+  sessionId: string;
   name: string;
 }
 
-export const useRenameSession = () => {
+export const useRenameApp = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ appId, name }: RenameAppInput) => {
-      const response = await api.patch(`/app/${appId}/name`, { name });
+    mutationFn: async ({ sessionId, name }: RenameAppInput) => {
+      const response = await api.patch(`/app/${sessionId}/name`, { name });
       return response.data;
     },
-    onSuccess: (_, { appId }) => {
+    onSuccess: (_, { sessionId }) => {
       return queryClient.invalidateQueries({
-        queryKey: queryKeys.app.detail(appId),
+        queryKey: queryKeys.app.detail(sessionId),
       });
     },
   });
 };
 
-export const useDeleteSession = () => {
+export const useDeleteApp = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (appId: string) => {
-      const response = await api.delete(`/app/${appId}`);
+    mutationFn: async (sessionId: string) => {
+      const response = await api.delete(`/app/${sessionId}`);
       return response.data;
     },
     onSuccess: () => {
@@ -196,18 +196,50 @@ export const useDeleteSession = () => {
   });
 };
 
-export const useResumeSession = () => {
+export const useResumeApp = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (appId: string) => {
-      const response = await api.post(`/app/${appId}/resume`);
+    mutationFn: async (sessionId: string) => {
+      const response = await api.post(`/app/${sessionId}/resume`);
       return response.data;
     },
-    onSuccess: (_, appId) => {
+    onSuccess: (_, sessionId) => {
       return queryClient.invalidateQueries({
-        queryKey: queryKeys.app.detail(appId),
+        queryKey: queryKeys.app.detail(sessionId),
       });
     },
   });
 };
+
+export const useUpdateAppMindMap = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      sessionId,
+      mindMap,
+    }: {
+      sessionId: string;
+      mindMap: any;
+    }) => {
+      const response = await api.patch(`/app/${sessionId}/studio/mindmap`, {
+        mindMap,
+      });
+      return response.data;
+    },
+    onSuccess: (_, { sessionId }) => {
+      return queryClient.invalidateQueries({
+        queryKey: queryKeys.app.detail(sessionId),
+      });
+    },
+  });
+};
+
+// Aliases for backward compatibility
+export const useCreateSession = useCreateApp;
+export const useStartSession = useStartApp;
+export const useSessionMessage = useAppMessage;
+export const useSessionSteer = useAppSteer;
+export const useSessionApprove = useAppApprove;
+export const useAddSessionMaterial = useAddAppMaterial;

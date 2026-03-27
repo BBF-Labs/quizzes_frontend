@@ -11,6 +11,12 @@ export const queryKeys = {
     streams: () => [...queryKeys.app.root, "stream"] as const,
     stream: (id: string) => [...queryKeys.app.streams(), id] as const,
   },
+  sessions: {
+    root: ["app"] as const,
+    lists: () => queryKeys.app.lists(),
+    details: () => queryKeys.app.details(),
+    detail: (id: string) => queryKeys.app.detail(id),
+  },
   library: {
     root: ["library"] as const,
     flashcards: {

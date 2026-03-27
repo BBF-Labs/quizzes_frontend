@@ -484,3 +484,9 @@ export interface IZStudyPartnerApp extends ZApp {
   mindMap?: StudioMindMap;
   exports?: StudioExport[];
 }
+
+// ─── Aliases for backward compatibility ──────────────────────────────────────
+export type ZSession = ZApp;
+export type ZSessionSummary = ZAppSummary;
+export type ZSessionMessage = ZAppMessage;
+export type CreateSessionInput = CreateAppInput;

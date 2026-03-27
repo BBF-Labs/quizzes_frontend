@@ -13,7 +13,7 @@ interface GetAppResponse {
   message: string;
 }
 
-export const useSessions = () => {
+export const useApps = () => {
   return useQuery({
     queryKey: queryKeys.app.lists(),
     queryFn: async () => {
@@ -25,16 +25,20 @@ export const useSessions = () => {
   });
 };
 
-export const useSession = (appId: string, enabled = true) => {
+export const useApp = (sessionId: string, enabled = true) => {
   return useQuery({
-    queryKey: queryKeys.app.detail(appId),
+    queryKey: queryKeys.app.detail(sessionId),
     queryFn: async () => {
-      const response = await api.get<GetAppResponse>(`/app/${appId}`);
+      const response = await api.get<GetAppResponse>(`/app/${sessionId}`);
       return response.data.data;
     },
-    enabled: enabled && !!appId,
+    enabled: enabled && !!sessionId,
     staleTime: 1000 * 10, // 10 seconds - sessions update frequently
     refetchOnWindowFocus: true, // Re-fetch when user returns to tab
     retry: 2,
   });
 };
+
+// Aliases for backward compatibility
+export const useSession = useApp;
+export const useSessions = useApps;

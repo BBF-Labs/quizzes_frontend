@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Paperclip, X, Settings2, Plus, ArrowUp } from "lucide-react";
-import { useSessionApprove } from "@/hooks";
+import { useAppApprove } from "@/hooks";
 import { useAppLayout } from "./layout";
 import { cn } from "@/lib/utils";
 import { MessageFeed } from "@/components/app/center/MessageFeed";
@@ -18,7 +18,7 @@ export default function ChatPage() {
     messageMutation,
   } = useAppLayout();
 
-  const approveMutation = useSessionApprove();
+  const approveMutation = useAppApprove();
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);

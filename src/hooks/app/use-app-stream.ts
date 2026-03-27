@@ -2,14 +2,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { getAccessToken } from "@/lib/session";
 import type {
-  ZSession,
-  ZSessionMessage,
-  ZSessionMessageType,
+  ZApp,
+  ZAppMessage,
+  ZAppMessageType,
   ConnectionType,
 } from "@/types/session";
 
-interface UseSessionStreamOptions {
-  onSessionUpdate?: (session: ZSession) => void;
+interface UseAppStreamOptions {
+  onAppUpdate?: (app: ZApp) => void;
   onConnectionChange?: (connected: boolean, type: ConnectionType) => void;
 }
 
@@ -26,11 +26,11 @@ interface StreamSignal {
   };
 }
 
-export const useSessionStream = (
+export const useAppStream = (
   sessionId: string,
-  initialMessages: ZSessionMessage[] = [],
+  initialMessages: ZAppMessage[] = [],
   enabled = true,
-  options?: UseSessionStreamOptions,
+  options?: UseAppStreamOptions,
 ) => {
   const isMountedRef = useRef(true);
   useEffect(() => {
@@ -40,7 +40,7 @@ export const useSessionStream = (
     };
   }, []);
 
-  const [messages, setMessages] = useState<ZSessionMessage[]>(initialMessages);
+  const [messages, setMessages] = useState<ZAppMessage[]>(initialMessages);
   const [isConnected, setIsConnected] = useState(false);
   const [connectionType, setConnectionType] = useState<ConnectionType>(
     enabled ? "polling" : "disconnected",
@@ -148,11 +148,11 @@ export const useSessionStream = (
       eventSource.addEventListener("message", (event) => {
         try {
           const signal: StreamSignal = JSON.parse(event.data);
-          console.log("[useSessionStream] Raw Signal:", signal);
+          console.log("[useAppStream] Raw Signal:", signal);
           if (signal.sessionId !== sessionId) return;
 
           console.log(
-            "[useSessionStream] Signal received:",
+            "[useAppStream] Signal received:",
             signal.type,
             signal.payload?.messageId,
           );
@@ -188,18 +188,18 @@ export const useSessionStream = (
                       isStreaming: true,
                     };
                   } else {
-                    const stableId = msgId || uuidv4();
-
-                    streamingMessageIds.current.add(stableId);
-                    const newMsg: ZSessionMessage = {
-                      id: stableId,
-                      messageId: stableId,
-                      role: "z",
-                      type: "text" as ZSessionMessageType,
-                      content: "",
-                      timestamp: signal.timestamp || new Date().toISOString(),
-                      isStreaming: true,
-                    };
+                     const stableId = msgId || uuidv4();
+ 
+                     streamingMessageIds.current.add(stableId);
+                     const newMsg: ZAppMessage = {
+                       id: stableId,
+                       messageId: stableId,
+                       role: "z",
+                       type: "text" as ZAppMessageType,
+                       content: "",
+                       timestamp: signal.timestamp || new Date().toISOString(),
+                       isStreaming: true,
+                     };
                     if (isMountedRef.current) {
                       msgs.push(newMsg);
                     }
@@ -337,7 +337,7 @@ export const useSessionStream = (
     return () => cancelAnimationFrame(animationFrame);
   }, []);
 
-  const pushMessage = useCallback((msg: ZSessionMessage) => {
+  const pushMessage = useCallback((msg: ZAppMessage) => {
     setMessages((prev) => [...prev, msg]);
   }, []);
 

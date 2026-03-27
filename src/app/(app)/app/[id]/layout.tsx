@@ -13,11 +13,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { PanelLeftOpen, PanelRightOpen } from "lucide-react";
 import {
-  useSession,
-  useSessionStream,
-  useRenameSession,
-  useSessionMessage,
-} from "@/hooks";
+  useApp,
+  useApps,
+} from "@/hooks/app/use-app-queries";
+import {
+  useRenameApp,
+  useAppMessage,
+} from "@/hooks/app/use-app-actions";
+import { useAppStream } from "@/hooks/app/use-app-stream";
 import { useSocket } from "@/hooks";
 import { StudioPanel } from "@/components/app/right";
 import { SourcesPanel } from "@/components/app/left/SourcesPanel";
@@ -26,8 +29,8 @@ import { useAuth } from "@/contexts/auth-context";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type {
-  ZSessionMessage,
-  IZStudyPartnerSession,
+  ZAppMessage,
+  IZStudyPartnerApp,
   StudioNote,
   SharedNote,
   StudioFlashcard,
@@ -49,10 +52,10 @@ interface AppLayoutContextValue {
   rightOpen: boolean;
   toggleLeft: () => void;
   toggleRight: () => void;
-  messages: ZSessionMessage[];
-  pushMessage: (message: ZSessionMessage) => void;
+  messages: ZAppMessage[];
+  pushMessage: (message: ZAppMessage) => void;
   sendMessage: (content: string) => Promise<void>;
-  messageMutation: ReturnType<typeof useSessionMessage>;
+  messageMutation: ReturnType<typeof useAppMessage>;
 }
 
 const AppLayoutContext = createContext<AppLayoutContextValue | null>(null);
@@ -93,17 +96,19 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
   const toggleLeft = useCallback(() => setLeftOpen((v) => !v), []);
   const toggleRight = useCallback(() => setRightOpen((v) => !v), []);
 
-  // ── Session data ────────────────────────────────────────────────────────────
+  // ── Queries and Mutations ────────────────────────────────────────────────────
   const { user, logout } = useAuth();
-  const { data: session } = useSession(sessionId);
-  const stream = useSessionStream(
+  const { data: apps } = useApps();
+  const { data: app, isLoading } = useApp(sessionId, !!sessionId);
+  const renameMutation = useRenameApp();
+  const messageMutation = useAppMessage();
+ 
+  const stream = useAppStream(
     sessionId,
-    session?.zMessages || [],
+    app?.zMessages || [],
     !!sessionId,
   );
   const { isConnected: isSocketConnected } = useSocket();
-
-  const messageMutation = useSessionMessage();
 
   // ── Studio workspace state ──────────────────────────────────────────────────
   const [studioNotes, setStudioNotes] = useState<StudioNote[]>([]);
@@ -118,7 +123,7 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
   const [studioExports, setStudioExports] = useState<StudioExport[]>([]);
 
   const handleSessionChange = useCallback(
-    (updated: Partial<IZStudyPartnerSession>) => {
+    (updated: Partial<IZStudyPartnerApp>) => {
       if (updated.notes !== undefined) setStudioNotes(updated.notes);
       if (updated.sharedNotes !== undefined)
         setStudioSharedNotes(updated.sharedNotes);
@@ -133,33 +138,32 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
 
   // ── Sync artifacts from session data ────────────────────────────────────────
   useEffect(() => {
-    if (session?.artifacts) {
-      // Find the latest mindmap artifact
-      const mmArtifact = [...session.artifacts]
-        .reverse()
-        .find((a) => a.type === "mindmap");
+    if (app?.artifacts) {
+      const mmArtifact = app.artifacts
+        .find((a: { type: string; content: unknown }) => a.type === "mindmap");
       if (mmArtifact) {
+        // Use a functional update or a separate effect to avoid synchronous cascading renders if possible, 
+        // but here it seems we are just syncing state with the fetch result.
         setStudioMindMap(mmArtifact.content as StudioMindMap);
       }
 
       // Sync quizzes
-      const quizzes = session.artifacts
-        .filter((a) => a.type === "quiz")
-        .map((a) => a.content as StudioQuiz);
-      if (quizzes.length > 0) {
-        setStudioQuizzes(quizzes);
+      const quizArtifacts = app.artifacts
+        .filter((a: { type: string; content: unknown }) => a.type === "quiz")
+        .map((a: { type: string; content: unknown }) => a.content as StudioQuiz);
+      if (quizArtifacts.length > 0) {
+        setStudioQuizzes(quizArtifacts);
       }
-
-      // Sync flashcards (aggregated from all flashcard sets)
-      const flashcards = session.artifacts
-        .filter((a) => a.type === "flashcard_set")
-        .flatMap((a: any) => (a.content as any).cards || []);
-      if (flashcards.length > 0) {
-        setStudioFlashcards(flashcards);
+ 
+      const fcArtifacts = app.artifacts
+        .filter((a: { type: string; content: unknown }) => a.type === "flashcard_set")
+        .flatMap((a: { type: string; content: unknown }) => (a.content as any).cards || []);
+      if (fcArtifacts.length > 0) {
+        setStudioFlashcards(fcArtifacts);
       }
 
       // Sync notes (aggregated from all notes artifacts)
-      const notes = session.artifacts
+      const notes = app.artifacts
         .filter((a) => a.type === "notes")
         .flatMap((a: any) => (a.content as any).sections || []);
       if (notes.length > 0) {
@@ -167,30 +171,29 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
       }
 
       // Sync exports from session.studio
-      if (session.studio?.exportedFiles) {
-        setStudioExports(session.studio.exportedFiles);
+      if (app.studio?.exportedFiles) {
+        setStudioExports(app.studio.exportedFiles);
       }
     }
-  }, [session?.artifacts, session?.studio?.exportedFiles]);
+  }, [app?.artifacts, app?.studio?.exportedFiles]);
 
   // ── Inline session name editing ─────────────────────────────────────────────
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameInput, setNameInput] = useState("");
-  const renameSession = useRenameSession();
-
-  const sessionName = session?.name || session?.title || "New Session";
+  
+  const appName = app?.name || app?.title || "New App";
 
   function handleNameClick() {
-    setNameInput(sessionName);
+    setNameInput(appName);
     setIsEditingName(true);
   }
 
   async function handleNameBlur() {
     setIsEditingName(false);
     const trimmed = nameInput.trim();
-    if (!trimmed || trimmed === sessionName) return;
+    if (!trimmed || trimmed === appName) return;
     try {
-      await renameSession.mutateAsync({ sessionId, name: trimmed });
+      await renameMutation.mutateAsync({ sessionId, name: trimmed });
     } catch {
       // silent — optimistic rename
     }
@@ -212,11 +215,11 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
       try {
         await messageMutation.mutateAsync({
           sessionId,
-          message: content.trim(),
+          message: content,
           messageId: msgId,
         });
       } catch (err) {
-        console.error("[AppLayout] sendMessage failed", err);
+        console.error("[useAppLayout] sendMessage failed", err);
       }
     },
     [sessionId, messageMutation, stream],
@@ -331,7 +334,7 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
                     className="text-sm font-semibold text-foreground/80 hover:text-foreground transition-colors truncate max-w-75 px-3 py-1.5 rounded-md hover:bg-muted/40"
                     title="Click to rename"
                   >
-                    {sessionName}
+                    {appName}
                   </button>
                 )}
               </div>
@@ -388,11 +391,11 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
                   style={{ width: RIGHT_PANEL_WIDTH }}
                   className="h-full flex flex-col bg-card/10"
                 >
-                  {session && (
+                  {app && (
                     <StudioPanel
                       sessionId={sessionId}
-                      session={{
-                        ...session,
+                      app={{
+                        ...app,
                         notes: studioNotes,
                         sharedNotes: studioSharedNotes,
                         flashcards: studioFlashcards,
