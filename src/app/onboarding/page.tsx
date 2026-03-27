@@ -8,10 +8,6 @@ import { useAuth } from "@/contexts/auth-context";
 
 // Step Components
 import ProfileStep from "@/components/onboarding/steps/ProfileStep";
-import UniversityStep from "@/components/onboarding/steps/UniversityStep";
-import CampusStep from "@/components/onboarding/steps/CampusStep";
-import DepartmentStep from "@/components/onboarding/steps/DepartmentStep";
-import ProgramStep from "@/components/onboarding/steps/ProgramStep";
 import YearOfStudyStep from "@/components/onboarding/steps/YearOfStudyStep";
 import PushOptInStep from "@/components/onboarding/steps/PushOptInStep";
 import PWAInstallStep from "@/components/onboarding/steps/PWAInstallStep";
@@ -37,20 +33,6 @@ export default function OnboardingPage() {
       required: true,
       component: ProfileStep,
     },
-    {
-      id: "university",
-      label: "University",
-      required: true,
-      component: UniversityStep,
-    },
-    { id: "campus", label: "Campus", required: false, component: CampusStep },
-    {
-      id: "department",
-      label: "Department",
-      required: false,
-      component: DepartmentStep,
-    },
-    { id: "program", label: "Program", required: true, component: ProgramStep },
     {
       id: "yearOfStudy",
       label: "Year of Study",
@@ -110,10 +92,13 @@ export default function OnboardingPage() {
     });
 
     try {
-      await updateStepAsync({
-        stepId: steps[currentStep].id,
-        data: updatedData,
-      });
+      if (steps[currentStep].id !== "pwaInstall") {
+        await updateStepAsync({
+          stepId: steps[currentStep].id,
+          data: updatedData,
+        });
+      }
+      
       if (currentStep < steps.length - 1) {
         setCurrentStep((prev) => prev + 1);
       } else {

@@ -7,7 +7,7 @@ import { BookOpen, Clock3, Search } from "lucide-react";
 import { useSessions } from "@/hooks";
 import { cn } from "@/lib/utils";
 
-export default function AllChatsPage() {
+export default function AllSessionsPage() {
   const { data: sessions = [], isLoading, error } = useSessions();
   const [query, setQuery] = useState("");
 
@@ -83,7 +83,7 @@ export default function AllChatsPage() {
             className="flex flex-col gap-2"
           >
             {filtered.map((session, i) => {
-              const title = session.title || `Chat ${session.id.slice(0, 8)}`;
+              const title = session.title || `Session ${session.id.slice(0, 8)}`;
               return (
                 <motion.div
                   key={session.id}

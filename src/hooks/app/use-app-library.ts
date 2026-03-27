@@ -10,6 +10,8 @@ import type {
   NoteSummary,
   QuizDetail,
   QuizSummary,
+  MaterialSummary,
+  MaterialDetail,
 } from "@/types/session";
 
 type ApiData<T> = { data: T };
@@ -154,6 +156,95 @@ export const useDeleteLibraryNote = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.library.notes.root(),
+      });
+    },
+  });
+};
+
+export const useLibraryMaterials = () =>
+  useQuery({
+    queryKey: queryKeys.library.materials.list(),
+    queryFn: async () => {
+      const res = await api.get<ApiData<MaterialSummary[]>>("/app/materials");
+      return res.data?.data ?? [];
+    },
+  });
+
+export const useCreateLibraryMaterial = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: {
+      uploadId: string;
+      title?: string;
+      courseId?: string;
+    }) => {
+      const res = await api.post<ApiData<MaterialDetail>>(
+        "/app/materials",
+        data,
+      );
+      return res.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.library.materials.root(),
+      });
+    },
+  });
+};
+
+export const useDeleteLibraryMaterial = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/app/materials/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.library.materials.root(),
+      });
+    },
+  });
+};
+
+export const useGenerateFlashcards = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { materialId: string; courseId?: string }) => {
+      const res = await api.post("/app/flashcards/generate", data);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.library.flashcards.root(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.library.materials.root(),
+      });
+    },
+  });
+};
+
+export const useGenerateQuiz = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: {
+      materialId: string;
+      courseId?: string;
+      settings?: any;
+    }) => {
+      const res = await api.post("/app/quizzes/generate", data);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.library.quizzes.root(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.library.materials.root(),
       });
     },
   });

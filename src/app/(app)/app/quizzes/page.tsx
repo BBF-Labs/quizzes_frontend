@@ -1,12 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { BookOpen, Search, Trash2, X } from "lucide-react";
+import { BookOpen, Search, Trash2, X, Plus, PlayCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { api } from "@/lib/api";
-import type { QuizSummary } from "@/types/session";
+import { toast } from "sonner";
+import {
+  useLibraryQuizzes,
+  useDeleteLibraryQuiz,
+  useGenerateQuiz,
+} from "@/hooks/app/use-app-library";
+import { GenerationDialog } from "@/components/app/library/generation-dialog";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -21,28 +26,18 @@ function formatDate(iso: string): string {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function QuizzesPage() {
-  const [quizzes, setQuizzes] = useState<QuizSummary[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: quizzes = [], isLoading, error: queryError } = useLibraryQuizzes();
+  const deleteMutation = useDeleteLibraryQuiz();
+  const generateQuizMutation = useGenerateQuiz();
+
   const [search, setSearch] = useState("");
   const [courseFilter, setCourseFilter] = useState("");
-  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    api
-      .get<{ data: QuizSummary[] }>("/app/quizzes")
-      .then((res) => setQuizzes(res.data?.data ?? []))
-      .catch((err) => {
-        console.error("[QuizzesPage] load failed", err);
-        setError("Failed to load quizzes.");
-      })
-      .finally(() => setIsLoading(false));
-  }, []);
+  const [isGenerationDialogOpen, setIsGenerationDialogOpen] = useState(false);
 
   // Client-side filtering
-  const searchRe = search.trim()
-    ? new RegExp(search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i")
-    : null;
+  const searchRe = useMemo(() => 
+    search.trim() ? new RegExp(search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") : null
+  , [search]);
 
   const filtered = quizzes.filter((q) => {
     if (searchRe && !searchRe.test(q.title)) return false;
@@ -55,20 +50,16 @@ export default function QuizzesPage() {
   ) as string[];
 
   const handleDelete = async (id: string) => {
-    if (deletingIds.has(id)) return;
-    setDeletingIds((p) => new Set([...p, id]));
     try {
-      await api.delete(`/app/quizzes/${id}`);
-      setQuizzes((p) => p.filter((q) => q.id !== id));
-    } catch (err) {
-      console.error("[QuizzesPage] delete failed", err);
-    } finally {
-      setDeletingIds((p) => {
-        const next = new Set(p);
-        next.delete(id);
-        return next;
-      });
+      await deleteMutation.mutateAsync(id);
+      toast.success("Quiz deleted");
+    } catch {
+      toast.error("Failed to delete quiz");
     }
+  };
+
+  const handleGenerate = async (materialId: string) => {
+    await generateQuizMutation.mutateAsync({ materialId });
   };
 
   return (
@@ -78,8 +69,39 @@ export default function QuizzesPage() {
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-2"
-        ></motion.div>
+          className="mb-6 rounded-(--radius) border border-border/40 bg-card/30 p-4 md:p-5"
+        >
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-[10px] font-mono uppercase tracking-[0.25em] text-primary/80">
+                Self Assessment
+              </p>
+              <h1 className="mt-1 text-2xl font-black tracking-tight">Quizzes</h1>
+              <p className="mt-2 text-sm font-mono text-muted-foreground/70">
+                Test your knowledge with AI-generated quizzes.
+              </p>
+            </div>
+            
+            <div className="flex flex-col gap-3 items-end">
+               <div className="rounded-(--radius) border border-border/40 bg-background/40 px-3 py-2 w-full sm:w-auto text-center">
+                  <p className="text-xs font-mono font-semibold text-foreground">
+                    {quizzes.length}
+                  </p>
+                  <p className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/60">
+                    Total Quizzes
+                  </p>
+                </div>
+
+              <button
+                onClick={() => setIsGenerationDialogOpen(true)}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-primary px-4 py-2 rounded-(--radius) text-[11px] font-mono uppercase tracking-widest text-primary-foreground hover:opacity-90 transition-all font-bold"
+              >
+                <Plus className="size-3.5" />
+                Generate Quiz
+              </button>
+            </div>
+          </div>
+        </motion.div>
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-3 mb-6">
@@ -131,14 +153,14 @@ export default function QuizzesPage() {
         )}
 
         {/* Error */}
-        {!isLoading && error && (
+        {!isLoading && queryError && (
           <div className="border border-destructive/40 bg-destructive/5 px-4 py-3 font-mono text-sm text-destructive">
-            {error}
+            Failed to load quizzes.
           </div>
         )}
 
         {/* Empty */}
-        {!isLoading && !error && filtered.length === 0 && (
+        {!isLoading && !queryError && filtered.length === 0 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -150,13 +172,13 @@ export default function QuizzesPage() {
             <p className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground/50">
               {search || courseFilter
                 ? "No quizzes match your filters"
-                : "No quizzes yet. Study with Z to generate some."}
+                : "No quizzes yet. Generate some from your study materials."}
             </p>
           </motion.div>
         )}
 
         {/* Grid */}
-        {!isLoading && !error && filtered.length > 0 && (
+        {!isLoading && !queryError && filtered.length > 0 && (
           <motion.div
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
             variants={{
@@ -179,8 +201,10 @@ export default function QuizzesPage() {
                     },
                   }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className="group relative border border-border/40 bg-card/30 hover:border-primary/40 hover:bg-primary/5 transition-all"
+                  className="group relative border border-border/40 bg-card/30 hover:border-primary/40 hover:bg-primary/5 transition-all overflow-hidden"
                 >
+                  <div className="pointer-events-none absolute inset-x-0 top-0 h-10 bg-linear-to-b from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
                   {/* Delete */}
                   <button
                     type="button"
@@ -188,7 +212,7 @@ export default function QuizzesPage() {
                       e.preventDefault();
                       handleDelete(quiz.id);
                     }}
-                    disabled={deletingIds.has(quiz.id)}
+                    disabled={deleteMutation.isPending}
                     className="absolute top-2 right-2 p-1 text-muted-foreground/30 hover:text-destructive opacity-0 group-hover:opacity-100 transition-all disabled:opacity-20"
                     aria-label="Delete quiz"
                   >
@@ -196,13 +220,17 @@ export default function QuizzesPage() {
                   </button>
 
                   <Link href={`/app/quizzes/${quiz.id}`} className="block p-4">
-                    <p className="font-mono font-bold text-sm text-foreground line-clamp-2 pr-6">
-                      {quiz.title}
-                    </p>
-                    <p className="mt-1 text-[10px] font-mono text-muted-foreground/60">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="font-mono font-bold text-sm text-foreground line-clamp-2 pr-2">
+                        {quiz.title}
+                      </p>
+                      <PlayCircle className="mt-0.5 size-3.5 shrink-0 text-muted-foreground/40 group-hover:text-primary transition-colors" />
+                    </div>
+
+                    <p className="mt-1 text-[10px] font-mono text-muted-foreground/60 min-h-4">
                       {[quiz.courseTitle, quiz.courseCode]
                         .filter(Boolean)
-                        .join(" · ")}
+                        .join(" · ") || "General"}
                     </p>
 
                     <div className="mt-3 flex items-center gap-2 flex-wrap">
@@ -219,12 +247,6 @@ export default function QuizzesPage() {
                         >
                           avg {Math.round(quiz.averageScore)}%
                         </Badge>
-                      )}
-                      {typeof quiz.totalAttempts === "number" && (
-                        <span className="text-[9px] font-mono text-muted-foreground/40">
-                          {quiz.totalAttempts}{" "}
-                          {quiz.totalAttempts === 1 ? "attempt" : "attempts"}
-                        </span>
                       )}
                     </div>
 
@@ -246,6 +268,15 @@ export default function QuizzesPage() {
           </p>
         )}
       </div>
+
+      <GenerationDialog
+        isOpen={isGenerationDialogOpen}
+        onOpenChange={setIsGenerationDialogOpen}
+        title="Generate Quiz"
+        description="Select a material from your library or upload a new one to generate an AI quiz."
+        type="quiz"
+        onGenerate={handleGenerate}
+      />
     </div>
   );
 }

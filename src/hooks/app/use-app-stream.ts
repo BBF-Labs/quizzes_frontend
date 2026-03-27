@@ -55,12 +55,6 @@ export const useSessionStream = (
       .map((m) => `${m.id}-${m.content.length}`)
       .join("|");
 
-    console.log("[useSessionStream] Syncing initialMessages:", {
-      count: initialMessages.length,
-      first: initialMessages[0]?.content.slice(0, 20),
-      session: sessionId,
-    });
-
     if (syncKey === lastSyncedRef.current) return;
     lastSyncedRef.current = syncKey;
 
@@ -89,9 +83,6 @@ export const useSessionStream = (
           if (!isStreaming) {
             // Update metadata (like server ID) but keep local content if it matches
             if (m.id !== im.id || m.content !== im.content) {
-              console.log(
-                `[useSessionStream] Syncing message: ${im.messageId || im.id}`,
-              );
               next[existingIdx] = { ...m, ...im };
               changed = true;
             }
@@ -102,9 +93,6 @@ export const useSessionStream = (
             (m) => m.role === im.role && m.content === im.content,
           );
           if (!contentMatch) {
-            console.log(
-              `[useSessionStream] Adding new message from server: ${im.messageId || im.id}`,
-            );
             next.push(im);
             changed = true;
           } else if (!contentMatch.messageId && im.messageId) {
@@ -201,9 +189,7 @@ export const useSessionStream = (
                     };
                   } else {
                     const stableId = msgId || uuidv4();
-                    console.log(
-                      `[useSessionStream] Creating new streaming message: ${stableId}`,
-                    );
+
                     streamingMessageIds.current.add(stableId);
                     const newMsg: ZSessionMessage = {
                       id: stableId,

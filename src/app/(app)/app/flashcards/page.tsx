@@ -1,12 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { ArrowUpRight, Layers, Search, Trash2, X } from "lucide-react";
+import { ArrowUpRight, Layers, Search, Trash2, X, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { api } from "@/lib/api";
-import type { FlashcardSetSummary } from "@/types/session";
+import { toast } from "sonner";
+import {
+  useLibraryFlashcards,
+  useDeleteLibraryFlashcard,
+  useGenerateFlashcards,
+} from "@/hooks/app/use-app-library";
+import { GenerationDialog } from "@/components/app/library/generation-dialog";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -21,28 +26,18 @@ function formatDate(iso: string): string {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function FlashcardsPage() {
-  const [sets, setSets] = useState<FlashcardSetSummary[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: sets = [], isLoading, error: queryError } = useLibraryFlashcards();
+  const deleteMutation = useDeleteLibraryFlashcard();
+  const generateFlashcardsMutation = useGenerateFlashcards();
+
   const [search, setSearch] = useState("");
   const [courseFilter, setCourseFilter] = useState("");
-  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    api
-      .get<{ data: FlashcardSetSummary[] }>("/app/flashcards")
-      .then((res) => setSets(res.data?.data ?? []))
-      .catch((err) => {
-        console.error("[FlashcardsPage] load failed", err);
-        setError("Failed to load flashcard sets.");
-      })
-      .finally(() => setIsLoading(false));
-  }, []);
+  const [isGenerationDialogOpen, setIsGenerationDialogOpen] = useState(false);
 
   // Filter client-side
-  const searchRe = search.trim()
-    ? new RegExp(search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i")
-    : null;
+  const searchRe = useMemo(() => 
+    search.trim() ? new RegExp(search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") : null
+  , [search]);
 
   const filtered = sets.filter((s) => {
     if (searchRe && !searchRe.test(s.title)) return false;
@@ -57,20 +52,16 @@ export default function FlashcardsPage() {
   ) as string[];
 
   const handleDelete = async (id: string) => {
-    if (deletingIds.has(id)) return;
-    setDeletingIds((p) => new Set([...p, id]));
     try {
-      await api.delete(`/app/flashcards/${id}`);
-      setSets((p) => p.filter((s) => s.id !== id));
-    } catch (err) {
-      console.error("[FlashcardsPage] delete failed", err);
-    } finally {
-      setDeletingIds((p) => {
-        const next = new Set(p);
-        next.delete(id);
-        return next;
-      });
+      await deleteMutation.mutateAsync(id);
+      toast.success("Flashcard set deleted");
+    } catch {
+      toast.error("Failed to delete flashcards");
     }
+  };
+
+  const handleGenerate = async (materialId: string) => {
+    await generateFlashcardsMutation.mutateAsync({ materialId });
   };
 
   return (
@@ -86,35 +77,38 @@ export default function FlashcardsPage() {
               <p className="text-[10px] font-mono uppercase tracking-[0.25em] text-primary/80">
                 Study Library
               </p>
+              <h1 className="mt-1 text-2xl font-black tracking-tight">Flashcards</h1>
               <p className="mt-2 text-sm font-mono text-muted-foreground/70">
-                Browse, filter, and open your flashcard sets.
+                Browse, filter, and generate new flashcard sets.
               </p>
             </div>
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="rounded-(--radius) border border-border/40 bg-background/40 px-3 py-2">
-                <p className="text-xs font-mono font-semibold text-foreground">
-                  {sets.length}
-                </p>
-                <p className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/60">
-                  Sets
-                </p>
+            <div className="flex flex-col gap-3 items-end">
+              <div className="grid grid-cols-2 gap-2 text-center w-full sm:w-auto">
+                <div className="rounded-(--radius) border border-border/40 bg-background/40 px-3 py-2">
+                  <p className="text-xs font-mono font-semibold text-foreground">
+                    {sets.length}
+                  </p>
+                  <p className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/60">
+                    Sets
+                  </p>
+                </div>
+                <div className="rounded-(--radius) border border-border/40 bg-background/40 px-3 py-2">
+                  <p className="text-xs font-mono font-semibold text-foreground">
+                    {totalCards}
+                  </p>
+                  <p className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/60">
+                    Cards
+                  </p>
+                </div>
               </div>
-              <div className="rounded-(--radius) border border-border/40 bg-background/40 px-3 py-2">
-                <p className="text-xs font-mono font-semibold text-foreground">
-                  {totalCards}
-                </p>
-                <p className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/60">
-                  Cards
-                </p>
-              </div>
-              <div className="rounded-(--radius) border border-border/40 bg-background/40 px-3 py-2">
-                <p className="text-xs font-mono font-semibold text-foreground">
-                  {filtered.length}
-                </p>
-                <p className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/60">
-                  Showing
-                </p>
-              </div>
+
+              <button
+                onClick={() => setIsGenerationDialogOpen(true)}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-primary px-4 py-2 rounded-(--radius) text-[11px] font-mono uppercase tracking-widest text-primary-foreground hover:opacity-90 transition-all font-bold"
+              >
+                <Plus className="size-3.5" />
+                Generate Flashcards
+              </button>
             </div>
           </div>
         </motion.div>
@@ -170,14 +164,14 @@ export default function FlashcardsPage() {
         )}
 
         {/* Error */}
-        {!isLoading && error && (
+        {!isLoading && queryError && (
           <div className="border border-destructive/40 bg-destructive/5 px-4 py-3 font-mono text-sm text-destructive">
-            {error}
+            Failed to load flashcard sets.
           </div>
         )}
 
         {/* Empty */}
-        {!isLoading && !error && filtered.length === 0 && (
+        {!isLoading && !queryError && filtered.length === 0 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -189,13 +183,13 @@ export default function FlashcardsPage() {
             <p className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground/50">
               {search || courseFilter
                 ? "No sets match your filters"
-                : "No flashcard sets yet. Study with Z to generate some."}
+                : "No flashcard sets yet. Generate some from your study materials."}
             </p>
           </motion.div>
         )}
 
         {/* Grid */}
-        {!isLoading && !error && filtered.length > 0 && (
+        {!isLoading && !queryError && filtered.length > 0 && (
           <motion.div
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
             variants={{
@@ -229,7 +223,7 @@ export default function FlashcardsPage() {
                       e.preventDefault();
                       handleDelete(set.id);
                     }}
-                    disabled={deletingIds.has(set.id)}
+                    disabled={deleteMutation.isPending}
                     className="absolute top-2 right-2 p-1 text-muted-foreground/30 hover:text-destructive opacity-0 group-hover:opacity-100 transition-all disabled:opacity-20"
                     aria-label="Delete set"
                   >
@@ -289,6 +283,15 @@ export default function FlashcardsPage() {
           </p>
         )}
       </div>
+
+      <GenerationDialog
+        isOpen={isGenerationDialogOpen}
+        onOpenChange={setIsGenerationDialogOpen}
+        title="Generate Flashcards"
+        description="Select a material from your library or upload a new one to generate AI flashcards."
+        type="flashcards"
+        onGenerate={handleGenerate}
+      />
     </div>
   );
 }

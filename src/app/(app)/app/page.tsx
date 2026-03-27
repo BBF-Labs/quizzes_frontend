@@ -16,12 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
-import {
-  useSessions,
-  useCreateSession,
-  useCourseSearch,
-  useDebounce,
-} from "@/hooks";
+import { useSessions, useCreateSession, useCourseSearch, useDebounce } from "@/hooks";
 import { cn } from "@/lib/utils";
 
 // ─── Time-aware rotating greetings ───────────────────────────────────────────
@@ -72,14 +67,14 @@ function getGreeting(name: string): string {
   return pool[greetingIndex];
 }
 
-// ─── Session mode options ─────────────────────────────────────────────────────
+// ─── App mode options ─────────────────────────────────────────────────────────
 
-const SESSION_MODES = [
+const APP_MODES = [
   { value: "structured", label: "Structured Study" },
   { value: "free", label: "Free Chat" },
 ] as const;
 
-type SessionMode = (typeof SESSION_MODES)[number]["value"];
+type AppMode = (typeof APP_MODES)[number]["value"];
 
 export default function AppHomePage() {
   const router = useRouter();
@@ -90,7 +85,7 @@ export default function AppHomePage() {
   // ── Composer state ──────────────────────────────────────────────────────────
   const [input, setInput] = useState("");
   const [course, setCourse] = useState("");
-  const [mode, setMode] = useState<SessionMode>("structured");
+  const [mode, setMode] = useState<AppMode>("structured");
   const [courseSearch, setCourseSearch] = useState("");
   const debouncedSearch = useDebounce(courseSearch, 400);
   const { data: searchResults = [], isLoading: isSearchingByText } =
@@ -137,8 +132,7 @@ export default function AppHomePage() {
         courseId: courseId ? courseId : undefined,
         mode,
       });
-      const resolvedSessionId =
-        session?.id || (session as { _id?: string })?._id;
+      const resolvedSessionId = session?.id || (session as { _id?: string })?._id;
 
       if (!resolvedSessionId || resolvedSessionId === "undefined") {
         console.error("No valid session ID returned", session);
@@ -175,7 +169,7 @@ export default function AppHomePage() {
   return (
     <div className="flex flex-col h-full min-h-[calc(100dvh-3.5rem)]">
       {/* ── Greeting + recent sessions ─────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4 pb-48">
+      <div className="flex-1 flex flex-col items-center justify-center px-4">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
@@ -195,7 +189,7 @@ export default function AppHomePage() {
             {greeting}
           </h1>
           <p className="text-sm text-muted-foreground font-mono">
-            Start typing below to begin a new session.
+            Start typing below to begin a new study session.
           </p>
 
           <motion.div
@@ -207,15 +201,16 @@ export default function AppHomePage() {
             <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground/50 mb-3 text-left">
               Desktop
             </p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 md:gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 md:gap-3">
               {[
                 { href: "/app/all", label: "Sessions", Icon: MessageSquare },
+                { href: "/app/library", label: "Library", Icon: BookOpen },
                 {
                   href: "/app/flashcards",
                   label: "Flashcards",
-                  Icon: BookOpen,
+                  Icon: Clock3,
                 },
-                { href: "/app/quizzes", label: "Quizzes", Icon: Clock3 },
+                { href: "/app/quizzes", label: "Quizzes", Icon: Sparkles },
                 { href: "/app/mindmaps", label: "Mind Maps", Icon: Network },
                 { href: "/app/notes", label: "Notes", Icon: FileText },
                 {
@@ -260,7 +255,7 @@ export default function AppHomePage() {
                   >
                     <Clock3 className="size-3.5 text-muted-foreground/50 shrink-0" />
                     <span className="flex-1 truncate text-[11px] font-mono text-muted-foreground group-hover:text-foreground transition-colors">
-                      {s.title || `Chat ${s.id.slice(0, 8)}`}
+                      {s.title || `Session ${s.id.slice(0, 8)}`}
                     </span>
                     <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40">
                       {s.startedAt
@@ -278,7 +273,7 @@ export default function AppHomePage() {
                   href="/app/all"
                   className="mt-2 inline-block text-[10px] font-mono uppercase tracking-widest text-primary/70 hover:text-primary transition-colors"
                 >
-                  View all {sessions.length} chats →
+                  View all {sessions.length} sessions →
                 </Link>
               )}
             </motion.div>
@@ -302,8 +297,8 @@ export default function AppHomePage() {
         </motion.div>
       </div>
 
-      {/* ── Composer — fixed to bottom of content area ─────────────────────── */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 px-4 py-4 bg-background/80 backdrop-blur supports-backdrop-filter:bg-background/60">
+      {/* ── Composer — sticky to bottom of content area ─────────────────────── */}
+      <div className="sticky bottom-0 z-50 -mx-4 px-4 py-4 md:-mx-8 md:px-8 bg-background border-t border-border/50">
         <div className="mx-auto max-w-2xl">
           {/* Attached file pill */}
           <AnimatePresence>
@@ -414,7 +409,7 @@ export default function AppHomePage() {
                         Mode
                       </label>
                       <div className="flex gap-1">
-                        {SESSION_MODES.map((m) => (
+                        {APP_MODES.map((m) => (
                           <button
                             key={m.value}
                             type="button"
@@ -471,7 +466,7 @@ export default function AppHomePage() {
 
             {isSubmitting && (
               <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 shrink-0">
-                Creating...
+                Starting...
               </span>
             )}
           </div>

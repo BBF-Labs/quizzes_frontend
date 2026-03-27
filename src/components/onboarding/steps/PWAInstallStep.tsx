@@ -97,13 +97,6 @@ export default function PWAInstallStep({ onComplete }: PWAInstallStepProps) {
             </span>
           </motion.div>
 
-          {/* Floating UI element */}
-          <div className="absolute bottom-4 right-4 p-2 bg-background border border-border shadow-2xl -skew-x-12 flex items-center gap-2">
-            <Download className="size-3 text-primary" />
-            <span className="text-[9px] font-mono uppercase tracking-[0.2em] text-muted-foreground">
-              App Manifest Active
-            </span>
-          </div>
         </div>
 
         {platform === "ios" ? (

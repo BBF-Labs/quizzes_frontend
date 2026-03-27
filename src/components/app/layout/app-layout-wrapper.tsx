@@ -9,7 +9,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { SessionsSidebar } from "@/components/app/layout";
+import { AppSidebar } from "@/components/app/layout";
 import { ThemeToggle, UserProfileDropdown } from "@/components/common";
 import { useAuth } from "@/contexts/auth-context";
 import {
@@ -21,7 +21,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 
-export function SessionsLayoutWrapper({ children }: { children: ReactNode }) {
+export function AppLayoutWrapper({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const segments = pathname.split("/").filter(Boolean);
   const routePart = segments[1] || "";
@@ -38,7 +38,7 @@ export function SessionsLayoutWrapper({ children }: { children: ReactNode }) {
   const sessionId = routePart && !staticRoutes.has(routePart) ? routePart : "";
   const isSessionDetail = !!sessionId;
   const routeLabelMap: Record<string, string> = {
-    all: "All Chats",
+    all: "All Sessions",
     memory: "Memory",
     settings: "Settings",
     usage: "Usage",
@@ -77,7 +77,7 @@ export function SessionsLayoutWrapper({ children }: { children: ReactNode }) {
   return (
     <SidebarProvider>
       <div className="flex min-h-screen bg-background text-foreground w-full">
-        <SessionsSidebar />
+        <AppSidebar />
         <SidebarInset className="flex flex-col flex-1">
           <header className="border-b border-border/50 bg-background/80 backdrop-blur-sm sticky top-0 z-40 h-14 shrink-0 flex items-center px-4">
             <SidebarTrigger className="-ml-1" />
