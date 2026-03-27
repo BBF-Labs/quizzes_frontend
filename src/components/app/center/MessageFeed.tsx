@@ -6,12 +6,12 @@ import { Brain } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "@/lib/utils";
-import type { ZSessionMessage } from "@/types/session";
+import type { ZAppMessage } from "@/types/session";
 import { DirectiveCard } from "@/components/app/center/DirectiveCard";
 import type { DirectiveCardCallbacks } from "@/components/app/center/DirectiveCard";
 
 export interface MessageFeedProps extends DirectiveCardCallbacks {
-  messages: ZSessionMessage[];
+  messages: ZAppMessage[];
   /**
    * The messageId of the most-recent, still-unresolved directive.
    * All directives whose messageId does NOT match this are treated as resolved.
@@ -120,7 +120,7 @@ export function MessageFeed({
 // ─── Internal Z message bubble with markdown ──────────────────────────────────
 
 interface ZMessageBubbleProps {
-  message: ZSessionMessage;
+  message: ZAppMessage;
 }
 
 function ZMessageBubble({ message }: ZMessageBubbleProps) {

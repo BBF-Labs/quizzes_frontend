@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { getAccessToken } from "@/lib/session";
 import { useSocket } from "@/hooks";
-import type { ISessionMaterial } from "@/types/session";
+import type { IAppMaterial } from "@/types/session";
 import { MaterialCard } from "@/components/app/left/MaterialCard";
 
 // ─── Accepted MIME types ──────────────────────────────────────────────────────
@@ -22,7 +22,7 @@ const ACCEPTED = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function mimeToType(mime: string): ISessionMaterial["type"] {
+function mimeToType(mime: string): IAppMaterial["type"] {
   if (mime === "application/pdf") return "pdf";
   if (mime.includes("wordprocessingml")) return "docx";
   if (mime === "text/markdown") return "md";
@@ -67,7 +67,7 @@ export function SourcesPanel({
 }: SourcesPanelProps) {
   const { socket } = useSocket();
 
-  const [materials, setMaterials] = useState<ISessionMaterial[]>([]);
+  const [materials, setMaterials] = useState<IAppMaterial[]>([]);
   const [uploading, setUploading] = useState<UploadRow[]>([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -77,11 +77,11 @@ export function SourcesPanel({
     let cancelled = false;
 
     api
-      .get<{ data: ISessionMaterial[] } | ISessionMaterial[]>(`/app/${sessionId}/materials`)
+      .get<{ data: IAppMaterial[] } | IAppMaterial[]>(`/app/${sessionId}/materials`)
       .then((res) => {
         if (cancelled) return;
         const raw = res.data;
-        const list = Array.isArray(raw) ? raw : (raw as { data: ISessionMaterial[] }).data;
+        const list = Array.isArray(raw) ? raw : (raw as { data: IAppMaterial[] }).data;
         setMaterials(Array.isArray(list) ? list : []);
       })
       .catch((err) => {
@@ -153,7 +153,7 @@ export function SourcesPanel({
         xhr.onload = () => {
           try {
             const parsed = JSON.parse(xhr.responseText);
-            const mat: ISessionMaterial = parsed.data ?? parsed;
+            const mat: IAppMaterial = parsed.data ?? parsed;
             // Honour the server's processingStatus if present; fall back to "pending"
             setMaterials((prev) => [
               ...prev,

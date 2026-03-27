@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { File, FileText, FileType2, Loader2, CheckCircle, XCircle, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
-import type { ISessionMaterial } from "@/types/session";
+import type { IAppMaterial } from "@/types/session";
 
 // ─── Helper: escape a string for use in a RegExp ─────────────────────────────
 
@@ -58,7 +58,7 @@ function FileIcon({ type, className }: { type: string; className?: string }) {
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
 
-function StatusBadge({ status }: { status: ISessionMaterial["processingStatus"] }) {
+function StatusBadge({ status }: { status: IAppMaterial["processingStatus"] }) {
   if (status === "pending") {
     return (
       <span className="flex items-center gap-1 text-[9px] font-mono uppercase tracking-widest text-amber-500 animate-pulse">
@@ -87,7 +87,7 @@ function StatusBadge({ status }: { status: ISessionMaterial["processingStatus"] 
 
 interface MaterialCardProps {
   sessionId: string;
-  material: ISessionMaterial;
+  material: IAppMaterial;
   isHighlighted: boolean;
   highlightedExcerpt?: string;
   /** Words to bold within the excerpt (typically the current search query) */

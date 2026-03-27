@@ -45,7 +45,7 @@ function FlipCard({
         animate={{ rotateY: flipped ? 180 : 0 }}
         transition={{ duration: 0.35, ease: "easeInOut" }}
         style={{ transformStyle: "preserve-3d" }}
-        className="relative h-[110px]"
+        className="relative h-27.5"
       >
         {/* Front */}
         <div

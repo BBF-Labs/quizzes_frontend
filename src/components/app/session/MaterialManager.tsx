@@ -15,7 +15,11 @@ interface MaterialManagerProps {
   courseId: string;
 }
 
-export function MaterialManager({ sessionId, materials, courseId }: MaterialManagerProps) {
+export function MaterialManager({
+  sessionId,
+  materials,
+  courseId,
+}: MaterialManagerProps) {
   const [isUploading, setIsUploading] = useState(false);
   const { mutate: addMaterial } = useAddSessionMaterial(sessionId);
 
@@ -108,7 +112,10 @@ export function MaterialManager({ sessionId, materials, courseId }: MaterialMana
                   </span>
                 </div>
                 {!m.isProcessed && (
-                  <Badge variant="outline" className="text-[10px] h-4 px-1 animate-pulse">
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] h-4 px-1 animate-pulse"
+                  >
                     Processing
                   </Badge>
                 )}
