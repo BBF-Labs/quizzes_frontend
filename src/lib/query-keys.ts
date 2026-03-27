@@ -1,15 +1,15 @@
 export const queryKeys = {
   authSession: ["auth-session"] as const,
   onboardingStatus: ["onboarding-status"] as const,
-  sessions: {
-    root: ["sessions"] as const,
-    lists: () => [...queryKeys.sessions.root, "list"] as const,
+  app: {
+    root: ["app"] as const,
+    lists: () => [...queryKeys.app.root, "list"] as const,
     listQueryOptions: (options?: Record<string, any>) =>
-      [...queryKeys.sessions.lists(), options] as const,
-    details: () => [...queryKeys.sessions.root, "detail"] as const,
-    detail: (id: string) => [...queryKeys.sessions.details(), id] as const,
-    streams: () => [...queryKeys.sessions.root, "stream"] as const,
-    stream: (id: string) => [...queryKeys.sessions.streams(), id] as const,
+      [...queryKeys.app.lists(), options] as const,
+    details: () => [...queryKeys.app.root, "detail"] as const,
+    detail: (id: string) => [...queryKeys.app.details(), id] as const,
+    streams: () => [...queryKeys.app.root, "stream"] as const,
+    stream: (id: string) => [...queryKeys.app.streams(), id] as const,
   },
   library: {
     root: ["library"] as const,
@@ -36,6 +36,12 @@ export const queryKeys = {
       list: () => [...queryKeys.library.notes.root(), "list"] as const,
       detail: (id: string) =>
         [...queryKeys.library.notes.root(), "detail", id] as const,
+    },
+    materials: {
+      root: () => [...queryKeys.library.root, "materials"] as const,
+      list: () => [...queryKeys.library.materials.root(), "list"] as const,
+      detail: (id: string) =>
+        [...queryKeys.library.materials.root(), "detail", id] as const,
     },
   },
 };

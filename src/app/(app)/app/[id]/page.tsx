@@ -197,7 +197,7 @@ export default function ChatPage() {
       />
 
       {/* Input */}
-      <div className="px-6 md:px-12 pb-12 pt-4 bg-background border-t border-border/5 animate-in fade-in slide-in-from-bottom-2">
+      <div className="sticky bottom-0 z-50 -mx-6 md:-mx-12 px-6 md:px-12 pb-12 pt-4 bg-background border-t border-border/5 shadow-[0_-10px_40px_rgba(0,0,0,0.2)]">
         <div className="w-full">
           <AnimatePresence>
             {attachedFile && (

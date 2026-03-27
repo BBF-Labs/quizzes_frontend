@@ -24,9 +24,7 @@ export function useUploadFile() {
         formData.append("folder", folder);
       }
 
-      const res = await api.post("/system/upload", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const res = await api.postForm("/system/upload", formData);
 
       return res.data?.data as IUpload;
     },

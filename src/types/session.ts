@@ -1,20 +1,20 @@
-export type ZSessionMessageType =
+export type ZAppMessageType =
   | "text"
   | "directive"
   | "tool_call"
   | "tool_result";
 
-// ─── Session Material (Sources Panel) ────────────────────────────────────────
+// ─── App Material (Sources Panel) ───────────────────────────────────────────
 
-export type SessionMaterialProcessingStatus = "pending" | "ready" | "failed";
+export type AppMaterialProcessingStatus = "pending" | "ready" | "failed";
 
-export interface ISessionMaterial {
+export interface IAppMaterial {
   id: string;
   filename: string;
   type: "pdf" | "docx" | "txt" | "md" | string;
   /** File size in bytes */
   size: number;
-  processingStatus: SessionMaterialProcessingStatus;
+  processingStatus: AppMaterialProcessingStatus;
   url?: string;
 }
 
@@ -93,15 +93,15 @@ export type ZDirective =
   | { type: "SHOW_SUGGESTION"; payload: ZShowSuggestionPayload }
   | { type: "SHOW_SUMMARY"; payload: ZShowSummaryPayload };
 
-// ─── Session Messages ─────────────────────────────────────────────────────────
+// ─── App Messages ────────────────────────────────────────────────────────────
 
-export interface ZSessionMessage {
+export interface ZAppMessage {
   /** Client-generated UUID used as React key */
   id: string;
   /** Server-assigned message ID — used for directive resolution tracking */
   messageId: string;
   role: "user" | "z" | "peer" | "system";
-  type: ZSessionMessageType;
+  type: ZAppMessageType;
   content: string;
   timestamp: string;
   /** Present only when type === "directive" */
@@ -216,9 +216,9 @@ export type StepInput =
     }
   | { stepType: "task_skipped"; payload: { taskId?: string } };
 
-// ─── Create Session Input ─────────────────────────────────────────────────────
+// ─── Create App Input ────────────────────────────────────────────────────────
 
-export interface CreateSessionInput {
+export interface CreateAppInput {
   courseId?: string;
   mode: "free" | "structured";
   planningMode?: "planning" | "fast";
@@ -235,16 +235,16 @@ export interface ZMaterial {
   isProcessed: boolean;
 }
 
-// ─── Session (Full Shape) ─────────────────────────────────────────────────────
+// ─── App (Full Shape) ──────────────────────────────────────────────────────────
 
-export interface ZSession {
+export interface ZApp {
   id: string;
   title?: string;
   name?: string;
   courseId?: string;
   mode: "free" | "structured";
   planningMode?: "planning" | "fast";
-  zMessages: ZSessionMessage[];
+  zMessages: ZAppMessage[];
   materials?: ZMaterial[];
   artifacts?: Array<{ type: string; content: unknown }>;
   studio?: {
@@ -254,7 +254,7 @@ export interface ZSession {
   status: "active" | "completed";
 }
 
-export interface ZSessionSummary {
+export interface ZAppSummary {
   id: string;
   title?: string;
   courseId?: string;
@@ -429,6 +429,29 @@ export interface NoteDetail {
   updatedAt?: string;
 }
 
+// ─── Library: Materials ───────────────────────────────────────────────────────
+
+export interface MaterialSummary {
+  id: string;
+  title: string;
+  courseTitle?: string;
+  courseCode?: string;
+  mimeType: string;
+  size: number;
+  processingStatus: "pending" | "processing" | "ready" | "failed";
+  flashcardsGenerated: boolean;
+  quizGenerated: boolean;
+  createdAt: string;
+}
+
+export interface MaterialDetail extends MaterialSummary {
+  uploadId?: string;
+  lectures?: Array<{
+    title: string;
+    topics: Array<{ title: string }>;
+  }>;
+}
+
 // ─── Library: Mind Maps ──────────────────────────────────────────────────────
 
 export interface MindMapSummary {
@@ -451,9 +474,9 @@ export interface MindMapDetail {
   updatedAt?: string;
 }
 
-// ─── Study Partner Session (superset of ZSession with studio workspace) ───────
+// ─── Study Partner App (superset of ZApp with studio workspace) ──────────────
 
-export interface IZStudyPartnerSession extends ZSession {
+export interface IZStudyPartnerApp extends ZApp {
   notes?: StudioNote[];
   sharedNotes?: SharedNote[];
   flashcards?: StudioFlashcard[];

@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 
-export function SessionsSidebar() {
+export function AppSidebar() {
   const pathname = usePathname();
   const { state } = useSidebar();
   const { data: sessions = [] } = useSessions();
@@ -57,8 +57,11 @@ export function SessionsSidebar() {
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="py-4">
+      <SidebarContent className="py-4 no-scrollbar">
         <SidebarGroup>
+          <SidebarGroupLabel className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground/50 px-4 mb-2">
+            Platform
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
@@ -97,7 +100,7 @@ export function SessionsSidebar() {
                   <Link href="/app/all">
                     <MessageSquare className="size-4" />
                     <span className="font-mono text-[11px] uppercase tracking-widest">
-                      All Sessions
+                      Screens
                     </span>
                   </Link>
                 </SidebarMenuButton>
@@ -106,17 +109,47 @@ export function SessionsSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  isActive={pathname.startsWith("/app/flashcards")}
+                  isActive={pathname === "/app/library"}
+                  tooltip="Library"
+                  className={cn(
+                    "h-9 px-4 rounded-(--radius) transition-all duration-200",
+                    pathname === "/app/library"
+                      ? "bg-primary/5 text-primary border-r-2 border-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
+                  )}
+                >
+                  <Link href="/app/library">
+                    <BookOpen className="size-4" />
+                    <span className="font-mono text-[11px] uppercase tracking-widest">
+                      Library
+                    </span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground/50 px-4 mb-2">
+            Tools
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === "/app/flashcards"}
                   tooltip="Flashcards"
                   className={cn(
                     "h-9 px-4 rounded-(--radius) transition-all duration-200",
-                    pathname.startsWith("/app/flashcards")
+                    pathname === "/app/flashcards"
                       ? "bg-primary/5 text-primary border-r-2 border-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
                   )}
                 >
                   <Link href="/app/flashcards">
-                    <BookOpen className="size-4" />
+                    <Brain className="size-4" />
                     <span className="font-mono text-[11px] uppercase tracking-widest">
                       Flashcards
                     </span>
@@ -127,17 +160,17 @@ export function SessionsSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  isActive={pathname.startsWith("/app/quizzes")}
+                  isActive={pathname === "/app/quizzes"}
                   tooltip="Quizzes"
                   className={cn(
                     "h-9 px-4 rounded-(--radius) transition-all duration-200",
-                    pathname.startsWith("/app/quizzes")
+                    pathname === "/app/quizzes"
                       ? "bg-primary/5 text-primary border-r-2 border-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
                   )}
                 >
                   <Link href="/app/quizzes">
-                    <MessageSquare className="size-4" />
+                    <FileText className="size-4" />
                     <span className="font-mono text-[11px] uppercase tracking-widest">
                       Quizzes
                     </span>
@@ -148,11 +181,11 @@ export function SessionsSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  isActive={pathname.startsWith("/app/mindmaps")}
+                  isActive={pathname === "/app/mindmaps"}
                   tooltip="Mind Maps"
                   className={cn(
                     "h-9 px-4 rounded-(--radius) transition-all duration-200",
-                    pathname.startsWith("/app/mindmaps")
+                    pathname === "/app/mindmaps"
                       ? "bg-primary/5 text-primary border-r-2 border-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
                   )}
@@ -165,54 +198,21 @@ export function SessionsSidebar() {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
 
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname.startsWith("/app/notes")}
-                  tooltip="Notes"
-                  className={cn(
-                    "h-9 px-4 rounded-(--radius) transition-all duration-200",
-                    pathname.startsWith("/app/notes")
-                      ? "bg-primary/5 text-primary border-r-2 border-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
-                  )}
-                >
-                  <Link href="/app/notes">
-                    <FileText className="size-4" />
-                    <span className="font-mono text-[11px] uppercase tracking-widest">
-                      Notes
-                    </span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname === "/app/memory"}
-                  tooltip="Memory"
-                  className={cn(
-                    "h-9 px-4 rounded-(--radius) transition-all duration-200",
-                    pathname === "/app/memory"
-                      ? "bg-primary/5 text-primary border-r-2 border-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
-                  )}
-                >
-                  <Link href="/app/memory">
-                    <Brain className="size-4" />
-                    <span className="font-mono text-[11px] uppercase tracking-widest">
-                      Memory
-                    </span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground/50 px-4 mb-2">
+            Settings
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
                   isActive={pathname === "/app/settings"}
-                  tooltip="Settings"
+                  tooltip="Account"
                   className={cn(
                     "h-9 px-4 rounded-(--radius) transition-all duration-200",
                     pathname === "/app/settings"
@@ -223,7 +223,7 @@ export function SessionsSidebar() {
                   <Link href="/app/settings">
                     <Settings className="size-4" />
                     <span className="font-mono text-[11px] uppercase tracking-widest">
-                      Settings
+                      Account
                     </span>
                   </Link>
                 </SidebarMenuButton>

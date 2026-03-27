@@ -1,25 +1,23 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { queryKeys } from "@/lib/query-keys";
-import type { ZSessionSummary, ZSession } from "@/types/session";
+import type { ZAppSummary, ZApp } from "@/types/session";
 
-interface ListSessionsResponse {
-  data: ZSessionSummary[];
+interface ListAppsResponse {
+  data: ZAppSummary[];
   message: string;
 }
 
-interface GetSessionResponse {
-  data: ZSession;
+interface GetAppResponse {
+  data: ZApp;
   message: string;
 }
 
 export const useSessions = () => {
   return useQuery({
-    queryKey: queryKeys.sessions.lists(),
+    queryKey: queryKeys.app.lists(),
     queryFn: async () => {
-      console.log("[useSessions] Requesting list");
-      const response = await api.get<ListSessionsResponse>("/app");
-      console.log("[useSessions] Raw Response:", response.data);
+      const response = await api.get<ListAppsResponse>("/app");
       return response.data.data ?? [];
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
@@ -27,16 +25,14 @@ export const useSessions = () => {
   });
 };
 
-export const useSession = (sessionId: string, enabled = true) => {
+export const useSession = (appId: string, enabled = true) => {
   return useQuery({
-    queryKey: queryKeys.sessions.detail(sessionId),
+    queryKey: queryKeys.app.detail(appId),
     queryFn: async () => {
-      console.log(`[useSession] Requesting detail: ${sessionId}`);
-      const response = await api.get<GetSessionResponse>(`/app/${sessionId}`);
-      console.log("[useSession] Raw Response:", response.data);
+      const response = await api.get<GetAppResponse>(`/app/${appId}`);
       return response.data.data;
     },
-    enabled: enabled && !!sessionId,
+    enabled: enabled && !!appId,
     staleTime: 1000 * 10, // 10 seconds - sessions update frequently
     refetchOnWindowFocus: true, // Re-fetch when user returns to tab
     retry: 2,
