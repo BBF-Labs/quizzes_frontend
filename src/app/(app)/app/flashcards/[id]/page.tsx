@@ -1,6 +1,7 @@
 "use client";
 
-import { use, useRef, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
+import { useBreadcrumbStore } from "@/store/breadcrumb";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -82,25 +83,29 @@ export default function FlashcardSetDetailPage({
 
   // const isFull = (set?.cards.length ?? 0) >= MAX_CARDS; // Not used
 
+  useEffect(() => {
+    if (set?.title) {
+      useBreadcrumbStore.getState().setDynamicTitle(set.title);
+    }
+    return () => useBreadcrumbStore.getState().setDynamicTitle(null);
+  }, [set?.title]);
+
   // UI preferences
   // const cardStyle = ... // Not used
 
   return (
     <div
-      className="min-h-full px-2 py-6 flex flex-col items-center"
+      className="min-h-full px-2 pb-6 pt-2 flex flex-col items-center"
       ref={confettiRef}
     >
       {/* Title in top bar (breadcrumb area) */}
-      <div className="w-full max-w-3xl mx-auto mb-8 flex flex-col items-center">
-        <h1 className="text-2xl font-black tracking-tighter text-center">
-          {set?.title}
-        </h1>
-        {(set?.courseTitle || set?.courseCode) && (
+      {(set?.courseTitle || set?.courseCode) && (
+        <div className="w-full max-w-3xl mx-auto mb-8 flex flex-col items-center">
           <p className="mt-1 text-[11px] font-mono text-muted-foreground/60 text-center">
             {[set.courseTitle, set.courseCode].filter(Boolean).join(" · ")}
           </p>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Loading */}
       {isLoading && (
@@ -122,7 +127,10 @@ export default function FlashcardSetDetailPage({
           {/* Left navigation */}
           <button
             type="button"
-            onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
+            onClick={() => {
+              setCurrentIndex((prev) => Math.max(0, prev - 1));
+              setFlippedIds(new Set());
+            }}
             disabled={currentIndex === 0}
             className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-12 w-12 flex items-center justify-center rounded-(--radius) border border-border/50 bg-card/60 text-2xl text-muted-foreground/60 hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed"
             aria-label="Previous card"
@@ -234,11 +242,12 @@ export default function FlashcardSetDetailPage({
           {/* Right navigation */}
           <button
             type="button"
-            onClick={() =>
+            onClick={() => {
               setCurrentIndex((prev) =>
                 Math.min((set.cards.length || 1) - 1, prev + 1),
-              )
-            }
+              );
+              setFlippedIds(new Set());
+            }}
             disabled={currentIndex >= set.cards.length - 1}
             className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-12 w-12 flex items-center justify-center rounded-(--radius) border border-border/50 bg-card/60 text-2xl text-muted-foreground/60 hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed"
             aria-label="Next card"

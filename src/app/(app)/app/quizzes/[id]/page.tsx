@@ -4,11 +4,11 @@ import { useEffect, useState } from "react";
 import { use } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { BookOpen, ChevronDown, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
+import { useBreadcrumbStore } from "@/store/breadcrumb";
 import type { QuizDetail, QuizLecture, QuizTopic, QuizQuestion } from "@/types/session";
 
 // ─── Question row ─────────────────────────────────────────────────────────────
@@ -151,22 +151,21 @@ export default function QuizDetailPage({
       .finally(() => setIsLoading(false));
   }, [id]);
 
+  useEffect(() => {
+    if (quiz?.title) {
+      useBreadcrumbStore.getState().setDynamicTitle(quiz.title);
+    }
+    return () => useBreadcrumbStore.getState().setDynamicTitle(null);
+  }, [quiz?.title]);
+
   const totalQuestions = quiz?.lectures.reduce(
     (sum, l) => sum + l.topics.reduce((s, t) => s + t.questions.length, 0),
     0,
   );
 
   return (
-    <div className="min-h-full px-4 py-8">
+    <div className="min-h-full px-4 pt-2 pb-8">
       <div className="mx-auto max-w-3xl">
-        {/* Back link */}
-        <Link
-          href="/app/quizzes"
-          className="inline-block mb-6 text-[10px] font-mono uppercase tracking-widest text-muted-foreground/50 hover:text-primary transition-colors"
-        >
-          ← All Quizzes
-        </Link>
-
         {/* Loading */}
         {isLoading && (
           <div className="flex flex-col gap-3">
@@ -196,17 +195,14 @@ export default function QuizDetailPage({
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h1 className="text-2xl font-black tracking-tighter">
-                    {quiz.title}
-                  </h1>
                   {(quiz.courseTitle || quiz.courseCode) && (
-                    <p className="mt-1 text-[11px] font-mono text-muted-foreground/60">
+                    <p className="mb-2 text-[11px] font-mono text-muted-foreground/60">
                       {[quiz.courseTitle, quiz.courseCode]
                         .filter(Boolean)
                         .join(" · ")}
                     </p>
                   )}
-                  <div className="mt-2 flex items-center gap-2">
+                  <div className="flex items-center gap-2">
                     <Badge
                       variant="outline"
                       className="text-[9px] font-mono h-4 px-1.5"
@@ -230,7 +226,6 @@ export default function QuizDetailPage({
                   Study This Quiz
                 </Button>
               </div>
-              <div className="mt-4 h-px w-10 bg-primary/40" />
             </motion.div>
 
             {/* Lectures */}
