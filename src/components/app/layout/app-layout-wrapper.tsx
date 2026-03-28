@@ -21,6 +21,8 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 
+import { useBreadcrumbStore } from "@/store/breadcrumb";
+
 export function AppLayoutWrapper({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const segments = pathname.split("/").filter(Boolean);
@@ -34,6 +36,7 @@ export function AppLayoutWrapper({ children }: { children: ReactNode }) {
     "quizzes",
     "notes",
     "mindmaps",
+    "library",
   ]);
   const sessionId = routePart && !staticRoutes.has(routePart) ? routePart : "";
   const isSessionDetail = !!sessionId;
@@ -56,6 +59,7 @@ export function AppLayoutWrapper({ children }: { children: ReactNode }) {
 
   // Always call hooks unconditionally (Rules of Hooks)
   const { user, logout } = useAuth();
+  const dynamicTitle = useBreadcrumbStore((state) => state.dynamicTitle);
 
   // For session detail pages the [id]/layout.tsx handles everything
   if (isSessionDetail) {
@@ -68,8 +72,10 @@ export function AppLayoutWrapper({ children }: { children: ReactNode }) {
   const formatSegment = (segment: string, index: number) => {
     if (routeLabelMap[segment]) return routeLabelMap[segment];
     const isNestedDetail = index > 0 && detailLabelMap[parentSegment];
+    if (isNestedDetail && dynamicTitle) return dynamicTitle;
     if (isNestedDetail) return detailLabelMap[parentSegment];
     const isLikelyId = index > 0 && /^[a-f0-9-]{8,}$/i.test(segment);
+    if (isLikelyId && dynamicTitle) return dynamicTitle;
     if (isLikelyId) return "Details";
     return segment.replace(/-/g, " ");
   };

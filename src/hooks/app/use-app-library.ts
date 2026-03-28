@@ -249,3 +249,26 @@ export const useGenerateQuiz = () => {
     },
   });
 };
+
+export const useGenerateMindMap = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: {
+      materialId: string;
+      courseId?: string;
+      settings?: any;
+    }) => {
+      const res = await api.post("/app/mindmaps/generate", data);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.library.mindmaps.root(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.library.materials.root(),
+      });
+    },
+  });
+};

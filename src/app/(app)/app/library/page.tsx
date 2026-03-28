@@ -19,6 +19,7 @@ import {
   useDeleteLibraryMaterial,
   useGenerateFlashcards,
   useGenerateQuiz,
+  useGenerateMindMap,
 } from "@/hooks/app/use-app-library";
 import { useUploadFile } from "@/hooks/common/use-upload";
 import { toast } from "sonner";
@@ -29,13 +30,14 @@ export default function LibraryPage() {
   const deleteMaterial = useDeleteLibraryMaterial();
   const generateFlashcards = useGenerateFlashcards();
   const generateQuiz = useGenerateQuiz();
+  const generateMindMap = useGenerateMindMap();
   const uploadFile = useUploadFile();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [isUploading, setIsUploading] = useState(false);
 
   const filteredMaterials = (materials || []).filter((m) =>
-    (m.title || "").toLowerCase().includes(searchQuery.toLowerCase())
+    (m.title || "").toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -76,6 +78,15 @@ export default function LibraryPage() {
     }
   };
 
+  const handleGenerateMindMap = async (materialId: string) => {
+    try {
+      await generateMindMap.mutateAsync({ materialId });
+      toast.success("Mind Map generation started in background");
+    } catch {
+      toast.error("Failed to start generation");
+    }
+  };
+
   return (
     <div className="flex flex-col h-full max-w-6xl mx-auto px-6 py-8">
       <div className="flex items-center justify-between mb-8">
@@ -88,7 +99,7 @@ export default function LibraryPage() {
           </p>
         </div>
 
-        <label className="group relative flex items-center justify-center gap-2 bg-primary px-4 py-2 cursor-pointer hover:bg-primary/90 transition-all">
+        <label className="group relative flex items-center justify-center gap-2 bg-primary px-4 py-2 cursor-pointer hover:bg-primary/90 transition-all rounded(--radius)">
           <Plus className="size-4 text-primary-foreground" />
           <span className="font-mono text-[11px] uppercase tracking-widest text-primary-foreground">
             {isUploading ? "Uploading..." : "Add Material"}
@@ -146,10 +157,13 @@ export default function LibraryPage() {
                     </div>
                     <div className="min-w-0">
                       <h3 className="text-sm font-bold truncate leading-tight mb-1">
-                        {material.title}
+                        {material.title.length > 35
+                          ? material.title.slice(0, 35) + "..."
+                          : material.title}
                       </h3>
                       <p className="text-[10px] font-mono text-muted-foreground uppercase">
-                        {material.mimeType} • {(material.size / (1024 * 1024)).toFixed(2)} MB
+                        {material.mimeType} •{" "}
+                        {(material.size / (1024 * 1024)).toFixed(2)} MB
                       </p>
                     </div>
                   </div>
@@ -199,6 +213,15 @@ export default function LibraryPage() {
                     >
                       <Sparkles className="size-3" />
                       Quiz
+                    </button>
+                    <div className="w-px h-2 bg-border/40" />
+                    <button
+                      onClick={() => handleGenerateMindMap(material.id)}
+                      disabled={material.processingStatus !== "ready"}
+                      className="inline-flex items-center gap-1.5 px-2 py-1 text-[9px] font-mono uppercase tracking-widest text-muted-foreground hover:text-primary disabled:opacity-30 transition-colors"
+                    >
+                      <Sparkles className="size-3" />
+                      Mind Map
                     </button>
                   </div>
                 </div>

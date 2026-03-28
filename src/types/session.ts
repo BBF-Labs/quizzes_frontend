@@ -327,6 +327,8 @@ export interface StudioMindMap {
   updatedAt: string;
 }
 
+export type MindMapContent = StudioMindMap;
+
 export interface StudioExport {
   id: string;
   type: "markdown" | "pdf";
@@ -458,6 +460,8 @@ export interface MindMapSummary {
   id: string;
   sessionId: string;
   sessionName?: string;
+  courseTitle?: string;
+  courseCode?: string;
   title: string;
   nodeCount: number;
   edgeCount: number;
