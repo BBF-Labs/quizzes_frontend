@@ -20,6 +20,7 @@ import {
   useGenerateFlashcards,
   useGenerateQuiz,
   useGenerateMindMap,
+  useProcessLibraryMaterial,
 } from "@/hooks/app/use-app-library";
 import { useUploadFile } from "@/hooks/common/use-upload";
 import { toast } from "sonner";
@@ -31,6 +32,7 @@ export default function LibraryPage() {
   const generateFlashcards = useGenerateFlashcards();
   const generateQuiz = useGenerateQuiz();
   const generateMindMap = useGenerateMindMap();
+  const processMaterial = useProcessLibraryMaterial();
   const uploadFile = useUploadFile();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -84,6 +86,15 @@ export default function LibraryPage() {
       toast.success("Mind Map generation started in background");
     } catch {
       toast.error("Failed to start generation");
+    }
+  };
+
+  const handleProcessMaterial = async (materialId: string) => {
+    try {
+      await processMaterial.mutateAsync(materialId);
+      toast.success("Material added to processing queue");
+    } catch {
+      toast.error("Failed to start processing");
     }
   };
 
@@ -197,32 +208,45 @@ export default function LibraryPage() {
                   </div>
 
                   <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => handleGenerateFlashcards(material.id)}
-                      disabled={material.processingStatus !== "ready"}
-                      className="inline-flex items-center gap-1.5 px-2 py-1 text-[9px] font-mono uppercase tracking-widest text-muted-foreground hover:text-primary disabled:opacity-30 transition-colors"
-                    >
-                      <Sparkles className="size-3" />
-                      Flashcards
-                    </button>
-                    <div className="w-px h-2 bg-border/40" />
-                    <button
-                      onClick={() => handleGenerateQuiz(material.id)}
-                      disabled={material.processingStatus !== "ready"}
-                      className="inline-flex items-center gap-1.5 px-2 py-1 text-[9px] font-mono uppercase tracking-widest text-muted-foreground hover:text-primary disabled:opacity-30 transition-colors"
-                    >
-                      <Sparkles className="size-3" />
-                      Quiz
-                    </button>
-                    <div className="w-px h-2 bg-border/40" />
-                    <button
-                      onClick={() => handleGenerateMindMap(material.id)}
-                      disabled={material.processingStatus !== "ready"}
-                      className="inline-flex items-center gap-1.5 px-2 py-1 text-[9px] font-mono uppercase tracking-widest text-muted-foreground hover:text-primary disabled:opacity-30 transition-colors"
-                    >
-                      <Sparkles className="size-3" />
-                      Mind Map
-                    </button>
+                    {material.processingStatus !== "ready" && material.processingStatus !== "processing" ? (
+                      <button
+                        onClick={() => handleProcessMaterial(material.id)}
+                        disabled={processMaterial.isPending}
+                        className="inline-flex items-center gap-1.5 px-2 py-1 text-[9px] font-mono uppercase tracking-widest text-primary hover:bg-primary/10 disabled:opacity-30 transition-colors rounded-sm"
+                      >
+                        <RefreshCw className="size-3" />
+                        Process
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => handleGenerateFlashcards(material.id)}
+                          disabled={material.processingStatus !== "ready"}
+                          className="inline-flex items-center gap-1.5 px-2 py-1 text-[9px] font-mono uppercase tracking-widest text-muted-foreground hover:text-primary disabled:opacity-30 transition-colors"
+                        >
+                          <Sparkles className="size-3" />
+                          Flashcards
+                        </button>
+                        <div className="w-px h-2 bg-border/40" />
+                        <button
+                          onClick={() => handleGenerateQuiz(material.id)}
+                          disabled={material.processingStatus !== "ready"}
+                          className="inline-flex items-center gap-1.5 px-2 py-1 text-[9px] font-mono uppercase tracking-widest text-muted-foreground hover:text-primary disabled:opacity-30 transition-colors"
+                        >
+                          <Sparkles className="size-3" />
+                          Quiz
+                        </button>
+                        <div className="w-px h-2 bg-border/40" />
+                        <button
+                          onClick={() => handleGenerateMindMap(material.id)}
+                          disabled={material.processingStatus !== "ready"}
+                          className="inline-flex items-center gap-1.5 px-2 py-1 text-[9px] font-mono uppercase tracking-widest text-muted-foreground hover:text-primary disabled:opacity-30 transition-colors"
+                        >
+                          <Sparkles className="size-3" />
+                          Mind Map
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </motion.div>

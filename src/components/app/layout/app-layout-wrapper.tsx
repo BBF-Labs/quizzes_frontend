@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/breadcrumb";
 
 import { useBreadcrumbStore } from "@/store/breadcrumb";
+import { useGlobalAppEvents } from "@/hooks/app/use-global-app-events";
 
 export function AppLayoutWrapper({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -60,6 +61,9 @@ export function AppLayoutWrapper({ children }: { children: ReactNode }) {
   // Always call hooks unconditionally (Rules of Hooks)
   const { user, logout } = useAuth();
   const dynamicTitle = useBreadcrumbStore((state) => state.dynamicTitle);
+  
+  // Attach global socket listener to automatically refresh TanStack caches
+  useGlobalAppEvents();
 
   // For session detail pages the [id]/layout.tsx handles everything
   if (isSessionDetail) {

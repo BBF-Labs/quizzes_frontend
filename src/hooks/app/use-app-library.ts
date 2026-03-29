@@ -208,6 +208,21 @@ export const useDeleteLibraryMaterial = () => {
   });
 };
 
+export const useProcessLibraryMaterial = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await api.post(`/app/materials/${id}/process`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.library.materials.root(),
+      });
+    },
+  });
+};
+
 export const useGenerateFlashcards = () => {
   const queryClient = useQueryClient();
 
