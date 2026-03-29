@@ -3,13 +3,15 @@
 import { useState, useEffect, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Search, UploadCloud, X } from "lucide-react";
+import { Plus, Search, UploadCloud, X, Library } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
-import { api } from "@/lib/api";
-import { getAccessToken } from "@/lib/session";
 import { useSocket } from "@/hooks";
+import { useAppMaterials } from "@/hooks/app/use-app-actions";
+import { queryKeys } from "@/lib/query-keys";
 import type { IAppMaterial } from "@/types/session";
 import { MaterialCard } from "@/components/app/left/MaterialCard";
+import { MaterialSelectorDialog } from "@/components/app/center/MaterialSelectorDialog";
 
 // ─── Accepted MIME types ──────────────────────────────────────────────────────
 
@@ -66,35 +68,12 @@ export function SourcesPanel({
   onClose,
 }: SourcesPanelProps) {
   const { socket } = useSocket();
+  const queryClient = useQueryClient();
 
-  const [materials, setMaterials] = useState<IAppMaterial[]>([]);
+  const { data: materials = [], isLoading: loading } = useAppMaterials(sessionId);
   const [uploading, setUploading] = useState<UploadRow[]>([]);
   const [query, setQuery] = useState("");
-  const [loading, setLoading] = useState(true);
-
-  // ── Fetch materials on mount ────────────────────────────────────────────────
-  useEffect(() => {
-    let cancelled = false;
-
-    api
-      .get<{ data: IAppMaterial[] } | IAppMaterial[]>(`/app/${sessionId}/materials`)
-      .then((res) => {
-        if (cancelled) return;
-        const raw = res.data;
-        const list = Array.isArray(raw) ? raw : (raw as { data: IAppMaterial[] }).data;
-        setMaterials(Array.isArray(list) ? list : []);
-      })
-      .catch((err) => {
-        if (!cancelled) console.error("[SourcesPanel] fetch failed", err);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [sessionId]);
+  const [isLibraryOpen, setIsLibraryOpen] = useState(false);
 
   // ── Socket listener: material_ready ────────────────────────────────────────
   useEffect(() => {
@@ -109,10 +88,14 @@ export function SourcesPanel({
       const mid = payload.id ?? payload.materialId;
       if (!mid) return;
 
-      setMaterials((prev) =>
-        prev.map((m) =>
-          m.id === mid ? { ...m, processingStatus: "ready" } : m,
-        ),
+      queryClient.setQueryData<IAppMaterial[]>(
+        queryKeys.app.materials(sessionId),
+        (old) => {
+          if (!old) return old;
+          return old.map((m) =>
+            m.id === mid ? { ...m, processingStatus: "ready" } : m,
+          );
+        },
       );
     }
 
@@ -120,7 +103,7 @@ export function SourcesPanel({
     return () => {
       socket.off("app:signal", handleSignal);
     };
-  }, [socket]);
+  }, [socket, queryClient, sessionId]);
 
   // ── Upload handler ──────────────────────────────────────────────────────────
   const uploadFile = useCallback(
@@ -155,22 +138,34 @@ export function SourcesPanel({
             const parsed = JSON.parse(xhr.responseText);
             const mat: IAppMaterial = parsed.data ?? parsed;
             // Honour the server's processingStatus if present; fall back to "pending"
-            setMaterials((prev) => [
-              ...prev,
-              { ...mat, processingStatus: mat.processingStatus ?? "pending" },
-            ]);
+            queryClient.setQueryData<IAppMaterial[]>(
+              queryKeys.app.materials(sessionId),
+              (old) => {
+                const arr = old ? [...old] : [];
+                return [
+                  ...arr,
+                  { ...mat, processingStatus: mat.processingStatus ?? "pending" },
+                ];
+              },
+            );
           } catch {
             // server sent non-JSON or error — add minimal placeholder
-            setMaterials((prev) => [
-              ...prev,
-              {
-                id: `local-${Date.now()}`,
-                filename: file.name,
-                type: mimeToType(file.type),
-                size: file.size,
-                processingStatus: "pending",
+            queryClient.setQueryData<IAppMaterial[]>(
+              queryKeys.app.materials(sessionId),
+              (old) => {
+                const arr = old ? [...old] : [];
+                return [
+                  ...arr,
+                  {
+                    id: `local-${Date.now()}`,
+                    filename: file.name,
+                    type: mimeToType(file.type),
+                    size: file.size,
+                    processingStatus: "pending",
+                  },
+                ];
               },
-            ]);
+            );
           }
           setUploading((prev) => prev.filter((u) => u.filename !== file.name));
           resolve();
@@ -185,7 +180,7 @@ export function SourcesPanel({
         xhr.send(formData);
       });
     },
-    [sessionId],
+    [sessionId, queryClient],
   );
 
   // ── react-dropzone ──────────────────────────────────────────────────────────
@@ -211,9 +206,13 @@ export function SourcesPanel({
   });
 
   // ── Delete handler ──────────────────────────────────────────────────────────
+  // ── Delete handler (optimistic) ─────────────────────────────────────────────
   const handleDelete = useCallback((id: string) => {
-    setMaterials((prev) => prev.filter((m) => m.id !== id));
-  }, []);
+    queryClient.setQueryData<IAppMaterial[]>(
+      queryKeys.app.materials(sessionId),
+      (old) => (old ? old.filter((m) => m.id !== id) : []),
+    );
+  }, [queryClient, sessionId]);
 
   // ── Filtered list ───────────────────────────────────────────────────────────
   const filtered = query.trim()
@@ -246,14 +245,24 @@ export function SourcesPanel({
             Sources
           </span>
         </div>
-        <button
-          type="button"
-          onClick={open}
-          className="flex items-center gap-1.5 text-[11px] font-medium border border-border/50 rounded-md px-2 py-1 text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors hover:bg-muted/30"
-        >
-          <Plus className="size-3" />
-          Add
-        </button>
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setIsLibraryOpen(true)}
+            className="flex items-center gap-1.5 text-[11px] font-medium border border-border/50 rounded-md px-2 py-1 text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors hover:bg-muted/30"
+          >
+            <Library className="size-3" />
+            Library
+          </button>
+          <button
+            type="button"
+            onClick={open}
+            className="flex items-center gap-1.5 text-[11px] font-medium border border-border/50 rounded-md px-2 py-1 text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors hover:bg-muted/30"
+          >
+            <Plus className="size-3" />
+            Add
+          </button>
+        </div>
       </div>
 
       {/* Search */}
@@ -365,6 +374,13 @@ export function SourcesPanel({
           ))}
         </motion.div>
       )}
+
+      <MaterialSelectorDialog 
+        isOpen={isLibraryOpen}
+        onOpenChange={setIsLibraryOpen}
+        sessionId={sessionId}
+        alreadyAddedIds={materials.map(m => m.id)}
+      />
     </div>
   );
 }

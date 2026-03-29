@@ -1,8 +1,14 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { queryKeys } from "@/lib/query-keys";
 import { toast } from "sonner";
-import type { CreateAppInput, ZApp } from "@/types/session";
+import type {
+  CreateAppInput,
+  ZApp,
+  IAppMaterial,
+  StudioNote,
+  SessionHighlight,
+} from "@/types/session";
 
 interface CreateAppResponse {
   data: ZApp;
@@ -134,6 +140,89 @@ export const useAppApprove = () => {
   });
 };
 
+export const useAppHighlights = (sessionId: string) => {
+  return useQuery({
+    queryKey: [...queryKeys.app.detail(sessionId), "highlights"],
+    queryFn: async () => {
+      const response = await api.get(`/app/${sessionId}`);
+      const raw = response.data;
+      const data = (raw as { data: ZApp }).data || (raw as ZApp);
+      return (data.highlights || []) as SessionHighlight[];
+    },
+    enabled: !!sessionId && sessionId !== "undefined",
+  });
+};
+
+export const useAddHighlight = (sessionId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (
+      highlight: Omit<SessionHighlight, "id" | "createdAt">,
+    ) => {
+      const response = await api.post(
+        `/app/${sessionId}/highlights`,
+        highlight,
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [...queryKeys.app.detail(sessionId), "highlights"],
+      });
+    },
+  });
+};
+
+export const useRemoveHighlight = (sessionId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (highlightId: string) => {
+      const response = await api.delete(
+        `/app/${sessionId}/highlights/${highlightId}`,
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [...queryKeys.app.detail(sessionId), "highlights"],
+      });
+    },
+  });
+};
+
+export const useAppMaterials = (sessionId: string) => {
+  return useQuery({
+    queryKey: queryKeys.app.materials(sessionId),
+    queryFn: async () => {
+      const response = await api.get<{ data: IAppMaterial[] } | IAppMaterial[]>(`/app/${sessionId}/materials`);
+      const raw = response.data;
+      const list = Array.isArray(raw) ? raw : (raw as { data: IAppMaterial[] }).data;
+      return Array.isArray(list) ? list : [];
+    },
+    enabled: !!sessionId && sessionId !== "undefined",
+  });
+};
+
+export const useAppMaterialContent = (sessionId: string, materialId: string | null) => {
+  return useQuery({
+    queryKey: [...queryKeys.app.materials(sessionId), materialId, "content"],
+    queryFn: async () => {
+      if (!materialId) return null;
+      const response = await api.get(`/app/${sessionId}/materials/${materialId}/download`, {
+        responseType: "blob",
+      });
+      return response.data as Blob;
+    },
+    enabled: !!sessionId && !!materialId && sessionId !== "undefined",
+    staleTime: 1000 * 60 * 10, // 10 minutes cache
+  });
+};
+
+export const useAppMaterial = (sessionId: string, materialId: string | null) => {
+  const { data: materials = [] } = useAppMaterials(sessionId);
+  return materials.find((m) => m.id === materialId) || null;
+};
+
 export const useAddAppMaterial = (sessionId: string) => {
   const queryClient = useQueryClient();
 
@@ -146,9 +235,12 @@ export const useAddAppMaterial = (sessionId: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
+        queryKey: queryKeys.app.materials(sessionId),
+      });
+      queryClient.invalidateQueries({
         queryKey: queryKeys.app.detail(sessionId),
       });
-      toast.success("Material added to app");
+      toast.success("Material added to session");
     },
     onError: (error: unknown) => {
       const message =
@@ -163,6 +255,109 @@ interface RenameAppInput {
   sessionId: string;
   name: string;
 }
+
+export const useDeleteAppMaterial = (sessionId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (materialId: string) => {
+      const response = await api.delete(`/app/${sessionId}/materials/${materialId}`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.app.materials(sessionId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.app.detail(sessionId),
+      });
+      // Silent success since this usually updates UI instantly
+    },
+    onError: (error: unknown) => {
+      const message =
+        (error as { response?: { data?: { message?: string } } })?.response
+          ?.data?.message || "Failed to delete material";
+      console.error("[useDeleteAppMaterial] delete failed", message);
+      toast.error(message);
+    },
+  });
+};
+
+export const useCreateStudioNote = (sessionId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ title, content }: { title: string; content: string }) => {
+      const response = await api.post(`/app/${sessionId}/studio/notes`, {
+        title,
+        content,
+      });
+      return response.data.data;
+    },
+    onSuccess: (newNote: StudioNote) => {
+      queryClient.setQueryData<ZApp>(
+        queryKeys.app.detail(sessionId),
+        (old) => {
+          if (!old) return old;
+          // Optimistically add to the session object's notes if they exist
+          return {
+            ...old,
+            studio: {
+              ...old.studio,
+              notes: [newNote, ...(old.studio?.notes || [])],
+            },
+          } as any;
+        },
+      );
+      // Also invalidate for safety
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.app.detail(sessionId),
+      });
+    },
+  });
+};
+
+export const useUpdateStudioNote = (sessionId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      noteId,
+      title,
+      content,
+    }: {
+      noteId: string;
+      title?: string;
+      content?: string;
+    }) => {
+      const response = await api.patch(
+        `/app/${sessionId}/studio/notes/${noteId}`,
+        { title, content },
+      );
+      return response.data.data;
+    },
+    onSuccess: (updatedNote: StudioNote) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.app.detail(sessionId),
+      });
+    },
+  });
+};
+
+export const useDeleteStudioNote = (sessionId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (noteId: string) => {
+      await api.delete(`/app/${sessionId}/studio/notes/${noteId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.app.detail(sessionId),
+      });
+    },
+  });
+};
 
 export const useRenameApp = () => {
   const queryClient = useQueryClient();

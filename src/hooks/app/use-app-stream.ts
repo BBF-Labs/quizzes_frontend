@@ -52,7 +52,7 @@ export const useAppStream = (
     if (initialMessages.length === 0) return;
 
     const syncKey = initialMessages
-      .map((m) => `${m.id}-${m.content.length}`)
+      .map((m) => `${m.id}-${m.content?.length || 0}`)
       .join("|");
 
     if (syncKey === lastSyncedRef.current) return;
@@ -275,12 +275,13 @@ export const useAppStream = (
 
   useEffect(() => {
     if (sessionId && enabled) {
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      connect();
+      // Small deferred execution to ensure state updates don't cascade into renders
+      const timer = setTimeout(() => connect(), 0);
+      return () => {
+        clearTimeout(timer);
+        disconnect();
+      };
     }
-    return () => {
-      disconnect();
-    };
   }, [sessionId, enabled, connect, disconnect]);
 
   useEffect(() => {

@@ -11,19 +11,23 @@ import {
 import { use } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { PanelLeftOpen, PanelRightOpen } from "lucide-react";
+import { PanelLeftOpen, PanelRightOpen, X, Users, Sparkles, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { nanoid } from "nanoid";
+import { api } from "@/lib/api";
 import {
   useApp,
-  useApps,
 } from "@/hooks/app/use-app-queries";
 import {
   useRenameApp,
   useAppMessage,
+  useCreateStudioNote,
 } from "@/hooks/app/use-app-actions";
 import { useAppStream } from "@/hooks/app/use-app-stream";
 import { useSocket } from "@/hooks";
 import { StudioPanel } from "@/components/app/right";
 import { SourcesPanel } from "@/components/app/left/SourcesPanel";
+import { DocumentReader } from "@/components/app/center/DocumentReader";
 import { UserProfileDropdown } from "@/components/common";
 import { useAuth } from "@/contexts/auth-context";
 import { Input } from "@/components/ui/input";
@@ -55,7 +59,10 @@ interface AppLayoutContextValue {
   messages: ZAppMessage[];
   pushMessage: (message: ZAppMessage) => void;
   sendMessage: (content: string) => Promise<void>;
+  addNote: (title: string, content: string) => void;
   messageMutation: ReturnType<typeof useAppMessage>;
+  activeMaterialId: string | null;
+  setActiveMaterialId: (id: string | null) => void;
 }
 
 const AppLayoutContext = createContext<AppLayoutContextValue | null>(null);
@@ -96,12 +103,29 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
   const toggleLeft = useCallback(() => setLeftOpen((v) => !v), []);
   const toggleRight = useCallback(() => setRightOpen((v) => !v), []);
 
+  const [activeMaterialId, setActiveMaterialId] = useState<string | null>(null);
+
   // ── Queries and Mutations ────────────────────────────────────────────────────
   const { user, logout } = useAuth();
-  const { data: apps } = useApps();
-  const { data: app, isLoading } = useApp(sessionId, !!sessionId);
-  const renameMutation = useRenameApp();
-  const messageMutation = useAppMessage();
+  const { data: app, isLoading, error } = useApp(sessionId, !!sessionId);
+  const [joining, setJoining] = useState(false);
+
+  const handleJoin = async () => {
+    setJoining(true);
+    try {
+      await api.post(`/app/${sessionId}/join`);
+      toast.success("Joined session!");
+      window.location.reload(); 
+    } catch {
+      toast.error("Failed to join session.");
+    } finally {
+      setJoining(false);
+    }
+  };
+
+  const renameAction = useRenameApp();
+  const messageAction = useAppMessage();
+  const createStudioNoteAction = useCreateStudioNote(sessionId);
  
   const stream = useAppStream(
     sessionId,
@@ -113,22 +137,16 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
   // ── Studio workspace state ──────────────────────────────────────────────────
   const [studioNotes, setStudioNotes] = useState<StudioNote[]>([]);
   const [studioSharedNotes, setStudioSharedNotes] = useState<SharedNote[]>([]);
-  const [studioFlashcards, setStudioFlashcards] = useState<StudioFlashcard[]>(
-    [],
-  );
+  const [studioFlashcards, setStudioFlashcards] = useState<StudioFlashcard[]>([]);
   const [studioQuizzes, setStudioQuizzes] = useState<StudioQuiz[]>([]);
-  const [studioMindMap, setStudioMindMap] = useState<StudioMindMap | undefined>(
-    undefined,
-  );
+  const [studioMindMap, setStudioMindMap] = useState<StudioMindMap | undefined>(undefined);
   const [studioExports, setStudioExports] = useState<StudioExport[]>([]);
 
   const handleSessionChange = useCallback(
     (updated: Partial<IZStudyPartnerApp>) => {
       if (updated.notes !== undefined) setStudioNotes(updated.notes);
-      if (updated.sharedNotes !== undefined)
-        setStudioSharedNotes(updated.sharedNotes);
-      if (updated.flashcards !== undefined)
-        setStudioFlashcards(updated.flashcards);
+      if (updated.sharedNotes !== undefined) setStudioSharedNotes(updated.sharedNotes);
+      if (updated.flashcards !== undefined) setStudioFlashcards(updated.flashcards);
       if (updated.quizzes !== undefined) setStudioQuizzes(updated.quizzes);
       if (updated.mindMap !== undefined) setStudioMindMap(updated.mindMap);
       if (updated.exports !== undefined) setStudioExports(updated.exports);
@@ -139,43 +157,69 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
   // ── Sync artifacts from session data ────────────────────────────────────────
   useEffect(() => {
     if (app?.artifacts) {
-      const mmArtifact = app.artifacts
-        .find((a: { type: string; content: unknown }) => a.type === "mindmap");
+      // Sync mindmap
+      const mmArtifact = (app.artifacts ?? [])
+        .find((a) => a.type === "mindmap");
       if (mmArtifact) {
-        // Use a functional update or a separate effect to avoid synchronous cascading renders if possible, 
-        // but here it seems we are just syncing state with the fetch result.
         setStudioMindMap(mmArtifact.content as StudioMindMap);
       }
-
+ 
       // Sync quizzes
-      const quizArtifacts = app.artifacts
-        .filter((a: { type: string; content: unknown }) => a.type === "quiz")
-        .map((a: { type: string; content: unknown }) => a.content as StudioQuiz);
+      const quizArtifacts = (app.artifacts ?? [])
+        .filter((a) => a.type === "quiz")
+        .map((a) => {
+          const content = a.content as { topicTitle?: string; questions?: unknown[]; savedToPersonalQuizId?: string };
+          return {
+            id: a.artifactId,
+            title: a.title,
+            topicTitle: content.topicTitle || "Quiz",
+            questionCount: content.questions?.length || 0,
+            generatedAt: a.createdAt,
+            savedToBank: !!content.savedToPersonalQuizId,
+          };
+        }) as StudioQuiz[];
+      
       if (quizArtifacts.length > 0) {
         setStudioQuizzes(quizArtifacts);
       }
  
-      const fcArtifacts = app.artifacts
-        .filter((a: { type: string; content: unknown }) => a.type === "flashcard_set")
-        .flatMap((a: { type: string; content: unknown }) => (a.content as any).cards || []);
+      // Sync flashcards
+      const fcArtifacts = (app.artifacts ?? [])
+        .filter((a) => a.type === "flashcard_set")
+        .flatMap((a) => (a.content as { cards?: unknown[] }).cards || []) as StudioFlashcard[];
+      
       if (fcArtifacts.length > 0) {
         setStudioFlashcards(fcArtifacts);
       }
 
-      // Sync notes (aggregated from all notes artifacts)
-      const notes = app.artifacts
+      // Sync notes
+      const notes = (app.artifacts ?? [])
         .filter((a) => a.type === "notes")
-        .flatMap((a: any) => (a.content as any).sections || []);
+        .flatMap((a) => ((a.content as { sections?: { id?: string; title?: string; body?: string; content?: string }[] }).sections || []).map((s) => ({
+          id: s.id || nanoid(),
+          title: s.title || "Untitled",
+          content: s.content || s.body || "",
+          generatedByZ: true,
+          createdAt: a.createdAt,
+          updatedAt: a.updatedAt
+        }))) as StudioNote[];
+      
       if (notes.length > 0) {
         setStudioNotes(notes);
       }
 
-      // Sync exports from session.studio
+      // Sync shared notes and exports from app studio
       if (app.studio?.exportedFiles) {
-        setStudioExports(app.studio.exportedFiles);
+        setStudioExports(app.studio.exportedFiles as unknown as StudioExport[]);
+      }
+      if (app.studio?.notes) {
+        setStudioNotes(app.studio.notes as unknown as StudioNote[]);
+      }
+      if (app.sharedNotes) {
+        setStudioSharedNotes(app.sharedNotes as unknown as SharedNote[]);
       }
     }
-  }, [app?.artifacts, app?.studio?.exportedFiles]);
+  }, [app?.artifacts, app?.studio?.exportedFiles, app?.studio?.notes, app?.sharedNotes]);
 
   // ── Inline session name editing ─────────────────────────────────────────────
   const [isEditingName, setIsEditingName] = useState(false);
@@ -193,7 +237,7 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
     const trimmed = nameInput.trim();
     if (!trimmed || trimmed === appName) return;
     try {
-      await renameMutation.mutateAsync({ sessionId, name: trimmed });
+      await renameAction.mutateAsync({ sessionId, name: trimmed });
     } catch {
       // silent — optimistic rename
     }
@@ -202,7 +246,7 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
   // ── Send a plain-text message ────────────────────────────────────────────────
   const sendMessage = useCallback(
     async (content: string) => {
-      if (!content.trim() || messageMutation.isPending) return;
+      if (!content.trim() || messageAction.isPending) return;
       const msgId = Date.now().toString();
       stream.pushMessage({
         id: msgId,
@@ -213,7 +257,7 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
         timestamp: new Date().toISOString(),
       });
       try {
-        await messageMutation.mutateAsync({
+        await messageAction.mutateAsync({
           sessionId,
           message: content,
           messageId: msgId,
@@ -222,7 +266,20 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
         console.error("[useAppLayout] sendMessage failed", err);
       }
     },
-    [sessionId, messageMutation, stream],
+    [sessionId, messageAction, stream],
+  );
+
+  const addNote = useCallback(
+    async (title: string, content: string) => {
+      try {
+        await createStudioNoteAction.mutateAsync({ title, content });
+        toast.success("Note saved to snippet collection.");
+      } catch (err) {
+        console.error("[useAppLayout] addNote failed", err);
+        toast.error("Failed to save note.");
+      }
+    },
+    [createStudioNoteAction],
   );
 
   // ── Context value ───────────────────────────────────────────────────────────
@@ -235,7 +292,10 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
     messages: stream.messages,
     pushMessage: stream.pushMessage,
     sendMessage,
-    messageMutation,
+    addNote,
+    messageMutation: messageAction,
+    activeMaterialId,
+    setActiveMaterialId,
   };
 
   return (
@@ -371,7 +431,63 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
 
             {/* Main Chat Page Content */}
             <div className="flex-1 pt-14 flex flex-col min-h-0 bg-background">
-              {children}
+              {isLoading ? (
+                <div className="flex-1 flex flex-col items-center justify-center p-8 gap-4">
+                  <Loader2 className="size-8 animate-spin text-primary/40" />
+                  <p className="text-xs font-mono text-muted-foreground animate-pulse">
+                    Connecting to study partner session...
+                  </p>
+                </div>
+              ) : error && (error as { response?: { status: number } }).response?.status === 403 ? (
+                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center max-w-md mx-auto">
+                  <div className="size-20 rounded-2xl bg-primary/5 flex items-center justify-center mb-6 shadow-sm border border-primary/10">
+                    <Users className="size-10 text-primary/60" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-foreground mb-2">Study Partner Session</h2>
+                  <p className="text-sm text-muted-foreground mb-8 leading-relaxed">
+                    This is a private study session. You&apos;ve been invited to join as a partner to collaborate on notes and chat with Z.
+                  </p>
+                  <button
+                    onClick={handleJoin}
+                    disabled={joining}
+                    className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3 px-6 rounded-xl font-semibold hover:bg-primary/90 transition-all shadow-md active:scale-[0.98] disabled:opacity-50"
+                  >
+                    {joining ? (
+                      <Loader2 className="size-5 animate-spin" />
+                    ) : (
+                      <>
+                        <Sparkles className="size-5" />
+                        Join Collaborative Session
+                      </>
+                    )}
+                  </button>
+                </div>
+              ) : error ? (
+                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+                  <p className="text-sm text-destructive font-mono">Failed to load session.</p>
+                </div>
+              ) : activeMaterialId ? (
+                <div className="flex-1 flex min-h-0">
+                  <div className="flex-1 border-r border-border/40 relative">
+                    <button
+                      onClick={() => setActiveMaterialId(null)}
+                      className="absolute top-4 right-4 z-50 size-8 flex items-center justify-center rounded-full bg-background/80 hover:bg-background border border-border shadow-sm text-muted-foreground hover:text-foreground transition-all"
+                      title="Close Reader"
+                    >
+                      <X className="size-4" />
+                    </button>
+                    <DocumentReader 
+                      materialId={activeMaterialId} 
+                      sessionId={sessionId} 
+                    />
+                  </div>
+                  <div className="w-112.5 flex flex-col min-w-[320px]">
+                    {children}
+                  </div>
+                </div>
+              ) : (
+                children
+              )}
             </div>
           </div>
 
