@@ -18,6 +18,21 @@ export interface IAppMaterial {
   url?: string;
 }
 
+export interface SessionHighlight {
+  id: string;
+  materialId: string;
+  pageNumber: number;
+  text: string;
+  color?: string;
+  bounds: {
+    top: number;
+    left: number;
+    width: number;
+    height: number;
+  };
+  createdAt: string;
+}
+
 // ─── Source Citation ──────────────────────────────────────────────────────────
 
 export interface ISourceCitation {
@@ -101,6 +116,8 @@ export interface ZAppMessage {
   /** Server-assigned message ID — used for directive resolution tracking */
   messageId: string;
   role: "user" | "z" | "peer" | "system";
+  authorId?: string;
+  authorName?: string;
   type: ZAppMessageType;
   content: string;
   timestamp: string;
@@ -237,6 +254,15 @@ export interface ZMaterial {
 
 // ─── App (Full Shape) ──────────────────────────────────────────────────────────
 
+export interface ZArtifact {
+  artifactId: string;
+  type: string;
+  title: string;
+  content: unknown;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ZApp {
   id: string;
   title?: string;
@@ -246,7 +272,10 @@ export interface ZApp {
   planningMode?: "planning" | "fast";
   zMessages: ZAppMessage[];
   materials?: ZMaterial[];
-  artifacts?: Array<{ type: string; content: unknown }>;
+  highlights?: SessionHighlight[];
+  artifacts?: ZArtifact[];
+  sharedNotes?: SharedNote[];
+  notes?: StudioNote[];
   studio?: {
     exportedFiles?: StudioExport[];
   };

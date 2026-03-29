@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { File, FileText, FileType2, Loader2, CheckCircle, XCircle, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { api } from "@/lib/api";
 import type { IAppMaterial } from "@/types/session";
+import { useAppLayout } from "@/app/(app)/app/[id]/layout";
+import { useDeleteAppMaterial } from "@/hooks/app/use-app-actions";
 
 // ─── Helper: escape a string for use in a RegExp ─────────────────────────────
 
@@ -49,7 +50,8 @@ function BoldMatches({
 
 // ─── File icon by type ────────────────────────────────────────────────────────
 
-function FileIcon({ type, className }: { type: string; className?: string }) {
+function FileIcon({ type, className }: { type?: string; className?: string }) {
+  if (!type) return <File className={className} />;
   const lower = type.toLowerCase();
   if (lower === "pdf") return <FileText className={className} />;
   if (lower === "docx" || lower === "doc") return <FileType2 className={className} />;
@@ -103,44 +105,47 @@ export function MaterialCard({
   searchQuery,
   onDelete,
 }: MaterialCardProps) {
-  const [deleting, setDeleting] = useState(false);
+  const { mutate: deleteMaterial, isPending: deleting } = useDeleteAppMaterial(sessionId);
   const [showExcerpt, setShowExcerpt] = useState(false);
 
   // Show excerpt when highlighted, auto-hide after 2 s
   useEffect(() => {
+    let showTimeout: NodeJS.Timeout;
+    let hideTimeout: NodeJS.Timeout;
     if (isHighlighted && highlightedExcerpt) {
-      setShowExcerpt(true);
-      const t = setTimeout(() => setShowExcerpt(false), 2000);
-      return () => clearTimeout(t);
+      showTimeout = setTimeout(() => setShowExcerpt(true), 0);
+      hideTimeout = setTimeout(() => setShowExcerpt(false), 2000);
+      return () => {
+        clearTimeout(showTimeout);
+        clearTimeout(hideTimeout);
+      };
+    } else if (showExcerpt) {
+      showTimeout = setTimeout(() => setShowExcerpt(false), 0);
+      return () => clearTimeout(showTimeout);
     }
-  }, [isHighlighted, highlightedExcerpt]);
+  }, [isHighlighted, highlightedExcerpt, showExcerpt]);
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (deleting) return;
-    setDeleting(true);
-    try {
-      await api.delete(`/app/${sessionId}/materials/${material.id}`);
-      onDelete();
-    } catch (err) {
-      console.error("[MaterialCard] delete failed", err);
-    } finally {
-      setDeleting(false);
-    }
+    deleteMaterial(material.id, {
+      onSuccess: () => {
+        onDelete();
+      },
+    });
   };
+
+  const { setActiveMaterialId, activeMaterialId } = useAppLayout();
+  const isActive = activeMaterialId === material.id;
 
   return (
     <motion.div
       layout
-      animate={{
-        borderLeftColor: isHighlighted
-          ? "hsl(var(--primary))"
-          : "transparent",
-      }}
+      onClick={() => setActiveMaterialId(material.id)}
       transition={{ duration: 0.3 }}
       className={cn(
-        "flex flex-col gap-1.5 border border-border/50 bg-card/40 px-3 py-2",
-        "border-l-2",
-        isHighlighted && "border-l-primary bg-primary/5",
+        "flex flex-col gap-1.5 border border-border/50 bg-card/40 px-3 py-2 cursor-pointer group transition-colors duration-300",
+        "border-l-2 border-l-transparent",
+        (isHighlighted || isActive) && "border-l-primary bg-primary/5",
       )}
     >
       {/* Top row: icon + filename + size + delete */}
@@ -185,7 +190,7 @@ export function MaterialCard({
             className="overflow-hidden"
           >
             <div className="mt-1 border border-primary/20 bg-primary/5 px-2 py-1.5 text-[11px] font-mono text-muted-foreground leading-relaxed">
-              <BoldMatches text={highlightedExcerpt} query={searchQuery ?? ""} />
+              <BoldMatches text={highlightedExcerpt!} query={searchQuery ?? ""} />
             </div>
           </motion.div>
         )}

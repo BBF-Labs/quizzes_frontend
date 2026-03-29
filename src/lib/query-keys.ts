@@ -10,6 +10,7 @@ export const queryKeys = {
     detail: (id: string) => [...queryKeys.app.details(), id] as const,
     streams: () => [...queryKeys.app.root, "stream"] as const,
     stream: (id: string) => [...queryKeys.app.streams(), id] as const,
+    materials: (id: string) => [...queryKeys.app.detail(id), "materials"] as const,
   },
   sessions: {
     root: ["app"] as const,
