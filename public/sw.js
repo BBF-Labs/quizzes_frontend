@@ -57,7 +57,11 @@ self.addEventListener("push", (event) => {
       .then((clientList) => {
         const appIsFocused = clientList.some((client) => client.focused);
         const forceShow = Boolean(data?.data?.forceShow);
+        const isSilentPing = Boolean(data?.data?.isSilentPing);
         
+        // Always skip visual notifications for backend sweeper pings
+        if (isSilentPing) { return; }
+
         if (appIsFocused && !forceShow) {
           return;
         }
