@@ -342,10 +342,21 @@ export const useAppStream = (
     setMessages((prev) => [...prev, msg]);
   }, []);
 
+  const updateMessage = useCallback((id: string, updates: Partial<ZAppMessage>) => {
+    setMessages((prev) => {
+      const idx = prev.findIndex((m) => m.id === id);
+      if (idx < 0) return prev;
+      const next = [...prev];
+      next[idx] = { ...next[idx], ...updates };
+      return next;
+    });
+  }, []);
+
   return {
     messages,
     isConnected,
     connectionType,
     pushMessage,
+    updateMessage,
   };
 };

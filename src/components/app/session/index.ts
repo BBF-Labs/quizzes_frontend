@@ -5,4 +5,3 @@ export * from "./MessageBubble";
 export * from "./MessageFeed";
 export * from "./SessionInput";
 export * from "./SessionMessages";
-export * from "./ThinkingTrace";
