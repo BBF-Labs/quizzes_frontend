@@ -9,13 +9,22 @@ interface MessageBubbleProps {
   message: ZSessionMessage;
   isUser?: boolean;
   authorName?: string;
+  onRetry?: (id: string, content: string) => void;
 }
 
-export function MessageBubble({ message, isUser = false }: MessageBubbleProps) {
+export function MessageBubble({
+  message,
+  isUser = false,
+  authorName,
+  onRetry,
+}: MessageBubbleProps) {
   // Hide tool_call / tool_result noise from the chat feed
   if (message.type === "tool_call" || message.type === "tool_result") {
     return null;
   }
+
+  const isErrorMessage = message.status === "error";
+  const isSending = message.status === "sending";
 
   if (isUser || message.role === "user") {
     return (
@@ -25,14 +34,37 @@ export function MessageBubble({ message, isUser = false }: MessageBubbleProps) {
         transition={{ duration: 0.25 }}
         className="flex flex-col items-end gap-1"
       >
-        <div className="max-w-[80%] border border-border/50 bg-secondary px-4 py-3 text-sm text-foreground font-mono rounded-(--radius)">
+        <div
+          className={cn(
+            "max-w-[80%] border px-4 py-3 text-sm font-mono rounded-(--radius)",
+            isErrorMessage
+              ? "border-destructive/50 bg-destructive/10 text-destructive-foreground"
+              : "border-border/50 bg-secondary text-foreground",
+          )}
+        >
           {message.content}
         </div>
-        {(message.authorName || authorName) && (
-          <span className="text-[9px] font-mono uppercase text-muted-foreground mr-1">
-            {message.authorName || authorName}
-          </span>
-        )}
+
+        <div className="flex items-center gap-2 mr-1">
+          {isSending && (
+            <span className="text-[9px] font-mono uppercase text-muted-foreground animate-pulse">
+              Sending...
+            </span>
+          )}
+          {isErrorMessage && (
+            <button
+              onClick={() => onRetry?.(message.id, message.content)}
+              className="text-[9px] font-mono uppercase text-destructive hover:underline"
+            >
+              Retry
+            </button>
+          )}
+          {(message.authorName || authorName) && (
+            <span className="text-[9px] font-mono uppercase text-muted-foreground">
+              {message.authorName || authorName}
+            </span>
+          )}
+        </div>
       </motion.div>
     );
   }

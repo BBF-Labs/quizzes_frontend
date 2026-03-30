@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Save, Copy, Check, Highlighter } from "lucide-react";
 import { useAppLayout } from "@/app/(app)/app/[id]/layout";
@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 interface SelectionContextMenuProps {
   containerRef: React.RefObject<HTMLDivElement | null>;
-  onHighlight?: (text: string, rect: DOMRect, color: string) => void;
+  onHighlight?: (text: string, rect: DOMRect, color: string, note?: string) => void;
 }
 
 export function SelectionContextMenu({ containerRef, onHighlight }: SelectionContextMenuProps) {
@@ -18,14 +18,25 @@ export function SelectionContextMenu({ containerRef, onHighlight }: SelectionCon
   const [selectedRect, setSelectedRect] = useState<DOMRect | null>(null);
   const { sendMessage, addNote } = useAppLayout();
   const [copied, setCopied] = useState(false);
+  const [note, setNote] = useState("");
+  const [isAddingNote, setIsAddingNote] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handleMouseUp = () => {
+    const handleMouseUp = (e: MouseEvent) => {
+      // If we clicked inside the menu, don't reset anything
+      if (menuRef.current?.contains(e.target as Node)) {
+        return;
+      }
+
       // Small timeout to ensure selection is populated
       setTimeout(() => {
         const selection = window.getSelection();
         if (!selection || selection.rangeCount === 0) {
-          setPosition(null);
+          // Only close if we're not currently adding a note
+          if (!isAddingNote) {
+            setPosition(null);
+          }
           return;
         }
 
@@ -68,7 +79,7 @@ export function SelectionContextMenu({ containerRef, onHighlight }: SelectionCon
         container.removeEventListener("mouseup", handleMouseUp);
       }
     };
-  }, [containerRef]);
+  }, [containerRef, isAddingNote]);
 
   const handleAskZ = async () => {
     if (!selectedText) return;
@@ -100,8 +111,10 @@ export function SelectionContextMenu({ containerRef, onHighlight }: SelectionCon
 
   const handleHighlight = (color: string) => {
     if (!selectedText || !selectedRect || !onHighlight) return;
-    onHighlight(selectedText, selectedRect, color);
+    onHighlight(selectedText, selectedRect, color, note.trim() || undefined);
     setPosition(null);
+    setNote("");
+    setIsAddingNote(false);
   };
 
   const colors = [
@@ -115,59 +128,115 @@ export function SelectionContextMenu({ containerRef, onHighlight }: SelectionCon
     <AnimatePresence>
       {position && (
         <motion.div
+          ref={menuRef}
           initial={{ opacity: 0, scale: 0.9, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 10 }}
-          className="absolute z-100 flex items-center gap-1 p-1 bg-background/95 backdrop-blur-md border border-border/50 shadow-xl rounded-full"
+          onMouseDown={(e) => e.stopPropagation()}
+          onMouseUp={(e) => e.stopPropagation()}
+          className={cn(
+            "absolute z-100 flex flex-col bg-background/95 backdrop-blur-md border border-border/50 shadow-xl overflow-hidden",
+            isAddingNote ? "rounded-2xl w-64" : "rounded-full"
+          )}
           style={{ 
             left: `${position.x}px`, 
             top: `${position.y}px`,
             transform: 'translateX(-50%) translateY(-100%)'
           }}
         >
-          <button 
-            onClick={handleAskZ}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-semibold text-primary hover:bg-primary/10 rounded-full transition-colors whitespace-nowrap"
-          >
-            <Sparkles className="size-3" />
-            Ask Z
-          </button>
-          
-          <div className="w-px h-3 bg-border/50 mx-0.5" />
-          
-          <button 
-            onClick={handleCopy}
-            className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors"
-            title="Copy"
-          >
-            {copied ? <Check className="size-3 text-green-500" /> : <Copy className="size-3" />}
-          </button>
+          <div className="flex items-center gap-1 p-1">
+            <button 
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={handleAskZ}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-semibold text-primary hover:bg-primary/10 rounded-full transition-colors whitespace-nowrap"
+            >
+              <Sparkles className="size-3" />
+              Ask Z
+            </button>
+            
+            <div className="w-px h-3 bg-border/50 mx-0.5" />
+            
+            <button 
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={handleCopy}
+              className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors"
+              title="Copy"
+            >
+              {copied ? <Check className="size-3 text-green-500" /> : <Copy className="size-3" />}
+            </button>
 
-          <button 
-            onClick={handleSaveNote}
-            className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors"
-            title="Save Note"
-          >
-            <Save className="size-3" />
-          </button>
+            <button 
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={handleSaveNote}
+              className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors"
+              title="Save Note"
+            >
+              <Save className="size-3" />
+            </button>
 
-          {onHighlight && (
-             <>
-               <div className="w-px h-3 bg-border/50 mx-0.5" />
-               <div className="flex items-center gap-1.5 px-2">
-                 {colors.map((c) => (
-                   <button
-                     key={c.id}
-                     onClick={() => handleHighlight(c.id)}
-                     className={cn(
-                       "size-3 rounded-full hover:scale-125 transition-transform shadow-sm border border-black/10",
-                       c.class,
-                     )}
-                     title={`Highlight ${c.id}`}
-                   />
-                 ))}
-               </div>
-             </>
+            {onHighlight && (
+              <>
+                <div className="w-px h-3 bg-border/50 mx-0.5" />
+                <button 
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => setIsAddingNote(!isAddingNote)}
+                  className={cn(
+                    "p-1.5 rounded-full transition-colors",
+                    isAddingNote ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                  title="Attach Note"
+                >
+                  <Highlighter className="size-3" />
+                </button>
+                {!isAddingNote && (
+                  <div className="flex items-center gap-1.5 px-2">
+                    {colors.map((c) => (
+                      <button
+                        key={c.id}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => handleHighlight(c.id)}
+                        className={cn(
+                          "size-3 rounded-full hover:scale-125 transition-transform shadow-sm border border-black/10",
+                          c.class,
+                        )}
+                        title={`Highlight ${c.id}`}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {isAddingNote && (
+            <div className="px-3 pb-3 pt-1 border-t border-border/40">
+              <textarea
+                autoFocus
+                placeholder="Type your note here..."
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                className="w-full bg-transparent text-[11px] font-mono placeholder:text-muted-foreground/40 resize-none focus:outline-none min-h-[60px] leading-relaxed"
+              />
+              <div className="flex items-center justify-between mt-2">
+                <span className="text-[9px] font-mono text-muted-foreground/50 uppercase tracking-widest">
+                  Select color to save
+                </span>
+                <div className="flex items-center gap-1.5">
+                  {colors.map((c) => (
+                    <button
+                      key={c.id}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => handleHighlight(c.id)}
+                      className={cn(
+                        "size-3 rounded-full hover:scale-125 transition-transform shadow-sm border border-black/10",
+                        c.class,
+                      )}
+                      title={`Save with ${c.id}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
           )}
         </motion.div>
       )}

@@ -23,6 +23,7 @@ export interface SessionHighlight {
   materialId: string;
   pageNumber: number;
   text: string;
+  note?: string;
   color?: string;
   bounds: {
     top: number;
@@ -129,6 +130,7 @@ export interface ZAppMessage {
   toolResult?: unknown;
   mode?: string;
   isStreaming?: boolean;
+  status?: "sending" | "sent" | "error";
 }
 
 export type ConnectionType = "sse" | "polling" | "disconnected";
@@ -278,6 +280,10 @@ export interface ZApp {
   notes?: StudioNote[];
   studio?: {
     exportedFiles?: StudioExport[];
+    notes?: StudioNote[];
+    flashcards?: StudioFlashcard[];
+    quizzes?: StudioQuiz[];
+    mindMap?: StudioMindMap;
   };
   startedAt?: string;
   status: "active" | "completed";

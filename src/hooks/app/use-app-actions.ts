@@ -165,10 +165,16 @@ export const useAddHighlight = (sessionId: string) => {
       );
       return response.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: [...queryKeys.app.detail(sessionId), "highlights"],
-      });
+    onSuccess: (newHighlightData) => {
+      const newHighlight = (newHighlightData as any).data || newHighlightData;
+      
+      queryClient.setQueryData(
+        [...queryKeys.app.detail(sessionId), "highlights"],
+        (old: SessionHighlight[] | undefined) => {
+          if (!old) return [newHighlight];
+          return [...old, newHighlight];
+        }
+      );
     },
   });
 };
@@ -182,10 +188,48 @@ export const useRemoveHighlight = (sessionId: string) => {
       );
       return response.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: [...queryKeys.app.detail(sessionId), "highlights"],
-      });
+    onSuccess: (_, highlightId) => {
+      queryClient.setQueryData(
+        [...queryKeys.app.detail(sessionId), "highlights"],
+        (old: SessionHighlight[] | undefined) => {
+          if (!old) return [];
+          return old.filter((h) => h.id !== highlightId);
+        }
+      );
+    },
+  });
+};
+
+export const useUpdateHighlight = (sessionId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      highlightId,
+      note,
+      color,
+    }: {
+      highlightId: string;
+      note?: string;
+      color?: string;
+    }) => {
+      const response = await api.patch(
+        `/app/${sessionId}/highlights/${highlightId}`,
+        { note, color },
+      );
+      return response.data;
+    },
+    onSuccess: (updatedHighlightData) => {
+      const updatedHighlight = (updatedHighlightData as any).data || updatedHighlightData;
+      
+      queryClient.setQueryData(
+        [...queryKeys.app.detail(sessionId), "highlights"],
+        (old: SessionHighlight[] | undefined) => {
+          if (!old) return [];
+          return old.map((h) =>
+            h.id === updatedHighlight.id ? { ...h, ...updatedHighlight } : h
+          );
+        }
+      );
     },
   });
 };

@@ -31,7 +31,8 @@ export function MessageFeed({
   onTestMe,
   onTryMyself,
   onAction,
-}: MessageFeedProps) {
+  onRetryMessage,
+}: MessageFeedProps & { onRetryMessage?: (id: string, content: string) => void }) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -93,16 +94,42 @@ export function MessageFeed({
 
         /* ── User messages ── */
         if (msg.role === "user") {
+          const isErrorMessage = msg.status === "error";
+          const isSending = msg.status === "sending";
+
           return (
             <motion.div
               key={msg.id}
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.25 }}
-              className="flex justify-end"
+              className="flex flex-col items-end gap-1"
             >
-              <div className="max-w-[80%] border border-border/50 bg-secondary px-4 py-3 text-sm text-foreground font-mono">
+              <div
+                className={cn(
+                  "max-w-[80%] border px-4 py-3 text-sm font-mono rounded-(--radius)",
+                  isErrorMessage
+                    ? "border-destructive/50 bg-destructive/10 text-destructive-foreground"
+                    : "border-border/50 bg-secondary text-foreground",
+                )}
+              >
                 {msg.content}
+              </div>
+
+              <div className="flex items-center gap-2 mr-1">
+                {isSending && (
+                  <span className="text-[9px] font-mono uppercase text-muted-foreground animate-pulse">
+                    Sending...
+                  </span>
+                )}
+                {isErrorMessage && (
+                  <button
+                    onClick={() => onRetryMessage?.(msg.id, msg.content)}
+                    className="text-[9px] font-mono uppercase text-destructive hover:underline"
+                  >
+                    Retry
+                  </button>
+                )}
               </div>
             </motion.div>
           );

@@ -2,30 +2,25 @@
 
 import { useEffect, useRef } from "react";
 import type { ZSessionMessage } from "@/types/session";
-import { MessageBubble } from "@/components/app/session";
-import { ThinkingTrace } from "@/components/app/session";
+import { MessageBubble } from "./MessageBubble";
 import { motion } from "framer-motion";
 import { Brain } from "lucide-react";
 
 interface SessionMessagesProps {
   messages: ZSessionMessage[];
-  isThinking: boolean;
-  thinkingBuffer: string;
 }
 
 export function SessionMessages({
   messages,
-  isThinking,
-  thinkingBuffer,
 }: SessionMessagesProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom on new messages / thinking updates
+  // Auto-scroll to bottom on new messages
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length, isThinking, thinkingBuffer]);
+  }, [messages.length]);
 
-  if (messages.length === 0 && !isThinking) {
+  if (messages.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-4 py-16 text-center">
         <motion.div
@@ -49,14 +44,6 @@ export function SessionMessages({
         <MessageBubble key={msg.id} message={msg} />
       ))}
 
-      {/* Live thinking trace */}
-      {isThinking && (
-        <ThinkingTrace
-          content={thinkingBuffer}
-          isStreaming={true}
-          defaultExpanded={true}
-        />
-      )}
 
       <div ref={bottomRef} />
     </div>

@@ -245,25 +245,37 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
 
   // ── Send a plain-text message ────────────────────────────────────────────────
   const sendMessage = useCallback(
-    async (content: string) => {
-      if (!content.trim() || messageAction.isPending) return;
-      const msgId = Date.now().toString();
-      stream.pushMessage({
-        id: msgId,
-        messageId: msgId,
-        role: "user",
-        type: "text",
-        content: content.trim(),
-        timestamp: new Date().toISOString(),
-      });
+    async (content: string, retryId?: string) => {
+      const trimmed = content.trim();
+      if (!trimmed || messageAction.isPending) return;
+
+      let msgId: string;
+      if (retryId) {
+        msgId = retryId;
+        stream.updateMessage(msgId, { status: "sending" });
+      } else {
+        msgId = Date.now().toString();
+        stream.pushMessage({
+          id: msgId,
+          messageId: msgId,
+          role: "user",
+          type: "text",
+          content: trimmed,
+          timestamp: new Date().toISOString(),
+          status: "sending",
+        });
+      }
+
       try {
         await messageAction.mutateAsync({
           sessionId,
-          message: content,
+          message: trimmed,
           messageId: msgId,
         });
+        stream.updateMessage(msgId, { status: "sent" });
       } catch (err) {
         console.error("[useAppLayout] sendMessage failed", err);
+        stream.updateMessage(msgId, { status: "error" });
       }
     },
     [sessionId, messageAction, stream],

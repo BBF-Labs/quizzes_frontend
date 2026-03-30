@@ -194,6 +194,7 @@ export default function ChatPage() {
         onTestMe={handleTestMe}
         onTryMyself={handleTryMyself}
         onAction={handleAction}
+        onRetryMessage={sendMessage}
       />
 
       {/* Input */}

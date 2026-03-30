@@ -4,23 +4,18 @@ import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Brain } from "lucide-react";
 import type { ZSessionMessage } from "@/types/session";
-import { MessageBubble } from "@/components/app/session";
-import { ThinkingTrace } from "@/components/app/session";
-import { DirectiveCard } from "@/components/app/session";
+import { MessageBubble } from "./MessageBubble";
+import { DirectiveCard } from "./DirectiveCard";
 import type { DirectiveCardCallbacks } from "@/components/app/session";
 
 export interface MessageFeedProps extends DirectiveCardCallbacks {
   messages: ZSessionMessage[];
-  isThinking: boolean;
-  thinkingBuffer: string;
   /** messageId of the currently active (unresolved) directive, or null if none */
   activeDirectiveMessageId: string | null;
 }
 
 export function MessageFeed({
   messages,
-  isThinking,
-  thinkingBuffer,
   activeDirectiveMessageId,
   onSubmitAnswer,
   onApprove,
@@ -31,15 +26,16 @@ export function MessageFeed({
   onTestMe,
   onTryMyself,
   onAction,
-}: MessageFeedProps) {
+  onRetryMessage,
+}: MessageFeedProps & { onRetryMessage?: (id: string, content: string) => void }) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom on new messages / thinking updates
+  // Auto-scroll to bottom on new messages
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length, isThinking, thinkingBuffer]);
+  }, [messages.length]);
 
-  if (messages.length === 0 && !isThinking) {
+  if (messages.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-4 py-16 text-center">
         <motion.div
@@ -87,17 +83,14 @@ export function MessageFeed({
           );
         }
 
-        return <MessageBubble key={msg.id} message={msg} />;
+        return (
+          <MessageBubble
+            key={msg.id}
+            message={msg}
+            onRetry={onRetryMessage}
+          />
+        );
       })}
-
-      {/* Live thinking trace while Z is processing */}
-      {isThinking && (
-        <ThinkingTrace
-          content={thinkingBuffer}
-          isStreaming={true}
-          defaultExpanded={true}
-        />
-      )}
 
       <div ref={bottomRef} />
     </div>
