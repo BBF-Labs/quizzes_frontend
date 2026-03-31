@@ -131,6 +131,7 @@ export interface ZAppMessage {
   mode?: string;
   isStreaming?: boolean;
   status?: "sending" | "sent" | "error";
+  replyToMessageId?: string;
 }
 
 export type ConnectionType = "sse" | "polling" | "disconnected";
@@ -265,6 +266,16 @@ export interface ZArtifact {
   updatedAt: string;
 }
 
+export interface SessionCitation {
+  citationId: string;
+  marker: string;
+  materialId: string;
+  filename: string;
+  excerpt: string;
+  pageNumber?: number;
+  messageId: string;
+}
+
 export interface ZApp {
   id: string;
   title?: string;
@@ -273,6 +284,7 @@ export interface ZApp {
   mode: "free" | "structured";
   planningMode?: "planning" | "fast";
   zMessages: ZAppMessage[];
+  citations?: SessionCitation[];
   materials?: ZMaterial[];
   highlights?: SessionHighlight[];
   artifacts?: ZArtifact[];

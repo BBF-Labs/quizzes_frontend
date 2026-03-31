@@ -69,7 +69,8 @@ api.interceptors.response.use(
             },
           );
 
-          const newToken = res.data?.accessToken;
+          const resData = res.data?.data ?? res.data;
+          const newToken = resData?.accessToken;
           if (newToken) {
             setSession({ accessToken: newToken });
             isRefreshing = false;
@@ -79,8 +80,15 @@ api.interceptors.response.use(
             originalRequest.headers.Authorization = `Bearer ${newToken}`;
             return api(originalRequest);
           }
+
+          // Refresh returned 200 but no token — clean up and force logout
+          isRefreshing = false;
+          refreshSubscribers = [];
+          clearSession();
+          window.location.href = "/login";
         } catch (refreshError) {
           isRefreshing = false;
+          refreshSubscribers = [];
           // Refresh failed -> clear memory session and redirect to login
           clearSession();
           window.location.href = "/login";

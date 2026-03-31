@@ -77,8 +77,7 @@ export const useAppStream = (
           const isStreaming =
             streamingMessageIds.current.has(m.id) ||
             streamingMessageIds.current.has(m.messageId) ||
-            !!streamingBufferRef.current[m.id] ||
-            (m.messageId && !!streamingBufferRef.current[m.messageId]);
+            !!m.isStreaming;
 
           if (!isStreaming) {
             // Update metadata (like server ID) but keep local content if it matches
@@ -120,9 +119,7 @@ export const useAppStream = (
   const retryCountRef = useRef(0);
   const maxRetriesRef = useRef(5);
 
-  const streamingBufferRef = useRef<Record<string, string>>({});
   const streamingMessageIds = useRef<Set<string>>(new Set());
-  const lastTickRef = useRef<number>(0);
 
   const connect = useCallback(() => {
     if (eventSourceRef.current) {
@@ -169,46 +166,54 @@ export const useAppStream = (
                 setMessages((prev) => {
                   const msgs = [...prev];
                   const existingIdx = msgId
-                    ? msgs.findIndex((m) => m.messageId === msgId)
+                    ? msgs.findIndex((m) => m.messageId === msgId || m.id === msgId)
                     : -1;
 
                   if (existingIdx >= 0) {
-                    const streamKey =
-                      msgId ||
-                      msgs[existingIdx].messageId ||
-                      msgs[existingIdx].id;
-                    const currentBuffer =
-                      streamingBufferRef.current[streamKey] || "";
-                    streamingBufferRef.current[streamKey] =
-                      currentBuffer + text;
-                    streamingMessageIds.current.add(streamKey);
-                    // Ensure the message is marked as streaming
+                    streamingMessageIds.current.add(msgId!);
                     msgs[existingIdx] = {
                       ...msgs[existingIdx],
+                      content: msgs[existingIdx].content + text,
                       isStreaming: true,
                     };
                   } else {
-                     const stableId = msgId || uuidv4();
- 
-                     streamingMessageIds.current.add(stableId);
-                     const newMsg: ZAppMessage = {
-                       id: stableId,
-                       messageId: stableId,
-                       role: "z",
-                       type: "text" as ZAppMessageType,
-                       content: "",
-                       timestamp: signal.timestamp || new Date().toISOString(),
-                       isStreaming: true,
-                     };
+                    const stableId = msgId || uuidv4();
+                    streamingMessageIds.current.add(stableId);
+                    const newMsg: ZAppMessage = {
+                      id: stableId,
+                      messageId: stableId,
+                      role: "z",
+                      type: "text" as ZAppMessageType,
+                      content: text,
+                      timestamp: signal.timestamp || new Date().toISOString(),
+                      isStreaming: true,
+                    };
                     if (isMountedRef.current) {
                       msgs.push(newMsg);
                     }
-                    streamingBufferRef.current[stableId] = text;
                   }
                   return msgs;
                 });
               }
               break;
+
+            case "text_done": {
+              const doneId = signal.payload?.messageId as string | undefined;
+              if (doneId) {
+                streamingMessageIds.current.delete(doneId);
+                setMessages((prev) => {
+                  const msgs = [...prev];
+                  const idx = msgs.findIndex(
+                    (m) => m.id === doneId || m.messageId === doneId,
+                  );
+                  if (idx >= 0) {
+                    msgs[idx] = { ...msgs[idx], isStreaming: false };
+                  }
+                  return msgs;
+                });
+              }
+              break;
+            }
 
             case "error":
               console.error(
@@ -284,59 +289,6 @@ export const useAppStream = (
     }
   }, [sessionId, enabled, connect, disconnect]);
 
-  useEffect(() => {
-    let animationFrame: number;
-
-    const tick = (time: number) => {
-      if (time - lastTickRef.current > 25) {
-        lastTickRef.current = time;
-
-        const bufferKeys = Object.keys(streamingBufferRef.current);
-        if (bufferKeys.length > 0) {
-          setMessages((prev) => {
-            let changed = false;
-            const next = [...prev];
-
-            for (const id of bufferKeys) {
-              const buffer = streamingBufferRef.current[id];
-              if (!buffer) continue;
-
-              const idx = next.findIndex((m) => m.id === id);
-              if (idx >= 0) {
-                let releaseCount = 2; // Increased base release
-                if (buffer.length > 200) releaseCount = 15;
-                else if (buffer.length > 100) releaseCount = 8;
-                else if (buffer.length > 50) releaseCount = 4;
-                else if (buffer.length > 20) releaseCount = 3;
-
-                const toRelease = buffer.slice(0, releaseCount);
-                const remaining = buffer.slice(releaseCount);
-                streamingBufferRef.current[id] = remaining;
-
-                next[idx] = {
-                  ...next[idx],
-                  content: next[idx].content + toRelease,
-                  isStreaming: remaining.length > 0, // Stay true if more is coming
-                };
-                changed = true;
-
-                if (remaining.length === 0) {
-                  delete streamingBufferRef.current[id];
-                  streamingMessageIds.current.delete(id);
-                }
-              }
-            }
-
-            return changed ? next : prev;
-          });
-        }
-      }
-      animationFrame = requestAnimationFrame(tick);
-    };
-
-    animationFrame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(animationFrame);
-  }, []);
 
   const pushMessage = useCallback((msg: ZAppMessage) => {
     setMessages((prev) => [...prev, msg]);
@@ -352,11 +304,42 @@ export const useAppStream = (
     });
   }, []);
 
+  const removeMessagesByReplyTo = useCallback((replyToMessageId: string) => {
+    setMessages((prev) =>
+      prev.filter((m) => (m as ZAppMessage & { replyToMessageId?: string }).replyToMessageId !== replyToMessageId),
+    );
+  }, []);
+
+  /** Keep the target message, remove everything after it */
+  const truncateAfter = useCallback((messageId: string) => {
+    setMessages((prev) => {
+      const idx = prev.findIndex(
+        (m) => m.id === messageId || m.messageId === messageId,
+      );
+      if (idx < 0) return prev;
+      return prev.slice(0, idx + 1);
+    });
+  }, []);
+
+  /** Remove the target message and everything after it */
+  const truncateFrom = useCallback((messageId: string) => {
+    setMessages((prev) => {
+      const idx = prev.findIndex(
+        (m) => m.id === messageId || m.messageId === messageId,
+      );
+      if (idx < 0) return prev;
+      return prev.slice(0, idx);
+    });
+  }, []);
+
   return {
     messages,
     isConnected,
     connectionType,
     pushMessage,
     updateMessage,
+    removeMessagesByReplyTo,
+    truncateAfter,
+    truncateFrom,
   };
 };

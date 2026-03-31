@@ -13,7 +13,7 @@ export default function OnboardingBanner() {
   const router = useRouter();
   const pathname = usePathname();
 
-  const { data: onboardingStatus, isLoading: onboardingStatusLoading } =
+  const { data: onboardingStatus, isLoading: onboardingStatusLoading, isFetched: onboardingStatusFetched } =
     useAuthQuery({
       queryKey: queryKeys.onboardingStatus,
       queryFn: async () => {
@@ -21,14 +21,15 @@ export default function OnboardingBanner() {
         return res.data?.data;
       },
       enabled: !!user,
-      staleTime: 30_000,
     });
 
   // Don't show on the actual onboarding page
   if (pathname?.startsWith("/onboarding")) return null;
 
-  // Wait for backend onboarding status before deciding visibility
-  if (user && onboardingStatusLoading) return null;
+  // Wait for backend onboarding status before deciding visibility.
+  // Also guard on isFetched: when useAuthQuery is disabled (auth hydrating),
+  // isLoading is false but data is undefined — isFetched distinguishes that state.
+  if (user && (!onboardingStatusFetched || onboardingStatusLoading)) return null;
 
   const onboardingCompleted =
     onboardingStatus?.completed ?? user?.onboarding?.completed ?? false;

@@ -27,7 +27,11 @@ export function MessageFeed({
   onTryMyself,
   onAction,
   onRetryMessage,
-}: MessageFeedProps & { onRetryMessage?: (id: string, content: string) => void }) {
+  onEditMessage,
+}: MessageFeedProps & {
+  onRetryMessage?: (id: string, content: string) => void;
+  onEditMessage?: (id: string, newContent: string) => void;
+}) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom on new messages
@@ -88,6 +92,7 @@ export function MessageFeed({
             key={msg.id}
             message={msg}
             onRetry={onRetryMessage}
+            onEdit={onEditMessage}
           />
         );
       })}

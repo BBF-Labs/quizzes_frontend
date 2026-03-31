@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Paperclip, X, Settings2, Plus, ArrowUp } from "lucide-react";
 import { useAppApprove } from "@/hooks";
+import { useRetryMessage } from "@/hooks/app/use-app-actions";
 import { useAppLayout } from "./layout";
 import { cn } from "@/lib/utils";
 import { MessageFeed } from "@/components/app/center/MessageFeed";
@@ -14,11 +15,15 @@ export default function ChatPage() {
   const {
     sessionId,
     messages,
+    citations,
     sendMessage,
     messageMutation,
+    truncateAfter,
+    truncateFrom,
   } = useAppLayout();
 
   const approveMutation = useAppApprove();
+  const retryMutation = useRetryMessage(sessionId);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -184,6 +189,7 @@ export default function ChatPage() {
       {/* Message feed */}
       <MessageFeed
         messages={messages}
+        citations={citations}
         activeDirectiveMessageId={activeDirectiveMessageId}
         onSubmitAnswer={handleSubmitAnswer}
         onApprove={handleApprove}
@@ -194,7 +200,14 @@ export default function ChatPage() {
         onTestMe={handleTestMe}
         onTryMyself={handleTryMyself}
         onAction={handleAction}
-        onRetryMessage={sendMessage}
+        onRetryMessage={(messageId: string) => {
+          truncateAfter(messageId);
+          retryMutation.mutate(messageId);
+        }}
+        onEditMessage={(messageId: string, newContent: string) => {
+          truncateFrom(messageId);
+          sendMessage(newContent);
+        }}
       />
 
       {/* Input */}

@@ -30,9 +30,8 @@ export function useOnboarding() {
       });
       return res.data;
     },
-    onSuccess: (data) => {
-      // Update local cache with new status returned from backend
-      queryClient.setQueryData(queryKeys.onboardingStatus, data.data);
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.onboardingStatus });
     },
   });
 
