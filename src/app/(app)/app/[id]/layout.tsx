@@ -41,6 +41,7 @@ import type {
   StudioQuiz,
   StudioMindMap,
   StudioExport,
+  SessionCitation,
 } from "@/types/session";
 
 // ─── Panel dimensions ─────────────────────────────────────────────────────────
@@ -57,12 +58,15 @@ interface AppLayoutContextValue {
   toggleLeft: () => void;
   toggleRight: () => void;
   messages: ZAppMessage[];
+  citations: SessionCitation[];
   pushMessage: (message: ZAppMessage) => void;
-  sendMessage: (content: string) => Promise<void>;
+  sendMessage: (content: string, retryId?: string) => Promise<void>;
   addNote: (title: string, content: string) => void;
   messageMutation: ReturnType<typeof useAppMessage>;
   activeMaterialId: string | null;
   setActiveMaterialId: (id: string | null) => void;
+  truncateAfter: (messageId: string) => void;
+  truncateFrom: (messageId: string) => void;
 }
 
 const AppLayoutContext = createContext<AppLayoutContextValue | null>(null);
@@ -252,6 +256,7 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
       let msgId: string;
       if (retryId) {
         msgId = retryId;
+        stream.truncateAfter(retryId);
         stream.updateMessage(msgId, { status: "sending" });
       } else {
         msgId = Date.now().toString();
@@ -302,12 +307,15 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
     toggleLeft,
     toggleRight,
     messages: stream.messages,
+    citations: app?.citations ?? [],
     pushMessage: stream.pushMessage,
     sendMessage,
     addNote,
     messageMutation: messageAction,
     activeMaterialId,
     setActiveMaterialId,
+    truncateAfter: stream.truncateAfter,
+    truncateFrom: stream.truncateFrom,
   };
 
   return (

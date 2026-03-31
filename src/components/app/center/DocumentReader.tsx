@@ -191,7 +191,7 @@ export function DocumentReader({ materialId, sessionId }: DocumentReaderProps) {
             </span>
             <button
               onClick={() => scrollToPage(currentPage + 1)}
-              disabled={currentPage >= numPages}
+              disabled={currentPage >= (numPages ?? 0)}
               className="p-1.5 hover:bg-accent rounded-md disabled:opacity-30 transition-colors"
             >
               <ChevronRight className="size-4" />

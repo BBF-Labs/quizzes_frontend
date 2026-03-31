@@ -54,8 +54,13 @@ export function hydrateSessionUserFromToken(): SessionUser | null {
   if (!token) return null;
 
   const decoded = parseJwt(token);
-  if (!decoded || isTokenExpired(decoded.exp)) {
+  if (!decoded) {
     clearSession();
+    return null;
+  }
+  if (isTokenExpired(decoded.exp)) {
+    // Keep tokens in storage so the auth context can attempt a refresh.
+    // Only wipe on a malformed token above.
     return null;
   }
 

@@ -12,6 +12,7 @@ import { queryKeys } from "@/lib/query-keys";
 import type { IAppMaterial } from "@/types/session";
 import { MaterialCard } from "@/components/app/left/MaterialCard";
 import { MaterialSelectorDialog } from "@/components/app/center/MaterialSelectorDialog";
+import { getAccessToken } from "@/lib/session";
 
 // ─── Accepted MIME types ──────────────────────────────────────────────────────
 

@@ -11,7 +11,7 @@ import {
   ensurePushSubscription,
   getCurrentPushEndpoint,
 } from "@/lib/push-notifications";
-import { clearSession, setSession } from "@/lib/session";
+import { clearSession, setSession, getRefreshToken } from "@/lib/session";
 import { queryKeys } from "@/lib/query-keys";
 import { hydrateSessionUserFromToken, SessionUser } from "@/hooks";
 import { isInvalidSessionError, useSessionValidation } from "@/hooks";
@@ -61,7 +61,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const { data: user, isLoading: isHydrating } = useQuery<User | null>({
     queryKey: queryKeys.authSession,
-    queryFn: async () => hydrateSessionUserFromToken(),
+    queryFn: async () => {
+      const user = hydrateSessionUserFromToken();
+      if (user) return user;
+
+      // Access token expired but refresh token may still be valid — try silently.
+      const refreshToken = getRefreshToken();
+      if (!refreshToken) return null;
+
+      try {
+        const res = await api.post("/auth/refresh", { refreshToken });
+        const resData = res.data?.data ?? res.data;
+        const newToken = resData?.accessToken;
+        if (newToken) {
+          setSession({ accessToken: newToken });
+          return hydrateSessionUserFromToken();
+        }
+      } catch {
+        clearSession();
+      }
+      return null;
+    },
     staleTime: 60_000,
   });
 

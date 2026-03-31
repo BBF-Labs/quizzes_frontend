@@ -142,7 +142,10 @@ export const useAppApprove = () => {
 
 export const useAppHighlights = (sessionId: string) => {
   return useQuery({
-    queryKey: [...queryKeys.app.detail(sessionId), "highlights"],
+    // Intentionally NOT nested under app.detail — message sends invalidate the full
+    // app.detail tree (prefix match), which would refetch highlights and force a
+    // re-render of DocumentReader on every message.
+    queryKey: ["session-highlights", sessionId],
     queryFn: async () => {
       const response = await api.get(`/app/${sessionId}`);
       const raw = response.data;
@@ -169,7 +172,7 @@ export const useAddHighlight = (sessionId: string) => {
       const newHighlight = (newHighlightData as any).data || newHighlightData;
       
       queryClient.setQueryData(
-        [...queryKeys.app.detail(sessionId), "highlights"],
+        ["session-highlights", sessionId],
         (old: SessionHighlight[] | undefined) => {
           if (!old) return [newHighlight];
           return [...old, newHighlight];
@@ -190,7 +193,7 @@ export const useRemoveHighlight = (sessionId: string) => {
     },
     onSuccess: (_, highlightId) => {
       queryClient.setQueryData(
-        [...queryKeys.app.detail(sessionId), "highlights"],
+        ["session-highlights", sessionId],
         (old: SessionHighlight[] | undefined) => {
           if (!old) return [];
           return old.filter((h) => h.id !== highlightId);
@@ -222,7 +225,7 @@ export const useUpdateHighlight = (sessionId: string) => {
       const updatedHighlight = (updatedHighlightData as any).data || updatedHighlightData;
       
       queryClient.setQueryData(
-        [...queryKeys.app.detail(sessionId), "highlights"],
+        ["session-highlights", sessionId],
         (old: SessionHighlight[] | undefined) => {
           if (!old) return [];
           return old.map((h) =>
@@ -249,7 +252,10 @@ export const useAppMaterials = (sessionId: string) => {
 
 export const useAppMaterialContent = (sessionId: string, materialId: string | null) => {
   return useQuery({
-    queryKey: [...queryKeys.app.materials(sessionId), materialId, "content"],
+    // Intentionally NOT nested under app.detail or app.materials — those trees are
+    // invalidated on every message send, which would refetch the blob, create a new
+    // objectUrl, reload the PDF Document component, and reset the reader scroll position.
+    queryKey: ["material-blob", materialId],
     queryFn: async () => {
       if (!materialId) return null;
       const response = await api.get(`/app/${sessionId}/materials/${materialId}/download`, {
@@ -258,7 +264,8 @@ export const useAppMaterialContent = (sessionId: string, materialId: string | nu
       return response.data as Blob;
     },
     enabled: !!sessionId && !!materialId && sessionId !== "undefined",
-    staleTime: 1000 * 60 * 10, // 10 minutes cache
+    staleTime: 1000 * 60 * 30,
+    gcTime: 1000 * 60 * 30,
   });
 };
 
@@ -468,6 +475,42 @@ export const useUpdateAppMindMap = () => {
       return response.data;
     },
     onSuccess: (_, { sessionId }) => {
+      return queryClient.invalidateQueries({
+        queryKey: queryKeys.app.detail(sessionId),
+      });
+    },
+  });
+};
+
+export const useRetryMessage = (sessionId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (messageId: string) => {
+      if (!sessionId || sessionId === "undefined")
+        throw new Error("Invalid app ID for retry");
+      const response = await api.post<StepResponse>(
+        `/app/${sessionId}/message/${messageId}/retry`,
+      );
+      return response.data;
+    },
+    onMutate: async (messageId: string) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.app.detail(sessionId) });
+      const previous = queryClient.getQueryData(queryKeys.app.detail(sessionId));
+      queryClient.setQueryData<ZApp>(queryKeys.app.detail(sessionId), (old) => {
+        if (!old) return old;
+        const idx = old.zMessages.findIndex((m) => m.messageId === messageId);
+        if (idx === -1) return old;
+        return { ...old, zMessages: old.zMessages.slice(0, idx + 1) };
+      });
+      return { previous };
+    },
+    onError: (_err, _messageId, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(queryKeys.app.detail(sessionId), context.previous);
+      }
+    },
+    onSuccess: () => {
       return queryClient.invalidateQueries({
         queryKey: queryKeys.app.detail(sessionId),
       });
