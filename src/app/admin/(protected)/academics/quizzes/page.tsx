@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Plus, Search, X, GraduationCap, Trash2, Eye } from "lucide-react";
@@ -12,6 +12,9 @@ import {
   useAdminDeleteQuiz,
   useAdminCourses,
 } from "@/hooks/admin/use-academics";
+import { PaginationController } from "@/components/common/pagination-controller";
+
+
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "text-yellow-500 border-yellow-500/30 bg-yellow-500/10",
@@ -156,13 +159,25 @@ export default function AdminQuizzesPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [showCreate, setShowCreate] = useState(false);
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
 
-  const filtered = quizzes.filter((q) => {
+  const filtered = quizzes.filter((q: any) => {
     if (statusFilter && q.status !== statusFilter) return false;
     if (!search.trim()) return true;
     const re = new RegExp(search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
-    return re.test(q.title) || q.tags.some((t) => re.test(t));
+    return re.test(q.title) || q.tags.some((t: string) => re.test(t));
   });
+
+  const totalPages = Math.ceil(filtered.length / pageSize);
+  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, statusFilter]);
+
+
+
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this quiz? This cannot be undone.")) return;
@@ -252,59 +267,68 @@ export default function AdminQuizzesPage() {
       )}
 
       {/* Grid */}
-      {!isLoading && filtered.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((quiz) => (
-            <div
-              key={quiz._id}
-              className="group relative border border-border/40 bg-card/30 hover:border-primary/40 transition-all"
-            >
-              <div className="p-4 space-y-3">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="font-mono font-bold text-sm text-foreground line-clamp-2 flex-1">
-                    {quiz.title}
-                  </p>
-                  <Badge
-                    className={`shrink-0 text-[8px] font-mono h-4 px-1.5 border ${STATUS_COLORS[quiz.status]}`}
-                  >
-                    {quiz.status}
-                  </Badge>
-                </div>
-
-                <div className="flex gap-1.5 flex-wrap">
-                  {quiz.tags.slice(0, 3).map((t) => (
-                    <span
-                      key={t}
-                      className="text-[9px] font-mono text-muted-foreground/50 border border-border/30 px-1.5 py-0.5"
+      {!isLoading && paginated.length > 0 && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {paginated.map((quiz) => (
+              <div
+                key={quiz._id}
+                className="group relative border border-border/40 bg-card/30 hover:border-primary/40 transition-all"
+              >
+                <div className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="font-mono font-bold text-sm text-foreground line-clamp-2 flex-1">
+                      {quiz.title}
+                    </p>
+                    <Badge
+                      className={`shrink-0 text-[8px] font-mono h-4 px-1.5 border ${STATUS_COLORS[quiz.status]}`}
                     >
-                      {t}
+                      {quiz.status}
+                    </Badge>
+                  </div>
+
+                  <div className="flex gap-1.5 flex-wrap">
+                    {(quiz.tags ?? []).slice(0, 3).map((t) => (
+                      <span
+                        key={t}
+                        className="text-[9px] font-mono text-muted-foreground/50 border border-border/30 px-1.5 py-0.5"
+                      >
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center justify-between border-t border-border/20 pt-2">
+                    <span className="text-[9px] font-mono text-muted-foreground/40">
+                      Pass {quiz.passingScore}%
                     </span>
-                  ))}
-                </div>
-
-                <div className="flex items-center justify-between border-t border-border/20 pt-2">
-                  <span className="text-[9px] font-mono text-muted-foreground/40">
-                    Pass {quiz.passingScore}%
-                  </span>
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Link href={`/admin/academics/quizzes/${quiz._id}`}>
-                      <button className="p-1.5 text-muted-foreground/40 hover:text-primary transition-colors">
-                        <Eye className="size-3.5" />
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Link href={`/admin/academics/quizzes/${quiz._id}`}>
+                        <button className="p-1.5 text-muted-foreground/40 hover:text-primary transition-colors">
+                          <Eye className="size-3.5" />
+                        </button>
+                      </Link>
+                      <button
+                        onClick={() => handleDelete(quiz._id)}
+                        className="p-1.5 text-muted-foreground/40 hover:text-destructive transition-colors"
+                      >
+                        <Trash2 className="size-3.5" />
                       </button>
-                    </Link>
-                    <button
-                      onClick={() => handleDelete(quiz._id)}
-                      className="p-1.5 text-muted-foreground/40 hover:text-destructive transition-colors"
-                    >
-                      <Trash2 className="size-3.5" />
-                    </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+
+          <PaginationController
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
         </div>
       )}
+
 
       <p className="text-[10px] font-mono text-muted-foreground/30 uppercase tracking-widest">
         {filtered.length} of {quizzes.length} quizzes

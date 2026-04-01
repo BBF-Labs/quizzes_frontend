@@ -25,15 +25,6 @@ interface PaginationControllerProps {
 /**
  * Reusable pagination controller component
  * Handles page navigation with prev/next buttons and optional page info display
- *
- * Usage:
- * ```tsx
- * <PaginationController
- *   page={page}
- *   totalPages={totalPages}
- *   onPageChange={setPage}
- * />
- * ```
  */
 export function PaginationController({
   page,
@@ -44,15 +35,12 @@ export function PaginationController({
   buttonSize = "sm",
   infoPosition = "left",
 }: PaginationControllerProps) {
-  // Don't render if only one page
-  if (totalPages <= 1) return null;
-
   const buttonClasses =
     buttonSize === "sm" ? "h-8 px-2 text-[10px]" : "h-9 px-3 text-xs";
 
   const pageInfo = (
     <span className="text-[10px] font-mono uppercase text-muted-foreground whitespace-nowrap">
-      Page {page} of {totalPages}
+      Page {page} of {Math.max(1, totalPages)}
     </span>
   );
 
