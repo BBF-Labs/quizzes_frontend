@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { use } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { BookOpen, ChevronDown, ChevronRight } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronRight, PlayCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
@@ -217,14 +217,25 @@ export default function QuizDetailPage({
                     </Badge>
                   </div>
                 </div>
-                <Button
-                  size="sm"
-                  className="h-7 gap-1 text-[10px] font-mono shrink-0"
-                  onClick={() => router.push("/app")}
-                >
-                  <BookOpen className="size-3" />
-                  Study This Quiz
-                </Button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 gap-1 text-[10px] font-mono"
+                    onClick={() => router.push("/app")}
+                  >
+                    <BookOpen className="size-3" />
+                    Study
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="h-7 gap-1 text-[10px] font-mono"
+                    onClick={() => router.push(`/app/quizzes/${id}/take`)}
+                  >
+                    <PlayCircle className="size-3" />
+                    Take Quiz
+                  </Button>
+                </div>
               </div>
             </motion.div>
 
