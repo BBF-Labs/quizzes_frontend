@@ -27,7 +27,9 @@ import { useGlobalAppEvents } from "@/hooks/app/use-global-app-events";
 export function AppLayoutWrapper({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const segments = pathname.split("/").filter(Boolean);
-  const routePart = segments[1] || "";
+  // Sessions live under /app/[sessionId]; other top-level sections (e.g. /quizzes) are not sessions
+  const isAppSection = segments[0] === "app";
+  const routePart = isAppSection ? (segments[1] || "") : (segments[0] || "");
   const staticRoutes = new Set([
     "all",
     "memory",
@@ -39,7 +41,7 @@ export function AppLayoutWrapper({ children }: { children: ReactNode }) {
     "mindmaps",
     "library",
   ]);
-  const sessionId = routePart && !staticRoutes.has(routePart) ? routePart : "";
+  const sessionId = isAppSection && routePart && !staticRoutes.has(routePart) ? routePart : "";
   const isSessionDetail = !!sessionId;
   const routeLabelMap: Record<string, string> = {
     all: "All Sessions",
@@ -57,6 +59,8 @@ export function AppLayoutWrapper({ children }: { children: ReactNode }) {
     notes: "Note",
     mindmaps: "Mind Map",
   };
+  // Breadcrumb segments: for /app/... skip the "app" prefix; for other sections keep all
+  const breadcrumbOffset = isAppSection ? 1 : 0;
 
   // Always call hooks unconditionally (Rules of Hooks)
   const { user, logout } = useAuth();
@@ -70,7 +74,7 @@ export function AppLayoutWrapper({ children }: { children: ReactNode }) {
     return <>{children}</>;
   }
 
-  const breadcrumbSegments = segments.slice(1);
+  const breadcrumbSegments = segments.slice(breadcrumbOffset);
   const parentSegment = breadcrumbSegments[0] || "";
 
   const formatSegment = (segment: string, index: number) => {

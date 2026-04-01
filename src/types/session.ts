@@ -452,6 +452,45 @@ export interface QuizDetail {
   createdAt: string;
 }
 
+// ─── System Quizzes (Qz-team created) ────────────────────────────────────────
+
+export interface SystemQuizSummary {
+  _id: string;
+  title: string;
+  description?: string;
+  courseId: string;
+  status: "draft" | "published" | "archived";
+  isAvailable: boolean;
+  passingScore: number;
+  tags: string[];
+  questionCount: number;
+  lectureCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SystemQuizDetail {
+  _id: string;
+  title: string;
+  description?: string;
+  courseId: string;
+  status: "draft" | "published" | "archived";
+  isAvailable: boolean;
+  availableFrom?: string;
+  availableTo?: string;
+  passingScore: number;
+  settings: {
+    timeLimit?: number;
+    shuffleQuestions: boolean;
+    showHints: boolean;
+    showExplanations: boolean;
+  };
+  tags: string[];
+  lectures: QuizLecture[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ZGradeResultItem {
   questionId: string;
   score: number;
