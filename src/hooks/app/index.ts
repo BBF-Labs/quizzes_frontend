@@ -3,3 +3,4 @@ export * from "./use-app-actions";
 export * from "./use-app-stream";
 export * from "./use-app-library";
 export * from "./use-flashcards";
+export * from "./use-quizzes";

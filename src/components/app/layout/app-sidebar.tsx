@@ -9,6 +9,7 @@ import {
   BookOpen,
   Clock3,
   FileText,
+  GraduationCap,
   MessageSquare,
   Network,
   Plus,
@@ -173,6 +174,27 @@ export function AppSidebar() {
                     <FileText className="size-4" />
                     <span className="font-mono text-[11px] uppercase tracking-widest">
                       Quizzes
+                    </span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname.startsWith("/quizzes")}
+                  tooltip="Qz Quizzes"
+                  className={cn(
+                    "h-9 px-4 rounded-(--radius) transition-all duration-200",
+                    pathname.startsWith("/quizzes")
+                      ? "bg-primary/5 text-primary border-r-2 border-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
+                  )}
+                >
+                  <Link href="/quizzes">
+                    <GraduationCap className="size-4" />
+                    <span className="font-mono text-[11px] uppercase tracking-widest">
+                      Qz Quizzes
                     </span>
                   </Link>
                 </SidebarMenuButton>

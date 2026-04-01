@@ -12,6 +12,7 @@ import { SocialProof } from "@/components/landing";
 import { CTA } from "@/components/landing";
 import { Footer } from "@/components/landing";
 import { StatsSection } from "@/components/landing";
+import { QuizzesSection } from "@/components/landing";
 
 export default function Home() {
   return (
@@ -23,6 +24,7 @@ export default function Home() {
         <MeetZ />
         <ProblemSolution />
         <Features />
+        <QuizzesSection />
         <HowZWorks />
         <CurriculumPreview />
         <ExamTimetablePreview />

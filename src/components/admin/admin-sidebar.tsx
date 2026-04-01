@@ -11,6 +11,7 @@ import {
   Settings,
   LogOut,
   GraduationCap,
+  BookOpen,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import {
@@ -74,6 +75,21 @@ const navigation = [
         title: "Waitlist",
         url: "/admin/waitlist",
         icon: UserPlus,
+      },
+    ],
+  },
+  {
+    title: "Academics",
+    items: [
+      {
+        title: "Courses",
+        url: "/admin/academics/courses",
+        icon: BookOpen,
+      },
+      {
+        title: "Quizzes",
+        url: "/admin/academics/quizzes",
+        icon: GraduationCap,
       },
     ],
   },

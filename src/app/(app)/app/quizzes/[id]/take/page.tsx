@@ -576,7 +576,7 @@ function QuestionMap({
             key={q.id}
             type="button"
             onClick={() => onJump(i)}
-            className={`size-2.5 border transition-colors ${color} hover:border-primary/60`}
+            className={`rounded-(--radius) size-2.5 border transition-colors ${color} hover:border-primary/60`}
             aria-label={`Question ${i + 1}`}
           />
         );
@@ -1027,7 +1027,7 @@ function ResultsScreen({
           <button
             type="button"
             onClick={onRetake}
-            className="inline-flex items-center gap-1.5 border border-border/50 px-4 py-1.5 text-[10px] font-mono uppercase tracking-widest text-muted-foreground hover:border-primary/50 hover:text-foreground transition-all"
+            className="rounded-(--radius) inline-flex items-center gap-1.5 border border-border/50 px-4 py-1.5 text-[10px] font-mono uppercase tracking-widest text-muted-foreground hover:border-primary/50 hover:text-foreground transition-all"
           >
             <RotateCcw className="size-3" />
             Retake
@@ -1040,7 +1040,7 @@ function ResultsScreen({
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="border border-primary/20 bg-primary/5 px-4 py-4 mb-4"
+          className="rounded-(--radius) border border-primary/20 bg-primary/5 px-4 py-4 mb-4"
         >
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -1387,7 +1387,7 @@ export default function QuizTakePage({
           {[...Array(5)].map((_, i) => (
             <div
               key={i}
-              className="h-12 animate-pulse bg-card/40 border border-border/20"
+              className="rounded-(--radius) h-12 animate-pulse bg-card/40 border border-border/20"
             />
           ))}
         </div>
@@ -1398,7 +1398,7 @@ export default function QuizTakePage({
   if (loadError || !quiz) {
     return (
       <div className="min-h-full px-4 pt-6 pb-8">
-        <div className="mx-auto max-w-2xl border border-destructive/40 bg-destructive/5 px-4 py-3 font-mono text-sm text-destructive">
+        <div className="rounded-(--radius) mx-auto max-w-2xl border border-destructive/40 bg-destructive/5 px-4 py-3 font-mono text-sm text-destructive">
           {loadError ?? "Quiz not found."}
         </div>
       </div>
@@ -1435,7 +1435,7 @@ export default function QuizTakePage({
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
-                  className="flex items-center gap-1 border border-amber-500/30 bg-amber-500/10 px-2 py-0.5"
+                  className="rounded-(--radius) flex items-center gap-1 border border-amber-500/30 bg-amber-500/10 px-2 py-0.5"
                 >
                   <Flame className="size-3 text-amber-500" />
                   <span className="text-[9px] font-mono text-amber-500 font-semibold">
