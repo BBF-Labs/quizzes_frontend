@@ -452,6 +452,17 @@ export interface QuizDetail {
   createdAt: string;
 }
 
+export interface ZGradeResultItem {
+  questionId: string;
+  score: number;
+  isCorrect: boolean;
+  feedback: string;
+}
+
+export interface ZGradeResult {
+  results: ZGradeResultItem[];
+}
+
 // ─── Library: Notes ───────────────────────────────────────────────────────────
 
 export interface NoteSummary {

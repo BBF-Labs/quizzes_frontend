@@ -10,6 +10,7 @@ import type {
   NoteSummary,
   QuizDetail,
   QuizSummary,
+  ZGradeResult,
   MaterialSummary,
   MaterialDetail,
 } from "@/types/session";
@@ -264,6 +265,40 @@ export const useGenerateQuiz = () => {
     },
   });
 };
+
+export const useGradeQuizAnswers = () =>
+  useMutation({
+    mutationFn: async (data: {
+      quizId: string;
+      answers: {
+        questionId: string;
+        question: string;
+        answer: string;
+        correctAnswer?: string;
+      }[];
+    }) => {
+      // Enqueue the grading job
+      const enqueueRes = await api.post<ApiData<{ jobId: string }>>(
+        `/app/quizzes/${data.quizId}/grade`,
+        { answers: data.answers },
+      );
+      const jobId = enqueueRes.data.data.jobId;
+
+      // Poll for result (max 30s, 1s interval)
+      for (let i = 0; i < 30; i++) {
+        await new Promise((r) => setTimeout(r, 1000));
+        const pollRes = await api.get<
+          ApiData<{ status: "pending" | "complete"; results?: ZGradeResult["results"]; error?: string }>
+        >(`/app/quizzes/grade-results/${jobId}`);
+        const payload = pollRes.data.data;
+        if (payload.status === "complete") {
+          if (payload.error) throw new Error(payload.error);
+          return { results: payload.results ?? [] } as ZGradeResult;
+        }
+      }
+      throw new Error("Grading timed out. Try again.");
+    },
+  });
 
 export const useGenerateMindMap = () => {
   const queryClient = useQueryClient();
