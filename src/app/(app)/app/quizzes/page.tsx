@@ -224,7 +224,14 @@ export default function QuizzesPage() {
                       <p className="font-mono font-bold text-sm text-foreground line-clamp-2 pr-2">
                         {quiz.title}
                       </p>
-                      <PlayCircle className="mt-0.5 size-3.5 shrink-0 text-muted-foreground/40 group-hover:text-primary transition-colors" />
+                      <Link
+                        href={`/app/quizzes/${quiz.id}/take`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="shrink-0 mt-0.5 p-0.5 text-muted-foreground/40 hover:text-primary transition-colors"
+                        aria-label="Take quiz"
+                      >
+                        <PlayCircle className="size-3.5" />
+                      </Link>
                     </div>
 
                     <p className="mt-1 text-[10px] font-mono text-muted-foreground/60 min-h-4">
