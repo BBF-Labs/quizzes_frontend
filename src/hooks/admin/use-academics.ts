@@ -3,6 +3,21 @@ import { api } from "@/lib/api";
 
 type ApiData<T> = { data: T };
 
+export interface PaginationMeta {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+type PaginatedApiData<T> = { data: T; meta: PaginationMeta };
+
+export interface PaginationParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface AdminCourse {
@@ -32,6 +47,18 @@ export interface AdminQuiz {
   updatedAt: string;
 }
 
+export interface AdminQuestion {
+  _id: string;
+  id: string;
+  question: string;
+  options: string[];
+  answer: string;
+  correctAnswer: string;
+  type: "mcq" | "true_false" | "short_answer" | "essay" | "fill_in_blank";
+  explanation?: string;
+  hint?: string;
+}
+
 export interface AdminQuizDetail extends AdminQuiz {
   availableFrom?: string;
   availableTo?: string;
@@ -43,26 +70,50 @@ export interface AdminQuizDetail extends AdminQuiz {
   };
   lectures: {
     title: string;
+    lectureTitle: string;
     description?: string;
     order: number;
     topics: {
       title: string;
+      topicTitle: string;
       order: number;
-      questionTypes: { type: string; questions: string[] }[];
+      questions: AdminQuestion[];
+      questionTypes: { type: string; questions: AdminQuestion[] }[];
     }[];
   }[];
 }
 
+export interface AddQuestionPayload {
+  lectureIndex: number;
+  topicIndex: number;
+  type: string;
+  question: string;
+  options: string[];
+  answer: string;
+  explanation?: string;
+  hint?: string;
+}
+
 // ─── Course hooks ─────────────────────────────────────────────────────────────
 
-export const useAdminCourses = () =>
-  useQuery({
-    queryKey: ["admin", "courses"],
+export const useAdminCourses = (params: PaginationParams = {}) => {
+  const { page = 1, limit = 10, search = "" } = params;
+  return useQuery({
+    queryKey: ["admin", "courses", page, limit, search],
     queryFn: async () => {
-      const res = await api.get<ApiData<AdminCourse[]>>("/admin/learning/courses");
-      return res.data?.data ?? [];
+      const query = new URLSearchParams({
+        page: String(page),
+        limit: String(limit),
+        ...(search ? { search } : {}),
+      });
+      const res = await api.get<PaginatedApiData<AdminCourse[]>>(`/admin/learning/courses?${query}`);
+      return {
+        data: res.data?.data ?? [],
+        pagination: res.data?.meta ?? { total: 0, page, limit, totalPages: 1 },
+      };
     },
   });
+};
 
 export const useAdminCreateCourse = () => {
   const qc = useQueryClient();
@@ -77,14 +128,25 @@ export const useAdminCreateCourse = () => {
 
 // ─── Quiz hooks ───────────────────────────────────────────────────────────────
 
-export const useAdminQuizzes = () =>
-  useQuery({
-    queryKey: ["admin", "quizzes"],
+export const useAdminQuizzes = (params: PaginationParams & { status?: string } = {}) => {
+  const { page = 1, limit = 10, search = "", status = "" } = params;
+  return useQuery({
+    queryKey: ["admin", "quizzes", page, limit, search, status],
     queryFn: async () => {
-      const res = await api.get<ApiData<AdminQuiz[]>>("/admin/learning/quizzes");
-      return res.data?.data ?? [];
+      const query = new URLSearchParams({
+        page: String(page),
+        limit: String(limit),
+        ...(search ? { search } : {}),
+        ...(status ? { status } : {}),
+      });
+      const res = await api.get<PaginatedApiData<AdminQuiz[]>>(`/admin/learning/quizzes?${query}`);
+      return {
+        data: res.data?.data ?? [],
+        pagination: res.data?.meta ?? { total: 0, page, limit, totalPages: 1 },
+      };
     },
   });
+};
 
 export const useAdminQuiz = (id: string, enabled = true) =>
   useQuery({
@@ -160,6 +222,52 @@ export const useAdminArchiveQuiz = () => {
       qc.invalidateQueries({ queryKey: ["admin", "quizzes"] });
       qc.invalidateQueries({ queryKey: ["admin", "quizzes", id] });
     },
+  });
+};
+
+export const useAdminPatchQuiz = (id: string) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: Record<string, any>) => {
+      const res = await api.patch<ApiData<AdminQuizDetail>>(`/admin/learning/quizzes/${id}`, data);
+      return res.data?.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "quizzes", id] });
+      qc.invalidateQueries({ queryKey: ["admin", "quizzes"] });
+    },
+  });
+};
+
+export const useAdminAddQuizQuestion = (quizId: string) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: AddQuestionPayload) => {
+      const res = await api.post<ApiData<AdminQuestion>>(`/admin/learning/quizzes/${quizId}/questions`, data);
+      return res.data?.data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "quizzes", quizId] }),
+  });
+};
+
+export const useAdminUpdateQuizQuestion = (quizId: string) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ questionId, data }: { questionId: string; data: Partial<AdminQuestion> & { type?: string } }) => {
+      const res = await api.put<ApiData<AdminQuestion>>(`/admin/learning/quizzes/${quizId}/questions/${questionId}`, data);
+      return res.data?.data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "quizzes", quizId] }),
+  });
+};
+
+export const useAdminRemoveQuizQuestion = (quizId: string) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (questionId: string) => {
+      await api.delete(`/admin/learning/quizzes/${quizId}/questions/${questionId}`);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "quizzes", quizId] }),
   });
 };
 

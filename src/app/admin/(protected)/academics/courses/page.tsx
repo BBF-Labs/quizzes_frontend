@@ -7,9 +7,9 @@ import { toast } from "sonner";
 import {
   useAdminCourses,
   useAdminCreateCourse,
-  type AdminCourse,
 } from "@/hooks/admin/use-academics";
 import { PaginationController } from "@/components/common/pagination-controller";
+import { Input } from "@/components/ui/input";
 
 
 // ─── Create form ──────────────────────────────────────────────────────────────
@@ -133,24 +133,25 @@ function CreateCourseForm({ onClose }: { onClose: () => void }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminCoursesPage() {
-  const { data: courses = [], isLoading } = useAdminCourses();
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
-  const filtered = courses.filter((c: AdminCourse) => {
-    if (!search.trim()) return true;
-    const re = new RegExp(search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
-    return re.test(c.code) || re.test(c.title ?? "") || re.test(c.about);
-  });
-
-  const totalPages = Math.ceil(filtered.length / pageSize);
-  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(t);
+  }, [search]);
 
   useEffect(() => {
     setPage(1);
-  }, [search]);
+  }, [debouncedSearch]);
+
+  const { data: result, isLoading } = useAdminCourses({ page, limit: pageSize, search: debouncedSearch });
+  const courses = result?.data ?? [];
+  const totalPages = result?.pagination.totalPages ?? 1;
+  const totalCount = result?.pagination.total ?? 0;
 
 
 
@@ -181,23 +182,28 @@ export default function AdminCoursesPage() {
 
       {showCreate && <CreateCourseForm onClose={() => setShowCreate(false)} />}
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/50" />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search courses…"
-          className="w-full border border-border/50 bg-card/40 pl-9 pr-9 py-2.5 text-[12px] font-mono placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50 transition-colors"
-        />
-        {search && (
-          <button
-            onClick={() => setSearch("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-muted-foreground"
-          >
-            <X className="size-3.5" />
-          </button>
-        )}
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <Input
+            placeholder="Search courses…"
+            className="pl-9 rounded-(--radius) bg-background/50 font-mono text-xs uppercase tracking-widest"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-muted-foreground"
+            >
+              <X className="size-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Loading */}
@@ -210,7 +216,7 @@ export default function AdminCoursesPage() {
       )}
 
       {/* Empty */}
-      {!isLoading && filtered.length === 0 && (
+      {!isLoading && courses.length === 0 && (
         <div className="flex flex-col items-center gap-3 py-16 text-center">
           <div className="flex size-12 items-center justify-center border border-primary/20 bg-primary/5">
             <BookOpen className="size-5 text-primary/60" />
@@ -222,7 +228,7 @@ export default function AdminCoursesPage() {
       )}
 
       {/* Table */}
-      {!isLoading && paginated.length > 0 && (
+      {!isLoading && courses.length > 0 && (
         <div className="space-y-4">
           <div className="border border-border/40 overflow-hidden">
             <table className="w-full text-left">
@@ -239,7 +245,7 @@ export default function AdminCoursesPage() {
                 </tr>
               </thead>
               <tbody>
-                {paginated.map((c) => (
+                {courses.map((c) => (
                   <tr
                     key={c._id}
                     className="border-b border-border/20 hover:bg-primary/5 transition-colors"
@@ -273,10 +279,8 @@ export default function AdminCoursesPage() {
         </div>
       )}
 
-
-
       <p className="text-[10px] font-mono text-muted-foreground/30 uppercase tracking-widest">
-        {filtered.length} of {courses.length} courses
+        {totalCount} course{totalCount !== 1 ? "s" : ""}
       </p>
     </div>
   );

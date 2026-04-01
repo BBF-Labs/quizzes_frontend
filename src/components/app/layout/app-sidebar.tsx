@@ -10,6 +10,7 @@ import {
   Clock3,
   FileText,
   GraduationCap,
+  LogOut,
   MessageSquare,
   Network,
   Plus,
@@ -18,6 +19,8 @@ import {
   Timer,
 } from "lucide-react";
 import { useSessions } from "@/hooks";
+import { useAuth } from "@/contexts/auth-context";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Sidebar,
   SidebarContent,
@@ -38,6 +41,7 @@ export function AppSidebar() {
   const pathname = usePathname();
   const { state } = useSidebar();
   const { data: sessions = [] } = useSessions();
+  const { user, logout } = useAuth();
 
   const recentSessions = useMemo(() => sessions.slice(0, 6), [sessions]);
 
@@ -324,6 +328,7 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-0 overflow-hidden">
+        {/* Z Memory indicator */}
         <div className="flex items-center gap-3 px-4 py-2 bg-secondary/5 border-t border-border/50">
           <Sparkles className="size-3 text-primary" />
           {state === "expanded" && (
@@ -333,6 +338,50 @@ export function AppSidebar() {
           )}
         </div>
 
+        {/* Profile section */}
+        <div
+          className={cn(
+            "flex items-stretch gap-0 border-t border-border/50",
+            state === "expanded" ? "h-12" : "h-10",
+          )}
+        >
+          <Link
+            href="/app/profile"
+            className={cn(
+              "flex-1 flex items-center gap-3 p-2 hover:bg-secondary/10 transition-colors overflow-hidden",
+              pathname === "/app/profile" && "bg-primary/5 border-l-2 border-primary",
+            )}
+          >
+            <Avatar className="size-8 rounded-(--radius) border border-border/50 bg-secondary/20 shrink-0">
+              <AvatarImage src={user?.profilePicture} className="object-cover" />
+              <AvatarFallback className="rounded-(--radius) bg-zinc-800 font-mono text-[10px] font-bold text-zinc-400">
+                {user?.username?.[0]?.toUpperCase() || "U"}
+              </AvatarFallback>
+            </Avatar>
+            {state === "expanded" && (
+              <div className="flex flex-col flex-1 overflow-hidden">
+                <span className="text-[10px] font-mono font-bold text-foreground uppercase truncate">
+                  {user?.username || "User"}
+                </span>
+                <span className="text-[8px] font-mono tracking-widest text-muted-foreground uppercase truncate">
+                  {user?.role ? user.role.replace("_", " ") : "Student"}
+                </span>
+              </div>
+            )}
+          </Link>
+          <button
+            onClick={logout}
+            className={cn(
+              "flex items-center justify-center hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-all group/logout border-l border-border/50",
+              state === "expanded" ? "w-10" : "w-full",
+            )}
+            title="Logout"
+          >
+            <LogOut className="size-3.5 group-hover/logout:-translate-x-0.5 transition-transform" />
+          </button>
+        </div>
+
+        {/* Back to home */}
         <Link
           href="/"
           className="h-10 w-full border-t border-border/50 flex items-center gap-3 px-4 text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"

@@ -9,15 +9,7 @@ import { useSystemQuizzes } from "@/hooks/app/use-quizzes";
 import { PaginationController } from "@/components/common/pagination-controller";
 
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
+import { QuizCard } from "@/components/app/quizzes/quiz-card";
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -39,7 +31,7 @@ export default function SystemQuizzesPage() {
 
   const filtered = quizzes.filter((q: any) => {
     if (searchRe && !searchRe.test(q.title) && !searchRe.test(q.description ?? "")) return false;
-    if (tagFilter && !q.tags.includes(tagFilter)) return false;
+    if (tagFilter && !q.tags?.includes(tagFilter)) return false;
     return true;
   });
 
@@ -50,10 +42,7 @@ export default function SystemQuizzesPage() {
     setPage(1);
   }, [search, tagFilter]);
 
-  const allTags = Array.from(new Set(quizzes.flatMap((q: any) => q.tags).filter(Boolean)));
-
-
-
+  const allTags = Array.from(new Set(quizzes.flatMap((q: any) => q.tags ?? []).filter(Boolean)));
 
   return (
     <div className="min-h-full px-4 py-8">
@@ -170,67 +159,18 @@ export default function SystemQuizzesPage() {
             >
               <AnimatePresence mode="popLayout">
                 {paginated.map((quiz) => (
-                  <motion.div
+                  <QuizCard
                     key={quiz._id}
-                    layout
-                    variants={{
-                      hidden: { opacity: 0, y: 12 },
-                      visible: { opacity: 1, y: 0, transition: { duration: 0.22 } },
-                    }}
-                    initial="hidden"
-                    animate="visible"
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    className="group relative border border-border/40 bg-card/30 hover:border-primary/40 hover:bg-primary/5 transition-all overflow-hidden"
-                  >
-                    <div className="pointer-events-none absolute inset-x-0 top-0 h-10 bg-linear-to-b from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-
-                    <Link href={`/quizzes/${quiz._id}`} className="block p-4">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="font-mono font-bold text-sm text-foreground line-clamp-2 pr-2">
-                          {quiz.title}
-                        </p>
-                        <span className="shrink-0 mt-0.5 p-0.5 text-muted-foreground/40 group-hover:text-primary transition-colors">
-                          <PlayCircle className="size-3.5" />
-                        </span>
-                      </div>
-
-                      {quiz.description && (
-                        <p className="mt-1 text-[10px] font-mono text-muted-foreground/60 line-clamp-2">
-                          {quiz.description}
-                        </p>
-                      )}
-
-                      <div className="mt-3 flex items-center gap-2 flex-wrap">
-                        <Badge variant="outline" className="text-[9px] font-mono h-4 px-1.5">
-                          {quiz.questionCount ?? 0} Qs
-                        </Badge>
-                        <Badge variant="outline" className="text-[9px] font-mono h-4 px-1.5">
-                          {quiz.lectureCount ?? 0} lectures
-                        </Badge>
-                        <Badge variant="secondary" className="text-[9px] font-mono h-4 px-1.5">
-                          Pass {quiz.passingScore}%
-                        </Badge>
-                      </div>
-
-                      {quiz.tags.length > 0 && (
-                        <div className="mt-2 flex items-center gap-1 flex-wrap">
-                          <Tag className="size-2.5 text-muted-foreground/30 shrink-0" />
-                          {quiz.tags.slice(0, 3).map((tag) => (
-                            <span
-                              key={tag}
-                              className="text-[9px] font-mono text-muted-foreground/40"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-
-                      <p className="mt-3 text-[9px] font-mono text-muted-foreground/40">
-                        {formatDate(quiz.createdAt)}
-                      </p>
-                    </Link>
-                  </motion.div>
+                    id={quiz._id}
+                    title={quiz.title}
+                    description={quiz.description}
+                    href={`/quizzes/${quiz._id}`}
+                    questionCount={quiz.questionCount ?? 0}
+                    lectureCount={quiz.lectureCount ?? 0}
+                    passingScore={quiz.passingScore}
+                    tags={quiz.tags}
+                    createdAt={quiz.createdAt}
+                  />
                 ))}
               </AnimatePresence>
             </motion.div>

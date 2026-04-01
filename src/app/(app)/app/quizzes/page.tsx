@@ -13,15 +13,7 @@ import {
 } from "@/hooks/app/use-app-library";
 import { GenerationDialog } from "@/components/app/library/generation-dialog";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
+import { QuizCard } from "@/components/app/quizzes/quiz-card";
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -58,8 +50,8 @@ export default function QuizzesPage() {
     }
   };
 
-  const handleGenerate = async (materialId: string) => {
-    await generateQuizMutation.mutateAsync({ materialId });
+  const handleGenerate = async (materialId: string, settings?: any) => {
+    await generateQuizMutation.mutateAsync({ materialId, settings });
   };
 
   return (
@@ -190,78 +182,20 @@ export default function QuizzesPage() {
           >
             <AnimatePresence>
               {filtered.map((quiz) => (
-                <motion.div
+                <QuizCard
                   key={quiz.id}
-                  variants={{
-                    hidden: { opacity: 0, y: 12 },
-                    visible: {
-                      opacity: 1,
-                      y: 0,
-                      transition: { duration: 0.22 },
-                    },
-                  }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="group relative border border-border/40 bg-card/30 hover:border-primary/40 hover:bg-primary/5 transition-all overflow-hidden"
-                >
-                  <div className="pointer-events-none absolute inset-x-0 top-0 h-10 bg-linear-to-b from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-
-                  {/* Delete */}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleDelete(quiz.id);
-                    }}
-                    disabled={deleteMutation.isPending}
-                    className="absolute top-2 right-2 p-1 text-muted-foreground/30 hover:text-destructive opacity-0 group-hover:opacity-100 transition-all disabled:opacity-20"
-                    aria-label="Delete quiz"
-                  >
-                    <Trash2 className="size-3.5" />
-                  </button>
-
-                  <Link href={`/app/quizzes/${quiz.id}`} className="block p-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="font-mono font-bold text-sm text-foreground line-clamp-2 pr-2">
-                        {quiz.title}
-                      </p>
-                      <Link
-                        href={`/app/quizzes/${quiz.id}/take`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="shrink-0 mt-0.5 p-0.5 text-muted-foreground/40 hover:text-primary transition-colors"
-                        aria-label="Take quiz"
-                      >
-                        <PlayCircle className="size-3.5" />
-                      </Link>
-                    </div>
-
-                    <p className="mt-1 text-[10px] font-mono text-muted-foreground/60 min-h-4">
-                      {[quiz.courseTitle, quiz.courseCode]
-                        .filter(Boolean)
-                        .join(" · ") || "General"}
-                    </p>
-
-                    <div className="mt-3 flex items-center gap-2 flex-wrap">
-                      <Badge
-                        variant="outline"
-                        className="text-[9px] font-mono h-4 px-1.5"
-                      >
-                        {quiz.questionCount} Qs
-                      </Badge>
-                      {typeof quiz.averageScore === "number" && (
-                        <Badge
-                          variant="secondary"
-                          className="text-[9px] font-mono h-4 px-1.5"
-                        >
-                          avg {Math.round(quiz.averageScore)}%
-                        </Badge>
-                      )}
-                    </div>
-
-                    <p className="mt-3 text-[9px] font-mono text-muted-foreground/40">
-                      {formatDate(quiz.createdAt)}
-                    </p>
-                  </Link>
-                </motion.div>
+                  id={quiz.id}
+                  title={quiz.title}
+                  href={`/app/quizzes/${quiz.id}`}
+                  takeHref={`/app/quizzes/${quiz.id}/take`}
+                  courseTitle={quiz.courseTitle}
+                  courseCode={quiz.courseCode}
+                  questionCount={quiz.questionCount ?? 0}
+                  averageScore={quiz.averageScore}
+                  createdAt={quiz.createdAt}
+                  onDelete={handleDelete}
+                  isDeleting={deleteMutation.isPending}
+                />
               ))}
             </AnimatePresence>
           </motion.div>
