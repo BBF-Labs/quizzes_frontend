@@ -92,22 +92,33 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
   // ── Panel state — collapsed on mobile, expanded on lg ──────────────────────
   const [leftOpen, setLeftOpen] = useState(false);
   const [rightOpen, setRightOpen] = useState(false);
+  const [isLg, setIsLg] = useState(false);
+
+  // Mobile split-view tab toggle: "document" | "chat"
+  const [readerView, setReaderView] = useState<"document" | "chat">("document");
 
   useEffect(() => {
     const mql = window.matchMedia("(min-width: 1024px)");
     const onMqlChange = ({ matches }: MediaQueryListEvent | MediaQueryList) => {
       setLeftOpen(matches);
       setRightOpen(matches);
+      setIsLg(matches);
     };
     mql.addEventListener("change", onMqlChange);
     onMqlChange(mql);
     return () => mql.removeEventListener("change", onMqlChange);
   }, []);
 
+  const [activeMaterialId, setActiveMaterialId] = useState<string | null>(null);
+
+  // Reset to document view whenever a new material is opened
+  useEffect(() => {
+    if (activeMaterialId) setReaderView("document");
+  }, [activeMaterialId]);
+
   const toggleLeft = useCallback(() => setLeftOpen((v) => !v), []);
   const toggleRight = useCallback(() => setRightOpen((v) => !v), []);
 
-  const [activeMaterialId, setActiveMaterialId] = useState<string | null>(null);
 
   // ── Queries and Mutations ────────────────────────────────────────────────────
   const { user, logout } = useAuth();
@@ -326,39 +337,58 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
           {/* ── Left panel (Sources) ─────────────────────────────────────────────── */}
           <AnimatePresence initial={false}>
             {leftOpen && (
-              <motion.div
-                key="left-panel"
-                initial={{ width: 0 }}
-                animate={{ width: LEFT_PANEL_WIDTH }}
-                exit={{ width: 0 }}
-                transition={{ duration: 0.2, ease: "easeInOut" }}
-                style={{ overflow: "hidden" }}
-                className="shrink-0 border-r border-border/50 bg-card/10 flex flex-col"
-              >
-                <div
-                  style={{ width: LEFT_PANEL_WIDTH }}
-                  className="h-full flex flex-col"
+              <>
+                {/* Mobile backdrop */}
+                {!isLg && (
+                  <motion.div
+                    key="left-backdrop"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="fixed inset-0 z-30 bg-background/60 backdrop-blur-xs"
+                    onClick={toggleLeft}
+                  />
+                )}
+                <motion.div
+                  key="left-panel"
+                  initial={isLg ? { width: 0 } : { x: -LEFT_PANEL_WIDTH }}
+                  animate={isLg ? { width: LEFT_PANEL_WIDTH } : { x: 0, width: LEFT_PANEL_WIDTH }}
+                  exit={isLg ? { width: 0 } : { x: -LEFT_PANEL_WIDTH }}
+                  transition={{ duration: 0.2, ease: "easeInOut" }}
+                  style={{ overflow: "hidden" }}
+                  className={cn(
+                    "border-r border-border/50 bg-card/10 flex flex-col",
+                    isLg
+                      ? "shrink-0"
+                      : "fixed left-0 top-0 h-full z-40 shadow-2xl shadow-black/30 bg-background"
+                  )}
                 >
-                  {/* Top Left Logo Area */}
-                  <div className="h-14 shrink-0 flex items-center px-4">
-                    <Link
-                      href="/app/all"
-                      className="flex items-center gap-1.5 shrink-0 hover:opacity-80 transition-opacity"
-                    >
-                      <span className="text-xl font-bold tracking-widest text-foreground">
-                        Qz.
-                      </span>
-                    </Link>
+                  <div
+                    style={{ width: LEFT_PANEL_WIDTH }}
+                    className="h-full flex flex-col"
+                  >
+                    {/* Top Left Logo Area */}
+                    <div className="h-14 shrink-0 flex items-center px-4">
+                      <Link
+                        href="/app/all"
+                        className="flex items-center gap-1.5 shrink-0 hover:opacity-80 transition-opacity"
+                      >
+                        <span className="text-xl font-bold tracking-widest text-foreground">
+                          Qz.
+                        </span>
+                      </Link>
+                    </div>
+                    <div className="flex-1 min-h-0">
+                      <SourcesPanel
+                        sessionId={sessionId}
+                        activeCitationId={null}
+                        onClose={toggleLeft}
+                      />
+                    </div>
                   </div>
-                  <div className="flex-1 min-h-0">
-                    <SourcesPanel
-                      sessionId={sessionId}
-                      activeCitationId={null}
-                      onClose={toggleLeft}
-                    />
-                  </div>
-                </div>
-              </motion.div>
+                </motion.div>
+              </>
             )}
           </AnimatePresence>
 
@@ -487,22 +517,66 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
                   <p className="text-sm text-destructive font-mono">Failed to load session.</p>
                 </div>
               ) : activeMaterialId ? (
-                <div className="flex-1 flex min-h-0">
-                  <div className="flex-1 border-r border-border/40 relative">
+                <div className="flex-1 flex flex-col min-h-0">
+                  {/* Mobile tab bar — shown only when document reader is active */}
+                  <div className="md:hidden flex shrink-0 border-b border-border/40">
                     <button
-                      onClick={() => setActiveMaterialId(null)}
-                      className="absolute top-4 right-4 z-50 size-8 flex items-center justify-center rounded-full bg-background/80 hover:bg-background border border-border shadow-sm text-muted-foreground hover:text-foreground transition-all"
-                      title="Close Reader"
+                      onClick={() => setReaderView("document")}
+                      className={cn(
+                        "flex-1 py-2.5 text-[11px] font-mono uppercase tracking-widest transition-colors border-b-2 -mb-px",
+                        readerView === "document"
+                          ? "text-primary border-primary"
+                          : "text-muted-foreground border-transparent hover:text-foreground",
+                      )}
                     >
-                      <X className="size-4" />
+                      Document
                     </button>
-                    <DocumentReader 
-                      materialId={activeMaterialId} 
-                      sessionId={sessionId} 
-                    />
+                    <button
+                      onClick={() => setReaderView("chat")}
+                      className={cn(
+                        "flex-1 py-2.5 text-[11px] font-mono uppercase tracking-widest transition-colors border-b-2 -mb-px",
+                        readerView === "chat"
+                          ? "text-primary border-primary"
+                          : "text-muted-foreground border-transparent hover:text-foreground",
+                      )}
+                    >
+                      Chat
+                    </button>
                   </div>
-                  <div className="w-112.5 flex flex-col min-w-[320px]">
-                    {children}
+
+                  <div className="flex-1 flex min-h-0">
+                    {/* Document Reader: full-width on mobile (toggled), flex-1 on md+ */}
+                    <div
+                      className={cn(
+                        "relative flex-col border-r border-border/40",
+                        readerView === "document" ? "flex flex-1" : "hidden",
+                        "md:flex md:flex-1",
+                      )}
+                    >
+                      <button
+                        onClick={() => setActiveMaterialId(null)}
+                        className="absolute top-4 right-4 z-50 size-8 flex items-center justify-center rounded-full bg-background/80 hover:bg-background border border-border shadow-sm text-muted-foreground hover:text-foreground transition-all"
+                        title="Close Reader"
+                      >
+                        <X className="size-4" />
+                      </button>
+                      <DocumentReader
+                        materialId={activeMaterialId}
+                        sessionId={sessionId}
+                      />
+                    </div>
+
+                    {/* Chat panel: full-width on mobile (toggled), fixed width on md+ */}
+                    <div
+                      className={cn(
+                        "flex-col min-w-0",
+                        readerView === "chat" ? "flex flex-1" : "hidden",
+                        "md:flex md:w-80 md:flex-none md:min-w-[280px]",
+                        "lg:w-[450px] lg:min-w-[320px]",
+                      )}
+                    >
+                      {children}
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -514,38 +588,55 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
           {/* ── Right panel (Studio) ─────────────────────────────────────────────── */}
           <AnimatePresence initial={false}>
             {rightOpen && (
-              <motion.div
-                key="right-panel"
-                initial={{ width: 0 }}
-                animate={{ width: RIGHT_PANEL_WIDTH }}
-                exit={{ width: 0 }}
-                transition={{ duration: 0.2, ease: "easeInOut" }}
-                style={{ overflow: "hidden", zIndex: 10 }}
-                className="shrink-0 border-l border-border/50 shadow-sm"
-              >
-                <div
-                  style={{ width: RIGHT_PANEL_WIDTH }}
-                  className="h-full flex flex-col bg-card/10"
-                >
-                  {app && (
-                    <StudioPanel
-                      sessionId={sessionId}
-                      app={{
-                        ...app,
-                        notes: studioNotes,
-                        sharedNotes: studioSharedNotes,
-                        flashcards: studioFlashcards,
-                        quizzes: studioQuizzes,
-                        mindMap: studioMindMap,
-                        exports: studioExports,
-                      }}
-                      onSendMessage={sendMessage}
-                      onSessionChange={handleSessionChange}
-                      onClose={toggleRight}
-                    />
+              <>
+                {/* Mobile backdrop */}
+                {!isLg && (
+                  <motion.div
+                    key="right-backdrop"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="fixed inset-0 z-30 bg-background/60 backdrop-blur-xs"
+                    onClick={toggleRight}
+                  />
+                )}
+                <motion.div
+                  key="right-panel"
+                  initial={isLg ? { width: 0 } : { x: RIGHT_PANEL_WIDTH }}
+                  animate={isLg ? { width: RIGHT_PANEL_WIDTH } : { x: 0, width: RIGHT_PANEL_WIDTH }}
+                  exit={isLg ? { width: 0 } : { x: RIGHT_PANEL_WIDTH }}
+                  transition={{ duration: 0.2, ease: "easeInOut" }}
+                  style={{ overflow: "hidden", zIndex: isLg ? 10 : 40 }}
+                  className={cn(
+                    "border-l border-border/50 shadow-sm",
+                    isLg ? "shrink-0" : "fixed right-0 top-0 h-full shadow-2xl shadow-black/30"
                   )}
-                </div>
-              </motion.div>
+                >
+                  <div
+                    style={{ width: RIGHT_PANEL_WIDTH }}
+                    className="h-full flex flex-col bg-card/10 bg-background"
+                  >
+                    {app && (
+                      <StudioPanel
+                        sessionId={sessionId}
+                        app={{
+                          ...app,
+                          notes: studioNotes,
+                          sharedNotes: studioSharedNotes,
+                          flashcards: studioFlashcards,
+                          quizzes: studioQuizzes,
+                          mindMap: studioMindMap,
+                          exports: studioExports,
+                        }}
+                        onSendMessage={sendMessage}
+                        onSessionChange={handleSessionChange}
+                        onClose={toggleRight}
+                      />
+                    )}
+                  </div>
+                </motion.div>
+              </>
             )}
           </AnimatePresence>
         </div>

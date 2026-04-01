@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Plus, Search, X, BookOpen } from "lucide-react";
 import { toast } from "sonner";
@@ -9,6 +9,8 @@ import {
   useAdminCreateCourse,
   type AdminCourse,
 } from "@/hooks/admin/use-academics";
+import { PaginationController } from "@/components/common/pagination-controller";
+
 
 // ─── Create form ──────────────────────────────────────────────────────────────
 
@@ -134,12 +136,25 @@ export default function AdminCoursesPage() {
   const { data: courses = [], isLoading } = useAdminCourses();
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
 
-  const filtered = courses.filter((c) => {
+  const filtered = courses.filter((c: AdminCourse) => {
     if (!search.trim()) return true;
     const re = new RegExp(search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
     return re.test(c.code) || re.test(c.title ?? "") || re.test(c.about);
   });
+
+  const totalPages = Math.ceil(filtered.length / pageSize);
+  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
+
+
+
+
 
   return (
     <div className="space-y-6">
@@ -207,48 +222,58 @@ export default function AdminCoursesPage() {
       )}
 
       {/* Table */}
-      {!isLoading && filtered.length > 0 && (
-        <div className="border border-border/40 overflow-hidden">
-          <table className="w-full text-left">
-            <thead className="border-b border-border/40 bg-card/30">
-              <tr>
-                {["Code", "Title", "Semester", "Credits", "Year"].map((h) => (
-                  <th
-                    key={h}
-                    className="px-4 py-2.5 text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50"
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((c) => (
-                <tr
-                  key={c._id}
-                  className="border-b border-border/20 hover:bg-primary/5 transition-colors"
-                >
-                  <td className="px-4 py-3 text-[11px] font-mono font-bold text-primary">
-                    {c.code}
-                  </td>
-                  <td className="px-4 py-3 text-[11px] font-mono text-foreground max-w-xs truncate">
-                    {c.title || c.about}
-                  </td>
-                  <td className="px-4 py-3 text-[11px] font-mono text-muted-foreground">
-                    Sem {c.semester}
-                  </td>
-                  <td className="px-4 py-3 text-[11px] font-mono text-muted-foreground">
-                    {c.creditHours} cr
-                  </td>
-                  <td className="px-4 py-3 text-[11px] font-mono text-muted-foreground">
-                    {c.year}
-                  </td>
+      {!isLoading && paginated.length > 0 && (
+        <div className="space-y-4">
+          <div className="border border-border/40 overflow-hidden">
+            <table className="w-full text-left">
+              <thead className="border-b border-border/40 bg-card/30">
+                <tr>
+                  {["Code", "Title", "Semester", "Credits", "Year"].map((h) => (
+                    <th
+                      key={h}
+                      className="px-4 py-2.5 text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50"
+                    >
+                      {h}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {paginated.map((c) => (
+                  <tr
+                    key={c._id}
+                    className="border-b border-border/20 hover:bg-primary/5 transition-colors"
+                  >
+                    <td className="px-4 py-3 text-[11px] font-mono font-bold text-primary">
+                      {c.code}
+                    </td>
+                    <td className="px-4 py-3 text-[11px] font-mono text-foreground max-w-xs truncate">
+                      {c.title || c.about}
+                    </td>
+                    <td className="px-4 py-3 text-[11px] font-mono text-muted-foreground">
+                      Sem {c.semester}
+                    </td>
+                    <td className="px-4 py-3 text-[11px] font-mono text-muted-foreground">
+                      {c.creditHours} cr
+                    </td>
+                    <td className="px-4 py-3 text-[11px] font-mono text-muted-foreground">
+                      {c.year}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <PaginationController
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
         </div>
       )}
+
+
 
       <p className="text-[10px] font-mono text-muted-foreground/30 uppercase tracking-widest">
         {filtered.length} of {courses.length} courses

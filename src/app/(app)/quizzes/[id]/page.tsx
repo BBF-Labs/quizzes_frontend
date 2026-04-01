@@ -1,14 +1,13 @@
 "use client";
 
 import { use } from "react";
-import { useEffect } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { BookOpen, ChevronDown, ChevronRight, PlayCircle, Tag } from "lucide-react";
+import { ArrowLeft, BookOpen, ChevronDown, ChevronRight, PlayCircle, Tag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useSystemQuiz } from "@/hooks/app/use-quizzes";
-import { useBreadcrumbStore } from "@/store/breadcrumb";
 import type { QuizLecture, QuizTopic, QuizQuestion } from "@/types/session";
 import { useState } from "react";
 
@@ -129,21 +128,22 @@ export default function SystemQuizDetailPage({
   const router = useRouter();
   const { data: quiz, isLoading, error } = useSystemQuiz(id);
 
-  useEffect(() => {
-    if (quiz?.title) {
-      useBreadcrumbStore.getState().setDynamicTitle(quiz.title);
-    }
-    return () => useBreadcrumbStore.getState().setDynamicTitle(null);
-  }, [quiz?.title]);
-
   const totalQuestions = quiz?.lectures.reduce(
     (sum, l) => sum + l.topics.reduce((s, t) => s + t.questions.length, 0),
     0,
   );
 
   return (
-    <div className="min-h-full px-4 pt-2 pb-8">
+    <div className="min-h-full px-4 pt-4 pb-8">
       <div className="mx-auto max-w-3xl">
+        {/* Back link */}
+        <Link
+          href="/quizzes"
+          className="inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest text-muted-foreground/50 hover:text-primary transition-colors mb-6"
+        >
+          <ArrowLeft className="size-3" />
+          All Quizzes
+        </Link>
         {isLoading && (
           <div className="flex flex-col gap-3">
             {[...Array(4)].map((_, i) => (

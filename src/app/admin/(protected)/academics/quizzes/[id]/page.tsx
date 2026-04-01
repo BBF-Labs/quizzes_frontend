@@ -217,9 +217,9 @@ function LectureTree({
 
   return (
     <div className="space-y-2">
-      {lectures.map((l, i) => {
-        const totalQ = l.topics.reduce(
-          (s, t) => s + t.questionTypes.reduce((ss, qt) => ss + qt.questions.length, 0),
+      {(lectures || []).map((l, i) => {
+        const totalQ = (l.topics || []).reduce(
+          (s, t) => s + (t.questionTypes || []).reduce((ss, qt) => ss + (qt.questions || []).length, 0),
           0,
         );
         return (
@@ -238,13 +238,13 @@ function LectureTree({
                 {l.title}
               </span>
               <span className="text-[9px] font-mono text-muted-foreground/40 shrink-0">
-                {l.topics.length} topics · {totalQ} Qs
+                {(l.topics || []).length} topics · {totalQ} Qs
               </span>
             </button>
             {openLectures.has(i) && (
               <div className="px-4 pb-3 space-y-2">
-                {l.topics.map((t, ti) => {
-                  const qCount = t.questionTypes.reduce((s, qt) => s + qt.questions.length, 0);
+                {(l.topics || []).map((t, ti) => {
+                  const qCount = (t.questionTypes || []).reduce((s, qt) => s + (qt.questions || []).length, 0);
                   return (
                     <div key={ti} className="pl-4 border-l border-border/30">
                       <p className="text-[11px] font-mono font-semibold text-foreground">
@@ -254,13 +254,13 @@ function LectureTree({
                         </span>
                       </p>
                       <div className="mt-1 flex flex-wrap gap-1">
-                        {t.questionTypes.map((qt) => (
+                        {(t.questionTypes || []).map((qt) => (
                           <Badge
                             key={qt.type}
                             variant="outline"
                             className="text-[8px] font-mono h-4 px-1.5"
                           >
-                            {qt.type}: {qt.questions.length}
+                            {qt.type}: {(qt.questions || []).length}
                           </Badge>
                         ))}
                       </div>
@@ -328,8 +328,8 @@ export default function AdminQuizDetailPage({
     );
   }
 
-  const totalQ = quiz.lectures.reduce(
-    (s, l) => s + l.topics.reduce((ss, t) => ss + t.questionTypes.reduce((sss, qt) => sss + qt.questions.length, 0), 0),
+  const totalQ = (quiz.lectures || []).reduce(
+    (s, l) => s + (l.topics || []).reduce((ss, t) => ss + (t.questionTypes || []).reduce((sss, qt) => sss + (qt.questions || []).length, 0), 0),
     0,
   );
 
@@ -396,12 +396,12 @@ export default function AdminQuizDetailPage({
             {totalQ} questions
           </Badge>
           <Badge variant="outline" className="text-[9px] font-mono h-4 px-1.5">
-            {quiz.lectures.length} lectures
+            {(quiz.lectures || []).length} lectures
           </Badge>
           <Badge variant="secondary" className="text-[9px] font-mono h-4 px-1.5">
             Pass {quiz.passingScore}%
           </Badge>
-          {quiz.tags.map((t) => (
+          {(quiz.tags || []).map((t: string) => (
             <span key={t} className="text-[9px] font-mono text-muted-foreground/40 border border-border/30 px-1.5 py-0.5">
               {t}
             </span>
