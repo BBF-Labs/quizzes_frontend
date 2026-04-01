@@ -428,18 +428,39 @@ export interface QuizSummary {
 export interface QuizQuestion {
   id: string;
   question: string;
-  type: "mcq" | "free_text";
+  type: "mcq" | "free_text" | "true_false" | "short_answer" | "fill_in" | "fill_in_blank" | "essay";
   options?: string[];
   correctAnswer?: string;
+  hint?: string;
+  explanation?: string;
+}
+
+export interface QuizConfig {
+  selectedKeys: string[]; // "lectureIdx:topicIdx"
+  feedbackMode: "immediate" | "deferred";
+  timerMode: "none" | "per_question" | "total";
+  timerSeconds: number;
+  autoNext: boolean;
+  allowSkip: boolean;
+  shuffle: boolean;
+  passingScore: number;
+  useZGrading: boolean;
+  showHints: boolean;
 }
 
 export interface QuizTopic {
   topicTitle: string;
+  /** Admin-facing quizzes use 'title' instead of 'topicTitle' */
+  title?: string;
   questions: QuizQuestion[];
+  /** Admin-facing quizzes group questions by type */
+  questionTypes?: { type: string; questions: QuizQuestion[] }[];
 }
 
 export interface QuizLecture {
   lectureTitle: string;
+  /** Admin-facing quizzes use 'title' instead of 'lectureTitle' */
+  title?: string;
   topics: QuizTopic[];
 }
 

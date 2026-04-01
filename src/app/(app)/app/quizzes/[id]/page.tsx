@@ -7,124 +7,12 @@ import { useRouter } from "next/navigation";
 import { BookOpen, ChevronDown, ChevronRight, PlayCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Accordion } from "@/components/ui/accordion";
 import { api } from "@/lib/api";
 import { useBreadcrumbStore } from "@/store/breadcrumb";
 import type { QuizDetail, QuizLecture, QuizTopic, QuizQuestion } from "@/types/session";
 
-// ─── Question row ─────────────────────────────────────────────────────────────
-
-function QuestionRow({ q }: { q: QuizQuestion }) {
-  return (
-    <div className="border border-border/30 bg-card/20 px-4 py-3">
-      <div className="flex items-start gap-2">
-        <Badge
-          variant="outline"
-          className="shrink-0 text-[8px] font-mono h-4 px-1.5 uppercase mt-0.5"
-        >
-          {q.type === "mcq" ? "MCQ" : "Free"}
-        </Badge>
-        <p className="text-[12px] font-mono text-foreground leading-relaxed">
-          {q.question}
-        </p>
-      </div>
-
-      {/* Options */}
-      {q.options && q.options.length > 0 && (
-        <ul className="mt-2 ml-8 flex flex-col gap-1">
-          {q.options.map((opt, i) => (
-            <li
-              key={i}
-              className={`text-[10px] font-mono ${
-                opt === q.correctAnswer
-                  ? "text-green-500"
-                  : "text-muted-foreground/60"
-              }`}
-            >
-              {String.fromCharCode(65 + i)}. {opt}
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {/* Correct answer (free text) */}
-      {q.correctAnswer && (!q.options || q.options.length === 0) && (
-        <p className="mt-2 ml-8 text-[10px] font-mono text-muted-foreground/50">
-          Answer:{" "}
-          <span className="text-green-500">{q.correctAnswer}</span>
-        </p>
-      )}
-    </div>
-  );
-}
-
-// ─── Topic accordion ──────────────────────────────────────────────────────────
-
-function TopicSection({ topic }: { topic: QuizTopic }) {
-  const [open, setOpen] = useState(true);
-  return (
-    <div>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center gap-2 py-2 text-left"
-      >
-        {open ? (
-          <ChevronDown className="size-3.5 shrink-0 text-muted-foreground/40" />
-        ) : (
-          <ChevronRight className="size-3.5 shrink-0 text-muted-foreground/40" />
-        )}
-        <span className="text-[11px] font-mono font-semibold text-foreground">
-          {topic.topicTitle}
-        </span>
-        <span className="text-[9px] font-mono text-muted-foreground/40">
-          {topic.questions.length} Qs
-        </span>
-      </button>
-      {open && (
-        <div className="ml-5 flex flex-col gap-2 mb-3">
-          {topic.questions.map((q) => (
-            <QuestionRow key={q.id} q={q} />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Lecture accordion ────────────────────────────────────────────────────────
-
-function LectureSection({ lecture }: { lecture: QuizLecture }) {
-  const [open, setOpen] = useState(true);
-  const totalQ = lecture.topics.reduce((s, t) => s + t.questions.length, 0);
-  return (
-    <div className="border border-border/40 bg-card/20 px-4 py-3">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center gap-2 text-left"
-      >
-        {open ? (
-          <ChevronDown className="size-4 shrink-0 text-muted-foreground/50" />
-        ) : (
-          <ChevronRight className="size-4 shrink-0 text-muted-foreground/50" />
-        )}
-        <span className="font-mono font-bold text-sm text-foreground flex-1 truncate">
-          {lecture.lectureTitle}
-        </span>
-        <span className="text-[9px] font-mono text-muted-foreground/40 shrink-0">
-          {lecture.topics.length} topics · {totalQ} Qs
-        </span>
-      </button>
-      {open && (
-        <div className="mt-3 flex flex-col gap-0">
-          {lecture.topics.map((t) => (
-            <TopicSection key={t.topicTitle} topic={t} />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+import { LectureSection, QuizStatsBar } from "@/components/app/quizzes/quiz-content";
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -194,7 +82,7 @@ export default function QuizDetailPage({
               className="mb-8"
             >
               <div className="flex items-start justify-between gap-4">
-                <div>
+                <div className="flex-1">
                   {(quiz.courseTitle || quiz.courseCode) && (
                     <p className="mb-2 text-[11px] font-mono text-muted-foreground/60">
                       {[quiz.courseTitle, quiz.courseCode]
@@ -202,20 +90,11 @@ export default function QuizDetailPage({
                         .join(" · ")}
                     </p>
                   )}
-                  <div className="flex items-center gap-2">
-                    <Badge
-                      variant="outline"
-                      className="text-[9px] font-mono h-4 px-1.5"
-                    >
-                      {totalQuestions} questions
-                    </Badge>
-                    <Badge
-                      variant="outline"
-                      className="text-[9px] font-mono h-4 px-1.5"
-                    >
-                      {quiz.lectures.length} lectures
-                    </Badge>
-                  </div>
+                  <QuizStatsBar
+                    questionCount={totalQuestions ?? 0}
+                    lectureCount={quiz.lectures.length}
+                    className="flex-1"
+                  />
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <Button
@@ -254,9 +133,10 @@ export default function QuizDetailPage({
                 initial="hidden"
                 animate="visible"
               >
-                {quiz.lectures.map((lecture) => (
+              <Accordion type="multiple" className="grid gap-3">
+                {quiz.lectures.map((lecture, idx) => (
                   <motion.div
-                    key={lecture.lectureTitle}
+                    key={`${lecture.lectureTitle}-${idx}`}
                     variants={{
                       hidden: { opacity: 0, y: 10 },
                       visible: {
@@ -266,9 +146,10 @@ export default function QuizDetailPage({
                       },
                     }}
                   >
-                    <LectureSection lecture={lecture} />
+                    <LectureSection lecture={lecture} index={idx} />
                   </motion.div>
                 ))}
+              </Accordion>
               </motion.div>
             )}
           </>

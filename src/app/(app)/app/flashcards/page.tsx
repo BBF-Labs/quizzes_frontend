@@ -13,14 +13,16 @@ import {
 } from "@/hooks/app/use-app-library";
 import { GenerationDialog } from "@/components/app/library/generation-dialog";
 
+import { format } from "date-fns";
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  try {
+    return format(new Date(iso), "MMM d, yyyy");
+  } catch {
+    return iso;
+  }
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -60,7 +62,7 @@ export default function FlashcardsPage() {
     }
   };
 
-  const handleGenerate = async (materialId: string) => {
+  const handleGenerate = async (materialId: string, settings?: any) => {
     await generateFlashcardsMutation.mutateAsync({ materialId });
   };
 

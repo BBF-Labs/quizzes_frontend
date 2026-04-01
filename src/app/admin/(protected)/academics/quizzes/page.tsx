@@ -5,6 +5,14 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { Plus, Search, X, GraduationCap, Trash2, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import {
   useAdminQuizzes,
@@ -26,7 +34,8 @@ const STATUS_COLORS: Record<string, string> = {
 
 function CreateQuizForm({ onClose }: { onClose: () => void }) {
   const createMutation = useAdminCreateQuiz();
-  const { data: courses = [] } = useAdminCourses();
+  const { data: coursesResult } = useAdminCourses({ limit: 200 });
+  const courses = coursesResult?.data ?? [];
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -154,27 +163,32 @@ function CreateQuizForm({ onClose }: { onClose: () => void }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminQuizzesPage() {
-  const { data: quizzes = [], isLoading } = useAdminQuizzes();
   const deleteMutation = useAdminDeleteQuiz();
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
-  const filtered = quizzes.filter((q: any) => {
-    if (statusFilter && q.status !== statusFilter) return false;
-    if (!search.trim()) return true;
-    const re = new RegExp(search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
-    return re.test(q.title) || q.tags.some((t: string) => re.test(t));
-  });
-
-  const totalPages = Math.ceil(filtered.length / pageSize);
-  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(t);
+  }, [search]);
 
   useEffect(() => {
     setPage(1);
-  }, [search, statusFilter]);
+  }, [debouncedSearch, statusFilter]);
+
+  const { data: result, isLoading } = useAdminQuizzes({
+    page,
+    limit: pageSize,
+    search: debouncedSearch,
+    status: statusFilter,
+  });
+  const quizzes = result?.data ?? [];
+  const totalPages = result?.pagination.totalPages ?? 1;
+  const totalCount = result?.pagination.total ?? 0;
 
 
 
@@ -214,15 +228,18 @@ export default function AdminQuizzesPage() {
 
       {showCreate && <CreateQuizForm onClose={() => setShowCreate(false)} />}
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/50" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <Input
             placeholder="Search quizzes…"
-            className="w-full border border-border/50 bg-card/40 pl-9 pr-9 py-2.5 text-[12px] font-mono placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50 transition-colors"
+            className="pl-9 rounded-(--radius) bg-background/50 font-mono text-xs uppercase tracking-widest"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
           />
           {search && (
             <button
@@ -233,16 +250,31 @@ export default function AdminQuizzesPage() {
             </button>
           )}
         </div>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="border border-border/50 bg-card/40 px-3 py-2.5 text-[12px] font-mono text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors"
+        <Select
+          value={statusFilter || "all"}
+          onValueChange={(value) => {
+            setStatusFilter(value === "all" ? "" : value);
+            setPage(1);
+          }}
         >
-          <option value="">All statuses</option>
-          <option value="draft">Draft</option>
-          <option value="published">Published</option>
-          <option value="archived">Archived</option>
-        </select>
+          <SelectTrigger className="w-full sm:w-auto sm:min-w-40 rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+            <SelectValue placeholder="All Statuses" />
+          </SelectTrigger>
+          <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
+            <SelectItem value="all" className="rounded-(--radius) font-mono text-xs uppercase">
+              All Statuses
+            </SelectItem>
+            <SelectItem value="draft" className="rounded-(--radius) font-mono text-xs uppercase">
+              Draft
+            </SelectItem>
+            <SelectItem value="published" className="rounded-(--radius) font-mono text-xs uppercase">
+              Published
+            </SelectItem>
+            <SelectItem value="archived" className="rounded-(--radius) font-mono text-xs uppercase">
+              Archived
+            </SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Loading */}
@@ -255,7 +287,7 @@ export default function AdminQuizzesPage() {
       )}
 
       {/* Empty */}
-      {!isLoading && filtered.length === 0 && (
+      {!isLoading && quizzes.length === 0 && (
         <div className="flex flex-col items-center gap-3 py-16 text-center">
           <div className="flex size-12 items-center justify-center border border-primary/20 bg-primary/5">
             <GraduationCap className="size-5 text-primary/60" />
@@ -267,10 +299,10 @@ export default function AdminQuizzesPage() {
       )}
 
       {/* Grid */}
-      {!isLoading && paginated.length > 0 && (
+      {!isLoading && quizzes.length > 0 && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {paginated.map((quiz) => (
+            {quizzes.map((quiz) => (
               <div
                 key={quiz._id}
                 className="group relative border border-border/40 bg-card/30 hover:border-primary/40 transition-all"
@@ -331,7 +363,7 @@ export default function AdminQuizzesPage() {
 
 
       <p className="text-[10px] font-mono text-muted-foreground/30 uppercase tracking-widest">
-        {filtered.length} of {quizzes.length} quizzes
+        {totalCount} quiz{totalCount !== 1 ? "zes" : ""}
       </p>
     </div>
   );
