@@ -394,3 +394,17 @@ export const useAdminRemoveTimetableEntry = (timetableId: string) => {
     },
   });
 };
+
+export const useAdminSyncTimetable = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { startDate?: string; days?: number; semester?: string; academicYear?: string }) => {
+      const res = await api.post<ApiData<any>>("/admin/learning/timetables/sync", data);
+      return res.data?.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "timetables"] });
+      qc.invalidateQueries({ queryKey: ["admin", "courses"] });
+    },
+  });
+};

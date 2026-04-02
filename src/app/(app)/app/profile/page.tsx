@@ -17,10 +17,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/auth-context";
-import { cn } from "@/lib/utils";
 import { useProfileCheck, useProfileUpdate } from "@/hooks";
 import { useUploadFile, IUpload } from "@/hooks";
 import { toast } from "sonner";
+import { Bell, MessageSquare, Check, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const ROLE_LABELS: Record<string, string> = {
   student: "Student",
@@ -40,6 +41,18 @@ export default function ProfilePage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [localPreview, setLocalPreview] = useState<string | null>(null);
   const [uploadedPicture, setUploadedPicture] = useState<IUpload | null>(null);
+
+  // Notification Preferences State
+  type NotifChannels = { email: boolean; push: boolean; inApp: boolean };
+  type NotifSettings = {
+    examReminders: NotifChannels & { reminderIntervals: string[] };
+    courseAnnouncements: NotifChannels;
+  };
+
+  const [notifSettings, setNotifSettings] = useState<NotifSettings>(user?.notificationSettings || {
+    examReminders: { email: true, push: true, inApp: true, reminderIntervals: ["7", "3", "1"] },
+    courseAnnouncements: { email: true, push: true, inApp: true },
+  });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadMutation = useUploadFile();
@@ -66,7 +79,14 @@ export default function ProfilePage() {
       }, 500);
       return () => clearTimeout(timer);
     }
+    
   }, [currentPassword, checkMutation]);
+
+  useEffect(() => {
+    if (user?.notificationSettings) {
+      setNotifSettings(user.notificationSettings);
+    }
+  }, [user?.notificationSettings]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -107,6 +127,7 @@ export default function ProfilePage() {
         currentPassword: currentPassword || undefined,
         password: newPassword || undefined,
         profilePicture: uploadedPicture ? uploadedPicture._id : undefined,
+        notificationSettings: notifSettings,
       },
       {
         onSuccess: (data: { data?: { accessToken?: string; refreshToken?: string }; accessToken?: string; refreshToken?: string }) => {
@@ -376,11 +397,90 @@ export default function ProfilePage() {
         </div>
       </motion.div>
 
-      {/* Save */}
+      {/* Communication Preferences */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ ease: "easeOut", duration: 0.3, delay: 0.2 }}
+        className="border border-border/50 bg-card/40"
+      >
+        <div className="flex items-center gap-2 px-5 py-3 border-b border-border/50">
+          <Bell className="size-3.5 text-primary" />
+          <span className="text-[10px] font-mono uppercase tracking-[0.2em] font-medium">
+            Communication
+          </span>
+        </div>
+
+        <div className="p-5 space-y-6">
+          {/* Exam Reminders */}
+          <div className="space-y-4">
+             <div className="flex items-center gap-2">
+                <div className="h-px w-4 bg-primary/30" />
+                <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground">Exam Reminders</span>
+             </div>
+             
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <PreferenceToggle 
+                  label="Email Alerts"
+                  description="Receive 7, 3, and 1-day reminders via email."
+                  enabled={notifSettings.examReminders?.email !== false}
+                  onToggle={() => setNotifSettings((prev: NotifSettings) => ({
+                    ...prev,
+                    examReminders: { ...prev.examReminders, email: !prev.examReminders?.email }
+                  }))}
+                  icon={Mail}
+                />
+                <PreferenceToggle 
+                  label="Push Notifications"
+                  description="Get instant reminders on your device."
+                  enabled={notifSettings.examReminders?.push !== false}
+                  onToggle={() => setNotifSettings((prev: NotifSettings) => ({
+                    ...prev,
+                    examReminders: { ...prev.examReminders, push: !prev.examReminders?.push }
+                  }))}
+                  icon={Bell}
+                />
+             </div>
+          </div>
+
+          {/* Timetable Updates */}
+          <div className="space-y-4">
+             <div className="flex items-center gap-2">
+                <div className="h-px w-4 bg-primary/30" />
+                <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground">Timetable Shifts</span>
+             </div>
+             
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <PreferenceToggle 
+                  label="Email Updates"
+                  description="Get notified if a venue or time changes."
+                  enabled={notifSettings.courseAnnouncements?.email !== false}
+                  onToggle={() => setNotifSettings((prev: NotifSettings) => ({
+                    ...prev,
+                    courseAnnouncements: { ...prev.courseAnnouncements, email: !prev.courseAnnouncements?.email }
+                  }))}
+                  icon={MessageSquare}
+                />
+                <PreferenceToggle 
+                  label="Urgent Push"
+                  description="Critical alerts for day-of schedule changes."
+                  enabled={notifSettings.courseAnnouncements?.push !== false}
+                  onToggle={() => setNotifSettings((prev: NotifSettings) => ({
+                    ...prev,
+                    courseAnnouncements: { ...prev.courseAnnouncements, push: !prev.courseAnnouncements?.push }
+                  }))}
+                  icon={Bell}
+                />
+             </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Save */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ ease: "easeOut", duration: 0.3, delay: 0.25 }}
         className="flex justify-end"
       >
         <Button
@@ -400,5 +500,54 @@ export default function ProfilePage() {
         </Button>
       </motion.div>
     </div>
+  );
+}
+
+function PreferenceToggle({ 
+  label, 
+  description, 
+  enabled, 
+  onToggle, 
+  icon: Icon 
+}: { 
+  label: string; 
+  description: string; 
+  enabled: boolean; 
+  onToggle: () => void;
+  icon: any;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className={cn(
+        "flex flex-col items-start text-left p-4 border transition-all duration-200 group relative overflow-hidden",
+        enabled 
+          ? "border-primary/40 bg-primary/5 shadow-[0_0_10px_rgba(0,110,255,0.05)]" 
+          : "border-border/40 bg-card/20 opacity-60 grayscale hover:grayscale-0 hover:opacity-100"
+      )}
+    >
+      <div className="flex items-center gap-3 mb-2">
+        <div className={cn(
+          "size-6 flex items-center justify-center border transition-colors duration-200",
+          enabled ? "border-primary bg-primary text-white" : "border-border bg-background text-muted-foreground"
+        )}>
+          {enabled ? <Check className="size-3" /> : <X className="size-3" />}
+        </div>
+        <div className="flex items-center gap-2">
+          <Icon className={cn("size-3.5", enabled ? "text-primary" : "text-muted-foreground")} />
+          <span className="text-[10px] font-mono font-bold uppercase tracking-widest">{label}</span>
+        </div>
+      </div>
+      <p className="text-[9px] font-mono text-muted-foreground leading-relaxed">
+        {description}
+      </p>
+
+      {/* Decorative corner */}
+      <div className={cn(
+        "absolute top-0 right-0 size-6 border-t border-r transition-colors duration-200",
+        enabled ? "border-primary/20" : "border-transparent"
+      )} />
+    </button>
   );
 }

@@ -57,4 +57,14 @@ export const queryKeys = {
     detail: (id: string) =>
       [...queryKeys.systemQuizzes.root, "detail", id] as const,
   },
+  enrollments: {
+    root: ["enrollments"] as const,
+    list: (params?: Record<string, unknown>) =>
+      [...queryKeys.enrollments.root, "list", params] as const,
+  },
+  timetable: {
+    root: ["timetable"] as const,
+    mine: (semester: string, academicYear: string) =>
+      [...queryKeys.timetable.root, "mine", semester, academicYear] as const,
+  },
 };

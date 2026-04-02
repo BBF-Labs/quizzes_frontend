@@ -12,6 +12,7 @@ export type SessionUser = {
   role?: "student" | "creator" | "moderator" | "super_admin";
   isSubscribed?: boolean;
   profilePicture?: string;
+  notificationSettings?: any;
   onboarding?: {
     completed: boolean;
     currentStep: number;
@@ -28,6 +29,7 @@ type JwtPayload = {
   role?: "student" | "creator" | "moderator" | "super_admin";
   isSubscribed?: boolean;
   profilePicture?: string;
+  notificationSettings?: any;
   onboarding?: {
     completed: boolean;
     currentStep: number;
@@ -73,5 +75,6 @@ export function hydrateSessionUserFromToken(): SessionUser | null {
     isSubscribed: decoded.isSubscribed ?? false,
     profilePicture: decoded.profilePicture,
     onboarding: decoded.onboarding,
+    notificationSettings: decoded.notificationSettings,
   };
 }
