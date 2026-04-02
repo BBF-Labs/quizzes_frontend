@@ -4,7 +4,7 @@ export const queryKeys = {
   app: {
     root: ["app"] as const,
     lists: () => [...queryKeys.app.root, "list"] as const,
-    listQueryOptions: (options?: Record<string, any>) =>
+    listQueryOptions: (options?: Record<string, unknown>) =>
       [...queryKeys.app.lists(), options] as const,
     details: () => [...queryKeys.app.root, "detail"] as const,
     detail: (id: string) => [...queryKeys.app.details(), id] as const,

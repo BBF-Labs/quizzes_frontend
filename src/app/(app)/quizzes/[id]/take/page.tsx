@@ -18,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useSystemQuiz } from "@/hooks/app/use-quizzes";
 import { QuizConfigScreen } from "@/components/app/quizzes/quiz-config-screen";
-import type { QuizQuestion, QuizConfig } from "@/types/session";
+import type { QuizDetail, QuizQuestion, QuizConfig } from "@/types/session";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -158,7 +158,7 @@ export default function SystemQuizTakePage({
   useEffect(() => {
     if (timeLeft === null || done) return;
     if (timeLeft <= 0) {
-      setDone(true);
+      setTimeout(() => setDone(true), 0);
       return;
     }
     const t = setTimeout(() => setTimeLeft((v) => (v ?? 1) - 1), 1000);
@@ -174,7 +174,7 @@ export default function SystemQuizTakePage({
       setAnswers((prev) => ({ ...prev, [q.id]: opt }));
       if (config?.feedbackMode === "immediate") {
         setRevealed((prev) => ({ ...prev, [q.id]: true }));
-        const correct = q.correctAnswer || (q as any).answer;
+        const correct = q.correctAnswer;
         if (opt === correct) {
           controls.start({
             scale: [1, 1.02, 1],
@@ -188,7 +188,7 @@ export default function SystemQuizTakePage({
         }
       }
     },
-    [q, revealed, quiz, controls],
+    [q, revealed, quiz, controls, config?.feedbackMode],
   );
 
   const handleNext = () => {
@@ -212,7 +212,7 @@ export default function SystemQuizTakePage({
   const score = useMemo(() => {
     return questions.filter((q) => {
       if (!q) return false;
-      const correct = q.correctAnswer || (q as any).answer;
+      const correct = q.correctAnswer;
       return answers[q.id] === correct;
     }).length;
   }, [questions, answers]);
@@ -255,7 +255,7 @@ export default function SystemQuizTakePage({
     return (
       <div className="py-8">
         <QuizConfigScreen
-          quiz={quiz as any}
+          quiz={{ ...quiz, id: quiz._id } as QuizDetail}
           initialConfig={{
             timerMode: quiz.settings.timeLimit ? "total" : "none",
             timerSeconds: (quiz.settings.timeLimit || 0) * 60,
@@ -268,6 +268,19 @@ export default function SystemQuizTakePage({
           onStart={handleStart}
         />
       </div>
+    );
+  }
+
+  if (done) {
+    return (
+      <ResultsScreen
+        score={score}
+        total={questions.length}
+        passed={passed}
+        passingScore={quiz.passingScore ?? 70}
+        onRetake={handleRetake}
+        onBack={() => router.back()}
+      />
     );
   }
 

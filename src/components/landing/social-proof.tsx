@@ -74,10 +74,10 @@ export function SocialProof() {
                   </span>
                 </div>
                 <blockquote className="flex-1 text-[15px] text-muted-foreground mb-8 leading-relaxed font-light">
-                  "Z caught that I always struggled with recursion before I even
+                  &quot;Z caught that I always struggled with recursion before I even
                   knew it. The curriculum framework stripped all the noise away.
-                  It taught me that my edge isn't in guessing, it's in my
-                  discipline. I'm finally mastering my courses."
+                  It taught me that my edge isn&apos;t in guessing, it&apos;s in my
+                  discipline. I&apos;m finally mastering my courses.&quot;
                 </blockquote>
                 <div className="pt-6 border-t border-border/50 flex items-center gap-4 mt-auto">
                   <div className="w-8 h-8 rounded-(--radius) border border-border/80 bg-secondary flex items-center justify-center text-[10px] font-mono font-bold text-foreground">
@@ -113,9 +113,9 @@ export function SocialProof() {
                   </span>
                 </div>
                 <blockquote className="flex-1 text-[15px] text-muted-foreground mb-8 leading-relaxed font-light">
-                  "The community here is different. No hype, no shortcuts. Just
+                  &quot;The community here is different. No hype, no shortcuts. Just
                   serious people refining a craft. The focus on stewardship of
-                  my study time changed my entire life perspective."
+                  my study time changed my entire life perspective.&quot;
                 </blockquote>
                 <div className="pt-6 border-t border-border/50 flex items-center gap-4 mt-auto">
                   <div className="w-8 h-8 rounded-(--radius) border border-border/80 bg-secondary flex items-center justify-center text-[10px] font-mono font-bold text-foreground">
@@ -151,10 +151,10 @@ export function SocialProof() {
                   </span>
                 </div>
                 <blockquote className="flex-1 text-[15px] text-muted-foreground mb-8 leading-relaxed font-light">
-                  "Structured. Authoritative. Necessary. If you need someone to
+                  &quot;Structured. Authoritative. Necessary. If you need someone to
                   hold your hand, go elsewhere. If you want a platform that
                   systematically forces you to understand your curriculum, this
-                  is it."
+                  is it.&quot;
                 </blockquote>
                 <div className="pt-6 border-t border-border/50 flex items-center gap-4 mt-auto">
                   <div className="w-8 h-8 rounded-(--radius) border border-border/80 bg-secondary flex items-center justify-center text-[10px] font-mono font-bold text-foreground">

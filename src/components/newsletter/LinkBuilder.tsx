@@ -139,7 +139,7 @@ function LinkItem({
               {link.pathTemplate
                 .split("/")
                 .filter(Boolean)
-                .map((seg, sIdx, array) => (
+                .map((seg, sIdx) => (
                   <React.Fragment key={`${sIdx}-${seg}`}>
                     {isEditingPath === sIdx ? (
                       <Input
@@ -156,10 +156,10 @@ function LinkItem({
                             "/" + segments.join("/"),
                           );
                         }}
-                        onBlur={() => setIsEditingPath(-1 as any)}
+                        onBlur={() => setIsEditingPath(-1)}
                         onKeyDown={(e) => {
-                          if (e.key === "Enter") setIsEditingPath(-1 as any);
-                          if (e.key === "Escape") setIsEditingPath(-1 as any);
+                          if (e.key === "Enter") setIsEditingPath(-1);
+                          if (e.key === "Escape") setIsEditingPath(-1);
                         }}
                         disabled={disabled}
                         className="h-7 py-0 px-2 min-w-20 w-auto inline-block rounded-(--radius) font-mono text-[11px] bg-background border-primary"
@@ -415,7 +415,7 @@ export function LinkBuilder({ links, onChange, disabled }: LinkBuilderProps) {
                 No links active
               </p>
               <p className="text-[10px] font-mono mt-1 italic">
-                Click a template or "New Link" to start
+                Click a template or &quot;New Link&quot; to start
               </p>
             </div>
           ) : (

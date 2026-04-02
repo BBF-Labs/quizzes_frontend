@@ -44,28 +44,29 @@ export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadMutation = useUploadFile();
 
-  const isChecking = checkProfile.isPending;
+  const { mutate: checkMutation, isPending: isChecking, data: checkData } = useProfileCheck();
+
   const isUsernameTaken =
-    checkProfile.data?.username?.exists && username !== user?.username;
-  const isPasswordValid = checkProfile.data?.password?.valid;
+    checkData?.username?.exists && username !== user?.username;
+  const isPasswordValid = checkData?.password?.valid;
 
   useEffect(() => {
     if (username && username !== user?.username) {
       const timer = setTimeout(() => {
-        checkProfile.mutate({ username });
+        checkMutation({ username });
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [username, user?.username, checkProfile.mutate]);
+  }, [username, user?.username, checkMutation]);
 
   useEffect(() => {
     if (currentPassword.length >= 4) {
       const timer = setTimeout(() => {
-        checkProfile.mutate({ currentPassword });
+        checkMutation({ currentPassword });
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [currentPassword, checkProfile.mutate]);
+  }, [currentPassword, checkMutation]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -108,7 +109,7 @@ export default function ProfilePage() {
         profilePicture: uploadedPicture ? uploadedPicture._id : undefined,
       },
       {
-        onSuccess: (data: any) => {
+        onSuccess: (data: { data?: { accessToken?: string; refreshToken?: string }; accessToken?: string; refreshToken?: string }) => {
           toast.success("Profile updated");
           const resData = data.data ?? data;
           if (resData.accessToken) {

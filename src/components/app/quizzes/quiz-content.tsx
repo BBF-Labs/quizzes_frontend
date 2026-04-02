@@ -188,7 +188,7 @@ export function QuizStatsBar({
   questionCount: number;
   lectureCount: number;
   passingScore?: number;
-  settings?: any;
+  settings?: { timeLimit?: number } & Record<string, unknown>;
   className?: string;
 }) {
   const stats = [

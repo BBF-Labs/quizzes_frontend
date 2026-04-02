@@ -29,7 +29,7 @@ export default function SystemQuizzesPage() {
     [search],
   );
 
-  const filtered = quizzes.filter((q: any) => {
+  const filtered = quizzes.filter((q: { title: string; description?: string; tags?: string[] }) => {
     if (searchRe && !searchRe.test(q.title) && !searchRe.test(q.description ?? "")) return false;
     if (tagFilter && !q.tags?.includes(tagFilter)) return false;
     return true;
@@ -38,11 +38,7 @@ export default function SystemQuizzesPage() {
   const totalPages = Math.ceil(filtered.length / pageSize);
   const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
 
-  useEffect(() => {
-    setPage(1);
-  }, [search, tagFilter]);
-
-  const allTags = Array.from(new Set(quizzes.flatMap((q: any) => q.tags ?? []).filter(Boolean)));
+  const allTags = Array.from(new Set(quizzes.flatMap((q: { tags?: string[] }) => q.tags ?? []).filter(Boolean)));
 
   return (
     <div className="min-h-full px-4 py-8">
@@ -81,14 +77,20 @@ export default function SystemQuizzesPage() {
             <input
               type="text"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
               placeholder="Search quizzes…"
               className="w-full border border-border/50 bg-card/40 pl-9 pr-9 py-2.5 text-[12px] font-mono placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50 transition-colors"
             />
             {search && (
               <button
                 type="button"
-                onClick={() => setSearch("")}
+                onClick={() => {
+                  setSearch("");
+                  setPage(1);
+                }}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-muted-foreground"
               >
                 <X className="size-3.5" />
@@ -98,7 +100,10 @@ export default function SystemQuizzesPage() {
           {allTags.length > 0 && (
             <select
               value={tagFilter}
-              onChange={(e) => setTagFilter(e.target.value)}
+              onChange={(e) => {
+                setTagFilter(e.target.value);
+                setPage(1);
+              }}
               className="border border-border/50 bg-card/40 px-3 py-2.5 text-[12px] font-mono text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors"
             >
               <option value="">All topics</option>

@@ -176,9 +176,7 @@ export default function AdminQuizzesPage() {
     return () => clearTimeout(t);
   }, [search]);
 
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch, statusFilter]);
+
 
   const { data: result, isLoading } = useAdminQuizzes({
     page,
@@ -243,7 +241,10 @@ export default function AdminQuizzesPage() {
           />
           {search && (
             <button
-              onClick={() => setSearch("")}
+              onClick={() => {
+                setSearch("");
+                setPage(1);
+              }}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-muted-foreground"
             >
               <X className="size-3.5" />

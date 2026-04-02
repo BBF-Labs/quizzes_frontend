@@ -228,7 +228,7 @@ export const useAdminArchiveQuiz = () => {
 export const useAdminPatchQuiz = (id: string) => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (data: Record<string, any>) => {
+    mutationFn: async (data: Record<string, unknown>) => {
       const res = await api.patch<ApiData<AdminQuizDetail>>(`/admin/learning/quizzes/${id}`, data);
       return res.data?.data;
     },

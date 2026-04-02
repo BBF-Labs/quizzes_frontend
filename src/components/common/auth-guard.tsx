@@ -15,7 +15,7 @@ export function AuthGuard({ children, requireSuperAdmin = false }: AuthGuardProp
   const pathname = usePathname();
 
   const isAuthLoading = isLoading || isHydrating || isValidating;
-  const [showChildren, setShowChildren] = useState(false);
+  const canShow = !isAuthLoading && !!user && (!requireSuperAdmin || isSuperAdminRole);
 
   useEffect(() => {
     if (!isAuthLoading) {
@@ -23,13 +23,11 @@ export function AuthGuard({ children, requireSuperAdmin = false }: AuthGuardProp
         router.replace(`/login?redirectUrl=${encodeURIComponent(pathname)}`);
       } else if (requireSuperAdmin && !isSuperAdminRole) {
         router.replace(`/app`);
-      } else {
-        setShowChildren(true);
       }
     }
   }, [user, isSuperAdminRole, isAuthLoading, requireSuperAdmin, pathname, router]);
 
-  if (!showChildren) {
+  if (!canShow) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center space-y-4">
         <Loader2 className="size-8 text-primary animate-spin" />

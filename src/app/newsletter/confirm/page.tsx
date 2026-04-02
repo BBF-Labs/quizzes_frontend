@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { useConfirmNewsletter } from "@/hooks";
@@ -13,14 +13,14 @@ function ConfirmContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const { mutate, isPending, isSuccess, isError } = useConfirmNewsletter();
-  const [initialized, setInitialized] = useState(false);
+  const initialized = useRef(false);
 
   useEffect(() => {
-    if (token && !initialized) {
+    if (token && !initialized.current) {
       mutate(token);
-      setInitialized(true);
+      initialized.current = true;
     }
-  }, [token, mutate, initialized]);
+  }, [token, mutate]);
 
   return (
     <div className="max-w-md w-full mx-auto">

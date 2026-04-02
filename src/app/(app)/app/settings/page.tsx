@@ -1,20 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Brain, Users, Tag } from "lucide-react";
 
 // ─── localStorage-backed toggle ───────────────────────────────────────────────
 
 function useLocalToggle(key: string, defaultValue: boolean) {
-  const [value, setValue] = useState(defaultValue);
-
-  useEffect(() => {
+  const [value, setValue] = useState(() => {
+    if (typeof window === "undefined") return defaultValue;
     try {
       const stored = localStorage.getItem(key);
-      if (stored !== null) setValue(JSON.parse(stored) as boolean);
-    } catch {}
-  }, [key]);
+      return stored !== null ? (JSON.parse(stored) as boolean) : defaultValue;
+    } catch {
+      return defaultValue;
+    }
+  });
 
   const toggle = () => {
     setValue((prev) => {
@@ -30,14 +31,15 @@ function useLocalToggle(key: string, defaultValue: boolean) {
 }
 
 function useLocalSelect(key: string, defaultValue: string) {
-  const [value, setValue] = useState(defaultValue);
-
-  useEffect(() => {
+  const [value, setValue] = useState(() => {
+    if (typeof window === "undefined") return defaultValue;
     try {
       const stored = localStorage.getItem(key);
-      if (stored) setValue(stored);
-    } catch {}
-  }, [key]);
+      return stored !== null ? stored : defaultValue;
+    } catch {
+      return defaultValue;
+    }
+  });
 
   const set = (next: string) => {
     setValue(next);

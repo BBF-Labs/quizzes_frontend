@@ -38,7 +38,7 @@ interface GenerationDialogProps {
   onOpenChange: (open: boolean) => void;
   title: string;
   description: string;
-  onGenerate: (materialId: string, settings?: any) => Promise<void>;
+  onGenerate: (materialId: string, settings?: Record<string, unknown>) => Promise<void>;
   type: "flashcards" | "quiz" | "mindmap" | "notes";
 }
 

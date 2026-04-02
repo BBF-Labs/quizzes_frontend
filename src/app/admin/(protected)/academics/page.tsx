@@ -3,14 +3,17 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { BookOpen, GraduationCap, ArrowRight, Plus } from "lucide-react";
-import { useAdminCourses, useAdminQuizzes } from "@/hooks/admin/use-academics";
+import { useAdminCourses, useAdminQuizzes, AdminCourse, AdminQuiz } from "@/hooks/admin/use-academics";
 
 export default function AcademicsHubPage() {
-  const { data: courses = [] } = useAdminCourses();
-  const { data: quizzes = [] } = useAdminQuizzes();
+  const { data: coursesResponse } = useAdminCourses();
+  const { data: quizzesResponse } = useAdminQuizzes();
 
-  const published = quizzes.filter((q) => q.status === "published").length;
-  const drafts = quizzes.filter((q) => q.status === "draft").length;
+  const courses = coursesResponse?.data ?? [];
+  const quizzes = quizzesResponse?.data ?? [];
+
+  const published = quizzes.filter((q: AdminQuiz) => q.status === "published").length;
+  const drafts = quizzes.filter((q: AdminQuiz) => q.status === "draft").length;
 
   const cards = [
     {

@@ -144,9 +144,7 @@ export default function AdminCoursesPage() {
     return () => clearTimeout(t);
   }, [search]);
 
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch]);
+
 
   const { data: result, isLoading } = useAdminCourses({ page, limit: pageSize, search: debouncedSearch });
   const courses = result?.data ?? [];
@@ -197,7 +195,10 @@ export default function AdminCoursesPage() {
           />
           {search && (
             <button
-              onClick={() => setSearch("")}
+              onClick={() => {
+                setSearch("");
+                setPage(1);
+              }}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-muted-foreground"
             >
               <X className="size-3.5" />
