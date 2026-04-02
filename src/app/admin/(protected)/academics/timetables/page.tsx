@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Plus, 
@@ -12,7 +12,9 @@ import {
   Clock, 
   MapPin,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  RefreshCw,
+  Zap
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -23,11 +25,29 @@ import {
   useAdminAddTimetableEntry,
   useAdminRemoveTimetableEntry,
   useAdminCourses,
+  useAdminSyncTimetable,
 } from "@/hooks/admin/use-academics";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Combobox,
+  ComboboxInput,
+  ComboboxContent,
+  ComboboxList,
+  ComboboxItem,
+  ComboboxEmpty,
+} from "@/components/ui/combobox";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 // --- Create Timetable Form ---
 function CreateTimetableForm({ onClose }: { onClose: () => void }) {
@@ -67,15 +87,19 @@ function CreateTimetableForm({ onClose }: { onClose: () => void }) {
       <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1.5 block">Semester</label>
-          <Input
-            type="number"
-            min={1}
-            max={2}
+          <Select
             value={form.semester}
-            onChange={(e) => setForm(f => ({ ...f, semester: e.target.value }))}
-            className="font-mono"
-            required
-          />
+            onValueChange={(val) => setForm(f => ({ ...f, semester: val }))}
+          >
+            <SelectTrigger className="w-full font-mono h-10 uppercase tracking-widest">
+              <SelectValue placeholder="Select Semester" />
+            </SelectTrigger>
+            <SelectContent className="font-mono uppercase tracking-widest">
+              <SelectItem value="1">Semester 1</SelectItem>
+              <SelectItem value="2">Semester 2</SelectItem>
+              <SelectItem value="3">Semester 3</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div>
           <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1.5 block">Academic Year</label>
@@ -99,19 +123,129 @@ function CreateTimetableForm({ onClose }: { onClose: () => void }) {
     </motion.div>
   );
 }
+// --- Sync Timetable Dialog ---
+function SyncTimetableDialog({ onClose }: { onClose: () => void }) {
+  const syncMutation = useAdminSyncTimetable();
+  const [form, setForm] = useState({
+    startDate: new Date().toISOString(),
+    days: 7,
+    semester: "Semester 1",
+    academicYear: "2025-2026",
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await syncMutation.mutateAsync(form);
+      toast.success("Timetable synchronization completed");
+      onClose();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Sync failed");
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="border border-primary/30 bg-primary/5 p-6 mb-8 rounded-lg"
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+           <Zap className="size-4 text-primary animate-pulse" />
+           <h3 className="text-sm font-mono font-bold uppercase tracking-widest text-primary">Sync with University SIS</h3>
+        </div>
+        <button onClick={onClose} className="text-muted-foreground/50 hover:text-foreground">
+          <X className="size-4" />
+        </button>
+      </div>
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div>
+          <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1.5 block">Start Date</label>
+          <DateTimePicker
+            date={new Date(form.startDate)}
+            setDate={(date) => setForm(f => ({ ...f, startDate: date.toISOString() }))}
+          />
+        </div>
+        <div>
+          <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1.5 block">Days to Scrape</label>
+          <Input
+            type="number"
+            value={form.days}
+            onChange={(e) => setForm(f => ({ ...f, days: parseInt(e.target.value) }))}
+            className="font-mono"
+            required
+          />
+        </div>
+        <div>
+          <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1.5 block">Semester</label>
+          <Select
+            value={form.semester}
+            onValueChange={(val) => setForm(f => ({ ...f, semester: val }))}
+          >
+            <SelectTrigger className="w-full font-mono h-10 uppercase tracking-widest">
+              <SelectValue placeholder="Semester" />
+            </SelectTrigger>
+            <SelectContent className="font-mono uppercase tracking-widest">
+              <SelectItem value="Semester 1">Semester 1</SelectItem>
+              <SelectItem value="Semester 2">Semester 2</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1.5 block">Academic Year</label>
+          <Input
+            placeholder="e.g. 2025-2026"
+            value={form.academicYear}
+            onChange={(e) => setForm(f => ({ ...f, academicYear: e.target.value }))}
+            className="font-mono"
+            required
+          />
+        </div>
+        <div className="sm:col-span-2 lg:col-span-4 flex justify-end gap-3 mt-2">
+          <Button type="button" variant="ghost" onClick={onClose} className="font-mono text-[10px] uppercase tracking-widest">
+            Cancel
+          </Button>
+          <Button 
+            type="submit" 
+            disabled={syncMutation.isPending} 
+            className="font-mono text-[10px] uppercase tracking-widest bg-primary hover:bg-primary/90 text-primary-foreground min-w-[140px]"
+          >
+            {syncMutation.isPending ? (
+              <>
+                <RefreshCw className="mr-2 size-3 animate-spin" />
+                Scraping...
+              </>
+            ) : "Trigger Scraper"}
+          </Button>
+        </div>
+      </form>
+    </motion.div>
+  );
+}
 
 // --- Add Entry Form ---
 function AddEntryForm({ timetableId, onAdded }: { timetableId: string; onAdded: () => void }) {
   const addMutation = useAdminAddTimetableEntry(timetableId);
-  const { data: coursesData } = useAdminCourses({ limit: 100 });
+  const [courseSearch, setCourseSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(courseSearch), 300);
+    return () => clearTimeout(t);
+  }, [courseSearch]);
+
+  const { data: coursesData } = useAdminCourses({ limit: 50, search: debouncedSearch });
   const courses = coursesData?.data || [];
 
   const [form, setForm] = useState({
     courseId: "",
-    scheduledAt: "",
+    scheduledAt: new Date().toISOString(),
     venue: "",
     durationMinutes: 120,
   });
+
+  const selectedCourse = courses.find(c => c._id === form.courseId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,7 +261,8 @@ function AddEntryForm({ timetableId, onAdded }: { timetableId: string; onAdded: 
         courseName: "", // Backend will populate
       });
       toast.success("Entry added");
-      setForm({ courseId: "", scheduledAt: "", venue: "", durationMinutes: 120 });
+      setForm({ courseId: "", scheduledAt: new Date().toISOString(), venue: "", durationMinutes: 120 });
+      setCourseSearch("");
       onAdded();
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to add entry");
@@ -138,26 +273,43 @@ function AddEntryForm({ timetableId, onAdded }: { timetableId: string; onAdded: 
     <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-3 bg-secondary/5 p-3 border border-border/40 rounded-md mb-4">
       <div className="md:col-span-1">
         <label className="text-[9px] font-mono uppercase text-muted-foreground mb-1 block">Course</label>
-        <select
+        <Combobox
           value={form.courseId}
-          onChange={(e) => setForm(f => ({ ...f, courseId: e.target.value }))}
-          className="w-full bg-background border border-border/50 text-[11px] h-9 px-2 font-mono focus:outline-none focus:ring-1 focus:ring-primary/50"
-          required
+          onValueChange={(val) => {
+            const courseId = val as string;
+            setForm(f => ({ ...f, courseId }));
+            const course = courses.find(c => c._id === courseId);
+            if (course) setCourseSearch(`${course.code} - ${course.title}`);
+          }}
         >
-          <option value="">Select Course</option>
-          {courses.map(c => (
-            <option key={c._id} value={c._id}>{c.code} - {c.title}</option>
-          ))}
-        </select>
+          <ComboboxInput
+            placeholder="Search Course..."
+            className="h-9 text-[11px] font-mono uppercase tracking-widest w-full"
+            value={courseSearch}
+            onChange={(e) => setCourseSearch(e.target.value)}
+          />
+          <ComboboxContent className="font-mono border-border/40">
+            <ComboboxEmpty className="font-mono text-[10px] uppercase p-2">No courses found</ComboboxEmpty>
+            <ComboboxList className="max-h-60 no-scrollbar">
+              {courses.map((c: any) => (
+                <ComboboxItem
+                  key={c._id}
+                  value={c._id}
+                  className="text-[10px] uppercase tracking-tighter"
+                >
+                  <span className="font-bold text-primary mr-2">{c.code}</span>
+                  <span className="truncate">{c.title}</span>
+                </ComboboxItem>
+              ))}
+            </ComboboxList>
+          </ComboboxContent>
+        </Combobox>
       </div>
       <div>
         <label className="text-[9px] font-mono uppercase text-muted-foreground mb-1 block">Date & Time</label>
-        <Input
-          type="datetime-local"
-          value={form.scheduledAt}
-          onChange={(e) => setForm(f => ({ ...f, scheduledAt: e.target.value }))}
-          className="h-9 text-[11px] font-mono"
-          required
+        <DateTimePicker
+          date={new Date(form.scheduledAt)}
+          setDate={(date) => setForm(f => ({ ...f, scheduledAt: date.toISOString() }))}
         />
       </div>
       <div>
@@ -337,6 +489,7 @@ function TimetableRow({ timetable }: { timetable: any }) {
 export default function AdminTimetablesPage() {
   const { data: timetables, isLoading } = useAdminTimetables();
   const [showCreate, setShowCreate] = useState(false);
+  const [showSync, setShowSync] = useState(false);
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
@@ -354,11 +507,21 @@ export default function AdminTimetablesPage() {
              Exam Timetables
           </h1>
         </div>
-        <Button onClick={() => setShowCreate(true)} className="rounded-none font-mono uppercase tracking-widest px-6">
-          <Plus className="mr-2 h-4 w-4" /> Initialize
-        </Button>
+        <div className="flex gap-3">
+          <Button 
+            variant="outline"
+            onClick={() => setShowSync(true)} 
+            className="rounded-none font-mono uppercase tracking-widest px-6 border-primary/30 text-primary hover:bg-primary/10"
+          >
+            <RefreshCw className="mr-2 h-4 w-4" /> Sync with SIS
+          </Button>
+          <Button onClick={() => setShowCreate(true)} className="rounded-none font-mono uppercase tracking-widest px-6">
+            <Plus className="mr-2 h-4 w-4" /> Initialize
+          </Button>
+        </div>
       </div>
 
+      {showSync && <SyncTimetableDialog onClose={() => setShowSync(false)} />}
       {showCreate && <CreateTimetableForm onClose={() => setShowCreate(false)} />}
 
       <div className="grid grid-cols-1">

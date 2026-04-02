@@ -69,7 +69,7 @@ export function UserProfileDropdown({
           <Link href="/app" className="w-full flex items-center gap-2">
             <LayoutDashboard className="size-4 text-muted-foreground group-hover:text-white transition-colors" />
             <span className="font-mono text-xs uppercase tracking-widest group-hover:text-white transition-colors">
-              My Sessions
+              App
             </span>
           </Link>
         </DropdownMenuItem>

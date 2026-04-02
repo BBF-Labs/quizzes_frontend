@@ -10,13 +10,15 @@ import {
   Trash2,
   ChevronRight,
   Loader2,
+  Check,
+  X,
 } from "lucide-react";
 import {
   useMyCourses,
   useEnrollInCourse,
   useUnenrollFromCourse,
 } from "@/hooks/app/use-user-courses";
-import { useCourseSearch } from "@/hooks/common/use-courses";
+import { ICourse, useCourseSearch } from "@/hooks/common/use-courses";
 import { useDebounce } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -54,7 +56,7 @@ export default function MyCoursesPage() {
   const [selectedYear, setSelectedYear] = useState("2025-2026");
 
   const { data: enrollments = [], isLoading: isEnrollmentsLoading } =
-    useMyCourses(selectedSemester, selectedYear);
+    useMyCourses();
   const enrollMutation = useEnrollInCourse();
   const unenrollMutation = useUnenrollFromCourse();
 
@@ -64,18 +66,27 @@ export default function MyCoursesPage() {
     useCourseSearch(debouncedSearch);
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  const [selectedCourseIds, setSelectedCourseIds] = useState<Set<string>>(new Set());
+  const [selectedCourses, setSelectedCourses] = useState<ICourse[]>([]);
 
   const handleEnroll = async () => {
-    if (!selectedCourseId) return;
-    await enrollMutation.mutateAsync({
-      courseId: selectedCourseId,
-      semester: selectedSemester,
-      academicYear: selectedYear,
-    });
-    setIsAddDialogOpen(false);
-    setSelectedCourseId(null);
-    setCourseSearch("");
+    if (selectedCourseIds.size === 0) return;
+    try {
+      const enrollmentPromises = Array.from(selectedCourseIds).map((courseId) =>
+        enrollMutation.mutateAsync({
+          courseId,
+          semester: selectedSemester,
+          academicYear: selectedYear,
+        }),
+      );
+      await Promise.all(enrollmentPromises);
+      setIsAddDialogOpen(false);
+      setSelectedCourseIds(new Set());
+      setSelectedCourses([]);
+      setCourseSearch("");
+    } catch (err: any) {
+      // Error handling is likely done via global toast
+    }
   };
 
   return (
@@ -137,65 +148,190 @@ export default function MyCoursesPage() {
                   Search for a course to add to your semester enrollment.
                 </DialogDescription>
               </DialogHeader>
-              <div className="py-4 space-y-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Course code or title..."
-                    value={courseSearch}
-                    onChange={(e) => {
-                      setCourseSearch(e.target.value);
-                      setSelectedCourseId(null);
-                    }}
-                    className="pl-10 font-mono text-sm"
-                  />
-                </div>
-
-                <div className="max-h-[200px] overflow-y-auto space-y-2 no-scrollbar">
-                  {isSearching ? (
-                    <div className="flex items-center justify-center py-4">
-                      <Loader2 className="size-4 animate-spin text-primary" />
-                    </div>
-                  ) : searchResults.length > 0 ? (
-                    searchResults.map((c) => (
-                      <button
-                        key={c._id}
-                        onClick={() => setSelectedCourseId(c._id)}
-                        className={cn(
-                          "w-full text-left p-3 border transition-all flex flex-col gap-1",
-                          selectedCourseId === c._id
-                            ? "border-primary bg-primary/5"
-                            : "border-border/40 hover:border-primary/40 hover:bg-muted/50",
+              <div className="py-6 space-y-4">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground block">
+                      Select Course
+                    </label>
+                    <div className="space-y-4">
+                      {/* Selection Summary at Top */}
+                      <AnimatePresence>
+                        {selectedCourses.length > 0 && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="flex flex-wrap gap-2 pb-4 border-b border-border/20">
+                              {selectedCourses.map((c) => (
+                                <motion.div
+                                  layout
+                                  key={c._id}
+                                  initial={{ scale: 0.8, opacity: 0 }}
+                                  animate={{ scale: 1, opacity: 1 }}
+                                  exit={{ scale: 0.8, opacity: 0 }}
+                                  className="flex items-center gap-2 px-2 py-1 bg-primary/10 border border-primary/30 rounded text-[10px] font-mono uppercase tracking-[0.1em] group/chip"
+                                >
+                                  <span className="text-primary font-bold">{c.code}</span>
+                                  <button
+                                    onClick={() => {
+                                      setSelectedCourseIds((prev) => {
+                                        const next = new Set(prev);
+                                        next.delete(c._id);
+                                        return next;
+                                      });
+                                      setSelectedCourses((prev) => prev.filter(x => x._id !== c._id));
+                                    }}
+                                    className="p-0.5 hover:bg-primary/20 rounded-full transition-colors"
+                                  >
+                                    <X className="size-2.5 text-primary" />
+                                  </button>
+                                </motion.div>
+                              ))}
+                              <Button
+                                variant="ghost"
+                                size="xs"
+                                onClick={() => {
+                                  setSelectedCourseIds(new Set());
+                                  setSelectedCourses([]);
+                                }}
+                                className="text-[8px] font-mono uppercase tracking-widest text-muted-foreground hover:text-destructive h-6"
+                              >
+                                Clear All
+                              </Button>
+                            </div>
+                          </motion.div>
                         )}
-                      >
-                        <span className="font-mono text-[11px] font-bold uppercase truncate">
-                          {c.title}
-                        </span>
-                        <span className="font-mono text-[9px] tracking-widest text-muted-foreground uppercase">
-                          {c.code}
-                        </span>
-                      </button>
-                    ))
-                  ) : courseSearch.length >= 2 ? (
-                    <p className="text-center py-4 text-[10px] font-mono text-muted-foreground uppercase">
-                      No courses found
-                    </p>
-                  ) : (
-                    <p className="text-center py-4 text-[10px] font-mono text-muted-foreground uppercase">
-                      Start typing to search
-                    </p>
-                  )}
+                      </AnimatePresence>
+
+                      {/* Integrated Search Input */}
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+                        <Input
+                          placeholder="SEARCH BY COURSE CODE OR TITLE..."
+                          value={courseSearch}
+                          onChange={(e) => setCourseSearch(e.target.value)}
+                          className="pl-9 font-mono text-[10px] uppercase tracking-[0.2em] bg-zinc-900/30 h-10 border-border/40 focus:border-primary/50 transition-colors"
+                          autoFocus
+                        />
+                      </div>
+
+                      {/* Integrated Scrollable List */}
+                      <div className="border border-border/40 rounded-md bg-zinc-950/20 overflow-hidden">
+                        <div className="max-h-[320px] overflow-y-auto no-scrollbar py-2 px-2 space-y-1">
+                          {isSearching && searchResults.length === 0 ? (
+                            <div className="py-16 text-center space-y-3">
+                              <Loader2 className="size-5 animate-spin mx-auto text-primary" />
+                              <p className="text-[9px] font-mono uppercase tracking-[0.3em] text-muted-foreground animate-pulse">
+                                Indexing Platform...
+                              </p>
+                            </div>
+                          ) : searchResults.length === 0 ? (
+                            <div className="py-16 text-center">
+                              <p className="text-[9px] font-mono uppercase tracking-[0.3em] text-muted-foreground/60">
+                                No Matching Courses Found
+                              </p>
+                            </div>
+                          ) : (
+                            searchResults.map((c) => {
+                              const isAlreadyEnrolled = enrollments.some(
+                                (e) =>
+                                  e.courseId?._id === c._id &&
+                                  e.semester === selectedSemester &&
+                                  e.academicYear === selectedYear
+                              );
+                              const isSelected = selectedCourseIds.has(c._id);
+
+                              return (
+                                <button
+                                  key={c._id}
+                                  disabled={isAlreadyEnrolled}
+                                  onClick={() => {
+                                    if (isAlreadyEnrolled) return;
+                                    setSelectedCourseIds((prev) => {
+                                      const next = new Set(prev);
+                                      if (isSelected) {
+                                        next.delete(c._id);
+                                      } else {
+                                        next.add(c._id);
+                                      }
+                                      return next;
+                                    });
+                                    setSelectedCourses((prev) => {
+                                      if (isSelected) {
+                                        return prev.filter((x) => x._id !== c._id);
+                                      } else {
+                                        return [...prev, c];
+                                      }
+                                    });
+                                  }}
+                                  className={cn(
+                                    "w-full text-left p-3 rounded transition-all duration-200 group/item relative",
+                                    isAlreadyEnrolled
+                                      ? "opacity-50 cursor-not-allowed bg-zinc-900/20"
+                                      : isSelected
+                                      ? "bg-primary/5 border border-primary/20 shadow-[0_0_15px_-5px_rgba(var(--primary-rgb),0.2)]"
+                                      : "hover:bg-zinc-900/50 border border-transparent"
+                                  )}
+                                >
+                                  <div className="flex items-center justify-between gap-4">
+                                    <div className="flex flex-col gap-0.5 min-w-0">
+                                      <span
+                                        className={cn(
+                                          "font-bold text-[11px] font-mono uppercase tracking-widest transition-colors",
+                                          isAlreadyEnrolled
+                                            ? "text-muted-foreground"
+                                            : isSelected
+                                            ? "text-primary"
+                                            : "text-foreground/90 group-hover/item:text-foreground"
+                                        )}
+                                      >
+                                        {c.code}
+                                      </span>
+                                      <span className="text-[9px] text-muted-foreground/70 truncate font-mono uppercase tracking-tighter group-hover/item:text-muted-foreground transition-colors">
+                                        {c.title}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                      {isAlreadyEnrolled && (
+                                        <div className="px-1.5 py-0.5 rounded-sm bg-zinc-800 border border-border/20 text-[7px] font-mono font-bold text-muted-foreground uppercase tracking-widest">
+                                          Synced
+                                        </div>
+                                      )}
+                                      {isSelected && !isAlreadyEnrolled && (
+                                        <motion.div
+                                          initial={{ scale: 0.5, opacity: 0 }}
+                                          animate={{ scale: 1, opacity: 1 }}
+                                          className="size-4 rounded-full bg-primary flex items-center justify-center shadow-[0_0_10px_rgba(var(--primary-rgb),0.5)]"
+                                        >
+                                          <Check className="size-2.5 text-black stroke-[3]" />
+                                        </motion.div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </button>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
               <DialogFooter>
                 <Button
-                  disabled={!selectedCourseId || enrollMutation.isPending}
+                  disabled={selectedCourseIds.size === 0 || enrollMutation.isPending}
                   onClick={handleEnroll}
                   className="w-full font-mono text-[11px] uppercase tracking-widest"
                 >
                   {enrollMutation.isPending
                     ? "Enrolling..."
-                    : "Enroll in Course"}
+                    : selectedCourseIds.size > 1
+                      ? `Enroll in ${selectedCourseIds.size} Courses`
+                      : "Enroll in Course"}
                 </Button>
               </DialogFooter>
             </DialogContent>

@@ -3,17 +3,39 @@ import { api } from "@/lib/api";
 import { queryKeys } from "@/lib/query-keys";
 import type { SystemQuizSummary, SystemQuizDetail } from "@/types/session";
 
-type ApiData<T> = { data: T };
+type ApiData<T> = { data: T; meta?: PaginationMeta };
 
-export const useSystemQuizzes = (search?: string) =>
+export interface PaginationMeta {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface QuizzesListParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  tags?: string;
+}
+
+export const useSystemQuizzes = (params?: QuizzesListParams) =>
   useQuery({
-    queryKey: [...queryKeys.systemQuizzes.list(), { search }],
+    queryKey: [...queryKeys.systemQuizzes.list(), params],
     queryFn: async () => {
-      const params = search ? `?search=${encodeURIComponent(search)}` : "";
+      const qs = new URLSearchParams();
+      if (params?.page) qs.set("page", String(params.page));
+      if (params?.limit) qs.set("limit", String(params.limit));
+      if (params?.search) qs.set("search", params.search);
+      if (params?.tags) qs.set("tags", params.tags);
+      const query = qs.toString() ? `?${qs.toString()}` : "";
       const res = await api.get<ApiData<SystemQuizSummary[]>>(
-        `/learning/quizzes${params}`,
+        `/learning/quizzes${query}`,
       );
-      return res.data?.data ?? [];
+      return {
+        quizzes: res.data?.data ?? [],
+        pagination: res.data?.meta ?? null,
+      };
     },
   });
 
@@ -21,7 +43,7 @@ export const useSystemQuiz = (id: string, enabled = true) =>
   useQuery({
     queryKey: queryKeys.systemQuizzes.detail(id),
     queryFn: async () => {
-      const res = await api.get<ApiData<SystemQuizDetail>>(
+      const res = await api.get<{ data: SystemQuizDetail }>(
         `/learning/quizzes/${id}`,
       );
       return res.data?.data ?? null;

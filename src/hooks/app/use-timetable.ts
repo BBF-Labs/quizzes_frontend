@@ -16,9 +16,12 @@ export interface IExamEntry {
   courseId: string;
   courseCode: string;
   courseName: string;
+  examType: "midterm" | "final" | "resit" | "supplementary";
   scheduledAt: string; // ISO Date String
   venue: string;
   durationMinutes: number;
+  semester: string;
+  academicYear: string;
 }
 
 export function useMyTimetable(semester: string, academicYear: string) {

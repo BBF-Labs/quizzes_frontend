@@ -170,6 +170,12 @@ export default function TimetablePage() {
                         >
                           {entry.courseCode}
                         </Badge>
+                        <Badge
+                          variant="outline"
+                          className="font-mono text-[9px] uppercase tracking-widest h-5 rounded-none border-primary/30 text-primary/70"
+                        >
+                          {entry.examType}
+                        </Badge>
                         {isPast && (
                           <Badge
                             variant="secondary"

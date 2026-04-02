@@ -189,46 +189,6 @@ export function AppSidebar() {
 
         <SidebarGroup>
           <SidebarGroupLabel className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground/50 px-4 mb-2">
-            Academics
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname === "/app/courses"}
-                  className={cn(
-                    "h-9 px-4 rounded-(--radius) transition-all duration-200",
-                    pathname === "/app/courses" ? "bg-primary/5 text-primary border-r-2 border-primary" : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                  )}
-                >
-                  <Link href="/app/courses">
-                    <GraduationCap className="size-4" />
-                    <span className="font-mono text-[11px] uppercase tracking-widest">My Courses</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname === "/app/timetable"}
-                  className={cn(
-                    "h-9 px-4 rounded-(--radius) transition-all duration-200",
-                    pathname === "/app/timetable" ? "bg-primary/5 text-primary border-r-2 border-primary" : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                  )}
-                >
-                  <Link href="/app/timetable">
-                    <Calendar className="size-4" />
-                    <span className="font-mono text-[11px] uppercase tracking-widest">Timetable</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground/50 px-4 mb-2">
             Tools
           </SidebarGroupLabel>
           <SidebarGroupContent>
