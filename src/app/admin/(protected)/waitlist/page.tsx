@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   UserPlus,
@@ -27,9 +27,28 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
 export default function WaitlistPage() {
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
+  const search = searchParams.get("search") ?? "";
+  const statusFilter = searchParams.get("status") ?? "";
+
+  const updateQueryParams = (updates: Record<string, string | null>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    for (const [key, value] of Object.entries(updates)) {
+      if (!value) {
+        params.delete(key);
+      } else {
+        params.set(key, value);
+      }
+    }
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, {
+      scroll: false,
+    });
+  };
+
   const { data: waitlistData, isLoading } = useWaitlist({
     page,
     limit: 20,
@@ -73,16 +92,17 @@ export default function WaitlistPage() {
             className="pl-9 rounded-(--radius) bg-background/50 font-mono text-xs uppercase tracking-widest"
             value={search}
             onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
+              updateQueryParams({ search: e.target.value || null, page: "1" });
             }}
           />
         </div>
         <Select
           value={statusFilter || "all"}
           onValueChange={(value) => {
-            setStatusFilter(value === "all" ? "" : value);
-            setPage(1);
+            updateQueryParams({
+              status: value === "all" ? null : value,
+              page: "1",
+            });
           }}
         >
           <SelectTrigger className="w-full sm:w-auto sm:min-w-140 rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
@@ -232,7 +252,9 @@ export default function WaitlistPage() {
           <PaginationController
             page={page}
             totalPages={totalPages}
-            onPageChange={setPage}
+            onPageChange={(nextPage) =>
+              updateQueryParams({ page: String(nextPage) })
+            }
           />
         </CardContent>
       </Card>
