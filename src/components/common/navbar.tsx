@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   motion,
@@ -17,9 +17,16 @@ import OnboardingBanner from "@/components/onboarding/OnboardingBanner";
 import { api } from "@/lib/api";
 import { useAuthQuery } from "@/hooks";
 import { queryKeys } from "@/lib/query-keys";
+import {
+  ONBOARDING_BANNER_VISIBILITY_EVENT,
+  isOnboardingBannerTemporarilyHidden,
+} from "@/lib/onboarding-banner";
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isBannerTemporarilyHidden, setIsBannerTemporarilyHidden] = useState(
+    () => isOnboardingBannerTemporarilyHidden(),
+  );
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
@@ -44,7 +51,27 @@ export function Navbar() {
     !!user &&
     !isOnboardingPath &&
     !onboardingStatusLoading &&
-    !onboardingCompleted;
+    !onboardingCompleted &&
+    !isBannerTemporarilyHidden;
+
+  useEffect(() => {
+    const refreshHiddenState = () => {
+      setIsBannerTemporarilyHidden(isOnboardingBannerTemporarilyHidden());
+    };
+
+    window.addEventListener(
+      ONBOARDING_BANNER_VISIBILITY_EVENT,
+      refreshHiddenState,
+    );
+    window.addEventListener("storage", refreshHiddenState);
+    return () => {
+      window.removeEventListener(
+        ONBOARDING_BANNER_VISIBILITY_EVENT,
+        refreshHiddenState,
+      );
+      window.removeEventListener("storage", refreshHiddenState);
+    };
+  }, []);
 
   const backgroundColor = useTransform(
     scrollY,
@@ -108,6 +135,12 @@ export function Navbar() {
                 className="text-xs font-mono font-medium tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors uppercase"
               >
                 Quizzes
+              </Link>
+              <Link
+                href="/timetable"
+                className="text-xs font-mono font-medium tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors uppercase"
+              >
+                Timetable
               </Link>
             </nav>
             <div className="flex items-center space-x-4">
@@ -175,6 +208,14 @@ export function Navbar() {
                   className="w-full justify-start rounded-(--radius) font-mono tracking-widest uppercase"
                 >
                   Quizzes
+                </Button>
+              </Link>
+              <Link href="/timetable" className="w-full">
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start rounded-(--radius) font-mono tracking-widest uppercase"
+                >
+                  Timetable
                 </Button>
               </Link>
               <Button
