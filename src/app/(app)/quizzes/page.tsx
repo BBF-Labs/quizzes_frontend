@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { GraduationCap, Search, X } from "lucide-react";
 import { useSystemQuizzes } from "@/hooks/app/use-quizzes";
@@ -11,18 +12,35 @@ const PAGE_SIZE = 12;
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function SystemQuizzesPage() {
-  const [search, setSearch] = useState("");
-  const [tagFilter, setTagFilter] = useState("");
-  const [page, setPage] = useState(1);
+function SystemQuizzesContent() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  // Committed search state — only sent to the server after debounce / explicit submit
-  const [committedSearch, setCommittedSearch] = useState("");
+  const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
+  const search = searchParams.get("search") ?? "";
+  const tagFilter = searchParams.get("tag") ?? "";
+
+  const updateQueryParams = (updates: Record<string, string | null>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    for (const [key, value] of Object.entries(updates)) {
+      if (!value) {
+        params.delete(key);
+      } else {
+        params.set(key, value);
+      }
+    }
+
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, {
+      scroll: false,
+    });
+  };
 
   const { data, isLoading, error: queryError } = useSystemQuizzes({
     page,
     limit: PAGE_SIZE,
-    search: committedSearch || undefined,
+    search: search || undefined,
     tags: tagFilter || undefined,
   });
 
@@ -32,20 +50,15 @@ export default function SystemQuizzesPage() {
   const total = pagination?.total ?? 0;
 
   const handleSearch = (value: string) => {
-    setSearch(value);
-    setCommittedSearch(value);
-    setPage(1);
+    updateQueryParams({ search: value || null, page: "1" });
   };
 
   const handleClearSearch = () => {
-    setSearch("");
-    setCommittedSearch("");
-    setPage(1);
+    updateQueryParams({ search: null, page: "1" });
   };
 
   const handleTagChange = (value: string) => {
-    setTagFilter(value);
-    setPage(1);
+    updateQueryParams({ tag: value || null, page: "1" });
   };
 
   return (
@@ -135,7 +148,7 @@ export default function SystemQuizzesPage() {
               <GraduationCap className="size-6 text-primary/60" />
             </div>
             <p className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground/50">
-              {committedSearch || tagFilter
+                {search || tagFilter
                 ? "No quizzes match your filters"
                 : "No quizzes available yet."}
             </p>
@@ -176,7 +189,9 @@ export default function SystemQuizzesPage() {
               <PaginationController
                 page={page}
                 totalPages={totalPages}
-                onPageChange={setPage}
+                onPageChange={(nextPage) =>
+                  updateQueryParams({ page: String(nextPage) })
+                }
                 className="mt-6"
               />
             )}
@@ -187,10 +202,33 @@ export default function SystemQuizzesPage() {
         {!isLoading && total > 0 && (
           <p className="mt-8 text-center text-[10px] font-mono uppercase tracking-widest text-muted-foreground/30">
             {total} {total === 1 ? "quiz" : "quizzes"}
-            {(committedSearch || tagFilter) && " matching filters"}
+            {(search || tagFilter) && " matching filters"}
           </p>
         )}
       </div>
     </div>
+  );
+}
+
+export default function SystemQuizzesPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-full px-4 py-8">
+          <div className="mx-auto max-w-5xl">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[...Array(6)].map((_, i) => (
+                <div
+                  key={i}
+                  className="h-36 animate-pulse bg-card/40 border border-border/30"
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <SystemQuizzesContent />
+    </Suspense>
   );
 }

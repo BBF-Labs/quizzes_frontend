@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import {
   Search,
@@ -15,6 +16,7 @@ import { format } from "date-fns";
 import { usePublicTimetables } from "@/hooks/use-public-exams";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { PaginationController } from "@/components/common/pagination-controller";
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -45,26 +47,37 @@ const formatDuration = (minutes: number) => {
   return `${hours}h ${remainingMinutes}m`;
 };
 
-export default function PublicExamsPage() {
-  const [search, setSearch] = useState("");
-  const [studentId, setStudentId] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [debouncedStudentId, setDebouncedStudentId] = useState("");
+function PublicExamsContent() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
+  const search = searchParams.get("search") ?? "";
+  const studentId = searchParams.get("studentId") ?? "";
+  const pageSize = 10;
+
+  const updateQueryParams = (updates: Record<string, string | null>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    for (const [key, value] of Object.entries(updates)) {
+      if (!value) {
+        params.delete(key);
+      } else {
+        params.set(key, value);
+      }
+    }
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, {
+      scroll: false,
+    });
+  };
+
   const [nowMs, setNowMs] = useState(() => Date.now());
-  const { data: timetables, isLoading } = usePublicTimetables(
-    debouncedSearch,
-    debouncedStudentId,
+  const { data, isLoading } = usePublicTimetables(
+    search,
+    studentId,
+    page,
+    pageSize,
   );
-
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(search), 500);
-    return () => clearTimeout(t);
-  }, [search]);
-
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedStudentId(studentId), 500);
-    return () => clearTimeout(t);
-  }, [studentId]);
 
   useEffect(() => {
     const timer = setInterval(() => setNowMs(Date.now()), 60000);
@@ -72,16 +85,12 @@ export default function PublicExamsPage() {
   }, []);
 
   const allEntries =
-    timetables
-      ?.flatMap((t) =>
-        t.entries.map((e) => ({
-          ...e,
-          semester: t.semester,
-          academicYear: t.academicYear,
-          examDate: new Date(e.scheduledAt),
-        })),
-      )
-      .sort((a, b) => a.examDate.getTime() - b.examDate.getTime()) || [];
+    data?.entries.map((e) => ({
+      ...e,
+      examDate: new Date(e.scheduledAt),
+    })) ?? [];
+  const pagination = data?.pagination;
+  const totalPages = pagination?.totalPages ?? 1;
 
   const nextExam = allEntries[0] ?? null;
   const nextExamDaysAway = nextExam
@@ -140,7 +149,12 @@ export default function PublicExamsPage() {
               type="text"
               placeholder="Search course code (e.g. DCIT313)"
               value={search}
-              onChange={(e) => setSearch(e.target.value.toUpperCase())}
+              onChange={(e) =>
+                updateQueryParams({
+                  search: e.target.value.toUpperCase() || null,
+                  page: "1",
+                })
+              }
               className="h-12 bg-transparent border-none font-mono text-sm placeholder:text-muted-foreground focus-visible:ring-0"
             />
           </div>
@@ -151,7 +165,12 @@ export default function PublicExamsPage() {
               type="text"
               placeholder="Student ID / Index Number"
               value={studentId}
-              onChange={(e) => setStudentId(e.target.value)}
+              onChange={(e) =>
+                updateQueryParams({
+                  studentId: e.target.value || null,
+                  page: "1",
+                })
+              }
               className="h-12 bg-transparent border-none font-mono text-sm placeholder:text-muted-foreground focus-visible:ring-0"
             />
           </div>
@@ -330,7 +349,7 @@ export default function PublicExamsPage() {
                 </div>
               </div>
             </motion.div>
-          ) : debouncedSearch ? (
+          ) : search ? (
             <motion.div
               key="empty"
               initial={{ opacity: 0 }}
@@ -339,7 +358,7 @@ export default function PublicExamsPage() {
             >
               <AlertCircle className="size-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-mono font-bold uppercase text-muted-foreground">
-                No results found for &quot;{debouncedSearch}&quot;
+                No results found for &quot;{search}&quot;
               </h3>
               <p className="text-sm font-mono text-muted-foreground mt-2">
                 Try a different course code.
@@ -359,6 +378,19 @@ export default function PublicExamsPage() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {totalPages > 1 && (
+          <div className="mt-6 border border-border/50 border-t-0">
+            <PaginationController
+              page={page}
+              totalPages={totalPages}
+              onPageChange={(nextPage) =>
+                updateQueryParams({ page: String(nextPage) })
+              }
+              className="border-0"
+            />
+          </div>
+        )}
         <footer className="mt-10 pt-6 border-t border-border/50 text-center">
           <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-[0.3em] font-semibold">
             &copy; 2026 University of Ghana · Powered by Qz Platform
@@ -366,5 +398,28 @@ export default function PublicExamsPage() {
         </footer>
       </div>
     </section>
+  );
+}
+
+export default function PublicExamsPage() {
+  return (
+    <Suspense
+      fallback={
+        <section className="py-20 md:py-28 bg-background border-b border-border/50">
+          <div className="container mx-auto px-4 max-w-6xl">
+            <div className="grid gap-4">
+              {[...Array(3)].map((_, i) => (
+                <div
+                  key={i}
+                  className="h-28 rounded-none bg-card border border-border/50 animate-pulse"
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      }
+    >
+      <PublicExamsContent />
+    </Suspense>
   );
 }

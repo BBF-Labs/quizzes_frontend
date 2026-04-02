@@ -18,29 +18,47 @@ export interface PublicExamEntry {
   durationMinutes: number;
 }
 
-export interface PublicTimetable {
-  _id: string;
+export interface PublicTimetableEntry extends PublicExamEntry {
+  timetableId: string;
   semester: string;
   academicYear: string;
-  isPublished: boolean;
-  entries: PublicExamEntry[];
+}
+
+export interface PublicPaginationMeta {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 export const usePublicTimetables = (
   search: string = "",
   studentId: string = "",
+  page: number = 1,
+  limit: number = 10,
 ) => {
   return useQuery({
-    queryKey: ["public", "timetables", search, studentId],
+    queryKey: ["public", "timetables", search, studentId, page, limit],
     queryFn: async () => {
       const query = new URLSearchParams({
+        page: String(page),
+        limit: String(limit),
         ...(search ? { search } : {}),
         ...(studentId ? { studentId } : {}),
       });
-      const res = await api.get<{ data: PublicTimetable[] }>(
-        `/learning/timetables/public?${query}`,
-      );
-      return res.data?.data ?? [];
+      const res = await api.get<{
+        data: PublicTimetableEntry[];
+        meta?: PublicPaginationMeta;
+      }>(`/learning/timetables/public?${query}`);
+      return {
+        entries: res.data?.data ?? [],
+        pagination: res.data?.meta ?? {
+          total: 0,
+          page,
+          limit,
+          totalPages: 1,
+        },
+      };
     },
     // Don't refetch too often for public data
     staleTime: 1000 * 60 * 5,

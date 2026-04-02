@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion, Variants } from "framer-motion";
 import { Plus, ArrowRight, RefreshCw, Check } from "lucide-react";
@@ -60,9 +61,28 @@ const itemVariants: Variants = {
 };
 
 export default function AdminPage() {
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
+  const search = searchParams.get("search") ?? "";
+  const statusFilter = searchParams.get("status") ?? "";
+
+  const updateQueryParams = (updates: Record<string, string | null>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    for (const [key, value] of Object.entries(updates)) {
+      if (!value) {
+        params.delete(key);
+      } else {
+        params.set(key, value);
+      }
+    }
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, {
+      scroll: false,
+    });
+  };
+
   const {
     data: campaignsData,
     isLoading,
@@ -176,14 +196,12 @@ export default function AdminPage() {
       <SearchFilterBar
         search={search}
         onSearchChange={(value) => {
-          setSearch(value);
-          setPage(1);
+          updateQueryParams({ search: value || null, page: "1" });
         }}
         placeholder="Search campaigns by title or subject..."
         filterValue={statusFilter}
         onFilterChange={(value) => {
-          setStatusFilter(value);
-          setPage(1);
+          updateQueryParams({ status: value || null, page: "1" });
         }}
         filterOptions={[
           { value: "draft", label: "Draft" },
@@ -344,7 +362,12 @@ export default function AdminPage() {
                       key={opt}
                       type="button"
                       variant={form.audience === opt ? "default" : "outline"}
-                      onClick={() => setForm({ ...form, audience: opt as "single" | "broadcast" })}
+                      onClick={() =>
+                        setForm({
+                          ...form,
+                          audience: opt as "single" | "broadcast",
+                        })
+                      }
                       className="flex-1 rounded-(--radius) font-mono text-[10px] uppercase h-10"
                     >
                       {opt}
@@ -486,7 +509,9 @@ export default function AdminPage() {
           <PaginationController
             page={page}
             totalPages={totalPages}
-            onPageChange={setPage}
+            onPageChange={(nextPage) =>
+              updateQueryParams({ page: String(nextPage) })
+            }
           />
         </>
       )}

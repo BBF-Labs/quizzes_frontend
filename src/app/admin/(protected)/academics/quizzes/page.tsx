@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Plus, Search, X, GraduationCap, Trash2, Eye } from "lucide-react";
@@ -164,12 +165,30 @@ function CreateQuizForm({ onClose }: { onClose: () => void }) {
 
 export default function AdminQuizzesPage() {
   const deleteMutation = useAdminDeleteQuiz();
-  const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
   const [showCreate, setShowCreate] = useState(false);
-  const [page, setPage] = useState(1);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
+  const search = searchParams.get("search") ?? "";
+  const statusFilter = searchParams.get("status") ?? "";
   const pageSize = 10;
+
+  const updateQueryParams = (updates: Record<string, string | null>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    for (const [key, value] of Object.entries(updates)) {
+      if (!value) {
+        params.delete(key);
+      } else {
+        params.set(key, value);
+      }
+    }
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, {
+      scroll: false,
+    });
+  };
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
@@ -235,15 +254,13 @@ export default function AdminQuizzesPage() {
             className="pl-9 rounded-(--radius) bg-background/50 font-mono text-xs uppercase tracking-widest"
             value={search}
             onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
+              updateQueryParams({ search: e.target.value || null, page: "1" });
             }}
           />
           {search && (
             <button
               onClick={() => {
-                setSearch("");
-                setPage(1);
+                updateQueryParams({ search: null, page: "1" });
               }}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-muted-foreground"
             >
@@ -254,8 +271,10 @@ export default function AdminQuizzesPage() {
         <Select
           value={statusFilter || "all"}
           onValueChange={(value) => {
-            setStatusFilter(value === "all" ? "" : value);
-            setPage(1);
+            updateQueryParams({
+              status: value === "all" ? null : value,
+              page: "1",
+            });
           }}
         >
           <SelectTrigger className="w-full sm:w-auto sm:min-w-40 rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
@@ -357,7 +376,9 @@ export default function AdminQuizzesPage() {
           <PaginationController
             page={page}
             totalPages={totalPages}
-            onPageChange={setPage}
+            onPageChange={(nextPage) =>
+              updateQueryParams({ page: String(nextPage) })
+            }
           />
         </div>
       )}

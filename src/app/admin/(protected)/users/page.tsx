@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Users, Search, Download, Shield, GraduationCap } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,9 +18,28 @@ import { useUsers } from "@/hooks";
 import { cn } from "@/lib/utils";
 
 export default function UsersPage() {
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState("");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
+  const search = searchParams.get("search") ?? "";
+  const roleFilter = searchParams.get("role") ?? "";
+
+  const updateQueryParams = (updates: Record<string, string | null>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    for (const [key, value] of Object.entries(updates)) {
+      if (!value) {
+        params.delete(key);
+      } else {
+        params.set(key, value);
+      }
+    }
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, {
+      scroll: false,
+    });
+  };
+
   const { data: usersData, isLoading } = useUsers({
     page,
     limit: 20,
@@ -64,16 +83,17 @@ export default function UsersPage() {
             className="pl-9 rounded-(--radius) bg-background/50 font-mono text-xs uppercase tracking-widest"
             value={search}
             onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
+              updateQueryParams({ search: e.target.value || null, page: "1" });
             }}
           />
         </div>
         <Select
           value={roleFilter || "all"}
           onValueChange={(value) => {
-            setRoleFilter(value === "all" ? "" : value);
-            setPage(1);
+            updateQueryParams({
+              role: value === "all" ? null : value,
+              page: "1",
+            });
           }}
         >
           <SelectTrigger className="w-full sm:w-auto sm:min-w-130 rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
@@ -259,7 +279,9 @@ export default function UsersPage() {
           <PaginationController
             page={page}
             totalPages={totalPages}
-            onPageChange={setPage}
+            onPageChange={(nextPage) =>
+              updateQueryParams({ page: String(nextPage) })
+            }
           />
         </CardContent>
       </Card>
