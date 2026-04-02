@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { Calendar, Clock, MapPin, Bell, AlertCircle } from "lucide-react";
@@ -19,9 +19,26 @@ import { Button } from "@/components/ui/button";
 const SEMESTERS = ["Semester 1", "Semester 2", "Summer Session"];
 const ACADEMIC_YEARS = ["2023-2024", "2024-2025", "2025-2026"];
 
+const formatDuration = (minutes: number) => {
+  if (minutes % 60 === 0) {
+    const hours = minutes / 60;
+    return `${hours}h`;
+  }
+
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+
+  if (hours === 0) {
+    return `${remainingMinutes}m`;
+  }
+
+  return `${hours}h ${remainingMinutes}m`;
+};
+
 export default function TimetablePage() {
   const [selectedSemester, setSelectedSemester] = useState("Semester 1");
   const [selectedYear, setSelectedYear] = useState("2025-2026");
+  const [nowMs, setNowMs] = useState(() => Date.now());
 
   const { data: timetables = [], isLoading } = useMyTimetable(
     selectedSemester,
@@ -36,6 +53,11 @@ export default function TimetablePage() {
           new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
       );
   }, [timetables]);
+
+  useEffect(() => {
+    const timer = setInterval(() => setNowMs(Date.now()), 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
@@ -128,7 +150,7 @@ export default function TimetablePage() {
           >
             {allEntries.map((entry) => {
               const dateInfo = formatDate(entry.scheduledAt);
-              const isPast = new Date(entry.scheduledAt).getTime() < Date.now();
+              const isPast = new Date(entry.scheduledAt).getTime() < nowMs;
 
               return (
                 <div
@@ -201,7 +223,7 @@ export default function TimetablePage() {
                         <p className="text-[11px] font-mono font-bold uppercase truncate">
                           {dateInfo.time}{" "}
                           <span className="text-muted-foreground/40 font-normal">
-                            / {entry.durationMinutes}m
+                            / {formatDuration(entry.durationMinutes)}
                           </span>
                         </p>
                       </div>
