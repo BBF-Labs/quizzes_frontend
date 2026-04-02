@@ -3,14 +3,14 @@ import { api } from "@/lib/api";
 
 type ApiData<T> = { data: T };
 
-export interface PaginationMeta {
+export interface AdminPaginationMeta {
   total: number;
   page: number;
   limit: number;
   totalPages: number;
 }
 
-type PaginatedApiData<T> = { data: T; meta: PaginationMeta };
+type PaginatedApiData<T> = { data: T; meta: AdminPaginationMeta };
 
 export interface PaginationParams {
   page?: number;
@@ -106,7 +106,9 @@ export const useAdminCourses = (params: PaginationParams = {}) => {
         limit: String(limit),
         ...(search ? { search } : {}),
       });
-      const res = await api.get<PaginatedApiData<AdminCourse[]>>(`/admin/learning/courses?${query}`);
+      const res = await api.get<PaginatedApiData<AdminCourse[]>>(
+        `/admin/learning/courses?${query}`,
+      );
       return {
         data: res.data?.data ?? [],
         pagination: res.data?.meta ?? { total: 0, page, limit, totalPages: 1 },
@@ -119,7 +121,10 @@ export const useAdminCreateCourse = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<AdminCourse>) => {
-      const res = await api.post<ApiData<AdminCourse>>("/admin/learning/courses", data);
+      const res = await api.post<ApiData<AdminCourse>>(
+        "/admin/learning/courses",
+        data,
+      );
       return res.data?.data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "courses"] }),
@@ -128,7 +133,9 @@ export const useAdminCreateCourse = () => {
 
 // ─── Quiz hooks ───────────────────────────────────────────────────────────────
 
-export const useAdminQuizzes = (params: PaginationParams & { status?: string } = {}) => {
+export const useAdminQuizzes = (
+  params: PaginationParams & { status?: string } = {},
+) => {
   const { page = 1, limit = 10, search = "", status = "" } = params;
   return useQuery({
     queryKey: ["admin", "quizzes", page, limit, search, status],
@@ -139,7 +146,9 @@ export const useAdminQuizzes = (params: PaginationParams & { status?: string } =
         ...(search ? { search } : {}),
         ...(status ? { status } : {}),
       });
-      const res = await api.get<PaginatedApiData<AdminQuiz[]>>(`/admin/learning/quizzes?${query}`);
+      const res = await api.get<PaginatedApiData<AdminQuiz[]>>(
+        `/admin/learning/quizzes?${query}`,
+      );
       return {
         data: res.data?.data ?? [],
         pagination: res.data?.meta ?? { total: 0, page, limit, totalPages: 1 },
@@ -152,7 +161,9 @@ export const useAdminQuiz = (id: string, enabled = true) =>
   useQuery({
     queryKey: ["admin", "quizzes", id],
     queryFn: async () => {
-      const res = await api.get<ApiData<AdminQuizDetail>>(`/admin/learning/quizzes/${id}`);
+      const res = await api.get<ApiData<AdminQuizDetail>>(
+        `/admin/learning/quizzes/${id}`,
+      );
       return res.data?.data ?? null;
     },
     enabled: enabled && !!id,
@@ -162,7 +173,10 @@ export const useAdminCreateQuiz = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<AdminQuiz>) => {
-      const res = await api.post<ApiData<AdminQuizDetail>>("/admin/learning/quizzes", data);
+      const res = await api.post<ApiData<AdminQuizDetail>>(
+        "/admin/learning/quizzes",
+        data,
+      );
       return res.data?.data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "quizzes"] }),
@@ -173,7 +187,10 @@ export const useAdminUpdateQuiz = (id: string) => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<AdminQuiz>) => {
-      const res = await api.put<ApiData<AdminQuizDetail>>(`/admin/learning/quizzes/${id}`, data);
+      const res = await api.put<ApiData<AdminQuizDetail>>(
+        `/admin/learning/quizzes/${id}`,
+        data,
+      );
       return res.data?.data;
     },
     onSuccess: () => {
@@ -229,7 +246,10 @@ export const useAdminPatchQuiz = (id: string) => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data: Record<string, unknown>) => {
-      const res = await api.patch<ApiData<AdminQuizDetail>>(`/admin/learning/quizzes/${id}`, data);
+      const res = await api.patch<ApiData<AdminQuizDetail>>(
+        `/admin/learning/quizzes/${id}`,
+        data,
+      );
       return res.data?.data;
     },
     onSuccess: () => {
@@ -243,21 +263,35 @@ export const useAdminAddQuizQuestion = (quizId: string) => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data: AddQuestionPayload) => {
-      const res = await api.post<ApiData<AdminQuestion>>(`/admin/learning/quizzes/${quizId}/questions`, data);
+      const res = await api.post<ApiData<AdminQuestion>>(
+        `/admin/learning/quizzes/${quizId}/questions`,
+        data,
+      );
       return res.data?.data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "quizzes", quizId] }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["admin", "quizzes", quizId] }),
   });
 };
 
 export const useAdminUpdateQuizQuestion = (quizId: string) => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ questionId, data }: { questionId: string; data: Partial<AdminQuestion> & { type?: string } }) => {
-      const res = await api.put<ApiData<AdminQuestion>>(`/admin/learning/quizzes/${quizId}/questions/${questionId}`, data);
+    mutationFn: async ({
+      questionId,
+      data,
+    }: {
+      questionId: string;
+      data: Partial<AdminQuestion> & { type?: string };
+    }) => {
+      const res = await api.put<ApiData<AdminQuestion>>(
+        `/admin/learning/quizzes/${quizId}/questions/${questionId}`,
+        data,
+      );
       return res.data?.data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "quizzes", quizId] }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["admin", "quizzes", quizId] }),
   });
 };
 
@@ -265,9 +299,12 @@ export const useAdminRemoveQuizQuestion = (quizId: string) => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (questionId: string) => {
-      await api.delete(`/admin/learning/quizzes/${quizId}/questions/${questionId}`);
+      await api.delete(
+        `/admin/learning/quizzes/${quizId}/questions/${questionId}`,
+      );
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "quizzes", quizId] }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["admin", "quizzes", quizId] }),
   });
 };
 
@@ -327,7 +364,9 @@ export const useAdminTimetables = (params: PaginationParams = {}) => {
         limit: String(limit),
         ...(search ? { search } : {}),
       });
-      const res = await api.get<PaginatedApiData<AdminTimetable[]>>(`/admin/learning/timetables?${query}`);
+      const res = await api.get<PaginatedApiData<AdminTimetable[]>>(
+        `/admin/learning/timetables?${query}`,
+      );
       return {
         data: res.data?.data ?? [],
         pagination: res.data?.meta ?? { total: 0, page, limit, totalPages: 1 },
@@ -340,10 +379,14 @@ export const useAdminCreateTimetable = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data: Partial<AdminTimetable>) => {
-      const res = await api.post<ApiData<AdminTimetable>>("/admin/learning/timetables", data);
+      const res = await api.post<ApiData<AdminTimetable>>(
+        "/admin/learning/timetables",
+        data,
+      );
       return res.data?.data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "timetables"] }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["admin", "timetables"] }),
   });
 };
 
@@ -351,10 +394,13 @@ export const useAdminPublishTimetable = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const res = await api.patch<ApiData<AdminTimetable>>(`/admin/learning/timetables/${id}/publish`);
+      const res = await api.patch<ApiData<AdminTimetable>>(
+        `/admin/learning/timetables/${id}/publish`,
+      );
       return res.data?.data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "timetables"] }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["admin", "timetables"] }),
   });
 };
 
@@ -362,7 +408,10 @@ export const useAdminAddTimetableEntry = (timetableId: string) => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data: AdminExamEntry) => {
-      const res = await api.post<ApiData<AdminTimetable>>(`/admin/learning/timetables/${timetableId}/entries`, data);
+      const res = await api.post<ApiData<AdminTimetable>>(
+        `/admin/learning/timetables/${timetableId}/entries`,
+        data,
+      );
       return res.data?.data;
     },
     onSuccess: () => {
@@ -375,8 +424,17 @@ export const useAdminAddTimetableEntry = (timetableId: string) => {
 export const useAdminUpdateTimetableEntry = (timetableId: string) => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ entryId, data }: { entryId: string; data: Partial<AdminExamEntry> }) => {
-      const res = await api.put<ApiData<AdminTimetable>>(`/admin/learning/timetables/${timetableId}/entries/${entryId}`, data);
+    mutationFn: async ({
+      entryId,
+      data,
+    }: {
+      entryId: string;
+      data: Partial<AdminExamEntry>;
+    }) => {
+      const res = await api.put<ApiData<AdminTimetable>>(
+        `/admin/learning/timetables/${timetableId}/entries/${entryId}`,
+        data,
+      );
       return res.data?.data;
     },
     onSuccess: () => {
@@ -390,7 +448,9 @@ export const useAdminRemoveTimetableEntry = (timetableId: string) => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (entryId: string) => {
-      await api.delete(`/admin/learning/timetables/${timetableId}/entries/${entryId}`);
+      await api.delete(
+        `/admin/learning/timetables/${timetableId}/entries/${entryId}`,
+      );
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin", "timetables"] });
@@ -402,8 +462,16 @@ export const useAdminRemoveTimetableEntry = (timetableId: string) => {
 export const useAdminSyncTimetable = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (data: { startDate?: string; days?: number; semester?: string; academicYear?: string }) => {
-      const res = await api.post<ApiData<any>>("/admin/learning/timetables/sync", data);
+    mutationFn: async (data: {
+      startDate?: string;
+      days?: number;
+      semester?: string;
+      academicYear?: string;
+    }) => {
+      const res = await api.post<ApiData<any>>(
+        "/admin/learning/timetables/sync",
+        data,
+      );
       return res.data?.data;
     },
     onSuccess: () => {

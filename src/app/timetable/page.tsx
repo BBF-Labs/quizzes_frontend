@@ -29,6 +29,22 @@ const itemVariants: Variants = {
 const VENUE_NOISE_PATTERN =
   /Exams\s+Calender|Search\s+Schedules|Schedule\s+Generator/i;
 
+const formatDuration = (minutes: number) => {
+  if (minutes % 60 === 0) {
+    const hours = minutes / 60;
+    return `${hours} hour${hours === 1 ? "" : "s"}`;
+  }
+
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+
+  if (hours === 0) {
+    return `${remainingMinutes} minute${remainingMinutes === 1 ? "" : "s"}`;
+  }
+
+  return `${hours}h ${remainingMinutes}m`;
+};
+
 export default function PublicExamsPage() {
   const [search, setSearch] = useState("");
   const [studentId, setStudentId] = useState("");
@@ -207,7 +223,7 @@ export default function PublicExamsPage() {
                     </div>
                     <div>
                       <div className="text-2xl font-black text-foreground font-mono">
-                        {nextExam.durationMinutes}m
+                        {formatDuration(nextExam.durationMinutes)}
                       </div>
                       <div className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase mt-1">
                         Duration
@@ -254,7 +270,7 @@ export default function PublicExamsPage() {
                           </div>
                           <div className="flex items-center gap-1.5">
                             <Clock className="w-3.5 h-3.5 text-primary/80" />
-                            <span>{entry.durationMinutes} minutes</span>
+                            <span>{formatDuration(entry.durationMinutes)}</span>
                           </div>
                         </div>
 
