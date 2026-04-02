@@ -103,6 +103,12 @@ export function Navbar() {
               <span className="text-xs font-mono font-medium tracking-[0.15em] text-muted-foreground hover:text-foreground cursor-pointer transition-colors uppercase">
                 Features
               </span>
+              <Link
+                href="/quizzes"
+                className="text-xs font-mono font-medium tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors uppercase"
+              >
+                Quizzes
+              </Link>
             </nav>
             <div className="flex items-center space-x-4">
               <ThemeToggle />
@@ -163,6 +169,14 @@ export function Navbar() {
               >
                 Features
               </Button>
+              <Link href="/quizzes" className="w-full">
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start rounded-(--radius) font-mono tracking-widest uppercase"
+                >
+                  Quizzes
+                </Button>
+              </Link>
               <Button
                 variant="outline"
                 className="w-full rounded-(--radius) border-primary/40 bg-primary/5 text-primary font-mono tracking-widest uppercase hover:bg-primary hover:text-primary-foreground transition-all duration-300"

@@ -11,6 +11,7 @@ import {
   Settings,
   LogOut,
   GraduationCap,
+  BookOpen,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import {
@@ -78,6 +79,21 @@ const navigation = [
     ],
   },
   {
+    title: "Academics",
+    items: [
+      {
+        title: "Courses",
+        url: "/admin/academics/courses",
+        icon: BookOpen,
+      },
+      {
+        title: "Quizzes",
+        url: "/admin/academics/quizzes",
+        icon: GraduationCap,
+      },
+    ],
+  },
+  {
     title: "Settings",
     items: [
       {
@@ -113,7 +129,7 @@ export function AdminSidebar() {
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="py-4">
+      <SidebarContent className="py-4 no-scrollbar">
         {navigation.map((group) => (
           <SidebarGroup key={group.title}>
             <SidebarGroupLabel className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground/50 px-4 mb-2">

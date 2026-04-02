@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   Dialog, 
   DialogContent, 
@@ -28,12 +29,16 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+
 interface GenerationDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
   description: string;
-  onGenerate: (materialId: string) => Promise<void>;
+  onGenerate: (materialId: string, settings?: Record<string, unknown>) => Promise<void>;
   type: "flashcards" | "quiz" | "mindmap" | "notes";
 }
 
@@ -53,6 +58,13 @@ export function GenerationDialog({
   const [selectedMaterialId, setSelectedMaterialId] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  
+  // Settings state
+  const [timeLimit, setTimeLimit] = useState(20);
+  const [questionCount, setQuestionCount] = useState(15);
+  const [shuffleQuestions, setShuffleQuestions] = useState(true);
+  const [showExplanations, setShowExplanations] = useState(true);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const filteredMaterials = (materials || []).filter((m) =>
@@ -87,7 +99,15 @@ export function GenerationDialog({
     
     setIsGenerating(true);
     try {
-      await onGenerate(selectedMaterialId);
+      const settings = type === "quiz" ? {
+        timeLimit,
+        questionCount,
+        shuffleQuestions,
+        showExplanations,
+        showHints: true,
+      } : undefined;
+
+      await onGenerate(selectedMaterialId, settings);
       toast.success("Generation started!");
       onOpenChange(false);
       // Reset state for next time
@@ -201,6 +221,72 @@ export function GenerationDialog({
               </div>
             )}
           </div>
+
+          {/* Settings (Optional for Quiz) */}
+          {type === "quiz" && selectedMaterialId && (
+            <motion.div 
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              className="p-4 border-t border-border/10 bg-muted/10 space-y-4"
+            >
+              <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-primary/70 font-black">
+                Quiz Generation Settings
+              </p>
+              
+              <div className="space-y-4">
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-[10px] font-mono uppercase text-muted-foreground/80">Time Limit</Label>
+                    <span className="text-[10px] font-mono text-primary font-bold bg-primary/5 px-1">{timeLimit} min</span>
+                  </div>
+                  <Slider 
+                    value={[timeLimit]} 
+                    onValueChange={([v]) => setTimeLimit(v)} 
+                    min={5} 
+                    max={60} 
+                    step={5} 
+                    className="py-1"
+                  />
+                </div>
+
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-[10px] font-mono uppercase text-muted-foreground/80">Questions</Label>
+                    <span className="text-[10px] font-mono text-primary font-bold bg-primary/5 px-1">{questionCount}</span>
+                  </div>
+                  <Slider 
+                    value={[questionCount]} 
+                    onValueChange={([v]) => setQuestionCount(v)} 
+                    min={5} 
+                    max={50} 
+                    step={1} 
+                    className="py-1"
+                  />
+                </div>
+
+                <div className="flex items-center gap-6 pt-1">
+                  <div className="flex items-center gap-2">
+                    <Switch 
+                      id="shuffle" 
+                      checked={shuffleQuestions} 
+                      onCheckedChange={setShuffleQuestions} 
+                      className="scale-75 origin-left"
+                    />
+                    <Label htmlFor="shuffle" className="text-[9px] font-mono uppercase text-muted-foreground/60 cursor-pointer">Shuffle</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch 
+                      id="explanations" 
+                      checked={showExplanations} 
+                      onCheckedChange={setShowExplanations} 
+                      className="scale-75 origin-left"
+                    />
+                    <Label htmlFor="explanations" className="text-[9px] font-mono uppercase text-muted-foreground/60 cursor-pointer">Explanations</Label>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
         </div>
 
         <DialogFooter className="p-4 border-t border-border/10 bg-muted/10">

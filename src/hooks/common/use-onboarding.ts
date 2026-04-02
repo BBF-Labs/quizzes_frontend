@@ -22,7 +22,15 @@ export function useOnboarding() {
 
   // Update onboarding step
   const updateStepMutation = useMutation({
-    mutationFn: async ({ stepId, data, isSkip }: { stepId: string; data?: any; isSkip?: boolean }) => {
+    mutationFn: async ({
+      stepId,
+      data,
+      isSkip,
+    }: {
+      stepId: string;
+      data?: Record<string, unknown>;
+      isSkip?: boolean;
+    }) => {
       const payload = isSkip ? { skipped: true } : data;
       const res = await api.patch("/users/onboarding/step", {
         step: stepId,
@@ -30,7 +38,7 @@ export function useOnboarding() {
       });
       return res.data;
     },
-    onSuccess: () => {
+    onSuccess: (data: { data: { user: Record<string, unknown> } }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.onboardingStatus });
     },
   });

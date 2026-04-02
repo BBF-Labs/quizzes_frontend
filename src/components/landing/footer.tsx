@@ -9,7 +9,12 @@ export function Footer() {
   const [status, setStatus] = useState<
     "idle" | "loading" | "success" | "error"
   >("idle");
+  const [year, setYear] = useState(new Date().getFullYear());
   const { mutate, isPending } = useSubscribeNewsletter();
+
+  React.useEffect(() => {
+    setYear(new Date().getFullYear());
+  }, []);
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
@@ -175,7 +180,7 @@ export function Footer() {
             </span>
 
             <div className="md:ml-auto uppercase tracking-widest text-muted-foreground/40 whitespace-nowrap">
-              © {new Date().getFullYear()}{" "}
+              © {year}{" "}
               <Link
                 href="https://bflabs.tech"
                 target="_blank"

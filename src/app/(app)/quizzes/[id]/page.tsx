@@ -1,60 +1,66 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { use } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { BookOpen, ChevronDown, ChevronRight, PlayCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  BookOpen,
+  ChevronDown,
+  ChevronRight,
+  PlayCircle,
+  Tag,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Accordion } from "@/components/ui/accordion";
-import { api } from "@/lib/api";
-import { useBreadcrumbStore } from "@/store/breadcrumb";
-import type { QuizDetail, QuizLecture, QuizTopic, QuizQuestion } from "@/types/session";
+import { useSystemQuiz } from "@/hooks/app/use-quizzes";
+import type { QuizLecture, QuizTopic, QuizQuestion } from "@/types/session";
+import { useState } from "react";
 
-import { LectureSection, QuizStatsBar } from "@/components/app/quizzes/quiz-content";
+import {
+  LectureSection,
+  QuizStatsBar,
+} from "@/components/app/quizzes/quiz-content";
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function QuizDetailPage({
+export default function SystemQuizDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
   const router = useRouter();
+  const { data: quiz, isLoading, error } = useSystemQuiz(id);
 
-  const [quiz, setQuiz] = useState<QuizDetail | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    api
-      .get<{ data: QuizDetail }>(`/app/quizzes/${id}`)
-      .then((res) => setQuiz(res.data?.data ?? null))
-      .catch((err) => {
-        console.error("[QuizDetailPage] load failed", err);
-        setError("Failed to load quiz.");
-      })
-      .finally(() => setIsLoading(false));
-  }, [id]);
-
-  useEffect(() => {
-    if (quiz?.title) {
-      useBreadcrumbStore.getState().setDynamicTitle(quiz.title);
-    }
-    return () => useBreadcrumbStore.getState().setDynamicTitle(null);
-  }, [quiz?.title]);
-
-  const totalQuestions = quiz?.lectures.reduce(
-    (sum, l) => sum + l.topics.reduce((s, t) => s + t.questions.length, 0),
-    0,
-  );
+  const totalQuestions =
+    quiz?.lectures?.reduce((sum, l) => {
+      const lectureTotal = (l.topics ?? []).reduce((s, t) => {
+        const qCount =
+          t.questions?.length ??
+          t.questionTypes?.reduce(
+            (acc, qt) => acc + (qt.questions?.length ?? 0),
+            0,
+          ) ??
+          0;
+        return s + qCount;
+      }, 0);
+      return sum + lectureTotal;
+    }, 0) ?? 0;
 
   return (
-    <div className="min-h-full px-4 pt-2 pb-8">
+    <div className="min-h-full px-4 pt-4 pb-8">
       <div className="mx-auto max-w-3xl">
-        {/* Loading */}
+        {/* Back link */}
+        <Link
+          href="/quizzes"
+          className="inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest text-muted-foreground/50 hover:text-primary transition-colors mb-6"
+        >
+          <ArrowLeft className="size-3" />
+          All Quizzes
+        </Link>
         {isLoading && (
           <div className="flex flex-col gap-3">
             {[...Array(4)].map((_, i) => (
@@ -66,10 +72,9 @@ export default function QuizDetailPage({
           </div>
         )}
 
-        {/* Error */}
         {!isLoading && error && (
           <div className="border border-destructive/40 bg-destructive/5 px-4 py-3 font-mono text-sm text-destructive">
-            {error}
+            Failed to load quiz.
           </div>
         )}
 
@@ -81,21 +86,23 @@ export default function QuizDetailPage({
               animate={{ opacity: 1, y: 0 }}
               className="mb-8"
             >
+              <h1 className="text-xl font-black tracking-tight mb-3">
+                {quiz.title}
+              </h1>
+              {quiz.description && (
+                <p className="text-sm font-mono text-muted-foreground/70 mb-3">
+                  {quiz.description}
+                </p>
+              )}
+
               <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  {(quiz.courseTitle || quiz.courseCode) && (
-                    <p className="mb-2 text-[11px] font-mono text-muted-foreground/60">
-                      {[quiz.courseTitle, quiz.courseCode]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </p>
-                  )}
-                  <QuizStatsBar
-                    questionCount={totalQuestions ?? 0}
-                    lectureCount={quiz.lectures.length}
-                    className="flex-1"
-                  />
-                </div>
+                <QuizStatsBar
+                  questionCount={totalQuestions}
+                  lectureCount={quiz.lectures.length}
+                  passingScore={quiz.passingScore}
+                  settings={quiz.settings}
+                  className="flex-1"
+                />
                 <div className="flex items-center gap-2 shrink-0">
                   <Button
                     variant="outline"
@@ -109,19 +116,33 @@ export default function QuizDetailPage({
                   <Button
                     size="sm"
                     className="h-7 gap-1 text-[10px] font-mono"
-                    onClick={() => router.push(`/app/quizzes/${id}/take`)}
+                    onClick={() => router.push(`/quizzes/${id}/take`)}
                   >
                     <PlayCircle className="size-3" />
                     Take Quiz
                   </Button>
                 </div>
               </div>
+
+              {(quiz.tags?.length ?? 0) > 0 && (
+                <div className="mt-3 flex items-center gap-1.5 flex-wrap">
+                  <Tag className="size-3 text-muted-foreground/30 shrink-0" />
+                  {quiz.tags?.map((tag) => (
+                    <span
+                      key={tag}
+                      className="text-[9px] font-mono text-muted-foreground/50 border border-border/30 px-1.5 py-0.5"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
             </motion.div>
 
             {/* Lectures */}
             {quiz.lectures.length === 0 ? (
               <p className="text-[11px] font-mono text-muted-foreground/40 text-center py-12">
-                No questions found.
+                No questions yet.
               </p>
             ) : (
               <motion.div

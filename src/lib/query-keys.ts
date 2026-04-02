@@ -4,7 +4,7 @@ export const queryKeys = {
   app: {
     root: ["app"] as const,
     lists: () => [...queryKeys.app.root, "list"] as const,
-    listQueryOptions: (options?: Record<string, any>) =>
+    listQueryOptions: (options?: Record<string, unknown>) =>
       [...queryKeys.app.lists(), options] as const,
     details: () => [...queryKeys.app.root, "detail"] as const,
     detail: (id: string) => [...queryKeys.app.details(), id] as const,
@@ -50,5 +50,11 @@ export const queryKeys = {
       detail: (id: string) =>
         [...queryKeys.library.materials.root(), "detail", id] as const,
     },
+  },
+  systemQuizzes: {
+    root: ["system-quizzes"] as const,
+    list: () => [...queryKeys.systemQuizzes.root, "list"] as const,
+    detail: (id: string) =>
+      [...queryKeys.systemQuizzes.root, "detail", id] as const,
   },
 };
