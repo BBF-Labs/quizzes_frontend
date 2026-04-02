@@ -12,6 +12,7 @@ import {
   LogOut,
   GraduationCap,
   BookOpen,
+  Calendar,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import {
@@ -90,6 +91,11 @@ const navigation = [
         title: "Quizzes",
         url: "/admin/academics/quizzes",
         icon: GraduationCap,
+      },
+      {
+        title: "Timetables",
+        url: "/admin/academics/timetables",
+        icon: Calendar,
       },
     ],
   },

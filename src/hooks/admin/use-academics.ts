@@ -291,3 +291,106 @@ export const useAdminGenerateQuizAI = () =>
       return res.data?.data;
     },
   });
+
+// ─── Timetable hooks ──────────────────────────────────────────────────────────
+
+export interface AdminTimetable {
+  _id: string;
+  semester: string;
+  academicYear: string;
+  isPublished: boolean;
+  entries: AdminExamEntry[];
+  createdAt: string;
+}
+
+export interface AdminExamEntry {
+  _id?: string;
+  courseId: string;
+  courseCode: string;
+  courseName: string;
+  scheduledAt: string;
+  venue: string;
+  durationMinutes: number;
+}
+
+export const useAdminTimetables = (params: PaginationParams = {}) => {
+  const { page = 1, limit = 10, search = "" } = params;
+  return useQuery({
+    queryKey: ["admin", "timetables", page, limit, search],
+    queryFn: async () => {
+      const query = new URLSearchParams({
+        page: String(page),
+        limit: String(limit),
+        ...(search ? { search } : {}),
+      });
+      const res = await api.get<PaginatedApiData<AdminTimetable[]>>(`/admin/learning/timetables?${query}`);
+      return {
+        data: res.data?.data ?? [],
+        pagination: res.data?.meta ?? { total: 0, page, limit, totalPages: 1 },
+      };
+    },
+  });
+};
+
+export const useAdminCreateTimetable = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: Partial<AdminTimetable>) => {
+      const res = await api.post<ApiData<AdminTimetable>>("/admin/learning/timetables", data);
+      return res.data?.data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "timetables"] }),
+  });
+};
+
+export const useAdminPublishTimetable = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await api.patch<ApiData<AdminTimetable>>(`/admin/learning/timetables/${id}/publish`);
+      return res.data?.data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "timetables"] }),
+  });
+};
+
+export const useAdminAddTimetableEntry = (timetableId: string) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: AdminExamEntry) => {
+      const res = await api.post<ApiData<AdminTimetable>>(`/admin/learning/timetables/${timetableId}/entries`, data);
+      return res.data?.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "timetables"] });
+      qc.invalidateQueries({ queryKey: ["admin", "timetables", timetableId] });
+    },
+  });
+};
+
+export const useAdminUpdateTimetableEntry = (timetableId: string) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ entryId, data }: { entryId: string; data: Partial<AdminExamEntry> }) => {
+      const res = await api.put<ApiData<AdminTimetable>>(`/admin/learning/timetables/${timetableId}/entries/${entryId}`, data);
+      return res.data?.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "timetables"] });
+      qc.invalidateQueries({ queryKey: ["admin", "timetables", timetableId] });
+    },
+  });
+};
+
+export const useAdminRemoveTimetableEntry = (timetableId: string) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (entryId: string) => {
+      await api.delete(`/admin/learning/timetables/${timetableId}/entries/${entryId}`);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "timetables"] });
+      qc.invalidateQueries({ queryKey: ["admin", "timetables", timetableId] });
+    },
+  });
+};
