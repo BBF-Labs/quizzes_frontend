@@ -309,7 +309,11 @@ export interface AdminExamEntry {
   courseCode: string;
   courseName: string;
   scheduledAt: string;
-  venue: string;
+  venues: {
+    venue: string;
+    indexStart?: string;
+    indexEnd?: string;
+  }[];
   durationMinutes: number;
 }
 
