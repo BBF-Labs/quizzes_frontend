@@ -66,12 +66,12 @@ export function DocumentReader({ materialId, sessionId }: DocumentReaderProps) {
   // Safe object URL management
   useEffect(() => {
     if (!blob) {
-      setObjectUrl(null);
+      setTimeout(() => setObjectUrl(null), 0);
       return;
     }
 
     const url = URL.createObjectURL(blob);
-    setObjectUrl(url);
+    setTimeout(() => setObjectUrl(url), 0);
 
     return () => {
       URL.revokeObjectURL(url);

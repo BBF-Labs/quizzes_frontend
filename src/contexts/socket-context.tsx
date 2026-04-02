@@ -5,7 +5,7 @@ import React, {
   useContext,
   useEffect,
   useState,
-  useMemo,
+  useRef,
 } from "react";
 import { io, Socket } from "socket.io-client";
 import { getAccessToken } from "@/lib/session";
@@ -39,33 +39,40 @@ const SocketContext = createContext<SocketContextValue>({
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
   const [isConnected, setIsConnected] = useState(false);
-
-  const socket = useMemo(() => {
-    return io(SOCKET_URL, {
-      path: SOCKET_PATH,
-      transports: ["websocket", "polling"],
-      reconnectionAttempts: 5,
-      autoConnect: false,
-    });
-  }, []);
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
+    if (!socketRef.current) {
+      socketRef.current = io(SOCKET_URL, {
+        path: SOCKET_PATH,
+        transports: ["websocket", "polling"],
+        reconnectionAttempts: 5,
+        autoConnect: false,
+      });
+      setSocket(socketRef.current);
+    }
+
+    const s = socketRef.current;
+    if (!s) return;
+
     const token = getAccessToken();
 
     if (token) {
-      socket.auth = { token: `Bearer ${token}` };
-      if (!socket.connected) {
-        socket.connect();
+      // Cast to bypass the compiler's strict immutability check for this external library property
+      (s as unknown as { auth: { token: string } }).auth = {
+        token: `Bearer ${token}`,
+      };
+      if (!s.connected) {
+        s.connect();
       }
     }
 
     function onConnect() {
-      console.log("[Socket] Connected to backend:", socket.id);
       setIsConnected(true);
     }
 
     function onDisconnect() {
-      console.log("[Socket] Disconnected from backend");
       setIsConnected(false);
     }
 
@@ -73,17 +80,16 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       console.error("[Socket] Connection error:", err.message);
     }
 
-    socket.on("connect", onConnect);
-    socket.on("disconnect", onDisconnect);
-    socket.on("connect_error", onConnectError);
+    s.on("connect", onConnect);
+    s.on("disconnect", onDisconnect);
+    s.on("connect_error", onConnectError);
 
     return () => {
-      socket.off("connect", onConnect);
-      socket.off("disconnect", onDisconnect);
-      socket.off("connect_error", onConnectError);
-      socket.disconnect();
+      s.off("connect", onConnect);
+      s.off("disconnect", onDisconnect);
+      s.off("connect_error", onConnectError);
     };
-  }, [socket]);
+  }, []);
 
   return (
     <SocketContext.Provider value={{ socket, isConnected }}>

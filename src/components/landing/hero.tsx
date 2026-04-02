@@ -51,7 +51,7 @@ export function Hero() {
 
   const handleSubmit = () => {
     mutate(formData, {
-      onSuccess: () => {
+      onSuccess: (data: { data: { quizId: string } }) => {
         setSubmitted(true);
         // Trigger neon blue confetti
         confetti({
@@ -266,7 +266,11 @@ export function Hero() {
 
                     {isError && (
                       <p className="text-[10px] font-mono text-red-500 uppercase tracking-wider">
-                        {(error as any)?.response?.data?.message ||
+                        {(
+                          error as {
+                            response?: { data?: { message?: string } };
+                          }
+                        )?.response?.data?.message ||
                           "Something went wrong. Please try again."}
                       </p>
                     )}
@@ -283,11 +287,11 @@ export function Hero() {
                     ACCESS GRANTED.
                   </div>
                   <p className="mb-4">
-                    You're on the list. Z will be in touch when access is
+                    You&apos;re on the list. Z will be in touch when access is
                     available.
                   </p>
                   <div className="text-[10px] p-3 bg-primary/10 border border-primary/20 animate-pulse text-primary/80 font-normal">
-                    NOTE: IF YOU DON'T SEE A CONFIRMATION EMAIL, CHECK YOUR SPAM
+                    NOTE: IF YOU DON&apos;T SEE A CONFIRMATION EMAIL, CHECK YOUR SPAM
                     FOLDER OR WAIT A FEW MINUTES.
                   </div>
                 </motion.div>

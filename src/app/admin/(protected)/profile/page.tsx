@@ -57,7 +57,7 @@ export default function ProfilePage() {
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [username, user?.username, checkProfile.mutate]);
+  }, [username, user?.username, checkProfile]);
 
   // Validation (Current Password)
   useEffect(() => {
@@ -67,7 +67,7 @@ export default function ProfilePage() {
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [currentPassword, checkProfile.mutate]);
+  }, [currentPassword, checkProfile]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -115,7 +115,7 @@ export default function ProfilePage() {
         profilePicture: uploadedPicture ? uploadedPicture._id : undefined,
       },
       {
-        onSuccess: (data: any) => {
+        onSuccess: (data: { data: { accessToken?: string; refreshToken?: string } }) => {
           toast.success("Profile synchronized successfully");
 
           const resData = data.data ?? data;

@@ -62,7 +62,7 @@ export default function FlashcardsPage() {
     }
   };
 
-  const handleGenerate = async (materialId: string, settings?: any) => {
+  const handleGenerate = async (materialId: string) => {
     await generateFlashcardsMutation.mutateAsync({ materialId });
   };
 

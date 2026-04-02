@@ -36,9 +36,9 @@ export const useCreateSession = () => {
       return {
         ...session,
         id:
-          typeof (session as any)._id === "string"
-            ? (session as any)._id
-            : (session as any)._id?.toString() || session.id,
+          typeof (session as { _id?: string })._id === "string"
+            ? (session as { _id?: string })._id!
+            : (session as { _id?: string | number })._id?.toString() || session.id,
       };
     },
     onSuccess: () => {

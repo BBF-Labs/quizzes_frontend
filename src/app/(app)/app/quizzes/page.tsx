@@ -50,7 +50,7 @@ export default function QuizzesPage() {
     }
   };
 
-  const handleGenerate = async (materialId: string, settings?: any) => {
+  const handleGenerate = async (materialId: string, settings?: Record<string, unknown>) => {
     await generateQuizMutation.mutateAsync({ materialId, settings });
   };
 
