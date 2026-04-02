@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useState,
-  useCallback,
-  useRef,
-  use,
-} from "react";
+import { useEffect, useState, useCallback, useRef, use, useMemo } from "react";
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import { useRouter } from "next/navigation";
 import {
@@ -29,30 +23,26 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import { api } from "@/lib/api";
 import { useGradeQuizAnswers } from "@/hooks/app/use-app-library";
 import { useBreadcrumbStore } from "@/store/breadcrumb";
-import type { QuizDetail, QuizQuestion, ZGradeResultItem } from "@/types/session";
+import { QuizConfigScreen } from "@/components/app/quizzes/quiz-config-screen";
+import type {
+  QuizDetail,
+  QuizQuestion,
+  ZGradeResultItem,
+  QuizConfig,
+} from "@/types/session";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-interface QuizConfig {
-  selectedKeys: string[]; // "lectureIdx:topicIdx"
-  feedbackMode: "immediate" | "deferred";
-  timerMode: "none" | "per_question" | "total";
-  timerSeconds: number;
-  autoNext: boolean;
-  allowSkip: boolean;
-  shuffle: boolean;
-  passingScore: number;
-  useZGrading: boolean;
-}
 
 interface SavedProgress {
   config: QuizConfig;
   current: number;
   answers: Record<string, string>;
-  immediateResults: Record<string, "correct" | "wrong">;
+  immediateResults: Record<string, "correct" | "wrong" | null>;
   streak: number;
   maxStreak: number;
   questionIds: string[];
@@ -98,23 +88,16 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-function buildQuestions(
-  quiz: QuizDetail,
-  config: QuizConfig,
-): QuizQuestion[] {
-  const qs = quiz.lectures.flatMap((l, li) =>
-    l.topics.flatMap((t, ti) => {
-      if (!config.selectedKeys.includes(`${li}:${ti}`)) return [];
-      return t.questions;
-    }),
-  );
+function buildQuestions(quiz: QuizDetail, config: QuizConfig): QuizQuestion[] {
+  const qs = quiz.lectures
+    .flatMap((l, li) =>
+      l.topics.flatMap((t, ti) => {
+        if (!config.selectedKeys.includes(`${li}:${ti}`)) return [];
+        return t.questions ?? [];
+      }),
+    )
+    .filter(Boolean);
   return config.shuffle ? shuffle(qs) : qs;
-}
-
-function allTopicKeys(quiz: QuizDetail): string[] {
-  return quiz.lectures.flatMap((l, li) =>
-    l.topics.map((_, ti) => `${li}:${ti}`),
-  );
 }
 
 function fmtSeconds(s: number): string {
@@ -138,12 +121,23 @@ function ResumePrompt({
   onResume: () => void;
   onRestart: () => void;
 }) {
-  const ago = (() => {
-    const diff = Date.now() - new Date(savedAt).getTime();
-    if (diff < 60000) return "just now";
-    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
-    return `${Math.floor(diff / 3600000)}h ago`;
-  })();
+  const [ago, setAgo] = useState("");
+
+  useEffect(() => {
+    const calculate = () => {
+      const diff = Date.now() - new Date(savedAt).getTime();
+      if (diff < 60000) return "just now";
+      if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+      return `${Math.floor(diff / 3600000)}h ago`;
+    };
+    // Use setTimeout to avoid synchronous state update in effect
+    const timeout = setTimeout(() => setAgo(calculate()), 0);
+    const interval = setInterval(() => setAgo(calculate()), 60000);
+    return () => {
+      clearTimeout(timeout);
+      clearInterval(interval);
+    };
+  }, [savedAt]);
 
   return (
     <motion.div
@@ -192,15 +186,20 @@ function ConfigScreen({
   quiz: QuizDetail;
   onStart: (config: QuizConfig) => void;
 }) {
-  const [selectedKeys, setSelectedKeys] = useState<string[]>(allTopicKeys(quiz));
-  const [feedbackMode, setFeedbackMode] = useState<"immediate" | "deferred">("immediate");
-  const [timerMode, setTimerMode] = useState<"none" | "per_question" | "total">("none");
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
+  const [feedbackMode, setFeedbackMode] = useState<"immediate" | "deferred">(
+    "immediate",
+  );
+  const [timerMode, setTimerMode] = useState<"none" | "per_question" | "total">(
+    "none",
+  );
   const [timerSeconds, setTimerSeconds] = useState(60);
   const [autoNext, setAutoNext] = useState(true);
   const [allowSkip, setAllowSkip] = useState(true);
   const [doShuffle, setDoShuffle] = useState(false);
   const [passingScore, setPassingScore] = useState(70);
   const [useZGrading, setUseZGrading] = useState(false);
+  const [showHints, setShowHints] = useState(false);
 
   const totalSelected = quiz.lectures.reduce(
     (s, l, li) =>
@@ -232,19 +231,6 @@ function ConfigScreen({
     l.topics.some((t) => t.questions.some((q) => q.type === "free_text")),
   );
 
-  const TIMER_PER_Q_OPTIONS = [
-    { label: "30s", value: 30 },
-    { label: "60s", value: 60 },
-    { label: "90s", value: 90 },
-    { label: "2m", value: 120 },
-  ];
-  const TIMER_TOTAL_OPTIONS = [
-    { label: "5m", value: 300 },
-    { label: "10m", value: 600 },
-    { label: "15m", value: 900 },
-    { label: "20m", value: 1200 },
-  ];
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -255,7 +241,9 @@ function ConfigScreen({
         <p className="text-[10px] font-mono uppercase tracking-[0.25em] text-primary/80 mb-1">
           Quiz Setup
         </p>
-        <h1 className="text-xl font-black tracking-tight truncate">{quiz.title}</h1>
+        <h1 className="text-xl font-black tracking-tight truncate">
+          {quiz.title}
+        </h1>
       </div>
 
       <div className="flex flex-col gap-4">
@@ -275,7 +263,10 @@ function ConfigScreen({
               const allOn = topicKeys.every((k) => selectedKeys.includes(k));
               const someOn = topicKeys.some((k) => selectedKeys.includes(k));
               return (
-                <div key={li} className="rounded-(--radius) border border-border/20 px-3 py-2">
+                <div
+                  key={li}
+                  className="rounded-(--radius) border border-border/20 px-3 py-2"
+                >
                   <button
                     type="button"
                     onClick={() => toggleLecture(li)}
@@ -310,7 +301,9 @@ function ConfigScreen({
                             <span
                               className={`size-3 border shrink-0 flex items-center justify-center ${on ? "border-primary bg-primary" : "border-border/40"}`}
                             >
-                              {on && <span className="block size-1 bg-primary-foreground" />}
+                              {on && (
+                                <span className="block size-1 bg-primary-foreground" />
+                              )}
                             </span>
                             <span className="font-mono text-[10px] text-muted-foreground/70">
                               {t.topicTitle}
@@ -357,7 +350,9 @@ function ConfigScreen({
                 onClick={() => setAutoNext((v) => !v)}
                 className={`size-4 border flex items-center justify-center shrink-0 ${autoNext ? "border-primary bg-primary" : "border-border/50"}`}
               >
-                {autoNext && <CheckCircle2 className="size-2.5 text-primary-foreground" />}
+                {autoNext && (
+                  <CheckCircle2 className="size-2.5 text-primary-foreground" />
+                )}
               </button>
               <span className="text-[10px] font-mono text-muted-foreground/70">
                 Auto-advance after answering MCQ
@@ -366,48 +361,32 @@ function ConfigScreen({
           )}
         </section>
 
-        {/* Timer */}
+        {/* Timer Slider */}
         <section className="rounded-(--radius) border border-border/40 bg-card/20 px-4 py-4">
-          <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/70 mb-3">
-            Timer
-          </p>
-          <div className="flex gap-2 mb-3">
-            {(["none", "per_question", "total"] as const).map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => setTimerMode(m)}
-                className={`rounded-(--radius) flex-1 py-2 border text-[10px] font-mono uppercase tracking-widest font-semibold transition-all ${
-                  timerMode === m
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border/40 text-muted-foreground/60 hover:border-border/70"
-                }`}
-              >
-                {m === "none" ? "None" : m === "per_question" ? "Per Q" : "Total"}
-              </button>
-            ))}
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/70">
+              Timer (Minutes)
+            </p>
+            <Badge variant="outline" className="text-[10px] font-mono h-5">
+              {timerSeconds === 0
+                ? "Unlimited"
+                : `${Math.floor(timerSeconds / 60)}m`}
+            </Badge>
           </div>
-          {timerMode !== "none" && (
-            <div className="flex gap-1.5 flex-wrap">
-              {(timerMode === "per_question"
-                ? TIMER_PER_Q_OPTIONS
-                : TIMER_TOTAL_OPTIONS
-              ).map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setTimerSeconds(opt.value)}
-                  className={`rounded-(--radius) px-3 py-1 border text-[10px] font-mono font-semibold transition-all ${
-                    timerSeconds === opt.value
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border/40 text-muted-foreground/60 hover:border-border/70"
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          )}
+          <Slider
+            value={[Math.floor(timerSeconds / 60)]}
+            min={0}
+            max={120}
+            step={5}
+            onValueChange={([v]) => {
+              setTimerSeconds(v * 60);
+              setTimerMode(v === 0 ? "none" : "total");
+            }}
+            className="py-4"
+          />
+          <p className="text-[10px] font-mono text-muted-foreground/40 mt-2">
+            Slide from 0 to 120 minutes. Custom timing allowed.
+          </p>
         </section>
 
         {/* Passing score + options row */}
@@ -440,18 +419,26 @@ function ConfigScreen({
             </p>
             <div className="flex flex-col gap-2">
               {[
-                { label: "Allow skipping questions", value: allowSkip, set: setAllowSkip },
-                { label: "Shuffle questions", value: doShuffle, set: setDoShuffle },
+                {
+                  label: "Allow skipping questions",
+                  value: allowSkip,
+                  set: setAllowSkip,
+                },
+                {
+                  label: "Shuffle questions",
+                  value: doShuffle,
+                  set: setDoShuffle,
+                },
+                { label: "Show Hints", value: showHints, set: setShowHints },
               ].map(({ label, value, set }) => (
-                <label key={label} className="flex items-center gap-2 cursor-pointer">
-                  <button
-                    type="button"
-                    onClick={() => set((v) => !v)}
-                    className={`size-4 border flex items-center justify-center shrink-0 ${value ? "border-primary bg-primary" : "border-border/50"}`}
-                  >
-                    {value && <CheckCircle2 className="size-2.5 text-primary-foreground" />}
-                  </button>
-                  <span className="text-[10px] font-mono text-muted-foreground/70">{label}</span>
+                <label
+                  key={label}
+                  className="flex items-center gap-2 cursor-pointer"
+                >
+                  <Switch checked={value} onCheckedChange={set} />
+                  <span className="text-[10px] font-mono text-muted-foreground/70">
+                    {label}
+                  </span>
                 </label>
               ))}
             </div>
@@ -467,7 +454,9 @@ function ConfigScreen({
                 onClick={() => setUseZGrading((v) => !v)}
                 className={`size-4 border flex items-center justify-center shrink-0 mt-0.5 ${useZGrading ? "border-primary bg-primary" : "border-border/50"}`}
               >
-                {useZGrading && <CheckCircle2 className="size-2.5 text-primary-foreground" />}
+                {useZGrading && (
+                  <CheckCircle2 className="size-2.5 text-primary-foreground" />
+                )}
               </button>
               <div>
                 <p className="text-[11px] font-mono font-semibold text-foreground flex items-center gap-1.5">
@@ -475,7 +464,8 @@ function ConfigScreen({
                   Grade free-text answers with Z
                 </p>
                 <p className="text-[10px] font-mono text-muted-foreground/60 mt-0.5">
-                  Z will review and score your written answers with detailed feedback after you submit.
+                  Z will review and score your written answers with detailed
+                  feedback after you submit.
                 </p>
               </div>
             </label>
@@ -497,6 +487,7 @@ function ConfigScreen({
               shuffle: doShuffle,
               passingScore,
               useZGrading,
+              showHints,
             })
           }
         >
@@ -512,7 +503,6 @@ function ConfigScreen({
 function TimerBar({
   remaining,
   total,
-  mode,
 }: {
   remaining: number;
   total: number;
@@ -520,11 +510,7 @@ function TimerBar({
 }) {
   const pct = total > 0 ? (remaining / total) * 100 : 0;
   const color =
-    pct > 50
-      ? "bg-primary"
-      : pct > 20
-      ? "bg-amber-500"
-      : "bg-red-500";
+    pct > 50 ? "bg-primary" : pct > 20 ? "bg-amber-500" : "bg-red-500";
 
   return (
     <div className="w-full h-0.5 bg-border/20">
@@ -564,19 +550,19 @@ function QuestionMap({
         const color = isCurrent
           ? "bg-primary border-primary"
           : result === "correct"
-          ? "bg-green-500/60 border-green-500/40"
-          : result === "wrong"
-          ? "bg-red-500/60 border-red-500/40"
-          : answered
-          ? "bg-primary/30 border-primary/30"
-          : "bg-transparent border-border/30";
+            ? "bg-green-500/60 border-green-500/40"
+            : result === "wrong"
+              ? "bg-red-500/60 border-red-500/40"
+              : answered
+                ? "bg-primary/30 border-primary/30"
+                : "bg-transparent border-border/30";
 
         return (
           <button
             key={q.id}
             type="button"
             onClick={() => onJump(i)}
-            className={`size-2.5 border transition-colors ${color} hover:border-primary/60`}
+            className={`rounded-(--radius) size-2.5 border transition-colors ${color} hover:border-primary/60`}
             aria-label={`Question ${i + 1}`}
           />
         );
@@ -612,23 +598,23 @@ function OptionBtn({
 
   const containerClass =
     isCorrectSelected || isRevealedCorrect
-      ? "border-green-500/60 bg-green-500/10 text-green-400"
+      ? "border-primary bg-primary/10 text-primary shadow-[0_0_15px_rgba(var(--primary),0.1)]"
       : isWrongSelected
-      ? "border-red-500/60 bg-red-500/10 text-red-400"
-      : selected && !feedbackState
-      ? "border-primary bg-primary/10 text-foreground"
-      : disabled
-      ? "border-border/20 bg-card/10 text-muted-foreground/30 cursor-default"
-      : "border-border/40 bg-card/20 text-muted-foreground hover:border-primary/50 hover:text-foreground cursor-pointer";
+        ? "border-red-500/60 bg-red-500/10 text-red-400"
+        : selected && !feedbackState
+          ? "border-primary bg-primary/10 text-foreground"
+          : disabled
+            ? "border-border/20 bg-card/10 text-muted-foreground/30 cursor-default"
+            : "border-border/40 bg-card/20 text-muted-foreground hover:border-primary/50 hover:text-foreground cursor-pointer";
 
   const letterClass =
     isCorrectSelected || isRevealedCorrect
-      ? "border-green-500/60 text-green-400 bg-green-500/10"
-      : isWrongSelected
-      ? "border-red-500/60 text-red-400 bg-red-500/10"
-      : selected && !feedbackState
       ? "border-primary text-primary bg-primary/10"
-      : "border-border/40";
+      : isWrongSelected
+        ? "border-red-500/60 text-red-400 bg-red-500/10"
+        : selected && !feedbackState
+          ? "border-primary text-primary bg-primary/10"
+          : "border-border/40";
 
   return (
     <button
@@ -643,7 +629,7 @@ function OptionBtn({
       </span>
       <span className="leading-relaxed">{opt}</span>
       {(isCorrectSelected || isRevealedCorrect) && (
-        <CheckCircle2 className="size-3.5 text-green-500 ml-auto mt-0.5 shrink-0" />
+        <CheckCircle2 className="size-3.5 text-primary ml-auto mt-0.5 shrink-0" />
       )}
       {isWrongSelected && (
         <XCircle className="size-3.5 text-red-500 ml-auto mt-0.5 shrink-0" />
@@ -663,6 +649,9 @@ function QuestionCard({
   feedbackState,
   mode,
   disabled,
+  showHints,
+  hintsRevealed,
+  onRevealHint,
 }: {
   q: QuizQuestion;
   index: number;
@@ -672,20 +661,32 @@ function QuestionCard({
   feedbackState: FeedbackState;
   mode: "immediate" | "deferred";
   disabled: boolean;
+  showHints: boolean;
+  hintsRevealed: Record<string, boolean>;
+  onRevealHint: (id: string) => void;
 }) {
   const controls = useAnimation();
   const borderClass =
     feedbackState === "correct"
-      ? "border-green-500/40 bg-green-500/5"
+      ? "border-primary/40 bg-primary/5"
       : feedbackState === "wrong"
-      ? "border-red-500/40 bg-red-500/5"
-      : "border-border/40 bg-card/20";
+        ? "border-red-500/40 bg-red-500/5"
+        : "border-border/40 bg-card/20";
+
+  const isRevealed = !!feedbackState;
+  const isAnswered = !!answer;
+  const showExplanation =
+    isRevealed &&
+    mode === "immediate" &&
+    isAnswered &&
+    feedbackState === "wrong";
+  const showHintUI = hintsRevealed[q.id];
 
   useEffect(() => {
     if (feedbackState === "correct") {
       controls.start({
-        scale: [1, 1.015, 1],
-        transition: { duration: 0.35, ease: "easeInOut" },
+        scale: [1, 1.025, 1],
+        transition: { duration: 0.45, ease: "easeInOut" },
       });
     } else if (feedbackState === "wrong") {
       controls.start({
@@ -697,8 +698,9 @@ function QuestionCard({
 
   return (
     <motion.div animate={controls}>
-      <div className={`rounded-(--radius) px-5 py-5 border transition-colors ${borderClass}`}>
-        {/* Question meta */}
+      <div
+        className={`rounded-(--radius) px-5 py-5 border transition-colors ${borderClass}`}
+      >
         <div className="flex items-center gap-2 mb-3">
           <Badge
             variant="outline"
@@ -716,12 +718,10 @@ function QuestionCard({
           )}
         </div>
 
-        {/* Question text */}
         <p className="font-mono text-sm leading-relaxed text-foreground mb-5">
           {q.question}
         </p>
 
-        {/* MCQ options */}
         {q.type === "mcq" && q.options && (
           <div className="flex flex-col gap-2">
             {q.options.map((opt, i) => (
@@ -739,7 +739,6 @@ function QuestionCard({
           </div>
         )}
 
-        {/* Free text */}
         {q.type === "free_text" && (
           <textarea
             value={answer}
@@ -749,6 +748,33 @@ function QuestionCard({
             disabled={disabled}
             className="rounded-(--radius) w-full border border-border/50 bg-card/30 px-4 py-3 font-mono text-[12px] placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 resize-none transition-colors disabled:opacity-40"
           />
+        )}
+
+        {(showHintUI || showExplanation) && (
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-4 border border-primary/20 bg-primary/5 px-4 py-3"
+          >
+            <p className="text-[10px] font-mono uppercase tracking-widest text-primary/60 mb-1">
+              {showHintUI ? "HINT" : "EXPLANATION"}
+            </p>
+            <p className="text-[11px] font-mono text-foreground italic">
+              {showHintUI
+                ? q.hint
+                : q.explanation || `The correct answer is ${q.correctAnswer}`}
+            </p>
+          </motion.div>
+        )}
+
+        {showHints && q.hint && !isRevealed && !showHintUI && (
+          <button
+            onClick={() => onRevealHint(q.id)}
+            className="mt-4 text-[10px] font-mono uppercase tracking-widest text-primary/60 hover:text-primary transition-colors flex items-center gap-1.5"
+          >
+            <div className="size-1.5 rounded-full bg-primary animate-pulse" />
+            Show Hint
+          </button>
         )}
       </div>
     </motion.div>
@@ -777,15 +803,16 @@ function ReviewItem({
       ? given.trim() === q.correctAnswer.trim()
       : null;
   const zGraded = q.type === "free_text" && zResult != null;
-  const isCorrect = q.type === "mcq" ? autoGrade : zGraded ? zResult!.isCorrect : selfMark;
+  const isCorrect =
+    q.type === "mcq" ? autoGrade : zGraded ? zResult!.isCorrect : selfMark;
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
   const borderColor =
     isCorrect === true
       ? "border-green-500/30 bg-green-500/5"
       : isCorrect === false
-      ? "border-red-500/30 bg-red-500/5"
-      : "border-border/30 bg-card/20";
+        ? "border-red-500/30 bg-red-500/5"
+        : "border-border/30 bg-card/20";
 
   return (
     <div className={`rounded-(--radius) border px-4 py-3 ${borderColor}`}>
@@ -818,7 +845,6 @@ function ReviewItem({
         {q.question}
       </p>
 
-      {/* MCQ options */}
       {q.type === "mcq" && q.options && (
         <div className="flex flex-col gap-1 mb-1">
           {q.options.map((opt, i) => {
@@ -831,8 +857,8 @@ function ReviewItem({
                   isRight
                     ? "text-green-500"
                     : isSelected
-                    ? "text-red-400"
-                    : "text-muted-foreground/30"
+                      ? "text-red-400"
+                      : "text-muted-foreground/30"
                 }`}
               >
                 <span>{letters[i]}.</span>
@@ -853,7 +879,6 @@ function ReviewItem({
         </div>
       )}
 
-      {/* Free text */}
       {q.type === "free_text" && (
         <div className="space-y-2">
           <div>
@@ -888,7 +913,6 @@ function ReviewItem({
               </p>
             </div>
           )}
-          {/* Self-mark (no Z grading or Z not requested) */}
           {!zGraded && selfMark === null && onSelfMark && (
             <div className="flex gap-2 pt-1">
               <button
@@ -947,10 +971,9 @@ function ResultsScreen({
   const graded = questions.map((q) => {
     if (q.type === "mcq") {
       const ans = answers[q.id] ?? "";
-      if (!ans) return null; // unanswered
-      return q.correctAnswer
-        ? ans.trim() === q.correctAnswer.trim()
-        : null;
+      if (!ans) return null;
+      const correct = q.correctAnswer;
+      return correct ? ans.trim() === String(correct).trim() : null;
     }
     const z = zResults[q.id];
     if (z) return z.isCorrect;
@@ -960,7 +983,8 @@ function ResultsScreen({
 
   const gradedCount = graded.filter((g) => g !== null).length;
   const correctCount = graded.filter((g) => g === true).length;
-  const pct = gradedCount > 0 ? Math.round((correctCount / gradedCount) * 100) : 0;
+  const pct =
+    gradedCount > 0 ? Math.round((correctCount / gradedCount) * 100) : 0;
   const pass = pct >= passingScore;
 
   const unansweredFreeText = questions.filter(
@@ -971,11 +995,11 @@ function ResultsScreen({
       selfMarks[q.id] === undefined,
   );
   const hasUngradedFreeText = unansweredFreeText.length > 0;
-  const isPctFinal = gradedCount === questions.filter((q) => !!answers[q.id]).length;
+  const isPctFinal =
+    gradedCount === questions.filter((q) => !!answers[q.id]).length;
 
   return (
     <div>
-      {/* Score card */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -1027,7 +1051,7 @@ function ResultsScreen({
           <button
             type="button"
             onClick={onRetake}
-            className="inline-flex items-center gap-1.5 border border-border/50 px-4 py-1.5 text-[10px] font-mono uppercase tracking-widest text-muted-foreground hover:border-primary/50 hover:text-foreground transition-all"
+            className="rounded-(--radius) inline-flex items-center gap-1.5 border border-border/50 px-4 py-1.5 text-[10px] font-mono uppercase tracking-widest text-muted-foreground hover:border-primary/50 hover:text-foreground transition-all"
           >
             <RotateCcw className="size-3" />
             Retake
@@ -1035,12 +1059,11 @@ function ResultsScreen({
         </div>
       </motion.div>
 
-      {/* Z-grading section */}
       {config.useZGrading && hasUngradedFreeText && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="border border-primary/20 bg-primary/5 px-4 py-4 mb-4"
+          className="rounded-(--radius) border border-primary/20 bg-primary/5 px-4 py-4 mb-4"
         >
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -1050,7 +1073,8 @@ function ResultsScreen({
               </p>
               <p className="text-[10px] font-mono text-muted-foreground/60 mt-0.5">
                 Z will score your {unansweredFreeText.length} free-text{" "}
-                {unansweredFreeText.length === 1 ? "answer" : "answers"} with detailed feedback.
+                {unansweredFreeText.length === 1 ? "answer" : "answers"} with
+                detailed feedback.
               </p>
             </div>
             <Button
@@ -1069,7 +1093,6 @@ function ResultsScreen({
         </motion.div>
       )}
 
-      {/* Review */}
       <div className="flex flex-col gap-3">
         {questions.map((q, i) => (
           <ReviewItem
@@ -1078,11 +1101,7 @@ function ResultsScreen({
             given={answers[q.id] ?? ""}
             index={i}
             zResult={zResults[q.id]}
-            selfMark={
-              q.type === "free_text"
-                ? (selfMarks[q.id] ?? null)
-                : null
-            }
+            selfMark={q.type === "free_text" ? (selfMarks[q.id] ?? null) : null}
             onSelfMark={
               q.type === "free_text" && !zResults[q.id]
                 ? (v) => onSelfMark(q.id, v)
@@ -1111,7 +1130,9 @@ export default function QuizTakePage({
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const [screen, setScreen] = useState<Screen>("config");
-  const [savedProgress, setSavedProgress] = useState<SavedProgress | null>(null);
+  const [savedProgress, setSavedProgress] = useState<SavedProgress | null>(
+    null,
+  );
 
   const [config, setConfig] = useState<QuizConfig | null>(null);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
@@ -1120,12 +1141,18 @@ export default function QuizTakePage({
   const [immediateResults, setImmediateResults] = useState<
     Record<string, FeedbackState>
   >({});
-  const [selfMarks, setSelfMarks] = useState<Record<string, boolean | null>>({});
-  const [zResults, setZResults] = useState<Record<string, ZGradeResultItem>>({});
+  const [selfMarks, setSelfMarks] = useState<Record<string, boolean | null>>(
+    {},
+  );
+  const [hintsRevealed, setHintsRevealed] = useState<Record<string, boolean>>(
+    {},
+  );
+  const [zResults, setZResults] = useState<Record<string, ZGradeResultItem>>(
+    {},
+  );
   const [streak, setStreak] = useState(0);
   const [maxStreak, setMaxStreak] = useState(0);
 
-  // Timer state
   const [timerRemaining, setTimerRemaining] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -1136,14 +1163,64 @@ export default function QuizTakePage({
     }
   }, []);
 
-  // Keyboard shortcuts
+  const handleSubmit = useCallback(() => {
+    stopTimer();
+    clearProgress(id);
+    const marks: Record<string, boolean | null> = {};
+    questions.forEach((q) => {
+      if (q.type === "free_text")
+        marks[q.id] = null;
+    });
+    setSelfMarks(marks);
+    setScreen("results");
+  }, [id, questions, stopTimer]);
+
+  const handleAnswer = useCallback(
+    (val: string) => {
+      const q = questions[current];
+      if (!q) return;
+
+      setAnswers((prev) => ({ ...prev, [q.id]: val }));
+
+      if (config?.feedbackMode === "immediate" && q.type === "mcq") {
+        const correct = q.correctAnswer;
+        const isCorrect = correct
+          ? val.trim() === String(correct).trim()
+          : null;
+        const result: FeedbackState =
+          isCorrect === true ? "correct" : isCorrect === false ? "wrong" : null;
+        setImmediateResults((prev) => ({ ...prev, [q.id]: result }));
+
+        if (result === "correct") {
+          setStreak((s) => {
+            const next = s + 1;
+            setMaxStreak((m) => Math.max(m, next));
+            return next;
+          });
+        } else {
+          setStreak(0);
+        }
+
+        if (config.autoNext && result !== null) {
+          setTimeout(() => {
+            setCurrent((c) => {
+              if (c < questions.length - 1) return c + 1;
+              handleSubmit();
+              return c;
+            });
+          }, 1400);
+        }
+      }
+    },
+    [config, current, questions, handleSubmit],
+  );
+
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (screen !== "quiz" || !config) return;
       const q = questions[current];
       if (!q) return;
 
-      // 1-9 for MCQ options
       if (q.type === "mcq" && q.options) {
         const idx = parseInt(e.key) - 1;
         if (idx >= 0 && idx < q.options.length) {
@@ -1152,18 +1229,15 @@ export default function QuizTakePage({
           if (!locked) handleAnswer(q.options[idx]);
         }
       }
-      // ArrowRight / Space → next
       if (e.key === "ArrowRight" || (e.key === " " && q.type !== "free_text")) {
         e.preventDefault();
         if (current < questions.length - 1) setCurrent((c) => c + 1);
       }
-      // ArrowLeft → prev
       if (e.key === "ArrowLeft") {
         if (current > 0) setCurrent((c) => c - 1);
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [screen, config, questions, current, immediateResults],
+    [screen, config, questions, current, immediateResults, handleAnswer],
   );
 
   useEffect(() => {
@@ -1171,7 +1245,6 @@ export default function QuizTakePage({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
-  // Load quiz
   useEffect(() => {
     api
       .get<{ data: QuizDetail }>(`/app/quizzes/${id}`)
@@ -1180,7 +1253,6 @@ export default function QuizTakePage({
         setQuiz(q);
         if (q) {
           useBreadcrumbStore.getState().setDynamicTitle(q.title);
-          // Check saved progress
           const saved = loadProgress(id);
           if (saved && saved.questionIds.length > 0) {
             setSavedProgress(saved);
@@ -1194,28 +1266,27 @@ export default function QuizTakePage({
     return () => useBreadcrumbStore.getState().setDynamicTitle(null);
   }, [id]);
 
-  // Per-question timer
   useEffect(() => {
     if (screen !== "quiz" || !config || config.timerMode !== "per_question")
       return;
     stopTimer();
-    setTimerRemaining(config.timerSeconds);
+    const timeout = setTimeout(() => setTimerRemaining(config.timerSeconds), 0);
     timerRef.current = setInterval(() => {
       setTimerRemaining((prev) => {
         if (prev <= 1) {
           stopTimer();
-          // Auto-skip on timeout
           setCurrent((c) => Math.min(c + 1, questions.length - 1));
           return config.timerSeconds;
         }
         return prev - 1;
       });
     }, 1000);
-    return stopTimer;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current, screen, config?.timerMode]);
+    return () => {
+      clearTimeout(timeout);
+      stopTimer();
+    };
+  }, [current, screen, config, questions.length, stopTimer]);
 
-  // Total timer
   useEffect(() => {
     if (screen !== "quiz" || !config || config.timerMode !== "total") return;
     stopTimer();
@@ -1230,10 +1301,8 @@ export default function QuizTakePage({
       });
     }, 1000);
     return stopTimer;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [screen, config?.timerMode]);
+  }, [screen, config?.timerMode, config?.timerSeconds, stopTimer]);
 
-  // Save progress whenever answers change
   useEffect(() => {
     if (screen !== "quiz" || !config || questions.length === 0) return;
     saveProgress(id, {
@@ -1246,17 +1315,14 @@ export default function QuizTakePage({
       questionIds: questions.map((q) => q.id),
       savedAt: new Date().toISOString(),
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [answers, current]);
+  }, [answers, current, id, config, questions, immediateResults, streak, maxStreak, screen]);
 
-  // Initialise quiz from config
   const startQuiz = useCallback(
     (cfg: QuizConfig, resumeData?: SavedProgress) => {
       if (!quiz) return;
       setConfig(cfg);
 
       if (resumeData) {
-        // Rebuild questions in the same order (by id)
         const allQs = buildQuestions(quiz, cfg);
         const ordered = resumeData.questionIds
           .map((qid) => allQs.find((q) => q.id === qid))
@@ -1277,67 +1343,11 @@ export default function QuizTakePage({
         setMaxStreak(0);
       }
 
-      if (cfg.timerMode === "total") {
-        setTimerRemaining(cfg.timerSeconds);
-      } else {
-        setTimerRemaining(cfg.timerSeconds);
-      }
-
+      setTimerRemaining(cfg.timerSeconds);
       setScreen("quiz");
     },
     [quiz],
   );
-
-  const handleAnswer = useCallback(
-    (val: string) => {
-      const q = questions[current];
-      if (!q) return;
-
-      setAnswers((prev) => ({ ...prev, [q.id]: val }));
-
-      if (config?.feedbackMode === "immediate" && q.type === "mcq") {
-        const isCorrect = q.correctAnswer
-          ? val.trim() === q.correctAnswer.trim()
-          : null;
-        const result: FeedbackState = isCorrect === true ? "correct" : isCorrect === false ? "wrong" : null;
-        setImmediateResults((prev) => ({ ...prev, [q.id]: result }));
-
-        // Update streak
-        if (result === "correct") {
-          setStreak((s) => {
-            const next = s + 1;
-            setMaxStreak((m) => Math.max(m, next));
-            return next;
-          });
-        } else {
-          setStreak(0);
-        }
-
-        // Auto-next
-        if (config.autoNext && result !== null) {
-          setTimeout(() => {
-            setCurrent((c) => {
-              if (c < questions.length - 1) return c + 1;
-              return c;
-            });
-          }, 1400);
-        }
-      }
-    },
-    [config, current, questions],
-  );
-
-  const handleSubmit = useCallback(() => {
-    stopTimer();
-    clearProgress(id);
-    // Init selfMarks for free-text
-    const marks: Record<string, boolean | null> = {};
-    questions.forEach((q) => {
-      if (q.type === "free_text") marks[q.id] = undefined as any;
-    });
-    setSelfMarks(marks);
-    setScreen("results");
-  }, [id, questions, stopTimer]);
 
   const handleRetake = useCallback(() => {
     stopTimer();
@@ -1369,16 +1379,12 @@ export default function QuizTakePage({
         })),
       });
       const byId: Record<string, ZGradeResultItem> = {};
-      result.results.forEach((r) => {
+      result.results.forEach((r: ZGradeResultItem) => {
         byId[r.questionId] = r;
       });
       setZResults((prev) => ({ ...prev, ...byId }));
-    } catch {
-      // error shown via gradeQuiz.isError
-    }
+    } catch {}
   }, [quiz, config, questions, answers, zResults, id, gradeQuiz]);
-
-  // ── Render ─────────────────────────────────────────────────────────────────
 
   if (isLoading) {
     return (
@@ -1387,7 +1393,7 @@ export default function QuizTakePage({
           {[...Array(5)].map((_, i) => (
             <div
               key={i}
-              className="h-12 animate-pulse bg-card/40 border border-border/20"
+              className="rounded-(--radius) h-12 animate-pulse bg-card/40 border border-border/20"
             />
           ))}
         </div>
@@ -1398,7 +1404,7 @@ export default function QuizTakePage({
   if (loadError || !quiz) {
     return (
       <div className="min-h-full px-4 pt-6 pb-8">
-        <div className="mx-auto max-w-2xl border border-destructive/40 bg-destructive/5 px-4 py-3 font-mono text-sm text-destructive">
+        <div className="rounded-(--radius) mx-auto max-w-2xl border border-destructive/40 bg-destructive/5 px-4 py-3 font-mono text-sm text-destructive">
           {loadError ?? "Quiz not found."}
         </div>
       </div>
@@ -1411,13 +1417,11 @@ export default function QuizTakePage({
     ? (immediateResults[currentQ.id] ?? null)
     : null;
   const isLast = current === questions.length - 1;
-  const answeredCount = Object.keys(answers).length;
-  const unansweredCount = questions.length - answeredCount;
+  const unansweredCount = questions.length - Object.keys(answers).length;
 
   return (
     <div className="min-h-full px-4 pt-2 pb-12">
       <div className="mx-auto max-w-2xl">
-        {/* Top nav */}
         <div className="flex items-center justify-between mb-4">
           <button
             type="button"
@@ -1428,14 +1432,13 @@ export default function QuizTakePage({
             Back
           </button>
           <div className="flex items-center gap-3">
-            {/* Streak badge */}
             <AnimatePresence>
               {streak >= 2 && screen === "quiz" && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
-                  className="flex items-center gap-1 border border-amber-500/30 bg-amber-500/10 px-2 py-0.5"
+                  className="rounded-(--radius) flex items-center gap-1 border border-amber-500/30 bg-amber-500/10 px-2 py-0.5"
                 >
                   <Flame className="size-3 text-amber-500" />
                   <span className="text-[9px] font-mono text-amber-500 font-semibold">
@@ -1444,15 +1447,14 @@ export default function QuizTakePage({
                 </motion.div>
               )}
             </AnimatePresence>
-            {/* Timer display (total mode) */}
             {screen === "quiz" && config?.timerMode === "total" && (
               <span
                 className={`text-[10px] font-mono tabular-nums ${
                   timerRemaining < config.timerSeconds * 0.2
                     ? "text-red-500"
                     : timerRemaining < config.timerSeconds * 0.5
-                    ? "text-amber-500"
-                    : "text-muted-foreground/60"
+                      ? "text-amber-500"
+                      : "text-muted-foreground/60"
                 }`}
               >
                 <Clock className="size-3 inline mr-1" />
@@ -1462,7 +1464,6 @@ export default function QuizTakePage({
           </div>
         </div>
 
-        {/* ── Resume prompt ── */}
         {screen === "resume" && savedProgress && (
           <ResumePrompt
             savedAt={savedProgress.savedAt}
@@ -1481,7 +1482,7 @@ export default function QuizTakePage({
 
         {/* ── Config ── */}
         {screen === "config" && (
-          <ConfigScreen quiz={quiz} onStart={(cfg) => startQuiz(cfg)} />
+          <QuizConfigScreen quiz={quiz} onStart={(cfg) => startQuiz(cfg)} />
         )}
 
         {/* ── Quiz ── */}
@@ -1500,7 +1501,9 @@ export default function QuizTakePage({
             <div className="w-full h-0.5 bg-border/20 mt-1">
               <motion.div
                 className="h-full bg-primary/30"
-                animate={{ width: `${((current + 1) / questions.length) * 100}%` }}
+                animate={{
+                  width: `${((current + 1) / questions.length) * 100}%`,
+                }}
                 transition={{ duration: 0.3 }}
               />
             </div>
@@ -1535,6 +1538,11 @@ export default function QuizTakePage({
                     feedbackState={currentFeedback}
                     mode={config.feedbackMode}
                     disabled={false}
+                    showHints={config.showHints}
+                    hintsRevealed={hintsRevealed}
+                    onRevealHint={(id) =>
+                      setHintsRevealed((h) => ({ ...h, [id]: true }))
+                    }
                   />
                 </motion.div>
               </AnimatePresence>
@@ -1547,8 +1555,8 @@ export default function QuizTakePage({
                   timerRemaining < config.timerSeconds * 0.2
                     ? "text-red-500"
                     : timerRemaining < config.timerSeconds * 0.5
-                    ? "text-amber-500"
-                    : "text-muted-foreground/40"
+                      ? "text-amber-500"
+                      : "text-muted-foreground/40"
                 }`}
               >
                 {fmtSeconds(timerRemaining)}
@@ -1573,7 +1581,9 @@ export default function QuizTakePage({
                 {config.allowSkip && !isLast && (
                   <button
                     type="button"
-                    onClick={() => setCurrent((c) => Math.min(c + 1, questions.length - 1))}
+                    onClick={() =>
+                      setCurrent((c) => Math.min(c + 1, questions.length - 1))
+                    }
                     className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground/40 hover:text-muted-foreground transition-colors"
                   >
                     <SkipForward className="size-3.5" />
@@ -1612,13 +1622,15 @@ export default function QuizTakePage({
                 className="mt-3 text-center text-[10px] font-mono text-amber-500/70 flex items-center justify-center gap-1"
               >
                 <AlertCircle className="size-3" />
-                {unansweredCount} question{unansweredCount !== 1 ? "s" : ""} unanswered
+                {unansweredCount} question{unansweredCount !== 1 ? "s" : ""}{" "}
+                unanswered
               </motion.p>
             )}
 
             {/* Keyboard hint */}
             <p className="mt-6 text-center text-[9px] font-mono text-muted-foreground/25 uppercase tracking-widest">
-              1–{Math.min(9, (currentQ.options?.length ?? 0))} to select · ← → to navigate
+              1–{Math.min(9, currentQ.options?.length ?? 0)} to select · ← → to
+              navigate
             </p>
           </>
         )}

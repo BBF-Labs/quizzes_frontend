@@ -66,12 +66,12 @@ export function DocumentReader({ materialId, sessionId }: DocumentReaderProps) {
   // Safe object URL management
   useEffect(() => {
     if (!blob) {
-      setObjectUrl(null);
+      setTimeout(() => setObjectUrl(null), 0);
       return;
     }
 
     const url = URL.createObjectURL(blob);
-    setObjectUrl(url);
+    setTimeout(() => setObjectUrl(url), 0);
 
     return () => {
       URL.revokeObjectURL(url);
@@ -169,8 +169,8 @@ export function DocumentReader({ materialId, sessionId }: DocumentReaderProps) {
       <div className="flex items-center justify-between px-4 py-2 border-b border-border/40 bg-background/50 backdrop-blur-sm z-20">
         <div className="flex items-center gap-3 min-w-0">
           <div className="flex items-center gap-1.5 min-w-0">
-            <Search className="size-3 text-muted-foreground/60" />
-            <span className="text-[11px] font-semibold truncate text-foreground/80 max-w-50">
+            <Search className="size-3 text-muted-foreground/60 shrink-0" />
+            <span className="text-[11px] font-semibold truncate text-foreground/80 max-w-[7rem] sm:max-w-[12.5rem]">
               {material?.filename || "Loading..."}
             </span>
             {material?.processingStatus === "pending" && (
@@ -186,7 +186,7 @@ export function DocumentReader({ materialId, sessionId }: DocumentReaderProps) {
             >
               <ChevronLeft className="size-4" />
             </button>
-            <span className="text-[11px] font-mono text-muted-foreground w-16 text-center">
+            <span className="text-[11px] font-mono text-muted-foreground w-12 sm:w-16 text-center">
               {currentPage} / {numPages || "--"}
             </span>
             <button
@@ -206,7 +206,7 @@ export function DocumentReader({ materialId, sessionId }: DocumentReaderProps) {
           >
             <ZoomOut className="size-3.5" />
           </button>
-          <span className="text-[11px] font-mono text-muted-foreground w-12 text-center select-none">
+          <span className="hidden sm:block text-[11px] font-mono text-muted-foreground w-12 text-center select-none">
             {Math.round(scale * 100)}%
           </span>
           <button

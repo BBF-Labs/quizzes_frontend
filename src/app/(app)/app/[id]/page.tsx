@@ -20,7 +20,10 @@ export default function ChatPage() {
     messageMutation,
     truncateAfter,
     truncateFrom,
+    activeMaterialId,
   } = useAppLayout();
+
+  const isInSplitView = !!activeMaterialId;
 
   const approveMutation = useAppApprove();
   const retryMutation = useRetryMessage(sessionId);
@@ -211,7 +214,12 @@ export default function ChatPage() {
       />
 
       {/* Input */}
-      <div className="sticky bottom-0 z-50 -mx-6 md:-mx-12 px-6 md:px-12 pb-12 pt-4 bg-background border-t border-border/5 shadow-[0_-10px_40px_rgba(0,0,0,0.2)]">
+      <div className={cn(
+        "sticky bottom-0 z-50 pt-4 bg-background border-t border-border/5 shadow-[0_-10px_40px_rgba(0,0,0,0.2)]",
+        isInSplitView
+          ? "px-3 pb-4"
+          : "-mx-6 md:-mx-12 px-6 md:px-12 pb-12",
+      )}>
         <div className="w-full">
           <AnimatePresence>
             {attachedFile && (

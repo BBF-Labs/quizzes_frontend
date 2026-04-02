@@ -119,9 +119,10 @@ export default function AdminPage() {
       );
       setShowNewForm(false);
       setForm(initialForm);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
       toast.error(
-        err.response?.data?.message ??
+        error.response?.data?.message ??
           "Could not create campaign draft. Check required fields and try again.",
       );
     }
@@ -343,7 +344,7 @@ export default function AdminPage() {
                       key={opt}
                       type="button"
                       variant={form.audience === opt ? "default" : "outline"}
-                      onClick={() => setForm({ ...form, audience: opt as any })}
+                      onClick={() => setForm({ ...form, audience: opt as "single" | "broadcast" })}
                       className="flex-1 rounded-(--radius) font-mono text-[10px] uppercase h-10"
                     >
                       {opt}

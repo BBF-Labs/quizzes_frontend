@@ -39,7 +39,7 @@ const features = [
     title: "Structured Quizzes",
     label: "CURRICULUM MAPPED",
     description:
-      "Quizzes broken down by lecture and topics. You always know exactly what you're being tested on and where you are in the material.",
+      "Quizzes broken down by lecture and topics. You always know exactly what you&apos;re being tested on and where you are in the material.",
     icon: <LayoutList className="w-5 h-5 text-primary" />,
   },
   {
@@ -92,7 +92,7 @@ export function Features() {
                 Infrastructure
               </h2>
               <p className="text-muted-foreground text-sm font-mono uppercase tracking-widest text-[10px] md:text-xs">
-                Everything you need. Nothing you don't.
+                Everything you need. Nothing you don&apos;t.
               </p>
             </div>
             <div className="text-primary font-mono text-xs font-bold uppercase tracking-widest flex items-center gap-2">

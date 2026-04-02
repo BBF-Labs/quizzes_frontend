@@ -250,7 +250,7 @@ export const useGenerateQuiz = () => {
     mutationFn: async (data: {
       materialId: string;
       courseId?: string;
-      settings?: any;
+      settings?: Record<string, unknown>;
     }) => {
       const res = await api.post("/app/quizzes/generate", data);
       return res.data;
@@ -307,7 +307,7 @@ export const useGenerateMindMap = () => {
     mutationFn: async (data: {
       materialId: string;
       courseId?: string;
-      settings?: any;
+      settings?: Record<string, unknown>;
     }) => {
       const res = await api.post("/app/mindmaps/generate", data);
       return res.data;

@@ -56,7 +56,7 @@ export function HowZWorks() {
   const [visibleLines, setVisibleLines] = useState<number[]>([]);
 
   useEffect(() => {
-    let timeouts: NodeJS.Timeout[] = [];
+    const timeouts: NodeJS.Timeout[] = [];
 
     // Simulate real-time execution log
     mockLines.forEach((_, i) => {
@@ -92,7 +92,7 @@ export function HowZWorks() {
                 Deterministic Execution
               </h2>
               <p className="text-muted-foreground text-sm font-mono uppercase tracking-widest text-[10px] md:text-xs">
-                Z doesn't just answer questions. It formulates and executes a
+                Z doesn&apos;t just answer questions. It formulates and executes a
                 strict plan.
               </p>
             </div>

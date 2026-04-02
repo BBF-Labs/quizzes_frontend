@@ -19,7 +19,7 @@ const pillars = [
     Icon: Shield,
     label: "PILLAR 01",
     title: "CURRICULUM ALIGNMENT",
-    desc: "Never study outside the scope of your actual university syllabus and lecturer's material. Z knows exactly what's in the exam.",
+    desc: "Never study outside the scope of your actual university syllabus and lecturer&apos;s material. Z knows exactly what&apos;s in the exam.",
     highlight: false,
   },
   {

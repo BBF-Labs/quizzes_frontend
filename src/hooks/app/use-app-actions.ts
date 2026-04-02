@@ -169,7 +169,7 @@ export const useAddHighlight = (sessionId: string) => {
       return response.data;
     },
     onSuccess: (newHighlightData) => {
-      const newHighlight = (newHighlightData as any).data || newHighlightData;
+      const newHighlight = (newHighlightData as { data?: SessionHighlight }).data || (newHighlightData as SessionHighlight);
       
       queryClient.setQueryData(
         ["session-highlights", sessionId],
@@ -222,7 +222,7 @@ export const useUpdateHighlight = (sessionId: string) => {
       return response.data;
     },
     onSuccess: (updatedHighlightData) => {
-      const updatedHighlight = (updatedHighlightData as any).data || updatedHighlightData;
+      const updatedHighlight = (updatedHighlightData as { data?: SessionHighlight }).data || (updatedHighlightData as SessionHighlight);
       
       queryClient.setQueryData(
         ["session-highlights", sessionId],
@@ -357,7 +357,7 @@ export const useCreateStudioNote = (sessionId: string) => {
               ...old.studio,
               notes: [newNote, ...(old.studio?.notes || [])],
             },
-          } as any;
+          } as ZApp;
         },
       );
       // Also invalidate for safety
@@ -467,7 +467,7 @@ export const useUpdateAppMindMap = () => {
       mindMap,
     }: {
       sessionId: string;
-      mindMap: any;
+      mindMap: unknown;
     }) => {
       const response = await api.patch(`/app/${sessionId}/studio/mindmap`, {
         mindMap,

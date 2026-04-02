@@ -70,7 +70,7 @@ export function CurriculumPreview() {
                 Curriculum Mapping
               </h2>
               <p className="text-muted-foreground text-sm font-mono uppercase tracking-widest text-[10px] md:text-xs">
-                Qz maps to your university's program structure. Nothing goes
+                Qz maps to your university&apos;s program structure. Nothing goes
                 untracked.
               </p>
             </div>

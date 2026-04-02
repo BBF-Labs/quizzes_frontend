@@ -11,19 +11,17 @@ export function AppGuard({ children }: { children: React.ReactNode }) {
 
   // Determine actual loading state
   const isAuthLoading = isLoading || isHydrating || isValidating;
-  const [showChildren, setShowChildren] = useState(false);
+  const canShow = !isAuthLoading && !!user;
 
   useEffect(() => {
     if (!isAuthLoading) {
       if (!user) {
         router.replace(`/login?redirectUrl=${encodeURIComponent(pathname)}`);
-      } else {
-        setShowChildren(true);
       }
     }
   }, [user, isAuthLoading, pathname, router]);
 
-  if (!showChildren) {
+  if (!canShow) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center space-y-4">
         <Loader2 className="size-8 text-primary animate-spin" />
