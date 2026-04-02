@@ -1,44 +1,65 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import Link from "next/link";
-import { GraduationCap, Search, X, PlayCircle, Tag } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { GraduationCap, Search, X } from "lucide-react";
 import { useSystemQuizzes } from "@/hooks/app/use-quizzes";
 import { PaginationController } from "@/components/common/pagination-controller";
-
-
 import { QuizCard } from "@/components/app/quizzes/quiz-card";
+
+const PAGE_SIZE = 12;
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function SystemQuizzesPage() {
-  const { data: quizzes = [], isLoading, error: queryError } = useSystemQuizzes();
+function SystemQuizzesContent() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  const [search, setSearch] = useState("");
-  const [tagFilter, setTagFilter] = useState("");
-  const [page, setPage] = useState(1);
-  const pageSize = 12;
+  const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
+  const search = searchParams.get("search") ?? "";
+  const tagFilter = searchParams.get("tag") ?? "";
 
-  const searchRe = useMemo(
-    () =>
-      search.trim()
-        ? new RegExp(search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i")
-        : null,
-    [search],
-  );
+  const updateQueryParams = (updates: Record<string, string | null>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    for (const [key, value] of Object.entries(updates)) {
+      if (!value) {
+        params.delete(key);
+      } else {
+        params.set(key, value);
+      }
+    }
 
-  const filtered = quizzes.filter((q: { title: string; description?: string; tags?: string[] }) => {
-    if (searchRe && !searchRe.test(q.title) && !searchRe.test(q.description ?? "")) return false;
-    if (tagFilter && !q.tags?.includes(tagFilter)) return false;
-    return true;
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, {
+      scroll: false,
+    });
+  };
+
+  const { data, isLoading, error: queryError } = useSystemQuizzes({
+    page,
+    limit: PAGE_SIZE,
+    search: search || undefined,
+    tags: tagFilter || undefined,
   });
 
-  const totalPages = Math.ceil(filtered.length / pageSize);
-  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
+  const quizzes = data?.quizzes ?? [];
+  const pagination = data?.pagination ?? null;
+  const totalPages = pagination?.totalPages ?? 1;
+  const total = pagination?.total ?? 0;
 
-  const allTags = Array.from(new Set(quizzes.flatMap((q: { tags?: string[] }) => q.tags ?? []).filter(Boolean)));
+  const handleSearch = (value: string) => {
+    updateQueryParams({ search: value || null, page: "1" });
+  };
+
+  const handleClearSearch = () => {
+    updateQueryParams({ search: null, page: "1" });
+  };
+
+  const handleTagChange = (value: string) => {
+    updateQueryParams({ tag: value || null, page: "1" });
+  };
 
   return (
     <div className="min-h-full px-4 py-8">
@@ -61,7 +82,7 @@ export default function SystemQuizzesPage() {
             </div>
             <div className="rounded-(--radius) border border-border/40 bg-background/40 px-3 py-2 text-center shrink-0">
               <p className="text-xs font-mono font-semibold text-foreground">
-                {quizzes.length}
+                {isLoading ? "—" : total}
               </p>
               <p className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/60">
                 Available
@@ -77,43 +98,27 @@ export default function SystemQuizzesPage() {
             <input
               type="text"
               value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
+              onChange={(e) => handleSearch(e.target.value)}
               placeholder="Search quizzes…"
               className="w-full border border-border/50 bg-card/40 pl-9 pr-9 py-2.5 text-[12px] font-mono placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50 transition-colors"
             />
             {search && (
               <button
                 type="button"
-                onClick={() => {
-                  setSearch("");
-                  setPage(1);
-                }}
+                onClick={handleClearSearch}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-muted-foreground"
               >
                 <X className="size-3.5" />
               </button>
             )}
           </div>
-          {allTags.length > 0 && (
-            <select
-              value={tagFilter}
-              onChange={(e) => {
-                setTagFilter(e.target.value);
-                setPage(1);
-              }}
-              className="border border-border/50 bg-card/40 px-3 py-2.5 text-[12px] font-mono text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors"
-            >
-              <option value="">All topics</option>
-              {allTags.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
-          )}
+          <input
+            type="text"
+            value={tagFilter}
+            onChange={(e) => handleTagChange(e.target.value)}
+            placeholder="Filter by tag…"
+            className="border border-border/50 bg-card/40 px-3 py-2.5 text-[12px] font-mono placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50 transition-colors sm:w-44"
+          />
         </div>
 
         {/* Loading */}
@@ -133,7 +138,7 @@ export default function SystemQuizzesPage() {
         )}
 
         {/* Empty */}
-        {!isLoading && !queryError && filtered.length === 0 && (
+        {!isLoading && !queryError && quizzes.length === 0 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -143,7 +148,7 @@ export default function SystemQuizzesPage() {
               <GraduationCap className="size-6 text-primary/60" />
             </div>
             <p className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground/50">
-              {search || tagFilter
+                {search || tagFilter
                 ? "No quizzes match your filters"
                 : "No quizzes available yet."}
             </p>
@@ -151,7 +156,7 @@ export default function SystemQuizzesPage() {
         )}
 
         {/* Grid */}
-        {!isLoading && !queryError && paginated.length > 0 && (
+        {!isLoading && !queryError && quizzes.length > 0 && (
           <div className="space-y-8">
             <motion.div
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
@@ -163,7 +168,7 @@ export default function SystemQuizzesPage() {
               animate="visible"
             >
               <AnimatePresence mode="popLayout">
-                {paginated.map((quiz) => (
+                {quizzes.map((quiz) => (
                   <QuizCard
                     key={quiz._id}
                     id={quiz._id}
@@ -180,24 +185,50 @@ export default function SystemQuizzesPage() {
               </AnimatePresence>
             </motion.div>
 
-            <PaginationController
-              page={page}
-              totalPages={totalPages}
-              onPageChange={setPage}
-              className="mt-6"
-            />
+            {totalPages > 1 && (
+              <PaginationController
+                page={page}
+                totalPages={totalPages}
+                onPageChange={(nextPage) =>
+                  updateQueryParams({ page: String(nextPage) })
+                }
+                className="mt-6"
+              />
+            )}
           </div>
         )}
 
-
         {/* Count */}
-        {!isLoading && quizzes.length > 0 && (
+        {!isLoading && total > 0 && (
           <p className="mt-8 text-center text-[10px] font-mono uppercase tracking-widest text-muted-foreground/30">
-            {filtered.length} of {quizzes.length}{" "}
-            {quizzes.length === 1 ? "quiz" : "quizzes"}
+            {total} {total === 1 ? "quiz" : "quizzes"}
+            {(search || tagFilter) && " matching filters"}
           </p>
         )}
       </div>
     </div>
+  );
+}
+
+export default function SystemQuizzesPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-full px-4 py-8">
+          <div className="mx-auto max-w-5xl">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[...Array(6)].map((_, i) => (
+                <div
+                  key={i}
+                  className="h-36 animate-pulse bg-card/40 border border-border/30"
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <SystemQuizzesContent />
+    </Suspense>
   );
 }

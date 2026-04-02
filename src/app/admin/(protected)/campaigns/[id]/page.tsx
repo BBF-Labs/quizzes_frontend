@@ -56,6 +56,7 @@ import {
 } from "@/components/ui/resizable";
 import { useIsMobile } from "@/hooks";
 import { useSocket } from "@/hooks";
+import { loadUiPreferences, UI_PALETTES } from "@/lib/ui-preferences";
 
 const STATUS_CLASS: Record<string, string> = {
   draft: "border-border text-muted-foreground",
@@ -134,6 +135,15 @@ export default function CampaignDetailPage() {
   const { theme } = useTheme();
   const isMobile = useIsMobile();
   const { socket } = useSocket();
+
+  // Load UI preferences for preview
+  const [uiPrefs, setUiPrefs] = useState(() => loadUiPreferences());
+
+  const themeColor =
+    uiPrefs.palette === "custom"
+      ? uiPrefs.customColors.primary
+      : UI_PALETTES[uiPrefs.palette].primary;
+  const borderRadius = uiPrefs.radiusRem;
 
   // Debounce refetch to prevent socket + polling simultaneous requests
   const refetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -570,20 +580,21 @@ export default function CampaignDetailPage() {
               </Button>
             )}
 
-            {isDraft && (
-              <Button
-                id="generate-campaign"
-                onClick={handleGenerate}
-                disabled={generateMutation.isPending}
-                variant="outline"
-                className="rounded-(--radius) font-mono text-[10px] tracking-widest uppercase border-primary/50 text-primary bg-primary/5 hover:bg-primary hover:text-primary-foreground shadow-[0_0_10px_rgba(0,110,255,0.1)] hover:shadow-[0_0_20px_rgba(0,110,255,0.2)] transition-all px-4"
-              >
-                <Sparkles className="size-4" />
-                {generateMutation.isPending
-                  ? "Generating…"
-                  : "Generate AI Body"}
-              </Button>
-            )}
+            <Button
+              id="generate-campaign"
+              onClick={handleGenerate}
+              disabled={!isDraft || generateMutation.isPending}
+              variant="outline"
+              className={cn(
+                "rounded-(--radius) font-mono text-[10px] tracking-widest uppercase border-primary/50 text-primary bg-primary/5 hover:bg-primary hover:text-primary-foreground shadow-[0_0_10px_rgba(0,110,255,0.1)] hover:shadow-[0_0_20px_rgba(0,110,255,0.2)] transition-all px-4",
+                !isDraft && "opacity-50 grayscale cursor-not-allowed border-muted text-muted-foreground bg-transparent shadow-none"
+              )}
+            >
+              <Sparkles className="size-4" />
+              {generateMutation.isPending
+                ? "Generating…"
+                : "Generate AI Body"}
+            </Button>
 
             {isDraft && campaign.bodyMarkdown && (
               <Button
@@ -672,35 +683,37 @@ export default function CampaignDetailPage() {
         onValueChange={handleTabChange}
         className="w-full"
       >
-        <TabsList
-          variant="line"
-          className="bg-transparent border-b border-border/20 w-auto min-w-full justify-start rounded-(--radius) h-auto px-0 mb-6 overflow-x-auto overflow-y-hidden no-scrollbar flex-nowrap shrink-0"
-        >
+        <div className="border-b border-border/30 mb-6 w-full">
+          <TabsList
+            variant="line"
+            className="bg-transparent w-auto min-w-full justify-start h-auto px-0 overflow-x-auto overflow-y-hidden no-scrollbar flex-nowrap shrink-0 border-none"
+          >
           <TabsTrigger
             value="configure"
-            className="rounded-(--radius) data-[state=active]:bg-primary/5"
+            className="relative rounded-none! border-none bg-transparent data-[state=active]:bg-transparent px-6 pb-4 text-muted-foreground data-[state=active]:text-primary transition-all after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-200"
           >
             <Settings2 className="size-3.5 mr-1.5" /> CONFIGURE
           </TabsTrigger>
           <TabsTrigger
             value="assets"
-            className="rounded-(--radius) data-[state=active]:bg-primary/5"
+            className="relative rounded-none! border-none bg-transparent data-[state=active]:bg-transparent px-6 pb-4 text-muted-foreground data-[state=active]:text-primary transition-all after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-200"
           >
             <ImageIcon className="size-3.5 mr-1.5" /> ASSETS
           </TabsTrigger>
           <TabsTrigger
             value="ai-writer"
-            className="rounded-(--radius) data-[state=active]:bg-primary/5"
+            className="relative rounded-none! border-none bg-transparent data-[state=active]:bg-transparent px-6 pb-4 text-muted-foreground data-[state=active]:text-primary transition-all after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-200"
           >
             <Sparkles className="size-3.5 mr-1.5" /> AI WRITER
           </TabsTrigger>
           <TabsTrigger
             value="composing"
-            className="rounded-(--radius) data-[state=active]:bg-primary/5"
+            className="relative rounded-none! border-none bg-transparent data-[state=active]:bg-transparent px-6 pb-4 text-muted-foreground data-[state=active]:text-primary transition-all after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-200"
           >
             <PenTool className="size-3.5 mr-1.5" /> COMPOSING
           </TabsTrigger>
         </TabsList>
+      </div>
 
         <div className="min-h-125">
           <AnimatePresence mode="wait">
@@ -987,6 +1000,8 @@ export default function CampaignDetailPage() {
                               url: `${l.baseUrl}${l.pathTemplate}`,
                             }))}
                             name="Admin (Preview)"
+                            themeColor={themeColor}
+                            borderRadius={borderRadius}
                             className="border-none! p-0! sm:p-8!"
                           />
                         </div>

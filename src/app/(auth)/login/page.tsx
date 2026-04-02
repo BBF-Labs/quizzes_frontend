@@ -11,10 +11,12 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 function LoginForm() {
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get("redirectUrl") || "/";
+  const redirectUrl = searchParams.get("redirectUrl");
+  const redirectTarget =
+    redirectUrl && redirectUrl.startsWith("/") ? redirectUrl : "/app";
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -22,7 +24,6 @@ function LoginForm() {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +31,7 @@ function LoginForm() {
     setLoading(true);
     try {
       await login(username, password, rememberMe);
-      setIsSuccess(true);
+      router.replace(redirectTarget);
     } catch (err: unknown) {
       setError(
         (err instanceof Error ? err.message : undefined) ??
@@ -43,14 +44,12 @@ function LoginForm() {
     }
   };
 
-  const { user } = useAuth();
-
-  // Logic: When successful login happens, redirect to the provided origin URL or home.
+  // If a user is already authenticated, keep auth pages inaccessible.
   useEffect(() => {
-    if (isSuccess && user) {
-      router.replace(redirectUrl);
+    if (user) {
+      router.replace(redirectTarget);
     }
-  }, [isSuccess, user, router, redirectUrl]);
+  }, [user, router, redirectTarget]);
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4 relative overflow-hidden">
