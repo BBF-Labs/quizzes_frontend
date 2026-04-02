@@ -17,6 +17,8 @@ interface EmailPreviewProps {
   markdownBody?: string;
   links?: { label: string; url: string }[];
   name?: string;
+  themeColor?: string;
+  borderRadius?: number;
   className?: string;
 }
 
@@ -60,9 +62,14 @@ export function EmailPreview({
   markdownBody,
   links = [],
   name,
+  themeColor,
+  borderRadius = 0,
   className,
 }: EmailPreviewProps) {
   const config = typeConfigs[type] || typeConfigs.update;
+
+  const currentThemeColor = themeColor || "#006eff";
+  const radius = `${borderRadius}rem`;
 
   return (
     <div
@@ -71,17 +78,25 @@ export function EmailPreview({
         className,
       )}
     >
-      <div className="w-full max-w-150 mx-auto bg-white dark:bg-zinc-900 border-2 border-black dark:border-zinc-800 shadow-[8px_8px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_rgba(255,255,255,0.05)]">
+      <div 
+        className="w-full max-w-150 mx-auto bg-white dark:bg-zinc-900 border-2 border-black dark:border-zinc-800 shadow-[8px_8px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_rgba(255,255,255,0.05)]"
+        style={{ borderRadius: radius }}
+      >
         <div className="p-5 sm:p-8">
           {/* Badge */}
           <div
-            className={cn("border px-2 py-1 inline-block mb-6", config.border)}
+            className={cn("border px-2 py-1 inline-block mb-6", !themeColor && config.border)}
+            style={{ 
+              borderColor: themeColor ? currentThemeColor : undefined,
+              borderRadius: radius
+            }}
           >
             <span
               className={cn(
                 "text-[11px] font-mono font-bold tracking-widest uppercase",
-                config.color,
+                !themeColor && config.color,
               )}
+              style={themeColor ? { color: currentThemeColor } : {}}
             >
               {category === "newsletter" ? "NEWSLETTER" : config.label}
             </span>
@@ -91,8 +106,9 @@ export function EmailPreview({
           <div
             className={cn(
               "bg-[#f8fafc] dark:bg-zinc-800/50 border-l-4 p-4 mb-5",
-              config.border,
+              !themeColor && config.border,
             )}
+            style={themeColor ? { borderLeftColor: currentThemeColor } : {}}
           >
             <h1 className="text-[22px] sm:text-[24px] font-black leading-[1.15] m-0 text-black dark:text-white uppercase tracking-tight">
               {title}
@@ -101,7 +117,12 @@ export function EmailPreview({
 
           <div className="text-[13px] font-bold text-black dark:text-white mb-3 tracking-wide font-mono">
             Greetings{" "}
-            <span className="text-[#006eff]">{name || "Subscriber"}</span>,
+            <span 
+              className={cn(!themeColor && "text-[#006eff]")}
+              style={themeColor ? { color: currentThemeColor } : {}}
+            >
+              {name || "Subscriber"}
+            </span>,
           </div>
 
           <div className="mb-5">
@@ -110,7 +131,7 @@ export function EmailPreview({
               font-mono
               prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-black dark:prose-headings:text-white
               prose-p:text-zinc-700 dark:prose-p:text-zinc-300 prose-p:leading-[1.6]
-              prose-a:text-[#006eff] prose-a:no-underline hover:prose-a:underline
+              prose-a:no-underline hover:prose-a:underline
               prose-strong:text-black dark:prose-strong:text-white
               prose-li:text-zinc-700 dark:prose-li:text-zinc-300
               prose-hr:border-zinc-200 dark:prose-hr:border-zinc-800"
@@ -118,6 +139,15 @@ export function EmailPreview({
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
+                  a: ({ children, href }) => (
+                    <a 
+                      href={href}
+                      className="underline"
+                      style={{ color: currentThemeColor }}
+                    >
+                      {children}
+                    </a>
+                  ),
                   h1: ({ children }) => (
                     <h1 className="text-[22px] sm:text-[24px] font-black uppercase tracking-tight mb-2.5 text-black dark:text-white font-mono leading-[1.2]">
                       {children}
@@ -146,7 +176,14 @@ export function EmailPreview({
                 <a
                   key={idx}
                   href={link.url}
-                  className="bg-[#006eff] text-white text-[13px] font-mono font-bold text-center block py-3 px-4 tracking-[0.15em] uppercase border-2 border-black dark:border-white/10 hover:translate-x-0.5 hover:translate-y-0.5 transition-transform"
+                  className={cn(
+                    "text-white text-[13px] font-mono font-bold text-center block py-3 px-4 tracking-[0.15em] uppercase border-2 border-black dark:border-white/10 hover:translate-x-0.5 hover:translate-y-0.5 transition-transform",
+                    !themeColor && "bg-[#006eff]"
+                  )}
+                  style={{ 
+                    backgroundColor: currentThemeColor,
+                    borderRadius: radius
+                  }}
                 >
                   {link.label}
                 </a>

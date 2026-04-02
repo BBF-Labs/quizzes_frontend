@@ -21,6 +21,7 @@ export function useProfileUpdate() {
       password?: string;
       currentPassword?: string;
       profilePicture?: string | IUpload;
+      notificationSettings?: any;
     }) => {
       const response = await api.put("/users/profile", data);
       return response.data.data;

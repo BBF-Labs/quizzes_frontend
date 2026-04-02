@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Plus, Search, X, BookOpen } from "lucide-react";
 import { toast } from "sonner";
@@ -133,11 +134,29 @@ function CreateCourseForm({ onClose }: { onClose: () => void }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminCoursesPage() {
-  const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
-  const [page, setPage] = useState(1);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
+  const search = searchParams.get("search") ?? "";
   const pageSize = 10;
+
+  const updateQueryParams = (updates: Record<string, string | null>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    for (const [key, value] of Object.entries(updates)) {
+      if (!value) {
+        params.delete(key);
+      } else {
+        params.set(key, value);
+      }
+    }
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, {
+      scroll: false,
+    });
+  };
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
@@ -189,15 +208,13 @@ export default function AdminCoursesPage() {
             className="pl-9 rounded-(--radius) bg-background/50 font-mono text-xs uppercase tracking-widest"
             value={search}
             onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
+              updateQueryParams({ search: e.target.value || null, page: "1" });
             }}
           />
           {search && (
             <button
               onClick={() => {
-                setSearch("");
-                setPage(1);
+                updateQueryParams({ search: null, page: "1" });
               }}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-muted-foreground"
             >
@@ -275,7 +292,9 @@ export default function AdminCoursesPage() {
           <PaginationController
             page={page}
             totalPages={totalPages}
-            onPageChange={setPage}
+            onPageChange={(nextPage) =>
+              updateQueryParams({ page: String(nextPage) })
+            }
           />
         </div>
       )}

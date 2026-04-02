@@ -41,6 +41,8 @@ export function AppLayoutWrapper({ children }: { children: ReactNode }) {
     "mindmaps",
     "library",
     "profile",
+    "courses",
+    "timetable",
   ]);
   const sessionId = isAppSection && routePart && !staticRoutes.has(routePart) ? routePart : "";
   const isSessionDetail = !!sessionId;
@@ -54,6 +56,8 @@ export function AppLayoutWrapper({ children }: { children: ReactNode }) {
     notes: "Notes",
     mindmaps: "Mind Maps",
     profile: "Profile",
+    courses: "My Courses",
+    timetable: "Exam Timetable",
   };
   const detailLabelMap: Record<string, string> = {
     flashcards: "Set",
