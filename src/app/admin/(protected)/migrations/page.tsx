@@ -281,20 +281,35 @@ function MigrationsContent() {
                           <div className="flex flex-col gap-1">
                             <div className="flex items-center gap-2">
                               <Calendar className="size-3" />
-                              {format(
-                                new Date(m.startTime),
-                                "MMM dd, yyyy HH:mm",
-                              )}
+                              {(() => {
+                                try {
+                                  return format(
+                                    new Date(m.startTime),
+                                    "MMM dd, yyyy HH:mm",
+                                  );
+                                } catch {
+                                  return "Invalid Date";
+                                }
+                              })()}
                             </div>
-                            {m.endTime && (
-                              <div className="flex items-center gap-2 opacity-60">
-                                <Clock className="size-3" />
-                                {formatDistance(
-                                  new Date(m.endTime),
-                                  new Date(m.startTime),
-                                )}
-                              </div>
-                            )}
+                            {(() => {
+                              try {
+                                if (!m.endTime || !m.startTime) return null;
+                                const end = new Date(m.endTime);
+                                const start = new Date(m.startTime);
+                                if (isNaN(end.getTime()) || isNaN(start.getTime()))
+                                  return null;
+
+                                return (
+                                  <div className="flex items-center gap-2 opacity-60">
+                                    <Clock className="size-3" />
+                                    {formatDistance(end, start)}
+                                  </div>
+                                );
+                              } catch {
+                                return null;
+                              }
+                            })()}
                           </div>
                         </td>
                         <td className="px-6 py-4 text-right">
