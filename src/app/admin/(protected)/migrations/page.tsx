@@ -7,7 +7,6 @@ import {
   Play,
   RotateCw,
   CheckCircle2,
-  AlertCircle,
   FileCode,
   Calendar,
   History,
@@ -65,8 +64,12 @@ function MigrationsContent() {
       const response = await runMutation.mutateAsync();
       toast.success(response.message || "Migration job enqueued successfully.");
       refetch();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to enqueue migration job.");
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to enqueue migration job.";
+      toast.error(errorMessage);
     }
   };
 
@@ -297,7 +300,10 @@ function MigrationsContent() {
                                 if (!m.endTime || !m.startTime) return null;
                                 const end = new Date(m.endTime);
                                 const start = new Date(m.startTime);
-                                if (isNaN(end.getTime()) || isNaN(start.getTime()))
+                                if (
+                                  isNaN(end.getTime()) ||
+                                  isNaN(start.getTime())
+                                )
                                   return null;
 
                                 return (
@@ -341,7 +347,7 @@ function MigrationsContent() {
         </Card>
 
         {/* Pending Scripts */}
-        <Card className="rounded-(--radius) border-border/50 bg-card/40 h-fit">
+        <Card className="rounded-(--radius) border-border/50 bg-card/40 lg:max-h-160 flex flex-col min-h-0">
           <CardHeader className="border-b border-border/10 bg-secondary/5">
             <div className="flex items-center gap-2">
               <FileCode className="size-4 text-blue-400" />
@@ -350,7 +356,7 @@ function MigrationsContent() {
               </CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="p-4">
+          <CardContent className="p-4 min-h-0">
             {pending.length === 0 ? (
               <div className="p-8 text-center space-y-3">
                 <CheckCircle2 className="size-8 text-green-500/20 mx-auto" />
@@ -359,31 +365,19 @@ function MigrationsContent() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-2">
-                {pending.map((file) => (
-                  <div
-                    key={file}
-                    className="flex items-center gap-3 p-3 rounded-(--radius) border border-border/30 bg-background/30 group"
-                  >
-                    <div className="size-1.5 rounded-full bg-blue-500 animate-pulse" />
-                    <span className="text-[11px] font-mono text-foreground truncate flex-1">
-                      {file}
-                    </span>
-                  </div>
-                ))}
-                <div className="mt-6 p-4 border border-blue-500/20 bg-blue-500/5 rounded-(--radius)">
-                  <div className="flex gap-3">
-                    <AlertCircle className="size-4 text-blue-400 shrink-0" />
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-mono font-bold text-blue-400 uppercase tracking-widest">
-                        Ready to Sync
-                      </p>
-                      <p className="text-[9px] font-mono text-muted-foreground uppercase leading-relaxed">
-                        These scripts are waiting to be applied to the
-                        production engine.
-                      </p>
+              <div className="space-y-4">
+                <div className="space-y-2 max-h-120 overflow-y-auto pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:w-0">
+                  {pending.map((file) => (
+                    <div
+                      key={file}
+                      className="flex items-center gap-3 p-3 rounded-(--radius) border border-border/30 bg-background/30 group"
+                    >
+                      <div className="size-1.5 rounded-full bg-blue-500 animate-pulse" />
+                      <span className="text-[11px] font-mono text-foreground truncate flex-1">
+                        {file}
+                      </span>
                     </div>
-                  </div>
+                  ))}
                 </div>
               </div>
             )}
