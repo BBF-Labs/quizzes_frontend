@@ -36,6 +36,7 @@ export default function ProfilePage() {
   const updateProfile = useProfileUpdate();
 
   const [username, setUsername] = useState(user?.username || "");
+  const [studentId, setStudentId] = useState(user?.studentId || "");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -126,6 +127,7 @@ export default function ProfilePage() {
         username: username !== user?.username ? username : undefined,
         currentPassword: currentPassword || undefined,
         password: newPassword || undefined,
+        studentId: studentId,
         profilePicture: uploadedPicture ? uploadedPicture._id : undefined,
         notificationSettings: notifSettings,
       },
@@ -299,6 +301,22 @@ export default function ProfilePage() {
                 username !== user?.username && isUsernameTaken && "border-destructive/50 bg-destructive/5",
               )}
             />
+          </div>
+
+          {/* Student ID / Index Number */}
+          <div className="space-y-1.5 sm:col-span-2">
+            <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/60 flex items-center gap-1.5">
+              <BadgeCheck className="size-3" /> Index Number / Student ID
+            </label>
+            <Input
+              value={studentId}
+              onChange={(e) => setStudentId(e.target.value)}
+              placeholder="e.g. 10987654 or ID-12345"
+              className="font-mono text-xs h-10 bg-background/50"
+            />
+            <p className="text-[8px] font-mono text-muted-foreground/40 uppercase tracking-widest">
+              Used for personalizing your exam timetable and venue assignments.
+            </p>
           </div>
         </div>
       </motion.div>

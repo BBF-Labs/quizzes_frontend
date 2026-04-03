@@ -8,7 +8,9 @@ export interface PublicVenue {
 }
 
 export interface PublicExamEntry {
-  _id: string;
+  _id: string; // session ID
+  sessionId?: string;
+  label?: string;
   courseId: string;
   courseCode: string;
   courseName: string;
@@ -16,6 +18,9 @@ export interface PublicExamEntry {
   venues: PublicVenue[];
   assignedVenue?: string | null;
   durationMinutes: number;
+  semester?: string;
+  academicYear?: string;
+  timetableId?: string;
 }
 
 export interface PublicTimetableEntry extends PublicExamEntry {
