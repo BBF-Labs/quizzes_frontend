@@ -308,6 +308,7 @@ function AddEntryForm({
     scheduledAt: new Date().toISOString(),
     venues: [{ venue: "", indexStart: "", indexEnd: "" }],
     durationMinutes: 120,
+    label: "",
   });
 
   const selectedCourse = courses.find((c) => c._id === form.courseId);
@@ -322,6 +323,7 @@ function AddEntryForm({
         scheduledAt: new Date(form.scheduledAt).toISOString(),
         venues: form.venues.filter((v) => v.venue.trim() !== ""),
         durationMinutes: form.durationMinutes,
+        label: form.label,
         courseCode: "", // Backend will populate
         courseName: "", // Backend will populate
       });
@@ -331,6 +333,7 @@ function AddEntryForm({
         scheduledAt: new Date().toISOString(),
         venues: [{ venue: "", indexStart: "", indexEnd: "" }],
         durationMinutes: 120,
+        label: "",
       });
       setCourseSearch("");
       onAdded();
@@ -466,6 +469,17 @@ function AddEntryForm({
       <div className="flex gap-2 items-end">
         <div className="flex-1">
           <label className="text-[9px] font-mono uppercase text-muted-foreground mb-1 block">
+            Batch / Label
+          </label>
+          <Input
+            value={form.label}
+            onChange={(e) => setForm((f) => ({ ...f, label: e.target.value }))}
+            className="h-9 text-[11px] font-mono uppercase"
+            placeholder="e.g. Batch 1"
+          />
+        </div>
+        <div className="flex-1">
+          <label className="text-[9px] font-mono uppercase text-muted-foreground mb-1 block">
             Duration (Min)
           </label>
           <Input
@@ -597,80 +611,104 @@ function TimetableRow({ timetable }: { timetable: any }) {
               <AddEntryForm timetableId={timetable._id} onAdded={() => {}} />
 
               {timetable.entries && timetable.entries.length > 0 ? (
-                <div className="space-y-2 mt-4">
-                  <div className="grid grid-cols-12 px-3 py-2 text-[9px] font-mono uppercase text-muted-foreground tracking-widest border-b border-border/20">
-                    <div className="col-span-3">Course</div>
-                    <div className="col-span-3">Date & Time</div>
-                    <div className="col-span-3">Venue</div>
-                    <div className="col-span-2 text-center">Duration</div>
-                    <div className="col-span-1"></div>
-                  </div>
+                <div className="space-y-4 mt-4">
                   {timetable.entries
-                    .sort(
-                      (a: any, b: any) =>
-                        new Date(a.scheduledAt).getTime() -
-                        new Date(b.scheduledAt).getTime(),
-                    )
+                    .sort((a: any, b: any) => {
+                      const timeA = a.sessions?.[0]?.scheduledAt
+                        ? new Date(a.sessions[0].scheduledAt).getTime()
+                        : 0;
+                      const timeB = b.sessions?.[0]?.scheduledAt
+                        ? new Date(b.sessions[0].scheduledAt).getTime()
+                        : 0;
+                      return timeA - timeB;
+                    })
                     .map((entry: any) => (
                       <div
                         key={entry._id}
-                        className="grid grid-cols-12 items-center px-3 py-2 border border-border/20 rounded hover:bg-primary/5 transition-colors"
+                        className="border border-border/20 rounded overflow-hidden"
                       >
-                        <div className="col-span-3">
-                          <p className="text-[11px] font-mono font-bold text-primary">
-                            {entry.courseCode}
-                          </p>
-                          <p className="text-[9px] font-mono text-muted-foreground truncate">
-                            {entry.courseName}
-                          </p>
-                        </div>
-                        <div className="col-span-3 flex items-center gap-2">
-                          <Clock className="size-3 text-muted-foreground/50" />
-                          <span className="text-[10px] font-mono uppercase">
-                            {format(
-                              new Date(entry.scheduledAt),
-                              "MMM d, HH:mm",
-                            )}
-                          </span>
-                        </div>
-                        <div className="col-span-3">
-                          <div className="flex items-center gap-2 mb-1">
-                            <MapPin className="size-3 text-muted-foreground/50" />
-                            <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground">
-                              VENUES
+                        {/* Course Header */}
+                        <div className="bg-secondary/5 px-4 py-2 border-b border-border/10 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <span className="text-[11px] font-mono font-bold text-primary">
+                              {entry.courseCode}
                             </span>
-                          </div>
-                          <div className="flex flex-wrap gap-1">
-                            {entry.venues?.map((v: any, vIdx: number) => (
+                            <span className="text-[10px] font-mono text-muted-foreground uppercase opacity-60">
+                              {entry.courseName}
+                            </span>
+                            {entry.isAutoSynced && (
                               <Badge
-                                key={vIdx}
                                 variant="outline"
-                                className="rounded-none bg-primary/5 text-[9px] font-mono py-0 px-1 border-primary/20"
+                                className="h-4 text-[7px] uppercase tracking-[0.2em] py-0 border-primary/20 bg-primary/5 text-primary/60"
                               >
-                                {v.venue}{" "}
-                                {v.indexStart
-                                  ? `(${v.indexStart}-${v.indexEnd})`
-                                  : ""}
+                                STS Synced
                               </Badge>
-                            )) || (
-                              <span className="text-[10px] font-mono opacity-40 italic">
-                                No venues
-                              </span>
                             )}
                           </div>
-                        </div>
-                        <div className="col-span-2 text-center">
-                          <span className="text-[10px] font-mono opacity-60">
-                            {entry.durationMinutes}m
-                          </span>
-                        </div>
-                        <div className="col-span-1 flex justify-end">
                           <button
                             onClick={() => handleRemoveEntry(entry._id)}
-                            className="p-1.5 text-muted-foreground/40 hover:text-destructive transition-colors"
+                            className="p-1 px-2 text-muted-foreground/40 hover:text-destructive transition-colors text-[9px] uppercase font-mono tracking-widest flex items-center gap-1"
                           >
-                            <Trash2 className="size-3.5" />
+                            <Trash2 className="size-3" /> Remove Course
                           </button>
+                        </div>
+
+                        {/* Sessions List */}
+                        <div className="divide-y divide-border/10">
+                          {entry.sessions?.map(
+                            (session: any, sIdx: number) => (
+                              <div
+                                key={session.sessionId || sIdx}
+                                className="grid grid-cols-12 items-center px-4 py-3 hover:bg-primary/5 transition-colors"
+                              >
+                                <div className="col-span-3 flex items-center gap-2">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-primary/30" />
+                                  <span className="text-[10px] font-mono uppercase font-bold">
+                                    {session.label || `Batch ${sIdx + 1}`}
+                                  </span>
+                                </div>
+                                <div className="col-span-4 flex items-center gap-2">
+                                  <Clock className="size-3 text-muted-foreground/50" />
+                                  <span className="text-[10px] font-mono uppercase">
+                                    {format(
+                                      new Date(session.scheduledAt),
+                                      "MMM d, HH:mm",
+                                    )}
+                                    <span className="ml-2 opacity-40">
+                                      ({session.durationMinutes}m)
+                                    </span>
+                                  </span>
+                                </div>
+                                <div className="col-span-5 flex items-center gap-2 overflow-hidden">
+                                  <MapPin className="size-3 text-muted-foreground/50 shrink-0" />
+                                  <div className="flex flex-wrap gap-1">
+                                    {session.venues?.map(
+                                      (v: any, vIdx: number) => (
+                                        <Badge
+                                          key={vIdx}
+                                          variant="outline"
+                                          className="rounded-none bg-primary/5 text-[8px] font-mono py-0 px-1 border-primary/20"
+                                        >
+                                          {v.venue}{" "}
+                                          {v.indexStart
+                                            ? `(${v.indexStart}-${v.indexEnd})`
+                                            : ""}
+                                        </Badge>
+                                      ),
+                                    ) || (
+                                      <span className="text-[10px] font-mono opacity-40 italic">
+                                        No venues
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            ),
+                          ) || (
+                            <div className="py-4 text-center text-[10px] font-mono opacity-40 italic">
+                              No sessions found
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}

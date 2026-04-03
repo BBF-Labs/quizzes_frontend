@@ -9,6 +9,7 @@ export type SessionUser = {
   username: string;
   email: string;
   bio?: string;
+  studentId?: string;
   role?: "student" | "creator" | "moderator" | "super_admin";
   isSubscribed?: boolean;
   profilePicture?: string;
@@ -26,6 +27,7 @@ type JwtPayload = {
   username?: string;
   email?: string;
   exp?: number;
+  studentId?: string;
   role?: "student" | "creator" | "moderator" | "super_admin";
   isSubscribed?: boolean;
   profilePicture?: string;
@@ -73,6 +75,7 @@ export function hydrateSessionUserFromToken(): SessionUser | null {
     email: decoded.email ?? "",
     role: decoded.role ?? "student",
     isSubscribed: decoded.isSubscribed ?? false,
+    studentId: decoded.studentId,
     profilePicture: decoded.profilePicture,
     onboarding: decoded.onboarding,
     notificationSettings: decoded.notificationSettings,

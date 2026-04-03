@@ -20,6 +20,7 @@ export function useProfileUpdate() {
       username?: string;
       password?: string;
       currentPassword?: string;
+      studentId?: string;
       profilePicture?: string | IUpload;
       notificationSettings?: any;
     }) => {

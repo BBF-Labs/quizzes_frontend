@@ -46,8 +46,7 @@ export default function TimetablePage() {
   );
 
   const allEntries = useMemo(() => {
-    return timetables
-      .flatMap((t) => t.entries)
+    return (timetables as any[])
       .sort(
         (a, b) =>
           new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
@@ -198,6 +197,14 @@ export default function TimetablePage() {
                         >
                           {entry.examType}
                         </Badge>
+                        {entry.label && (
+                          <Badge
+                            variant="secondary"
+                            className="font-mono text-[9px] uppercase tracking-widest h-5 rounded-none border-primary/20 bg-primary/10 text-primary"
+                          >
+                            {entry.label}
+                          </Badge>
+                        )}
                         {isPast && (
                           <Badge
                             variant="secondary"

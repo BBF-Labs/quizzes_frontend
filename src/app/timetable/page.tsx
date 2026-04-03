@@ -84,11 +84,7 @@ function PublicExamsContent() {
     return () => clearInterval(timer);
   }, []);
 
-  const allEntries =
-    data?.entries.map((e) => ({
-      ...e,
-      examDate: new Date(e.scheduledAt),
-    })) ?? [];
+  const allEntries = data?.entries ?? [];
   const pagination = data?.pagination;
   const totalPages = pagination?.totalPages ?? 1;
 
@@ -97,7 +93,8 @@ function PublicExamsContent() {
     ? Math.max(
         0,
         Math.ceil(
-          (nextExam.examDate.getTime() - nowMs) / (1000 * 60 * 60 * 24),
+          (new Date(nextExam.scheduledAt).getTime() - nowMs) /
+            (1000 * 60 * 60 * 24),
         ),
       )
     : null;
@@ -231,21 +228,23 @@ function PublicExamsContent() {
                 </div>
 
                 {nextExam && (
-                  <div className="mt-10 pt-6 border-t border-border/50 grid grid-cols-2 gap-4">
-                    <div>
-                      <div className="text-2xl font-black text-foreground font-mono">
-                        {format(nextExam.examDate, "h:mm a")}
+                  <div className="mt-10 pt-6 border-t border-border/50">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <div className="text-2xl font-black text-foreground font-mono">
+                          {format(new Date(nextExam.scheduledAt), "h:mm a")}
+                        </div>
+                        <div className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase mt-1">
+                          Start Time
+                        </div>
                       </div>
-                      <div className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase mt-1">
-                        Start Time
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-black text-foreground font-mono">
-                        {formatDuration(nextExam.durationMinutes)}
-                      </div>
-                      <div className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase mt-1">
-                        Duration
+                      <div>
+                        <div className="text-2xl font-black text-foreground font-mono">
+                          {formatDuration(nextExam.durationMinutes || 120)}
+                        </div>
+                        <div className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase mt-1">
+                          Duration
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -264,88 +263,97 @@ function PublicExamsContent() {
                 </div>
 
                 <div className="divide-y divide-border/50 flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:w-0">
-                  {allEntries.map((entry, idx) => (
-                    <motion.div
-                      key={`${entry._id}-${idx}`}
-                      variants={itemVariants}
-                      className="flex hover:bg-secondary/10 transition-colors"
-                    >
-                      <div className="flex-1 p-8 md:p-10">
-                        <div className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mb-1">
-                          {entry.courseCode} · {entry.semester} ·{" "}
-                          {entry.academicYear}
-                        </div>
-                        <h4 className="text-lg font-mono font-bold text-foreground mb-4 uppercase tracking-tight">
-                          {entry.courseName}
-                        </h4>
-
-                        <div className="flex flex-wrap gap-y-2 gap-x-5 text-sm text-muted-foreground font-mono mb-4">
-                          <div className="flex items-center gap-1.5">
-                            <CalendarClock className="w-3.5 h-3.5 text-primary/80" />
-                            <span>
-                              {format(entry.examDate, "eee dd MMM yyyy")} ·{" "}
-                              {format(entry.examDate, "h:mm a")}
-                            </span>
+                  {allEntries.map((entry, idx) => {
+                    const sessDate = new Date(entry.scheduledAt);
+                    return (
+                      <motion.div
+                        key={`${entry._id}-${idx}`}
+                        variants={itemVariants}
+                        className="flex hover:bg-secondary/10 transition-colors"
+                      >
+                        <div className="flex-1 p-8 md:p-10">
+                          <div className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mb-1">
+                            {entry.courseCode} · {entry.semester} ·{" "}
+                            {entry.academicYear}
                           </div>
-                          <div className="flex items-center gap-1.5">
-                            <Clock className="w-3.5 h-3.5 text-primary/80" />
-                            <span>{formatDuration(entry.durationMinutes)}</span>
-                          </div>
-                        </div>
-
-                        {entry.assignedVenue && (
-                          <div className="bg-primary/5 p-3 flex items-center gap-3 border border-primary/10 rounded-none mb-4">
-                            <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
-                            <span className="text-xs font-mono text-primary uppercase tracking-wider">
-                              Your venue: {entry.assignedVenue}
-                            </span>
-                          </div>
-                        )}
-
-                        <div className="bg-primary/5 p-3 flex items-center gap-3 border border-primary/10 rounded-none">
-                          <Bell className="w-3.5 h-3.5 text-primary shrink-0" />
-                          <span className="text-xs font-mono text-primary">
-                            Venue arrangement available for index-based seat
-                            planning.
-                          </span>
-                        </div>
-
-                        <div className="flex flex-wrap gap-2 mt-4">
-                          {entry.venues
-                            .filter((v) => !VENUE_NOISE_PATTERN.test(v.venue))
-                            .map((v, vIdx) => (
+                          <div className="flex items-center justify-between mb-4">
+                            <h4 className="text-lg font-mono font-bold text-foreground uppercase tracking-tight">
+                              {entry.courseName}
+                            </h4>
+                            {entry.label && (
                               <Badge
-                                key={vIdx}
-                                variant="outline"
-                                className="rounded-none border-border/50 bg-background font-mono text-[10px] py-1 px-3"
+                                variant="secondary"
+                                className="rounded-none border-primary/20 bg-primary/10 text-primary font-mono text-[10px] uppercase tracking-widest px-2 py-0.5"
                               >
-                                {v.venue}
-                                {v.indexStart && (
-                                  <span className="ml-2 opacity-70">
-                                    [{v.indexStart}-{v.indexEnd}]
-                                  </span>
-                                )}
+                                {entry.label}
                               </Badge>
-                            ))}
-                        </div>
-                      </div>
+                            )}
+                          </div>
 
-                      <div className="border-l border-border/50 flex flex-col items-center justify-center px-8 min-w-30 text-center">
-                        <div className="text-5xl md:text-6xl font-black font-mono tracking-tight leading-none text-foreground">
-                          {Math.max(
-                            0,
-                            Math.ceil(
-                              (entry.examDate.getTime() - nowMs) /
-                                (1000 * 60 * 60 * 24),
-                            ),
+                          <div className="flex flex-wrap gap-y-2 gap-x-5 text-sm text-muted-foreground font-mono mb-4">
+                            <div className="flex items-center gap-1.5">
+                              <CalendarClock className="w-3.5 h-3.5 text-primary/80" />
+                              <span>
+                                {format(sessDate, "eee dd MMM yyyy")} ·{" "}
+                                {format(sessDate, "h:mm a")}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <Clock className="w-3.5 h-3.5 text-primary/80" />
+                              <span>
+                                {formatDuration(entry.durationMinutes || 120)}
+                              </span>
+                            </div>
+                          </div>
+
+                          {entry.assignedVenue && (
+                            <div className="bg-primary/5 p-3 flex items-center gap-3 border border-primary/10 rounded-none mb-4">
+                              <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
+                              <span className="text-xs font-mono text-primary uppercase tracking-wider">
+                                Your venue: {entry.assignedVenue}
+                              </span>
+                            </div>
                           )}
+
+                          <div className="flex flex-wrap gap-2 mt-4">
+                            {entry.venues
+                              .filter(
+                                (v: any) => !VENUE_NOISE_PATTERN.test(v.venue),
+                              )
+                              .map((v: any, vIdx: number) => (
+                                <Badge
+                                  key={vIdx}
+                                  variant="outline"
+                                  className="rounded-none border-border/50 bg-background font-mono text-[10px] py-1 px-3"
+                                >
+                                  {v.venue}
+                                  {v.indexStart && (
+                                    <span className="ml-2 opacity-70">
+                                      [{v.indexStart}-{v.indexEnd}]
+                                    </span>
+                                  )}
+                                </Badge>
+                              ))}
+                          </div>
                         </div>
-                        <div className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase mt-2">
-                          days
+
+                        <div className="border-l border-border/50 flex flex-col items-center justify-center px-8 min-w-30 text-center">
+                          <div className="text-5xl md:text-6xl font-black font-mono tracking-tight leading-none text-foreground">
+                            {Math.max(
+                              0,
+                              Math.ceil(
+                                (sessDate.getTime() - nowMs) /
+                                  (1000 * 60 * 60 * 24),
+                              ),
+                            )}
+                          </div>
+                          <div className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase mt-2">
+                            days
+                          </div>
                         </div>
-                      </div>
-                    </motion.div>
-                  ))}
+                      </motion.div>
+                    );
+                  })}
                 </div>
               </div>
             </motion.div>

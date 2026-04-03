@@ -340,11 +340,9 @@ export interface AdminTimetable {
   createdAt: string;
 }
 
-export interface AdminExamEntry {
-  _id?: string;
-  courseId: string;
-  courseCode: string;
-  courseName: string;
+export interface AdminExamSession {
+  sessionId: string;
+  label?: string;
   scheduledAt: string;
   venues: {
     venue: string;
@@ -352,6 +350,24 @@ export interface AdminExamEntry {
     indexEnd?: string;
   }[];
   durationMinutes: number;
+}
+
+export interface AdminExamEntry {
+  _id?: string;
+  courseId: string;
+  courseCode: string;
+  courseName: string;
+  isAutoSynced?: boolean;
+  sessions?: AdminExamSession[];
+  // Legacy fields for manual add form compatibility
+  scheduledAt?: string;
+  label?: string;
+  venues?: {
+    venue: string;
+    indexStart?: string;
+    indexEnd?: string;
+  }[];
+  durationMinutes?: number;
 }
 
 export const useAdminTimetables = (params: PaginationParams = {}) => {
