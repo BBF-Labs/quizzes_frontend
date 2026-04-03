@@ -145,14 +145,8 @@ export const useAppStream = (
       eventSource.addEventListener("message", (event) => {
         try {
           const signal: StreamSignal = JSON.parse(event.data);
-          console.log("[useAppStream] Raw Signal:", signal);
           if (signal.sessionId !== sessionId) return;
 
-          console.log(
-            "[useAppStream] Signal received:",
-            signal.type,
-            signal.payload?.messageId,
-          );
           switch (signal.type) {
             case "text_chunk":
               if (

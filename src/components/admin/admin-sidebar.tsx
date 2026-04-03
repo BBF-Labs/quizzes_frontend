@@ -13,6 +13,7 @@ import {
   GraduationCap,
   BookOpen,
   Calendar,
+  Database,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import {
@@ -96,6 +97,16 @@ const navigation = [
         title: "Timetables",
         url: "/admin/academics/timetables",
         icon: Calendar,
+      },
+    ],
+  },
+  {
+    title: "Infrastructure",
+    items: [
+      {
+        title: "Migrations",
+        url: "/admin/migrations",
+        icon: Database,
       },
     ],
   },
