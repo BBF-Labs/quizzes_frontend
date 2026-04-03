@@ -8,6 +8,8 @@ import {
   LayoutDashboard,
   ArrowRight,
   UserPlus,
+  Calendar,
+  Database,
 } from "lucide-react";
 import Link from "next/link";
 import { useAdminStats } from "@/hooks";
@@ -233,6 +235,32 @@ export default function AdminDashboardPage() {
                 <Send className="size-4 mr-3 text-muted-foreground group-hover:text-primary transition-colors" />
                 <span className="text-[10px] font-mono tracking-widest uppercase">
                   Campaigns Manager
+                </span>
+                <ArrowRight className="size-3 ml-auto opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+              </Button>
+            </Link>
+
+            <Link href="/admin/academics/timetables">
+              <Button
+                variant="ghost"
+                className="w-full justify-start rounded-(--radius) h-11 border border-border/30 hover:bg-secondary/20 hover:border-primary/50 group"
+              >
+                <Calendar className="size-4 mr-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                <span className="text-[10px] font-mono tracking-widest uppercase">
+                  Timetable Sync
+                </span>
+                <ArrowRight className="size-3 ml-auto opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+              </Button>
+            </Link>
+
+            <Link href="/admin/migrations">
+              <Button
+                variant="ghost"
+                className="w-full justify-start rounded-(--radius) h-11 border border-border/30 hover:bg-secondary/20 hover:border-primary/50 group"
+              >
+                <Database className="size-4 mr-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                <span className="text-[10px] font-mono tracking-widest uppercase">
+                  System Migrations
                 </span>
                 <ArrowRight className="size-3 ml-auto opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
               </Button>

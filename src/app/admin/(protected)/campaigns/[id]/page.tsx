@@ -154,11 +154,8 @@ export default function CampaignDetailPage() {
         clearTimeout(refetchTimeoutRef.current);
       }
 
-      console.log(`[Refetch] Scheduled from ${source}`);
-
       // Schedule new refetch with small delay to batch requests
       refetchTimeoutRef.current = setTimeout(() => {
-        console.log(`[Refetch] Executing batched refetch from ${source}`);
         refetch();
         refetchTimeoutRef.current = null;
       }, 100); // 100ms debounce window
@@ -188,11 +185,7 @@ export default function CampaignDetailPage() {
         percentComplete?: number;
       };
     }) => {
-      console.log(`[Socket] Received email:updated event:`, data);
-      console.log(`[Socket] Current page campaign ID: ${id}`);
-
       if (data.campaignId === id) {
-        console.log(`[Socket] IDs match! Triggering refetch for ${id}...`);
         debouncedRefetch("socket");
 
         if (
@@ -235,10 +228,6 @@ export default function CampaignDetailPage() {
         }
 
         toast.info("Campaign updated in real-time.");
-      } else {
-        console.log(
-          `[Socket] ID mismatch. Data ID: ${data.campaignId}, Current ID: ${id}`,
-        );
       }
     };
 

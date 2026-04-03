@@ -25,12 +25,10 @@ export const useCreateSession = () => {
 
   return useMutation({
     mutationFn: async (input: CreateSessionInput): Promise<ZSession> => {
-      console.log("[useCreateSession] Request:", input);
       const response = await api.post<CreateSessionResponse>(
         "/app/sessions",
         input,
       );
-      console.log("[useCreateSession] Raw Response:", response.data);
       const session = response.data.data;
       // Map _id to id for frontend consistency, converting to string if needed
       return {
@@ -61,9 +59,7 @@ export const useStartSession = () => {
       if (!sessionId || sessionId === "undefined") {
         throw new Error("Invalid session ID for startSession");
       }
-      console.log(`[useStartSession] Request: sessionId=${sessionId}`);
       const response = await api.post<StepResponse>(`/app/${sessionId}/start`);
-      console.log("[useStartSession] Raw Response:", response.data);
       return response.data;
     },
     onSuccess: (_, sessionId) => {
@@ -94,12 +90,10 @@ export const useSessionMessage = () => {
       if (!sessionId || sessionId === "undefined") {
         throw new Error("Invalid session ID for session message");
       }
-      console.log("[useSessionMessage] Request:", { sessionId, messageId, length: message.length });
       const response = await api.post<StepResponse>(
         `/app/${sessionId}/message`,
         { message, messageId },
       );
-      console.log("[useSessionMessage] Raw Response:", response.data);
       return response.data;
     },
     onSuccess: (_, { sessionId }) => {

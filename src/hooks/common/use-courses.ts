@@ -29,8 +29,6 @@ export function useCourseSearch(searchTerm: string) {
           limit: 10,
         },
       });
-      console.log(response.data.data);
-      console.log(response)
       return response.data.data;
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
