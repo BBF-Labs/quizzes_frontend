@@ -17,7 +17,7 @@ export default function StudentDashboardPlaceholderPage() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-card/40 border border-border/50 p-8 md:p-12 text-center relative overflow-hidden"
+            className="bg-card/40 border border-border/50 p-8 md:p-12 text-center relative overflow-hidden rounded-(--radius)"
           >
             <div className="absolute top-0 right-0 w-16 h-16 pointer-events-none">
               <div className="absolute top-0 right-0 w-0.5 h-8 bg-primary" />
@@ -25,7 +25,7 @@ export default function StudentDashboardPlaceholderPage() {
             </div>
 
             <div className="flex justify-center mb-8">
-              <div className="w-16 h-16 bg-primary/20 flex items-center justify-center border border-primary/50">
+              <div className="w-16 h-16 bg-primary/20 flex items-center justify-center border border-primary/50 rounded-(--radius)">
                 <CheckCircle2 className="w-8 h-8 text-primary" />
               </div>
             </div>
@@ -46,7 +46,7 @@ export default function StudentDashboardPlaceholderPage() {
 
             <Link
               href="/"
-              className="inline-flex items-center space-x-3 bg-primary px-8 py-4 text-primary-foreground font-mono text-xs font-bold uppercase tracking-[0.2em] hover:bg-white hover:text-primary hover:ring-1 hover:ring-inset hover:ring-primary transition-all duration-300 group"
+              className="inline-flex items-center space-x-3 bg-primary px-8 py-4 text-primary-foreground font-mono text-xs font-bold uppercase tracking-[0.2em] hover:bg-white hover:text-primary hover:ring-1 hover:ring-inset hover:ring-primary transition-all duration-300 group rounded-(--radius)"
             >
               <span>RETURN TO BASE</span>
               <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />

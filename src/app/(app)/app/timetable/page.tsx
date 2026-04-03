@@ -115,7 +115,7 @@ export default function TimetablePage() {
       </div>
 
       {/* Info Box */}
-      <div className="bg-primary/5 border border-primary/20 p-4 flex items-start gap-3">
+      <div className="bg-primary/5 border border-primary/20 p-4 flex items-start gap-3 rounded-(--radius)">
         <Bell className="size-4 text-primary shrink-0 mt-0.5" />
         <p className="text-[10px] font-mono uppercase tracking-[0.1em] text-primary/80 leading-relaxed">
           Push notifications are enabled. You will be reminded 7 days, 3 days,
@@ -136,7 +136,7 @@ export default function TimetablePage() {
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="h-32 border border-border/40 animate-pulse bg-card/20 border-dashed"
+                className="h-32 border border-border/40 animate-pulse bg-card/20 border-dashed rounded-(--radius)"
               />
             ))}
           </motion.div>
@@ -155,7 +155,7 @@ export default function TimetablePage() {
                 <div
                   key={entry._id}
                   className={cn(
-                    "flex flex-col sm:flex-row border transition-all hover:border-primary/40 group overflow-hidden h-full",
+                    "flex flex-col sm:flex-row border transition-all hover:border-primary/40 group overflow-hidden h-full rounded-(--radius)",
                     isPast
                       ? "opacity-60 grayscale border-border/40"
                       : "border-border/60 bg-card/10 shadow-sm shadow-primary/2",
@@ -187,7 +187,7 @@ export default function TimetablePage() {
                       <div className="flex flex-wrap items-center gap-2">
                         <Badge
                           variant="outline"
-                          className="font-mono text-[9px] uppercase tracking-widest h-5 rounded-none border-border/40"
+                          className="font-mono text-[9px] uppercase tracking-widest h-5 rounded-(--radius) border-border/40"
                         >
                           {entry.courseCode}
                         </Badge>
@@ -200,7 +200,7 @@ export default function TimetablePage() {
                         {entry.label && (
                           <Badge
                             variant="secondary"
-                            className="font-mono text-[9px] uppercase tracking-widest h-5 rounded-none border-primary/20 bg-primary/10 text-primary"
+                            className="font-mono text-[9px] uppercase tracking-widest h-5 rounded-(--radius) border-primary/20 bg-primary/10 text-primary"
                           >
                             {entry.label}
                           </Badge>
@@ -208,7 +208,7 @@ export default function TimetablePage() {
                         {isPast && (
                           <Badge
                             variant="secondary"
-                            className="font-mono text-[8px] uppercase tracking-widest h-5 rounded-none"
+                            className="font-mono text-[8px] uppercase tracking-widest h-5 rounded-(--radius)"
                           >
                             Completed
                           </Badge>
@@ -267,9 +267,9 @@ export default function TimetablePage() {
             key="empty"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex flex-col items-center justify-center py-24 border-2 border-dashed border-border/40 bg-card/20 gap-6"
+            className="flex flex-col items-center justify-center py-24 border-2 border-dashed border-border/40 bg-card/20 gap-6 rounded-(--radius)"
           >
-            <div className="size-16 border border-border/40 bg-muted/10 flex items-center justify-center">
+            <div className="size-16 border border-border/40 bg-muted/10 flex items-center justify-center rounded-(--radius)">
               <Calendar className="size-8 text-muted-foreground/40" />
             </div>
             <div className="text-center space-y-2">

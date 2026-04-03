@@ -49,7 +49,7 @@
 }
 
 :root {
-  --radius: 0rem;
+  --radius: 0.75rem;
 
   /* Light Mode: High-tech Gray/Blue */
   --background: oklch(0.98 0.01 260);
