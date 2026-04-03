@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useCallback } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import {
@@ -8,15 +8,17 @@ import {
   CalendarClock,
   Clock,
   MapPin,
-  Bell,
   AlertCircle,
-  GraduationCap,
 } from "lucide-react";
 import { format } from "date-fns";
-import { usePublicTimetables } from "@/hooks/use-public-exams";
+import {
+  usePublicTimetables,
+  type PublicVenue,
+} from "@/hooks/use-public-exams";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { PaginationController } from "@/components/common/pagination-controller";
+import { cn } from "@/lib/utils";
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -55,28 +57,32 @@ function PublicExamsContent() {
   const search = searchParams.get("search") ?? "";
   const studentId = searchParams.get("studentId") ?? "";
   const pageSize = 10;
+  const SEARCH_DEBOUNCE_MS = 200;
 
-  const updateQueryParams = (updates: Record<string, string | null>) => {
-    const params = new URLSearchParams(searchParams.toString());
-    for (const [key, value] of Object.entries(updates)) {
-      if (!value) {
-        params.delete(key);
-      } else {
-        params.set(key, value);
+  const updateQueryParams = useCallback(
+    (updates: Record<string, string | null>) => {
+      const params = new URLSearchParams(searchParams.toString());
+      for (const [key, value] of Object.entries(updates)) {
+        if (!value) {
+          params.delete(key);
+        } else {
+          params.set(key, value);
+        }
       }
-    }
-    const query = params.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname, {
-      scroll: false,
-    });
-  };
+      const query = params.toString();
+      router.replace(query ? `${pathname}?${query}` : pathname, {
+        scroll: false,
+      });
+    },
+    [pathname, router, searchParams],
+  );
 
   const [localSearch, setLocalSearch] = useState(search);
   const [localStudentId, setLocalStudentId] = useState(studentId);
   const [nowMs, setNowMs] = useState(() => Date.now());
 
   // Immediate fetch of public data
-  const { data, isLoading, isFetching } = usePublicTimetables(
+  const { data, isFetching } = usePublicTimetables(
     search,
     studentId,
     page,
@@ -92,24 +98,29 @@ function PublicExamsContent() {
     setLocalStudentId(studentId);
   }, [studentId]);
 
-  // Debounced URL updates to prevent input lag
+  // Short debounce to keep typing smooth while still feeling immediate
   useEffect(() => {
     const timer = setTimeout(() => {
       if (localSearch !== search) {
-        updateQueryParams({ search: localSearch.toUpperCase() || null, page: "1" });
+        updateQueryParams({
+          search: localSearch.toUpperCase() || null,
+          page: "1",
+        });
       }
-    }, 500);
+    }, SEARCH_DEBOUNCE_MS);
+
     return () => clearTimeout(timer);
-  }, [localSearch]);
+  }, [localSearch, search, updateQueryParams]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       if (localStudentId !== studentId) {
         updateQueryParams({ studentId: localStudentId || null, page: "1" });
       }
-    }, 500);
+    }, SEARCH_DEBOUNCE_MS);
+
     return () => clearTimeout(timer);
-  }, [localStudentId]);
+  }, [localStudentId, studentId, updateQueryParams]);
 
   useEffect(() => {
     const timer = setInterval(() => setNowMs(Date.now()), 60000);
@@ -119,6 +130,7 @@ function PublicExamsContent() {
   const allEntries = data?.entries ?? [];
   const pagination = data?.pagination;
   const totalPages = pagination?.totalPages ?? 1;
+  const hasActiveFilters = Boolean(search || studentId);
 
   const nextExam = allEntries[0] ?? null;
   const nextExamDaysAway = nextExam
@@ -198,7 +210,7 @@ function PublicExamsContent() {
         <div className="h-px w-full bg-border/50 mb-10" />
 
         <AnimatePresence mode="wait">
-          ) : (
+          {allEntries.length > 0 ? (
             <motion.div
               key="results"
               variants={containerVariants}
@@ -269,7 +281,7 @@ function PublicExamsContent() {
                   </div>
                   <div className="font-bold text-foreground uppercase tracking-widest flex items-center gap-3">
                     <span className="w-1.5 h-1.5 bg-primary block animate-pulse" />
-                    Task: Upcoming Timetable Supervision
+                    Other Upcoming Entries
                   </div>
                 </div>
 
@@ -329,9 +341,10 @@ function PublicExamsContent() {
                           <div className="flex flex-wrap gap-2 mt-4">
                             {entry.venues
                               .filter(
-                                (v: any) => !VENUE_NOISE_PATTERN.test(v.venue),
+                                (v: PublicVenue) =>
+                                  !VENUE_NOISE_PATTERN.test(v.venue),
                               )
-                              .map((v: any, vIdx: number) => (
+                              .map((v: PublicVenue, vIdx: number) => (
                                 <Badge
                                   key={vIdx}
                                   variant="outline"
@@ -368,7 +381,22 @@ function PublicExamsContent() {
                 </div>
               </div>
             </motion.div>
-          ) : search ? (
+          ) : isFetching ? (
+            <motion.div
+              key="searching"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center py-20 border border-dashed border-border/50 rounded-(--radius) bg-card"
+            >
+              <div className="mx-auto mb-4 size-12 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+              <h3 className="text-lg font-mono font-bold uppercase text-foreground">
+                Searching timetable...
+              </h3>
+              <p className="text-sm font-mono text-muted-foreground mt-2">
+                Please wait while we fetch matching schedules.
+              </p>
+            </motion.div>
+          ) : hasActiveFilters ? (
             <motion.div
               key="empty"
               initial={{ opacity: 0 }}
@@ -377,10 +405,10 @@ function PublicExamsContent() {
             >
               <AlertCircle className="size-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-mono font-bold uppercase text-muted-foreground">
-                No results found for &quot;{search}&quot;
+                No matching timetable entries found
               </h3>
               <p className="text-sm font-mono text-muted-foreground mt-2">
-                Try a different course code.
+                Try a different course code or student ID.
               </p>
             </motion.div>
           ) : null}
