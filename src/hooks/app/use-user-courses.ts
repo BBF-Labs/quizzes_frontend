@@ -23,7 +23,8 @@ export function useMyCourses(semester?: string, academicYear?: string) {
           params: { semester, academicYear },
         },
       );
-      return response.data.data;
+      // Filter out enrollments with null courseId to prevent UI crashes
+      return (response.data.data || []).filter(e => !!e.courseId);
     },
   });
 }

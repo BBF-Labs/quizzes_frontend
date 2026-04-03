@@ -371,13 +371,14 @@ export default function MyCoursesPage() {
                 <CardHeader className="relative pb-0">
                   <div className="absolute top-4 right-4 translate-x-8 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all">
                     <button
-                      onClick={() =>
+                      onClick={() => {
+                        if (!enrollment.courseId?._id) return;
                         unenrollMutation.mutate({
                           courseId: enrollment.courseId._id,
                           semester: enrollment.semester,
                           academicYear: enrollment.academicYear,
-                        })
-                      }
+                        });
+                      }}
                       className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                       title="Unenroll"
                     >
@@ -391,10 +392,10 @@ export default function MyCoursesPage() {
                     </span>
                   </div>
                   <CardTitle className="text-lg font-black tracking-tight uppercase line-clamp-2 leading-tight">
-                    {enrollment.courseId.title}
+                    {enrollment.courseId?.title || "Unknown Course"}
                   </CardTitle>
                   <CardDescription className="font-mono text-[10px] uppercase tracking-widest">
-                    {enrollment.courseId.code}
+                    {enrollment.courseId?.code || "N/A"}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 mt-6">
@@ -419,8 +420,11 @@ export default function MyCoursesPage() {
                 </CardContent>
                 <CardFooter className="pt-0 bg-secondary/5 border-t border-border/20 py-3">
                   <Link
-                    href={`/app/courses/${enrollment.courseId._id}`}
-                    className="w-full flex items-center justify-between text-[10px] font-mono uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors"
+                    href={enrollment.courseId?._id ? `/app/courses/${enrollment.courseId._id}` : "#"}
+                    className={cn(
+                      "w-full flex items-center justify-between text-[10px] font-mono uppercase tracking-widest text-muted-foreground transition-colors",
+                      enrollment.courseId?._id ? "hover:text-primary" : "cursor-not-allowed opacity-50"
+                    )}
                   >
                     Course Content
                     <ChevronRight className="size-3" />
