@@ -36,7 +36,7 @@ interface AuthContextValue {
   isSuperAdminRole: boolean;
   hasAdminAccess: boolean;
   login: (
-    username: string,
+    identifier: string,
     password: string,
     rememberMe: boolean,
   ) => Promise<void>;
@@ -120,18 +120,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async ({
-      username,
+      identifier,
       password,
       rememberMe,
     }: {
-      username: string;
+      identifier: string;
       password: string;
       rememberMe: boolean;
     }) => {
       const pushEndpoint = await getCurrentPushEndpoint();
 
       const res = await api.post("/auth/login", {
-        username,
+        identifier,
         password,
         rememberMe,
         endpoint: pushEndpoint ?? undefined,
@@ -169,10 +169,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   const login = useCallback(
-    (username: string, password: string, rememberMe: boolean) =>
+    (identifier: string, password: string, rememberMe: boolean) =>
       loginMutation
         .mutateAsync({
-          username: username.trim().toLowerCase(),
+          identifier: identifier.trim().toLowerCase(),
           password,
           rememberMe,
         })
