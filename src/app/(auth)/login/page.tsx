@@ -18,7 +18,7 @@ function LoginForm() {
   const redirectTarget =
     redirectUrl && redirectUrl.startsWith("/") ? redirectUrl : "/app";
 
-  const [username, setUsername] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -30,7 +30,7 @@ function LoginForm() {
     setError("");
     setLoading(true);
     try {
-      await login(username, password, rememberMe);
+      await login(identifier, password, rememberMe);
       router.replace(redirectTarget);
     } catch (err: unknown) {
       setError(
@@ -98,17 +98,17 @@ function LoginForm() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
             <label className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground">
-              Username
+              Email or Username
             </label>
             <Input
-              id="admin-username"
+              id="admin-identifier"
               type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
               required
               autoComplete="username"
               className="rounded-(--radius) font-mono bg-secondary/40 dark:bg-input/30 border-border focus-visible:ring-ring/50"
-              placeholder="superadmin"
+              placeholder="email@example.com or username"
             />
           </div>
           <div className="space-y-1.5">
