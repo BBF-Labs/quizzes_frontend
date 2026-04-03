@@ -193,7 +193,7 @@ export default function TimetablePage() {
                         </Badge>
                         <Badge
                           variant="outline"
-                          className="font-mono text-[9px] uppercase tracking-widest h-5 rounded-none border-primary/30 text-primary/70"
+                          className="font-mono text-[9px] uppercase tracking-widest h-5 rounded-(--radius) border-primary/30 text-primary/70"
                         >
                           {entry.examType}
                         </Badge>
