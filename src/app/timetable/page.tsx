@@ -198,27 +198,16 @@ function PublicExamsContent() {
         <div className="h-px w-full bg-border/50 mb-10" />
 
         <AnimatePresence mode="wait">
-          {isLoading ? (
-            <motion.div
-              key="loading"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="grid gap-4"
-            >
-              {[...Array(3)].map((_, i) => (
-                <div
-                  key={i}
-                  className="h-28 rounded-(--radius) bg-card border border-border/50 animate-pulse"
-                />
-              ))}
-            </motion.div>
-          ) : allEntries.length > 0 ? (
+          ) : (
             <motion.div
               key="results"
               variants={containerVariants}
               initial="hidden"
               animate="visible"
-              className="grid grid-cols-1 lg:grid-cols-3 gap-0 border border-border/50 rounded-(--radius) overflow-hidden"
+              className={cn(
+                "grid grid-cols-1 lg:grid-cols-3 gap-0 border border-border/50 rounded-(--radius) overflow-hidden transition-opacity duration-300",
+                isFetching && "opacity-60 pointer-events-none",
+              )}
             >
               <div className="border-b lg:border-b-0 lg:border-r border-border/50 p-8 md:p-10 flex flex-col justify-between bg-card">
                 <div>
@@ -305,7 +294,7 @@ function PublicExamsContent() {
                             {entry.label && (
                               <Badge
                                 variant="secondary"
-                                className="rounded-none border-primary/20 bg-primary/10 text-primary font-mono text-[10px] uppercase tracking-widest px-2 py-0.5"
+                                className="rounded-(--radius) border-primary/20 bg-primary/10 text-primary font-mono text-[10px] uppercase tracking-widest px-2 py-0.5"
                               >
                                 {entry.label}
                               </Badge>
@@ -384,7 +373,7 @@ function PublicExamsContent() {
               key="empty"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center py-20 border border-dashed border-border/50 rounded-none bg-card"
+              className="text-center py-20 border border-dashed border-border/50 rounded-(--radius) bg-card"
             >
               <AlertCircle className="size-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-mono font-bold uppercase text-muted-foreground">
@@ -394,19 +383,7 @@ function PublicExamsContent() {
                 Try a different course code.
               </p>
             </motion.div>
-          ) : (
-            <motion.div
-              key="initial"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center py-20 border border-dashed border-border/50 rounded-none bg-card"
-            >
-              <GraduationCap className="size-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-sm font-mono text-muted-foreground uppercase tracking-[0.2em]">
-                Enter a course code to begin searching
-              </p>
-            </motion.div>
-          )}
+          ) : null}
         </AnimatePresence>
 
         {totalPages > 1 && (
@@ -441,7 +418,7 @@ export default function PublicExamsPage() {
               {[...Array(3)].map((_, i) => (
                 <div
                   key={i}
-                  className="h-28 rounded-none bg-card border border-border/50 animate-pulse"
+                  className="h-28 rounded-(--radius) bg-card border border-border/50 animate-pulse"
                 />
               ))}
             </div>
