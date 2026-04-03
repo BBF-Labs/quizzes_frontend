@@ -71,13 +71,45 @@ function PublicExamsContent() {
     });
   };
 
+  const [localSearch, setLocalSearch] = useState(search);
+  const [localStudentId, setLocalStudentId] = useState(studentId);
   const [nowMs, setNowMs] = useState(() => Date.now());
-  const { data, isLoading } = usePublicTimetables(
+
+  // Immediate fetch of public data
+  const { data, isLoading, isFetching } = usePublicTimetables(
     search,
     studentId,
     page,
     pageSize,
   );
+
+  // Sync local state with URL if URL changes (e.g. browser back button)
+  useEffect(() => {
+    setLocalSearch(search);
+  }, [search]);
+
+  useEffect(() => {
+    setLocalStudentId(studentId);
+  }, [studentId]);
+
+  // Debounced URL updates to prevent input lag
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (localSearch !== search) {
+        updateQueryParams({ search: localSearch.toUpperCase() || null, page: "1" });
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [localSearch]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (localStudentId !== studentId) {
+        updateQueryParams({ studentId: localStudentId || null, page: "1" });
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [localStudentId]);
 
   useEffect(() => {
     const timer = setInterval(() => setNowMs(Date.now()), 60000);
@@ -106,7 +138,7 @@ function PublicExamsContent() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-none border border-primary/20 bg-primary/5"
+            className="inline-flex items-center gap-2 px-3 py-1 rounded-(--radius) border border-primary/20 bg-primary/5"
           >
             <div className="size-1.5 rounded-full bg-primary animate-pulse" />
             <span className="text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-primary/80">
@@ -140,34 +172,24 @@ function PublicExamsContent() {
           transition={{ delay: 0.3 }}
           className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-10"
         >
-          <div className="flex items-center bg-card border border-border/50 rounded-none overflow-hidden focus-within:border-primary/40 transition-colors">
+          <div className="flex items-center bg-card border border-border/50 rounded-(--radius) overflow-hidden focus-within:border-primary/40 transition-colors">
             <Search className="ml-4 size-4 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Search course code (e.g. DCIT313)"
-              value={search}
-              onChange={(e) =>
-                updateQueryParams({
-                  search: e.target.value.toUpperCase() || null,
-                  page: "1",
-                })
-              }
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
               className="h-12 bg-transparent border-none font-mono text-sm placeholder:text-muted-foreground focus-visible:ring-0"
             />
           </div>
 
-          <div className="flex items-center bg-card border border-border/50 rounded-none overflow-hidden focus-within:border-primary/40 transition-colors">
+          <div className="flex items-center bg-card border border-border/50 rounded-(--radius) overflow-hidden focus-within:border-primary/40 transition-colors">
             <MapPin className="ml-4 size-4 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Student ID / Index Number"
-              value={studentId}
-              onChange={(e) =>
-                updateQueryParams({
-                  studentId: e.target.value || null,
-                  page: "1",
-                })
-              }
+              value={localStudentId}
+              onChange={(e) => setLocalStudentId(e.target.value)}
               className="h-12 bg-transparent border-none font-mono text-sm placeholder:text-muted-foreground focus-visible:ring-0"
             />
           </div>
@@ -186,7 +208,7 @@ function PublicExamsContent() {
               {[...Array(3)].map((_, i) => (
                 <div
                   key={i}
-                  className="h-28 rounded-none bg-card border border-border/50 animate-pulse"
+                  className="h-28 rounded-(--radius) bg-card border border-border/50 animate-pulse"
                 />
               ))}
             </motion.div>
@@ -196,7 +218,7 @@ function PublicExamsContent() {
               variants={containerVariants}
               initial="hidden"
               animate="visible"
-              className="grid grid-cols-1 lg:grid-cols-3 gap-0 border border-border/50 rounded-none overflow-hidden"
+              className="grid grid-cols-1 lg:grid-cols-3 gap-0 border border-border/50 rounded-(--radius) overflow-hidden"
             >
               <div className="border-b lg:border-b-0 lg:border-r border-border/50 p-8 md:p-10 flex flex-col justify-between bg-card">
                 <div>
