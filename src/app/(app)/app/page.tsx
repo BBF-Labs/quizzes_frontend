@@ -16,7 +16,12 @@ import {
   X,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
-import { useSessions, useCreateSession, useCourseSearch, useDebounce } from "@/hooks";
+import {
+  useSessions,
+  useCreateSession,
+  useCourseSearch,
+  useDebounce,
+} from "@/hooks";
 import { cn } from "@/lib/utils";
 
 // ─── Time-aware rotating greetings ───────────────────────────────────────────
@@ -132,7 +137,8 @@ export default function AppHomePage() {
         courseId: courseId ? courseId : undefined,
         mode,
       });
-      const resolvedSessionId = session?.id || (session as { _id?: string })?._id;
+      const resolvedSessionId =
+        session?.id || (session as { _id?: string })?._id;
 
       if (!resolvedSessionId || resolvedSessionId === "undefined") {
         console.error("No valid session ID returned", session);
@@ -255,7 +261,7 @@ export default function AppHomePage() {
                   >
                     <Clock3 className="size-3.5 text-muted-foreground/50 shrink-0" />
                     <span className="flex-1 truncate text-[11px] font-mono text-muted-foreground group-hover:text-foreground transition-colors">
-                      {s.title || `Session ${s.id.slice(0, 8)}`}
+                      {s.name || s.title || `Session ${s.id.slice(0, 8)}`}
                     </span>
                     <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40">
                       {s.startedAt
