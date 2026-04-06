@@ -1,157 +1,95 @@
-type SessionState = {
-  accessToken: string | null;
-  refreshToken: string | null;
-};
+/**
+ * Cookie-based session module.
+ *
+ * auth_access  — httpOnly, set by server. Holds the JWT access token.
+ *                Not readable from JS; sent automatically with every credentialed request.
+ * auth_refresh — httpOnly, set by server. Holds the refresh token.
+ *                Not readable from JS.
+ * auth_user    — NOT httpOnly, set by server. Holds a JSON snapshot of safe user info
+ *                (id, name, role, etc.) so the client can hydrate without a server call.
+ *
+ * This module manages the auth_user readable cookie and a localStorage signal key
+ * used for cross-tab session sync.
+ */
 
-type PersistMode = "memory" | "session" | "local";
+const AUTH_USER_COOKIE = "auth_user";
+export const AUTH_STATE_KEY = "auth_state"; // localStorage signal for cross-tab sync
 
-const ACCESS_TOKEN_KEY = "auth_token";
-const REFRESH_TOKEN_KEY = "auth_refresh_token";
-const REMEMBER_ME_KEY = "auth_remember_me";
-
-const LEGACY_ACCESS_TOKEN_KEY = "admin_token";
-const LEGACY_REFRESH_TOKEN_KEY = "admin_refresh_token";
-const LEGACY_REMEMBER_ME_KEY = "admin_remember_me";
-
-let sessionState: SessionState = {
-  accessToken: null,
-  refreshToken: null,
-};
-
-let persistMode: PersistMode = "memory";
-let hydrated = false;
-
-function canUseStorage() {
-  return typeof window !== "undefined";
+function canUseDOM(): boolean {
+  return typeof document !== "undefined";
 }
 
-function clearLegacyStorage() {
-  localStorage.removeItem(LEGACY_ACCESS_TOKEN_KEY);
-  localStorage.removeItem(LEGACY_REFRESH_TOKEN_KEY);
-  localStorage.removeItem(LEGACY_REMEMBER_ME_KEY);
-  sessionStorage.removeItem(LEGACY_ACCESS_TOKEN_KEY);
-  sessionStorage.removeItem(LEGACY_REFRESH_TOKEN_KEY);
+function getCookie(name: string): string | null {
+  if (!canUseDOM()) return null;
+  const match = document.cookie.match(
+    new RegExp(`(?:^|; )${name}=([^;]*)`)
+  );
+  return match ? decodeURIComponent(match[1]) : null;
 }
 
-function hydrateSessionFromStorage() {
-  if (hydrated || !canUseStorage()) return;
-  hydrated = true;
-
-  const remembered = localStorage.getItem(REMEMBER_ME_KEY) === "true";
-  const legacyRemembered = localStorage.getItem(LEGACY_REMEMBER_ME_KEY) === "true";
-
-  let accessToken = remembered
-    ? localStorage.getItem(ACCESS_TOKEN_KEY)
-    : sessionStorage.getItem(ACCESS_TOKEN_KEY);
-  let refreshToken = remembered
-    ? localStorage.getItem(REFRESH_TOKEN_KEY)
-    : sessionStorage.getItem(REFRESH_TOKEN_KEY);
-
-  if (!accessToken && !refreshToken) {
-    accessToken = legacyRemembered
-      ? localStorage.getItem(LEGACY_ACCESS_TOKEN_KEY)
-      : sessionStorage.getItem(LEGACY_ACCESS_TOKEN_KEY);
-    refreshToken = legacyRemembered
-      ? localStorage.getItem(LEGACY_REFRESH_TOKEN_KEY)
-      : sessionStorage.getItem(LEGACY_REFRESH_TOKEN_KEY);
-
-    if (accessToken || refreshToken) {
-      persistMode = legacyRemembered ? "local" : "session";
-      sessionState = { accessToken, refreshToken };
-      persistToStorage();
-      clearLegacyStorage();
-      return;
-    }
-  }
-
-  if (accessToken || refreshToken) {
-    persistMode = remembered ? "local" : "session";
-    sessionState = {
-      accessToken,
-      refreshToken,
-    };
-  }
+function deleteCookie(name: string) {
+  if (!canUseDOM()) return;
+  const isProduction = process.env.NODE_ENV === "production";
+  const sameSite = isProduction ? "None" : "Lax";
+  const secure = isProduction ? "; Secure" : "";
+  document.cookie = `${name}=; Max-Age=0; Path=/${secure}; SameSite=${sameSite}`;
 }
 
-function persistToStorage() {
-  if (!canUseStorage()) return;
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
 
-  localStorage.removeItem(ACCESS_TOKEN_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
-  sessionStorage.removeItem(ACCESS_TOKEN_KEY);
-  sessionStorage.removeItem(REFRESH_TOKEN_KEY);
-
-  if (!sessionState.accessToken && !sessionState.refreshToken) {
-    localStorage.removeItem(REMEMBER_ME_KEY);
-    clearLegacyStorage();
-    return;
-  }
-
-  if (persistMode === "local") {
-    localStorage.setItem(REMEMBER_ME_KEY, "true");
-    if (sessionState.accessToken) {
-      localStorage.setItem(ACCESS_TOKEN_KEY, sessionState.accessToken);
-    }
-    if (sessionState.refreshToken) {
-      localStorage.setItem(REFRESH_TOKEN_KEY, sessionState.refreshToken);
-    }
-    clearLegacyStorage();
-    return;
-  }
-
-  if (persistMode === "session") {
-    localStorage.setItem(REMEMBER_ME_KEY, "false");
-    if (sessionState.accessToken) {
-      sessionStorage.setItem(ACCESS_TOKEN_KEY, sessionState.accessToken);
-    }
-    if (sessionState.refreshToken) {
-      sessionStorage.setItem(REFRESH_TOKEN_KEY, sessionState.refreshToken);
-    }
-    clearLegacyStorage();
-    return;
-  }
-
-  localStorage.removeItem(REMEMBER_ME_KEY);
-}
-
-export function setSession(
-  session: Partial<SessionState>,
-  options?: { persist?: PersistMode | boolean },
-) {
-  hydrateSessionFromStorage();
-
-  if (typeof options?.persist === "boolean") {
-    persistMode = options.persist ? "local" : "session";
-  } else if (options?.persist) {
-    persistMode = options.persist;
-  }
-
-  sessionState = {
-    accessToken: session.accessToken ?? sessionState.accessToken,
-    refreshToken: session.refreshToken ?? sessionState.refreshToken,
+export type SessionUser = {
+  id: string;
+  name: string;
+  username: string;
+  email: string;
+  role?: "student" | "creator" | "moderator" | "super_admin";
+  isSubscribed?: boolean;
+  profilePicture?: string;
+  studentId?: string;
+  notificationSettings?: any;
+  onboarding?: {
+    completed: boolean;
+    currentStep: number;
+    steps: Record<string, boolean>;
   };
+};
 
-  persistToStorage();
+/** Read the auth_user cookie set by the server. Returns null if not present or malformed. */
+export function getSessionUser(): SessionUser | null {
+  const raw = getCookie(AUTH_USER_COOKIE);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as SessionUser;
+  } catch {
+    return null;
+  }
 }
 
+/**
+ * Clear client-visible session state (auth_user cookie + cross-tab signal).
+ * httpOnly cookies (auth_access, auth_refresh) can only be cleared server-side
+ * via POST /auth/logout — the auth context logout handler calls that endpoint.
+ */
 export function clearSession() {
-  hydrateSessionFromStorage();
-
-  sessionState = {
-    accessToken: null,
-    refreshToken: null,
-  };
-
-  persistMode = "memory";
-  persistToStorage();
+  deleteCookie(AUTH_USER_COOKIE);
+  if (typeof localStorage !== "undefined") {
+    localStorage.setItem(AUTH_STATE_KEY, "inactive");
+  }
 }
 
-export function getAccessToken() {
-  hydrateSessionFromStorage();
-  return sessionState.accessToken;
+/** Signal other tabs that a new session is active. */
+export function signalSessionActive() {
+  if (typeof localStorage !== "undefined") {
+    localStorage.setItem(AUTH_STATE_KEY, "active");
+  }
 }
 
-export function getRefreshToken() {
-  hydrateSessionFromStorage();
-  return sessionState.refreshToken;
-}
+// ---------------------------------------------------------------------------
+// Legacy stubs — kept so existing imports don't break during transition.
+// With httpOnly cookies the frontend never holds the raw tokens.
+// ---------------------------------------------------------------------------
+export function setSession() {}
+export function getAccessToken(): string | null { return null; }
+export function getRefreshToken(): string | null { return null; }

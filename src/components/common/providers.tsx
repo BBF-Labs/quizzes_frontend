@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/auth-context";
 import { SocketProvider } from "@/contexts/socket-context";
 import { UiCustomizationFab } from "@/components/app/layout";
 import { applyUiPreferences, loadUiPreferences } from "@/lib/ui-preferences";
+import { CookieConsent } from "@/components/common/cookie-consent";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -35,6 +36,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
             {children}
             <UiCustomizationFab />
             <Toaster />
+            <CookieConsent />
           </SocketProvider>
         </AuthProvider>
       </ThemeProvider>

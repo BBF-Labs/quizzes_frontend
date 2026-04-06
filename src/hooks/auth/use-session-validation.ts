@@ -12,7 +12,7 @@ export function useSessionValidation(enabled: boolean) {
     },
     enabled,
     retry: false,
-    staleTime: 30_000,
+    staleTime: 5 * 60 * 1000,
     throwOnError: false,
   });
 }

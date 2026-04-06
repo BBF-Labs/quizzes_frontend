@@ -1,83 +1,12 @@
-import {
-  clearSession,
-  getAccessToken,
-} from "@/lib/session";
+import { getSessionUser } from "@/lib/session";
 
-export type SessionUser = {
-  id: string;
-  name: string;
-  username: string;
-  email: string;
-  bio?: string;
-  studentId?: string;
-  role?: "student" | "creator" | "moderator" | "super_admin";
-  isSubscribed?: boolean;
-  profilePicture?: string;
-  notificationSettings?: any;
-  onboarding?: {
-    completed: boolean;
-    currentStep: number;
-    steps: Record<string, boolean>;
-  };
-};
+// Re-export SessionUser from session.ts so existing imports keep working
+export type { SessionUser } from "@/lib/session";
 
-type JwtPayload = {
-  id?: string;
-  name?: string;
-  username?: string;
-  email?: string;
-  exp?: number;
-  studentId?: string;
-  role?: "student" | "creator" | "moderator" | "super_admin";
-  isSubscribed?: boolean;
-  profilePicture?: string;
-  notificationSettings?: any;
-  onboarding?: {
-    completed: boolean;
-    currentStep: number;
-    steps: Record<string, boolean>;
-  };
-};
-
-function parseJwt(token: string): JwtPayload | null {
-  try {
-    const base64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
-    return JSON.parse(atob(base64)) as JwtPayload;
-  } catch {
-    return null;
-  }
-}
-
-function isTokenExpired(exp?: number): boolean {
-  if (!exp) return false;
-  return exp * 1000 <= Date.now();
-}
-
-export function hydrateSessionUserFromToken(): SessionUser | null {
-  const token = getAccessToken();
-  if (!token) return null;
-
-  const decoded = parseJwt(token);
-  if (!decoded) {
-    clearSession();
-    return null;
-  }
-  if (isTokenExpired(decoded.exp)) {
-    // Keep tokens in storage so the auth context can attempt a refresh.
-    // Only wipe on a malformed token above.
-    return null;
-  }
-
-  return {
-    id: decoded.id ?? "unknown-user",
-    name: decoded.name ?? "User",
-    username: decoded.username ?? decoded.email?.split("@")[0] ?? "User",
-    email: decoded.email ?? "",
-    role: decoded.role ?? "student",
-    isSubscribed: decoded.isSubscribed ?? false,
-    studentId: decoded.studentId,
-    profilePicture: decoded.profilePicture,
-    onboarding: decoded.onboarding,
-    notificationSettings: decoded.notificationSettings,
-  };
+/**
+ * Reads the auth_user cookie (set server-side at login/refresh) to hydrate
+ * the current user without a network call. Returns null if no session cookie exists.
+ */
+export function hydrateSessionUserFromToken() {
+  return getSessionUser();
 }
