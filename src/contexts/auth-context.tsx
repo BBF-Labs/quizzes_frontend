@@ -137,9 +137,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       const resData = res.data?.data ?? res.data;
-      // Cookies (auth_access, auth_refresh, auth_user) are set by the server.
-      const sessionUser = hydrateSessionUserFromToken();
-      if (!sessionUser) {
+      // auth_user cookie is set by the server. In cross-origin dev setups
+      // (frontend on :3000, API on :5000) the cookie is scoped to the API
+      // domain and won't be readable via document.cookie — fall back to the
+      // user object returned in the response body.
+      const sessionUser: User =
+        hydrateSessionUserFromToken() ??
+        (resData.user as User | undefined) ??
+        (resData as User);
+      if (!sessionUser?.id) {
         throw new Error("Session cookie not set after login");
       }
 
@@ -186,9 +192,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         username,
         password,
       });
-      // Cookies set by server on signup
-      const sessionUser = hydrateSessionUserFromToken();
-      if (!sessionUser) {
+      // Cookies set by server on signup. Fall back to response body in
+      // cross-origin dev setups where auth_user cookie isn't readable.
+      const resData = res.data?.data ?? res.data;
+      const sessionUser: User =
+        hydrateSessionUserFromToken() ??
+        (resData.user as User | undefined) ??
+        (resData as User);
+      if (!sessionUser?.id) {
         throw new Error("Session cookie not set after signup");
       }
 
