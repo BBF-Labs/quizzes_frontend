@@ -50,7 +50,11 @@ function ConfirmContent() {
         </div>
 
         <h1 className="text-3xl font-black tracking-tighter uppercase mb-4 italic">
-          {isPending ? "VERIFYING..." : isSuccess ? "ACCESS GRANTED." : "ERROR DETECTED."}
+          {isPending
+            ? "VERIFYING..."
+            : isSuccess
+              ? "ACCESS GRANTED."
+              : "ERROR DETECTED."}
         </h1>
 
         <div className="h-px bg-border/50 w-full mb-8" />
@@ -59,13 +63,13 @@ function ConfirmContent() {
           {isPending
             ? "SYNCHRONIZING ENCRYPTION KEYS AND VALIDATING YOUR SUBSCRIBER STATUS..."
             : isSuccess
-            ? "YOUR SUBSCRIPTION HAS BEEN SUCCESSFULLY VETTED. YOU ARE NOW SYNCED WITH THE QZ INTEL STREAM."
-            : "THE PROVIDED TOKEN IS INVALID OR HAS EXPIRED. PLEASE INITIATE A NEW REQUEST FROM THE FOOTER."}
+              ? "YOUR SUBSCRIPTION HAS BEEN SUCCESSFULLY VETTED. YOU ARE NOW SYNCED WITH THE QZ INTEL STREAM."
+              : "THE PROVIDED TOKEN IS INVALID OR HAS EXPIRED. PLEASE INITIATE A NEW REQUEST FROM THE FOOTER."}
         </p>
 
         <Link
           href="/"
-          className="inline-flex items-center space-x-3 bg-primary px-8 py-4 text-primary-foreground font-mono text-xs font-bold uppercase tracking-[0.2em] hover:bg-white hover:text-primary hover:ring-1 hover:ring-inset hover:ring-primary transition-all duration-300 group"
+          className="inline-flex items-center space-x-3 bg-primary px-8 py-4 text-primary-foreground font-mono text-xs font-bold uppercase tracking-[0.2em] hover:bg-white hover:text-primary hover:ring-1 hover:ring-inset hover:ring-primary transition-all duration-300 group rounded(--radius)"
         >
           <span>RETURN TO BASE</span>
           <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
@@ -82,12 +86,14 @@ export default function ConfirmPage() {
       <main className="flex-1 flex items-center justify-center p-4 relative py-24">
         {/* Background Grid Pattern */}
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px]" />
-        
-        <Suspense fallback={
-          <div className="max-w-md w-full mx-auto text-center font-mono animate-pulse">
-            LOADING SECURE MODULE...
-          </div>
-        }>
+
+        <Suspense
+          fallback={
+            <div className="max-w-md w-full mx-auto text-center font-mono animate-pulse">
+              LOADING SECURE MODULE...
+            </div>
+          }
+        >
           <ConfirmContent />
         </Suspense>
       </main>

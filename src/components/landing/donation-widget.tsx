@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Heart, Loader2 } from "lucide-react";
-import { useDonationLedger, useInitiateDonation } from "@/hooks/common/use-donations";
+import {
+  useDonationLedger,
+  useInitiateDonation,
+} from "@/hooks/common/use-donations";
 import { useAuth } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -43,14 +46,15 @@ export function DonationWidget() {
   return (
     <div className="border border-border/50 bg-card/30 p-6 md:p-8">
       {/* Header */}
-      <div className="flex items-start gap-3 mb-6">
+      <div className="flex items-start flex-col gap-3 mb-6">
         <div className="flex size-8 shrink-0 items-center justify-center border border-primary/30 bg-primary/10">
           <Heart className="size-4 text-primary" />
         </div>
         <div>
           <h3 className="text-base font-black tracking-tighter">Support Qz</h3>
           <p className="text-sm text-muted-foreground font-mono mt-0.5">
-            Help cover AI API costs and keep Qz free for students who can&apos;t afford a subscription.
+            Help cover AI API costs and keep Qz free for students who can&apos;t
+            afford a subscription.
           </p>
         </div>
       </div>
@@ -64,15 +68,21 @@ export function DonationWidget() {
         >
           <div className="text-center">
             <p className="text-lg font-black tracking-tighter text-primary">
-              GHS {ledger.totalRaisedGHS.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              GHS{" "}
+              {ledger.totalRaisedGHS.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
             </p>
             <p className="text-[9px] font-mono uppercase tracking-[0.2em] text-muted-foreground/60">
-              raised from {ledger.donations.length} supporter{ledger.donations.length !== 1 ? "s" : ""}
+              raised from {ledger.donations.length} supporter
+              {ledger.donations.length !== 1 ? "s" : ""}
             </p>
           </div>
           {ledger.platformPledgeGHS > 0 && (
             <p className="text-[10px] font-mono text-muted-foreground/50 border-l border-border/30 pl-4">
-              GHS {ledger.platformPledgeGHS.toFixed(2)} pledged to student access fund
+              GHS {ledger.platformPledgeGHS.toFixed(2)} pledged to student
+              access fund
             </p>
           )}
         </motion.div>
@@ -95,7 +105,7 @@ export function DonationWidget() {
                   "flex-1 py-1.5 text-[11px] font-mono border transition-colors",
                   amount === preset
                     ? "border-primary bg-primary/10 text-primary"
-                    : "border-border/50 text-muted-foreground hover:border-primary/40"
+                    : "border-border/50 text-muted-foreground hover:border-primary/40",
                 )}
               >
                 {preset}
@@ -107,7 +117,9 @@ export function DonationWidget() {
             min={1}
             step={1}
             value={amount}
-            onChange={(e) => setAmount(e.target.value === "" ? "" : Number(e.target.value))}
+            onChange={(e) =>
+              setAmount(e.target.value === "" ? "" : Number(e.target.value))
+            }
             placeholder="Custom amount"
             className="w-full border border-border/50 bg-background/40 px-3 py-2 text-sm font-mono focus:outline-none focus:border-primary/60 placeholder:text-muted-foreground/30"
           />
@@ -139,17 +151,21 @@ export function DonationWidget() {
             onClick={() => setIsAnonymous((v) => !v)}
             className={cn(
               "relative inline-flex items-center w-10 h-5 shrink-0 border transition-colors duration-200 rounded-full",
-              isAnonymous ? "bg-primary border-primary" : "bg-muted/30 border-border/50"
+              isAnonymous
+                ? "bg-primary border-primary"
+                : "bg-muted/30 border-border/50",
             )}
           >
             <span
               className={cn(
                 "inline-block w-4 h-4 bg-white shadow-sm transition-transform duration-200 rounded-full",
-                isAnonymous ? "translate-x-5" : "translate-x-0.5"
+                isAnonymous ? "translate-x-5" : "translate-x-0.5",
               )}
             />
           </button>
-          <span className="text-[11px] font-mono text-muted-foreground">Donate anonymously</span>
+          <span className="text-[11px] font-mono text-muted-foreground">
+            Donate anonymously
+          </span>
         </label>
 
         {!isAnonymous && (
@@ -178,9 +194,13 @@ export function DonationWidget() {
           className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-2.5 text-[11px] font-mono uppercase tracking-widest hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isPending ? (
-            <><Loader2 className="size-3 animate-spin" /> Processing…</>
+            <>
+              <Loader2 className="size-3 animate-spin" /> Processing…
+            </>
           ) : (
-            <><Heart className="size-3" /> Donate GHS {amount || "—"}</>
+            <>
+              <Heart className="size-3" /> Donate GHS {amount || "—"}
+            </>
           )}
         </button>
       </form>
@@ -192,8 +212,13 @@ export function DonationWidget() {
             Recent supporters
           </p>
           {ledger.donations.slice(0, 5).map((d) => (
-            <div key={d._id} className="flex items-center justify-between text-[10px] font-mono text-muted-foreground/50">
-              <span>{d.isAnonymous ? "Anonymous" : (d.donorName || "Anonymous")}</span>
+            <div
+              key={d._id}
+              className="flex items-center justify-between text-[10px] font-mono text-muted-foreground/50"
+            >
+              <span>
+                {d.isAnonymous ? "Anonymous" : d.donorName || "Anonymous"}
+              </span>
               <span className="text-muted-foreground">GHS {d.amount}</span>
             </div>
           ))}
