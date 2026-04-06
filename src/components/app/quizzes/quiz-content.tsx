@@ -10,38 +10,18 @@ import {
 import { QuizLecture, QuizTopic, QuizQuestion } from "@/types/session";
 import { BookOpen, Target, HelpCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { QuestionMarkdown, QuestionTypeBadge } from "@/components/app/quizzes/question-renderer";
 
 interface QuestionRowProps {
   q: QuizQuestion;
 }
 
 export function QuestionRow({ q }: QuestionRowProps) {
-  const typeLabel =
-    q.type === "mcq"
-      ? "MCQ"
-      : q.type === "true_false"
-      ? "T/F"
-      : q.type === "short_answer"
-      ? "Short"
-      : q.type === "fill_in" || q.type === "fill_in_blank"
-      ? "Fill"
-      : q.type === "essay"
-      ? "Essay"
-      : "Free";
-
   return (
     <div className="border border-border/30 bg-card/20 px-4 py-3">
       <div className="flex flex-col gap-1.5">
-        <Badge
-          variant="outline"
-          className="self-start text-[8px] font-mono h-4 px-1.5 uppercase"
-        >
-          {typeLabel}
-        </Badge>
-        <p
-          className="text-[12px] font-mono text-foreground leading-relaxed"
-          dangerouslySetInnerHTML={{ __html: q.question }}
-        />
+        <QuestionTypeBadge type={q.type} />
+        <QuestionMarkdown content={q.question} className="text-[12px]" />
       </div>
 
       {/* Options */}
@@ -55,7 +35,7 @@ export function QuestionRow({ q }: QuestionRowProps) {
               }`}
             >
               <span className="opacity-40 shrink-0">{String.fromCharCode(65 + i)}.</span>
-              <span dangerouslySetInnerHTML={{ __html: opt }} />
+              <QuestionMarkdown content={opt} className="text-[10px] flex-1" />
             </li>
           ))}
         </ul>
@@ -63,8 +43,8 @@ export function QuestionRow({ q }: QuestionRowProps) {
 
       {/* Correct answer fallback for non-MCQ */}
       {q.correctAnswer && (!q.options || q.options.length === 0) && (
-        <p className="mt-2 text-[10px] font-mono text-muted-foreground/50">
-          Answer: <span className="text-green-500 font-bold" dangerouslySetInnerHTML={{ __html: q.correctAnswer }} />
+        <p className="mt-2 text-[10px] font-mono text-muted-foreground/50 flex gap-1">
+          Answer: <QuestionMarkdown content={q.correctAnswer} className="text-[10px] text-green-500 font-bold flex-1" />
         </p>
       )}
     </div>

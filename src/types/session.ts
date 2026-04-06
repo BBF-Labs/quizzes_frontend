@@ -420,6 +420,7 @@ export interface QuizSummary {
   courseTitle?: string;
   courseCode?: string;
   questionCount: number;
+  lectureCount?: number;
   averageScore?: number;
   totalAttempts?: number;
   createdAt: string;
