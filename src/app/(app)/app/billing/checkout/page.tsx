@@ -126,18 +126,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-full px-4 py-8">
-      <div className="mx-auto max-w-md">
-
-        {/* Back */}
-        <motion.button
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          onClick={() => router.push("/app/billing")}
-          className="flex items-center gap-2 text-xs font-mono text-muted-foreground hover:text-foreground transition-colors mb-8"
-        >
-          <ArrowLeft className="size-3" />
-          Back to plans
-        </motion.button>
+      <div className="mx-auto max-w-5xl">
 
         {/* Header */}
         <motion.div

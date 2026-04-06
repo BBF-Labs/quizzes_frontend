@@ -10,11 +10,12 @@ import { cn } from "@/lib/utils";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const TIER_LABELS: Record<string, { label: string; tagline: string; color: string }> = {
-  cooked:    { label: "Cooked",    tagline: "All-nighter mode. One shot.",     color: "text-amber-400"  },
-  cruising:  { label: "Cruising",  tagline: "Steady grind. Mid-semester flow.", color: "text-sky-400"   },
-  locked_in: { label: "Locked In", tagline: "Unlimited. Zero excuses.",         color: "text-primary"   },
+const TIER_LABELS: Record<string, { label: string; tagline: string; color: string; borderHover: string }> = {
+  cooked:    { label: "Cooked",    tagline: "All-nighter mode. One shot.",      color: "text-amber-400", borderHover: "hover:border-amber-400/30" },
+  cruising:  { label: "Cruising",  tagline: "Steady grind. Mid-semester flow.", color: "text-sky-400",   borderHover: "hover:border-sky-400/40" },
+  locked_in: { label: "Locked In", tagline: "Unlimited. Zero excuses.",         color: "text-primary",   borderHover: "hover:border-primary/40" },
 };
+
 
 const DURATION_LABELS: Record<PlanDuration, string> = {
   daily:    "Daily",
@@ -22,18 +23,27 @@ const DURATION_LABELS: Record<PlanDuration, string> = {
   semester: "Semester",
 };
 
-const FEATURE_LABELS = [
-  { key: "tutorSessionsPerDay",   icon: Brain,     label: "Z Tutor Sessions" },
-  { key: "quizGenerationsPerDay", icon: BookOpen,  label: "Quiz Generations"  },
-  { key: "flashcardSetsPerDay",   icon: Zap,       label: "Flashcard Sets"    },
-  { key: "mindMapsPerDay",        icon: FileText,  label: "Mind Maps"         },
-  { key: "materialUploadsPerDay", icon: Upload,    label: "Material Uploads"  },
-] as const;
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatLimit(val: number | null | boolean, isBool = false): string {
-  if (isBool) return val ? "Yes" : "No";
-  if (val === null) return "Unlimited";
-  return String(val);
+function getFeaturesList(pkg: BillingPackage) {
+  const f = [];
+  f.push(pkg.limits.tutorSessionsPerDay === null ? "Unlimited Z sessions" : `${pkg.limits.tutorSessionsPerDay} Z session${pkg.limits.tutorSessionsPerDay !== 1 ? 's' : ''} / day`);
+  f.push(pkg.limits.quizGenerationsPerDay === null ? "Unlimited quizzes" : `${pkg.limits.quizGenerationsPerDay} quiz generation${pkg.limits.quizGenerationsPerDay !== 1 ? 's' : ''} / day`);
+  f.push(pkg.limits.flashcardSetsPerDay === null ? "Unlimited flashcard sets" : `${pkg.limits.flashcardSetsPerDay} flashcard set${pkg.limits.flashcardSetsPerDay !== 1 ? 's' : ''} / day`);
+  f.push(pkg.limits.mindMapsPerDay === null ? "Unlimited mind maps" : `${pkg.limits.mindMapsPerDay} mind map${pkg.limits.mindMapsPerDay !== 1 ? 's' : ''} / day`);
+  f.push(pkg.limits.materialUploadsPerDay === null ? "Unlimited uploads" : `${pkg.limits.materialUploadsPerDay} upload${pkg.limits.materialUploadsPerDay !== 1 ? 's' : ''} / day`);
+  f.push(pkg.tier === 'cooked' ? "Basic analytics" : "Full analytics");
+  if (pkg.limits.pdfExport) f.push("PDF export");
+  if (pkg.tier === 'locked_in') f.push("Priority processing", "Early feature access");
+  if (pkg.limits.bonusCreditsOnSignup > 0) f.push(`${pkg.limits.bonusCreditsOnSignup} bonus credits`);
+  return f;
+}
+
+function getNotIncluded(pkg: BillingPackage) {
+  const missing = [];
+  if (!pkg.limits.pdfExport) missing.push("PDF export");
+  if (pkg.tier !== 'locked_in') missing.push("Priority processing");
+  return missing;
 }
 
 // ─── Plan Card ────────────────────────────────────────────────────────────────
@@ -59,9 +69,10 @@ function PlanCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay }}
       className={cn(
-        "flex flex-col border bg-card/40 p-5 gap-4 relative",
+        "relative flex flex-col border bg-card/30 p-6 transition-colors duration-300 rounded-(--radius)",
         isCurrent ? "border-primary/60 bg-primary/5" : "border-border/50",
-        isPopular && !isCurrent && "border-sky-400/40",
+        isPopular && !isCurrent && "border-sky-400/30 bg-sky-400/[0.03]",
+        !isCurrent && meta.borderHover
       )}
     >
       {isPopular && (
@@ -90,61 +101,47 @@ function PlanCard({
         <p className="text-xs text-muted-foreground font-mono">{meta.tagline}</p>
       </div>
 
-      <div className="flex items-baseline gap-1">
-        <span className="text-3xl font-black tracking-tighter">
+      <div className="flex items-baseline gap-1 mb-5">
+        <span className="text-4xl font-black tracking-tighter">
           {pkg.priceGHS.toFixed(2)}
         </span>
-        <span className="text-xs font-mono text-muted-foreground">GHS</span>
-      </div>
-
-      <div className="h-px w-full bg-border/40" />
-
-      <div className="flex flex-col gap-2 flex-1">
-        {FEATURE_LABELS.map(({ key, icon: Icon, label }) => {
-          const val = pkg.limits[key as keyof typeof pkg.limits];
-          const unlimited = val === null;
-          return (
-            <div key={key} className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Icon className="size-3 text-muted-foreground/50" />
-                <span className="text-xs text-muted-foreground font-mono">{label}</span>
-              </div>
-              <span className={cn("text-xs font-mono font-semibold", unlimited ? "text-primary" : "text-foreground")}>
-                {formatLimit(val as number | null)}
-              </span>
-            </div>
-          );
-        })}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Star className="size-3 text-muted-foreground/50" />
-            <span className="text-xs text-muted-foreground font-mono">PDF Export</span>
-          </div>
-          <span className={cn("text-xs font-mono", pkg.limits.pdfExport ? "text-primary" : "text-muted-foreground/40")}>
-            {pkg.limits.pdfExport ? <Check className="size-3" /> : "—"}
+        <div className="flex items-center gap-1">
+          <span className="text-[10px] font-mono text-muted-foreground/60 uppercase">GHS</span>
+          <span className="text-[10px] font-mono text-muted-foreground/60 uppercase">
+            / {DURATION_LABELS[pkg.durationType].toLowerCase()}
           </span>
         </div>
-        {pkg.limits.bonusCreditsOnSignup > 0 && (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Zap className="size-3 text-amber-400/70" />
-              <span className="text-xs text-muted-foreground font-mono">Bonus credits</span>
-            </div>
-            <span className="text-xs font-mono text-amber-400">+{pkg.limits.bonusCreditsOnSignup}</span>
-          </div>
-        )}
       </div>
+
+      <div className="h-px w-full bg-border/40 mb-5" />
+
+      <ul className="flex flex-col gap-2 flex-1 mb-6">
+        {getFeaturesList(pkg).map((f) => (
+          <li key={f} className="flex items-center gap-2">
+            <Check className={cn("size-3 shrink-0", meta.color)} />
+            <span className="text-xs font-mono text-foreground/80">{f}</span>
+          </li>
+        ))}
+        {getNotIncluded(pkg).map((f) => (
+          <li key={f} className="flex items-center gap-2 opacity-30">
+            <span className="size-3 shrink-0 flex items-center justify-center text-[10px] text-muted-foreground">—</span>
+            <span className="text-xs font-mono text-muted-foreground line-through">{f}</span>
+          </li>
+        ))}
+      </ul>
 
       <button
         onClick={() => onSelect(pkg)}
         disabled={isCurrent}
         className={cn(
-          "w-full py-2.5 text-xs font-mono uppercase tracking-[0.15em] border transition-colors",
+          "w-full py-2.5 text-[10px] font-mono uppercase tracking-[0.15em] border transition-colors text-center block rounded-(--radius)",
           isCurrent
             ? "border-border/30 text-muted-foreground cursor-not-allowed"
             : pkg.tier === "locked_in"
             ? "border-primary bg-primary text-primary-foreground hover:bg-primary/90"
-            : "border-border hover:border-primary hover:text-primary text-foreground",
+            : pkg.tier === "cruising"
+            ? "border-sky-400/50 text-sky-400 hover:bg-sky-400/10"
+            : "border-border/60 text-foreground hover:border-amber-400/50 hover:text-amber-400",
         )}
       >
         {isCurrent ? "Active" : "Get started"}
