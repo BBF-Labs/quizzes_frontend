@@ -12,7 +12,12 @@ import {
   ensurePushSubscription,
   getCurrentPushEndpoint,
 } from "@/lib/push-notifications";
-import { clearSession, signalSessionActive } from "@/lib/session";
+import {
+  clearSession,
+  setSession,
+  signalSessionActive,
+  getRefreshToken,
+} from "@/lib/session";
 import { queryKeys } from "@/lib/query-keys";
 import { hydrateSessionUserFromToken, SessionUser } from "@/hooks";
 import { isInvalidSessionError, useSessionValidation } from "@/hooks";
@@ -63,22 +68,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { data: user, isLoading: isHydrating } = useQuery<User | null>({
     queryKey: queryKeys.authSession,
     queryFn: async () => {
-      const user = hydrateSessionUserFromToken();
-      if (user) return user;
+      // Fast path: tokens already in localStorage from a previous login.
+      const cached = hydrateSessionUserFromToken();
+      if (cached) return cached;
 
-      // No auth_user cookie — try a silent refresh. The httpOnly auth_refresh
-      // cookie is sent automatically via withCredentials.
+      // Slow path: try a silent refresh using the stored refresh token.
+      const refreshToken = getRefreshToken();
+      if (!refreshToken) return null;
+
       try {
-        await axios.post(
+        const res = await axios.post<{
+          user: User;
+          accessToken: string;
+          refreshToken: string;
+        }>(
           `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`,
-          {},
-          { withCredentials: true },
+          { refreshToken },
         );
-        return hydrateSessionUserFromToken();
+        const { user, accessToken, refreshToken: newRefreshToken } = res.data;
+        setSession(user, accessToken, newRefreshToken);
+        return user;
       } catch {
         clearSession();
+        return null;
       }
-      return null;
     },
     staleTime: 60_000,
   });
@@ -112,10 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isAuthenticated = Boolean(user);
   const isLoading = isHydrating || isValidating;
   const isSuperAdminRole = user?.role === "super_admin";
-  const hasAdminAccess = user?.role === "super_admin"; //restrict to super admin for now
-  // user?.role === "super_admin" ||
-  // user?.role === "creator" ||
-  // user?.role === "moderator";
+  const hasAdminAccess = user?.role === "super_admin";
 
   const loginMutation = useMutation({
     mutationFn: async ({
@@ -129,35 +139,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }) => {
       const pushEndpoint = await getCurrentPushEndpoint();
 
-      const res = await api.post("/auth/login", {
+      const res = await api.post<{
+        user: User;
+        accessToken: string;
+        refreshToken: string;
+      }>("/auth/login", {
         identifier,
         password,
         rememberMe,
         endpoint: pushEndpoint ?? undefined,
       });
 
-      const resData = res.data?.data ?? res.data;
-      // auth_user cookie is set by the server. In cross-origin dev setups
-      // (frontend on :3000, API on :5000) the cookie is scoped to the API
-      // domain and won't be readable via document.cookie — fall back to the
-      // user object returned in the response body.
-      const sessionUser: User =
-        hydrateSessionUserFromToken() ??
-        (resData.user as User | undefined) ??
-        (resData as User);
-      if (!sessionUser?.id) {
-        throw new Error("Session cookie not set after login");
-      }
-
+      const { user, accessToken, refreshToken } = res.data;
+      setSession(user, accessToken, refreshToken);
       signalSessionActive();
-      return sessionUser;
+      return user;
     },
     onSuccess: async (user) => {
       qc.setQueryData(queryKeys.authSession, user);
       await qc.invalidateQueries({
         queryKey: [...queryKeys.authSession, "validation"],
       });
-      // Post-login, prompt once for permission so authenticated sessions can receive pushes.
       await ensurePushSubscription({ promptForPermission: true });
     },
   });
@@ -186,29 +188,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       username: string;
       password: string;
     }) => {
-      const res = await api.post("/auth/signup", {
+      const res = await api.post<{
+        user: User;
+        accessToken: string;
+        refreshToken: string;
+      }>("/auth/signup", {
         name,
         email,
         username,
         password,
       });
-      // Cookies set by server on signup. Fall back to response body in
-      // cross-origin dev setups where auth_user cookie isn't readable.
-      const resData = res.data?.data ?? res.data;
-      const sessionUser: User =
-        hydrateSessionUserFromToken() ??
-        (resData.user as User | undefined) ??
-        (resData as User);
-      if (!sessionUser?.id) {
-        throw new Error("Session cookie not set after signup");
-      }
 
+      const { user, accessToken, refreshToken } = res.data;
+      setSession(user, accessToken, refreshToken);
       signalSessionActive();
       return {
-        ...sessionUser,
-        name: sessionUser.name || name,
-        username: sessionUser.username || username,
-        email: sessionUser.email || email,
+        ...user,
+        name: user.name || name,
+        username: user.username || username,
+        email: user.email || email,
       } as User;
     },
     onSuccess: (user) => {
@@ -234,7 +232,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
-      // Clear httpOnly cookies server-side
       await api.post("/auth/logout");
     } catch {
       // Proceed even if the request fails
@@ -246,7 +243,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [qc]);
 
   const updateSession = useCallback(() => {
-    // Re-read auth_user cookie after a profile update or token refresh
     const sessionUser = hydrateSessionUserFromToken();
     if (sessionUser) {
       qc.setQueryData(queryKeys.authSession, sessionUser);
