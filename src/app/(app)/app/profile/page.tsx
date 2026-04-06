@@ -51,15 +51,26 @@ export default function ProfilePage() {
     courseAnnouncements: NotifChannels;
   };
 
-  const [notifSettings, setNotifSettings] = useState<NotifSettings>(user?.notificationSettings || {
-    examReminders: { email: true, push: true, inApp: true, reminderIntervals: ["7", "3", "1"] },
-    courseAnnouncements: { email: true, push: true, inApp: true },
-  });
+  const [notifSettings, setNotifSettings] = useState<NotifSettings>(
+    user?.notificationSettings || {
+      examReminders: {
+        email: true,
+        push: true,
+        inApp: true,
+        reminderIntervals: ["7", "3", "1"],
+      },
+      courseAnnouncements: { email: true, push: true, inApp: true },
+    },
+  );
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadMutation = useUploadFile();
 
-  const { mutate: checkMutation, isPending: isChecking, data: checkData } = useProfileCheck();
+  const {
+    mutate: checkMutation,
+    isPending: isChecking,
+    data: checkData,
+  } = useProfileCheck();
 
   const isUsernameTaken =
     checkData?.username?.exists && username !== user?.username;
@@ -81,7 +92,6 @@ export default function ProfilePage() {
       }, 500);
       return () => clearTimeout(timer);
     }
-    
   }, [currentPassword, checkMutation]);
 
   useEffect(() => {
@@ -133,11 +143,20 @@ export default function ProfilePage() {
         notificationSettings: notifSettings,
       },
       {
-        onSuccess: (data: { data?: { user?: any; accessToken?: string; refreshToken?: string }; user?: any; accessToken?: string; refreshToken?: string }) => {
+        onSuccess: (data: {
+          data?: { user?: any; accessToken?: string; refreshToken?: string };
+          user?: any;
+          accessToken?: string;
+          refreshToken?: string;
+        }) => {
           toast.success("Profile updated");
           const resData = data.data ?? data;
           if (resData.accessToken && resData.user) {
-            setSession(resData.user, resData.accessToken, resData.refreshToken ?? "");
+            setSession(
+              resData.user,
+              resData.accessToken,
+              resData.refreshToken ?? "",
+            );
           }
           updateSession();
           setCurrentPassword("");
@@ -148,8 +167,11 @@ export default function ProfilePage() {
     );
   };
 
-  const roleLabel = user?.role ? (ROLE_LABELS[user.role] ?? user.role) : "Student";
-  const avatarSrc = localPreview || uploadedPicture?.url || user?.profilePicture;
+  const roleLabel = user?.role
+    ? (ROLE_LABELS[user.role] ?? user.role)
+    : "Student";
+  const avatarSrc =
+    localPreview || uploadedPicture?.url || user?.profilePicture;
 
   return (
     <div className="space-y-6">
@@ -229,11 +251,15 @@ export default function ProfilePage() {
           <div className="shrink-0 hidden sm:flex flex-col items-end gap-1">
             <div className="flex items-center gap-2">
               <BadgeCheck className="size-3 text-green-500" />
-              <span className="text-[9px] font-mono uppercase text-muted-foreground">Z Memory</span>
+              <span className="text-[9px] font-mono uppercase text-muted-foreground">
+                Z Memory
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <BadgeCheck className="size-3 text-green-500" />
-              <span className="text-[9px] font-mono uppercase text-muted-foreground">Unlimited Sessions</span>
+              <span className="text-[9px] font-mono uppercase text-muted-foreground">
+                Unlimited Sessions
+              </span>
             </div>
           </div>
         </div>
@@ -281,13 +307,23 @@ export default function ProfilePage() {
                 <Fingerprint className="size-3" /> Username
               </span>
               {username !== user?.username && (
-                <span className={cn(
-                  "text-[9px] italic lowercase",
-                  isChecking ? "text-muted-foreground" : isUsernameTaken ? "text-destructive" : "text-green-500"
-                )}>
-                  {isChecking
-                    ? <LoaderCircle className="size-2 animate-spin inline" />
-                    : isUsernameTaken ? "taken" : "available"}
+                <span
+                  className={cn(
+                    "text-[9px] italic lowercase",
+                    isChecking
+                      ? "text-muted-foreground"
+                      : isUsernameTaken
+                        ? "text-destructive"
+                        : "text-green-500",
+                  )}
+                >
+                  {isChecking ? (
+                    <LoaderCircle className="size-2 animate-spin inline" />
+                  ) : isUsernameTaken ? (
+                    "taken"
+                  ) : (
+                    "available"
+                  )}
                 </span>
               )}
             </label>
@@ -299,8 +335,13 @@ export default function ProfilePage() {
               placeholder="your_username"
               className={cn(
                 "font-mono text-xs h-10 bg-background/50",
-                username !== user?.username && !isUsernameTaken && !isChecking && "border-green-500/50 bg-green-500/5",
-                username !== user?.username && isUsernameTaken && "border-destructive/50 bg-destructive/5",
+                username !== user?.username &&
+                  !isUsernameTaken &&
+                  !isChecking &&
+                  "border-green-500/50 bg-green-500/5",
+                username !== user?.username &&
+                  isUsernameTaken &&
+                  "border-destructive/50 bg-destructive/5",
               )}
             />
           </div>
@@ -345,13 +386,23 @@ export default function ProfilePage() {
                 <KeyRound className="size-3" /> Current Password
               </span>
               {currentPassword && (
-                <span className={cn(
-                  "text-[9px] lowercase",
-                  isChecking ? "text-muted-foreground" : isPasswordValid ? "text-green-500" : "text-destructive"
-                )}>
-                  {isChecking
-                    ? <LoaderCircle className="size-2 animate-spin inline" />
-                    : isPasswordValid ? "verified" : "incorrect"}
+                <span
+                  className={cn(
+                    "text-[9px] lowercase",
+                    isChecking
+                      ? "text-muted-foreground"
+                      : isPasswordValid
+                        ? "text-green-500"
+                        : "text-destructive",
+                  )}
+                >
+                  {isChecking ? (
+                    <LoaderCircle className="size-2 animate-spin inline" />
+                  ) : isPasswordValid ? (
+                    "verified"
+                  ) : (
+                    "incorrect"
+                  )}
                 </span>
               )}
             </label>
@@ -364,8 +415,14 @@ export default function ProfilePage() {
               placeholder="••••••••"
               className={cn(
                 "font-mono text-xs h-10 bg-background/50",
-                currentPassword && isPasswordValid && "border-green-500/50 bg-green-500/5",
-                currentPassword && currentPassword.length >= 4 && !isChecking && !isPasswordValid && "border-destructive/50 bg-destructive/5",
+                currentPassword &&
+                  isPasswordValid &&
+                  "border-green-500/50 bg-green-500/5",
+                currentPassword &&
+                  currentPassword.length >= 4 &&
+                  !isChecking &&
+                  !isPasswordValid &&
+                  "border-destructive/50 bg-destructive/5",
               )}
             />
           </div>
@@ -391,7 +448,9 @@ export default function ProfilePage() {
             <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/60 flex items-center justify-between">
               <span>Confirm Password</span>
               {confirmPassword && newPassword !== confirmPassword && (
-                <span className="text-[9px] lowercase text-destructive">mismatch</span>
+                <span className="text-[9px] lowercase text-destructive">
+                  mismatch
+                </span>
               )}
             </label>
             <Input
@@ -403,8 +462,12 @@ export default function ProfilePage() {
               placeholder="Repeat new password"
               className={cn(
                 "font-mono text-xs h-10 bg-background/50",
-                confirmPassword && newPassword === confirmPassword && "border-green-500/50 bg-green-500/5",
-                confirmPassword && newPassword !== confirmPassword && "border-destructive/50 bg-destructive/5",
+                confirmPassword &&
+                  newPassword === confirmPassword &&
+                  "border-green-500/50 bg-green-500/5",
+                confirmPassword &&
+                  newPassword !== confirmPassword &&
+                  "border-destructive/50 bg-destructive/5",
               )}
             />
           </div>
@@ -412,7 +475,8 @@ export default function ProfilePage() {
 
         <div className="px-5 pb-4">
           <p className="text-[9px] font-mono text-muted-foreground/40 uppercase tracking-widest">
-            Current password is required for any changes. Leave new password blank to keep existing.
+            Current password is required for any changes. Leave new password
+            blank to keep existing.
           </p>
         </div>
       </motion.div>
@@ -434,64 +498,88 @@ export default function ProfilePage() {
         <div className="p-5 space-y-6">
           {/* Exam Reminders */}
           <div className="space-y-4">
-             <div className="flex items-center gap-2">
-                <div className="h-px w-4 bg-primary/30" />
-                <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground">Exam Reminders</span>
-             </div>
-             
-             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <PreferenceToggle 
-                  label="Email Alerts"
-                  description="Receive 7, 3, and 1-day reminders via email."
-                  enabled={notifSettings.examReminders?.email !== false}
-                  onToggle={() => setNotifSettings((prev: NotifSettings) => ({
+            <div className="flex items-center gap-2">
+              <div className="h-px w-4 bg-primary/30" />
+              <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground">
+                Exam Reminders
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <PreferenceToggle
+                label="Email Alerts"
+                description="Receive 7, 3, and 1-day reminders via email."
+                enabled={notifSettings.examReminders?.email !== false}
+                onToggle={() =>
+                  setNotifSettings((prev: NotifSettings) => ({
                     ...prev,
-                    examReminders: { ...prev.examReminders, email: !prev.examReminders?.email }
-                  }))}
-                  icon={Mail}
-                />
-                <PreferenceToggle 
-                  label="Push Notifications"
-                  description="Get instant reminders on your device."
-                  enabled={notifSettings.examReminders?.push !== false}
-                  onToggle={() => setNotifSettings((prev: NotifSettings) => ({
+                    examReminders: {
+                      ...prev.examReminders,
+                      email: !prev.examReminders?.email,
+                    },
+                  }))
+                }
+                icon={Mail}
+              />
+              <PreferenceToggle
+                label="Push Notifications"
+                description="Get instant reminders on your device."
+                enabled={notifSettings.examReminders?.push !== false}
+                onToggle={() =>
+                  setNotifSettings((prev: NotifSettings) => ({
                     ...prev,
-                    examReminders: { ...prev.examReminders, push: !prev.examReminders?.push }
-                  }))}
-                  icon={Bell}
-                />
-             </div>
+                    examReminders: {
+                      ...prev.examReminders,
+                      push: !prev.examReminders?.push,
+                    },
+                  }))
+                }
+                icon={Bell}
+              />
+            </div>
           </div>
 
           {/* Timetable Updates */}
           <div className="space-y-4">
-             <div className="flex items-center gap-2">
-                <div className="h-px w-4 bg-primary/30" />
-                <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground">Timetable Shifts</span>
-             </div>
-             
-             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <PreferenceToggle 
-                  label="Email Updates"
-                  description="Get notified if a venue or time changes."
-                  enabled={notifSettings.courseAnnouncements?.email !== false}
-                  onToggle={() => setNotifSettings((prev: NotifSettings) => ({
+            <div className="flex items-center gap-2">
+              <div className="h-px w-4 bg-primary/30" />
+              <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground">
+                Timetable Shifts
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <PreferenceToggle
+                label="Email Updates"
+                description="Get notified if a venue or time changes."
+                enabled={notifSettings.courseAnnouncements?.email !== false}
+                onToggle={() =>
+                  setNotifSettings((prev: NotifSettings) => ({
                     ...prev,
-                    courseAnnouncements: { ...prev.courseAnnouncements, email: !prev.courseAnnouncements?.email }
-                  }))}
-                  icon={MessageSquare}
-                />
-                <PreferenceToggle 
-                  label="Urgent Push"
-                  description="Critical alerts for day-of schedule changes."
-                  enabled={notifSettings.courseAnnouncements?.push !== false}
-                  onToggle={() => setNotifSettings((prev: NotifSettings) => ({
+                    courseAnnouncements: {
+                      ...prev.courseAnnouncements,
+                      email: !prev.courseAnnouncements?.email,
+                    },
+                  }))
+                }
+                icon={MessageSquare}
+              />
+              <PreferenceToggle
+                label="Urgent Push"
+                description="Critical alerts for day-of schedule changes."
+                enabled={notifSettings.courseAnnouncements?.push !== false}
+                onToggle={() =>
+                  setNotifSettings((prev: NotifSettings) => ({
                     ...prev,
-                    courseAnnouncements: { ...prev.courseAnnouncements, push: !prev.courseAnnouncements?.push }
-                  }))}
-                  icon={Bell}
-                />
-             </div>
+                    courseAnnouncements: {
+                      ...prev.courseAnnouncements,
+                      push: !prev.courseAnnouncements?.push,
+                    },
+                  }))
+                }
+                icon={Bell}
+              />
+            </div>
           </div>
         </div>
       </motion.div>
@@ -523,16 +611,16 @@ export default function ProfilePage() {
   );
 }
 
-function PreferenceToggle({ 
-  label, 
-  description, 
-  enabled, 
-  onToggle, 
-  icon: Icon 
-}: { 
-  label: string; 
-  description: string; 
-  enabled: boolean; 
+function PreferenceToggle({
+  label,
+  description,
+  enabled,
+  onToggle,
+  icon: Icon,
+}: {
+  label: string;
+  description: string;
+  enabled: boolean;
   onToggle: () => void;
   icon: any;
 }) {
@@ -542,21 +630,32 @@ function PreferenceToggle({
       onClick={onToggle}
       className={cn(
         "flex flex-col items-start text-left p-4 border transition-all duration-200 group relative overflow-hidden",
-        enabled 
-          ? "border-primary/40 bg-primary/5 shadow-[0_0_10px_rgba(0,110,255,0.05)]" 
-          : "border-border/40 bg-card/20 opacity-60 grayscale hover:grayscale-0 hover:opacity-100"
+        enabled
+          ? "border-primary/40 bg-primary/5 shadow-[0_0_10px_rgba(0,110,255,0.05)]"
+          : "border-border/40 bg-card/20 opacity-60 grayscale hover:grayscale-0 hover:opacity-100",
       )}
     >
       <div className="flex items-center gap-3 mb-2">
-        <div className={cn(
-          "size-6 flex items-center justify-center border transition-colors duration-200",
-          enabled ? "border-primary bg-primary text-white" : "border-border bg-background text-muted-foreground"
-        )}>
+        <div
+          className={cn(
+            "size-6 flex items-center justify-center border transition-colors duration-200 rounded-(--radius)",
+            enabled
+              ? "border-primary bg-primary text-white"
+              : "border-border bg-background text-muted-foreground",
+          )}
+        >
           {enabled ? <Check className="size-3" /> : <X className="size-3" />}
         </div>
         <div className="flex items-center gap-2">
-          <Icon className={cn("size-3.5", enabled ? "text-primary" : "text-muted-foreground")} />
-          <span className="text-[10px] font-mono font-bold uppercase tracking-widest">{label}</span>
+          <Icon
+            className={cn(
+              "size-3.5",
+              enabled ? "text-primary" : "text-muted-foreground",
+            )}
+          />
+          <span className="text-[10px] font-mono font-bold uppercase tracking-widest">
+            {label}
+          </span>
         </div>
       </div>
       <p className="text-[9px] font-mono text-muted-foreground leading-relaxed">
@@ -564,10 +663,12 @@ function PreferenceToggle({
       </p>
 
       {/* Decorative corner */}
-      <div className={cn(
-        "absolute top-0 right-0 size-6 border-t border-r transition-colors duration-200",
-        enabled ? "border-primary/20" : "border-transparent"
-      )} />
+      <div
+        className={cn(
+          "absolute top-0 right-0 size-6 border-t border-r transition-colors duration-200",
+          enabled ? "border-primary/20" : "border-transparent",
+        )}
+      />
     </button>
   );
 }

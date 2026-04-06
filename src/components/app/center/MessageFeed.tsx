@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Brain, Copy, Check, RotateCcw, Pencil, FileText } from "lucide-react";
+import { Brain, Copy, Check, RotateCcw, Pencil, FileText, ThumbsUp, ThumbsDown } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "@/lib/utils";
@@ -26,6 +26,7 @@ export interface MessageFeedProps extends DirectiveCardCallbacks {
   activeDirectiveMessageId: string | null;
   onRetryMessage?: (id: string, content: string) => void;
   onEditMessage?: (id: string, newContent: string) => void;
+  onRateMessage?: (messageId: string, rating: 1 | -1) => void;
 }
 
 export function MessageFeed({
@@ -43,6 +44,7 @@ export function MessageFeed({
   onAction,
   onRetryMessage,
   onEditMessage,
+  onRateMessage,
 }: MessageFeedProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -121,6 +123,7 @@ export function MessageFeed({
             message={msg}
             citations={citations}
             onRetry={onRetryMessage}
+            onRate={onRateMessage}
           />
         );
       })}
@@ -357,10 +360,12 @@ function ZMessageBubble({
   message,
   citations,
   onRetry,
+  onRate,
 }: {
   message: ZAppMessage;
   citations: SessionCitation[];
   onRetry?: (id: string, content: string) => void;
+  onRate?: (messageId: string, rating: 1 | -1) => void;
 }) {
   const isStreaming = !!message.isStreaming;
   const [hovered, setHovered] = useState(false);
@@ -452,6 +457,32 @@ function ZMessageBubble({
                   <RotateCcw className="size-2.5" />
                   Retry
                 </button>
+              )}
+              {onRate && message.role === "z" && (
+                <>
+                  <button
+                    onClick={() => onRate(message.messageId || message.id, 1)}
+                    className={cn(
+                      "flex items-center gap-1 text-[9px] font-mono uppercase transition-colors",
+                      (message as ZAppMessage & { rating?: number }).rating === 1
+                        ? "text-emerald-500"
+                        : "text-muted-foreground hover:text-emerald-500"
+                    )}
+                  >
+                    <ThumbsUp className="size-2.5" />
+                  </button>
+                  <button
+                    onClick={() => onRate(message.messageId || message.id, -1)}
+                    className={cn(
+                      "flex items-center gap-1 text-[9px] font-mono uppercase transition-colors",
+                      (message as ZAppMessage & { rating?: number }).rating === -1
+                        ? "text-destructive"
+                        : "text-muted-foreground hover:text-destructive"
+                    )}
+                  >
+                    <ThumbsDown className="size-2.5" />
+                  </button>
+                </>
               )}
             </motion.div>
           )}

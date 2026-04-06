@@ -14,9 +14,11 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle, UserProfileDropdown } from "@/components/common";
 import { useAuth } from "@/contexts/auth-context";
 import OnboardingBanner from "@/components/onboarding/OnboardingBanner";
+import { DonationBanner } from "@/components/landing/donation-banner";
 import { api } from "@/lib/api";
-import { useAuthQuery } from "@/hooks";
+import { useAuthQuery, useStreakStatus } from "@/hooks";
 import { queryKeys } from "@/lib/query-keys";
+import { Flame } from "lucide-react";
 import {
   ONBOARDING_BANNER_VISIBILITY_EVENT,
   isOnboardingBannerTemporarilyHidden,
@@ -30,6 +32,7 @@ export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { data: streak } = useStreakStatus();
   const { scrollY } = useScroll();
 
   const { data: onboardingStatus, isLoading: onboardingStatusLoading } =
@@ -106,6 +109,7 @@ export function Navbar() {
 
   return (
     <>
+      <DonationBanner />
       <OnboardingBanner />
       {showBanner && <div className="h-12.25 w-full shrink-0" />}
       <motion.header
@@ -142,9 +146,23 @@ export function Navbar() {
               >
                 Timetable
               </Link>
+              <Link
+                href="/pricing"
+                className="text-xs font-mono font-medium tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors uppercase"
+              >
+                Pricing
+              </Link>
             </nav>
             <div className="flex items-center space-x-4">
               <ThemeToggle />
+              {user && streak && streak.current > 0 && (
+                <div className="flex items-center gap-1 border border-amber-400/30 bg-amber-400/5 px-2 py-1">
+                  <Flame className="size-3 text-amber-400" />
+                  <span className="text-[10px] font-mono font-bold text-amber-400 tabular-nums">
+                    {streak.current}
+                  </span>
+                </div>
+              )}
               <Button
                 onClick={scrollToHero}
                 variant="outline"
@@ -172,6 +190,14 @@ export function Navbar() {
           {/* Mobile Toggle & ThemeToggle */}
           <div className="flex items-center space-x-2 md:hidden">
             <ThemeToggle />
+            {user && streak && streak.current > 0 && (
+              <div className="flex items-center gap-1 border border-amber-400/30 bg-amber-400/5 px-1.5 py-1">
+                <Flame className="size-3 text-amber-400" />
+                <span className="text-[10px] font-mono font-bold text-amber-400 tabular-nums">
+                  {streak.current}
+                </span>
+              </div>
+            )}
             {user && (
               <div className="mr-1">
                 <UserProfileDropdown user={user} onLogout={logout} />
@@ -216,6 +242,14 @@ export function Navbar() {
                   className="w-full justify-start rounded-(--radius) font-mono tracking-widest uppercase"
                 >
                   Timetable
+                </Button>
+              </Link>
+              <Link href="/pricing" className="w-full">
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start rounded-(--radius) font-mono tracking-widest uppercase"
+                >
+                  Pricing
                 </Button>
               </Link>
               <Button

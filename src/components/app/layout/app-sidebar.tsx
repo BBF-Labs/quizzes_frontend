@@ -8,6 +8,7 @@ import {
   Brain,
   BookOpen,
   Clock3,
+  CreditCard,
   FileText,
   GraduationCap,
   LogOut,
@@ -50,7 +51,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r border-border/50">
       <SidebarHeader className="h-14 flex items-center px-4">
         <div className="flex items-center gap-3 w-full">
-          <div className="flex items-end space-x-1.5 px-0.5">
+          <Link href="/" className="flex items-end space-x-1.5 px-0.5 hover:opacity-80 transition-opacity">
             <span className="text-lg font-bold tracking-widest text-foreground leading-none">
               Qz.
             </span>
@@ -59,7 +60,7 @@ export function AppSidebar() {
                 / App
               </span>
             )}
-          </div>
+          </Link>
         </div>
       </SidebarHeader>
 
@@ -327,6 +328,27 @@ export function AppSidebar() {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname.startsWith("/app/billing")}
+                  tooltip="Billing"
+                  className={cn(
+                    "h-9 px-4 rounded-(--radius) transition-all duration-200",
+                    pathname.startsWith("/app/billing")
+                      ? "bg-primary/5 text-primary border-r-2 border-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
+                  )}
+                >
+                  <Link href="/app/billing">
+                    <CreditCard className="size-4" />
+                    <span className="font-mono text-[11px] uppercase tracking-widest">
+                      Billing
+                    </span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -346,7 +368,7 @@ export function AppSidebar() {
               ) : (
                 recentSessions.map((session) => {
                   const title =
-                    session.title || `Session ${session.id.slice(0, 6)}`;
+                    session.name || `Session ${session.id.slice(0, 6)}`;
                   const href = `/app/${session.id}`;
                   const isActive = pathname === href;
 
@@ -401,11 +423,15 @@ export function AppSidebar() {
             href="/app/profile"
             className={cn(
               "flex-1 flex items-center gap-3 p-2 hover:bg-secondary/10 transition-colors overflow-hidden",
-              pathname === "/app/profile" && "bg-primary/5 border-l-2 border-primary",
+              pathname === "/app/profile" &&
+                "bg-primary/5 border-l-2 border-primary",
             )}
           >
             <Avatar className="size-8 rounded-(--radius) border border-border/50 bg-secondary/20 shrink-0">
-              <AvatarImage src={user?.profilePicture} className="object-cover" />
+              <AvatarImage
+                src={user?.profilePicture}
+                className="object-cover"
+              />
               <AvatarFallback className="rounded-(--radius) bg-zinc-800 font-mono text-[10px] font-bold text-zinc-400">
                 {user?.username?.[0]?.toUpperCase() || "U"}
               </AvatarFallback>

@@ -13,6 +13,8 @@ import { CTA } from "@/components/landing";
 import { Footer } from "@/components/landing";
 import { StatsSection } from "@/components/landing";
 import { QuizzesSection } from "@/components/landing";
+import { Pricing } from "@/components/landing";
+import { Donations } from "@/components/landing";
 
 export default function Home() {
   return (
@@ -31,6 +33,8 @@ export default function Home() {
         <RecommendationsPreview />
         <InstitutionSection />
         <SocialProof />
+        <Donations />
+        <Pricing />
         <CTA />
       </main>
       <Footer />

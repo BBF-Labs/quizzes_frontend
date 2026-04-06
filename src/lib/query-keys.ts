@@ -67,4 +67,20 @@ export const queryKeys = {
     mine: (semester: string, academicYear: string) =>
       [...queryKeys.timetable.root, "mine", semester, academicYear] as const,
   },
+  billing: {
+    root: ["billing"] as const,
+    packages: () => [...queryKeys.billing.root, "packages"] as const,
+    creditBundles: () => [...queryKeys.billing.root, "credit-bundles"] as const,
+    status: () => [...queryKeys.billing.root, "status"] as const,
+    streak: () => [...queryKeys.billing.root, "streak"] as const,
+    studentVerify: () => [...queryKeys.billing.root, "student-verify"] as const,
+  },
+  donations: {
+    root: ["donations"] as const,
+    ledger: () => [...queryKeys.donations.root, "ledger"] as const,
+  },
+  analytics: {
+    root: ["analytics"] as const,
+    summary: () => [...queryKeys.analytics.root, "summary"] as const,
+  },
 };

@@ -14,6 +14,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Combobox,
+  ComboboxInput,
+  ComboboxContent,
+  ComboboxList,
+  ComboboxItem,
+  ComboboxEmpty,
+} from "@/components/ui/combobox";
 import { toast } from "sonner";
 import {
   useAdminQuizzes,
@@ -35,8 +43,17 @@ const STATUS_COLORS: Record<string, string> = {
 
 function CreateQuizForm({ onClose }: { onClose: () => void }) {
   const createMutation = useAdminCreateQuiz();
-  const { data: coursesResult } = useAdminCourses({ limit: 200 });
+  const [courseSearch, setCourseSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(courseSearch), 300);
+    return () => clearTimeout(t);
+  }, [courseSearch]);
+
+  const { data: coursesResult } = useAdminCourses({ limit: 50, search: debouncedSearch });
   const courses = coursesResult?.data ?? [];
+
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -102,19 +119,40 @@ function CreateQuizForm({ onClose }: { onClose: () => void }) {
           <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">
             Course *
           </label>
-          <select
-            required
+          <Combobox
             value={form.courseId}
-            onChange={(e) => setForm((f) => ({ ...f, courseId: e.target.value }))}
-            className="w-full border border-border/50 bg-background/40 px-3 py-2 text-[12px] font-mono focus:outline-none focus:border-primary/50 transition-colors"
+            onValueChange={(val) => {
+              const courseId = val as string;
+              setForm((f) => ({ ...f, courseId }));
+              const course = courses.find((c) => c._id === courseId);
+              if (course) setCourseSearch(`${course.code} - ${course.title}`);
+            }}
           >
-            <option value="">Select course…</option>
-            {courses.map((c) => (
-              <option key={c._id} value={c._id}>
-                {c.code} {c.title ? `— ${c.title}` : ""}
-              </option>
-            ))}
-          </select>
+            <ComboboxInput
+              placeholder="Search course…"
+              className="w-full border border-border/50 bg-background/40 px-3 py-2 text-[12px] font-mono focus:outline-none focus:border-primary/50 transition-colors h-[34px] uppercase tracking-widest"
+              value={courseSearch}
+              onChange={(e) => setCourseSearch(e.target.value)}
+              required
+            />
+            <ComboboxContent className="font-mono border-border/40">
+              <ComboboxEmpty className="font-mono text-[10px] uppercase p-2">
+                No courses found
+              </ComboboxEmpty>
+              <ComboboxList className="max-h-60 no-scrollbar">
+                {courses.map((c: any) => (
+                  <ComboboxItem
+                    key={c._id}
+                    value={c._id}
+                    className="text-[10px] uppercase tracking-tighter"
+                  >
+                    <span className="font-bold text-primary mr-2">{c.code}</span>
+                    <span className="truncate">{c.title}</span>
+                  </ComboboxItem>
+                ))}
+              </ComboboxList>
+            </ComboboxContent>
+          </Combobox>
         </div>
         <div>
           <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">

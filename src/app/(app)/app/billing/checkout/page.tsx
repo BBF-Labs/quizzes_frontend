@@ -1,0 +1,323 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { motion } from "framer-motion";
+import { ArrowLeft, Tag, Zap, Loader2, AlertCircle } from "lucide-react";
+import {
+  usePackages,
+  useCreditBundles,
+  useBillingStatus,
+  useInitiatePlanPayment,
+  useInitiateCreditPayment,
+  useValidatePromoCode,
+  type BillingPackage,
+} from "@/hooks";
+import { useAuth } from "@/contexts/auth-context";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+
+const TIER_LABELS: Record<string, string> = {
+  cooked: "Cooked",
+  cruising: "Cruising",
+  locked_in: "Locked In",
+};
+
+const DURATION_LABELS: Record<string, string> = {
+  daily: "Daily",
+  weekly: "Weekly",
+  semester: "Semester",
+};
+
+export default function CheckoutPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const packageId = searchParams.get("packageId");
+  const bundleId = searchParams.get("bundleId");
+
+  const { user } = useAuth();
+  const { data: allPackages = [] } = usePackages();
+  const { data: creditBundles = [] } = useCreditBundles();
+  const { data: billingStatus } = useBillingStatus();
+
+  const [promoCode, setPromoCode] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState<{
+    code: string;
+    discountPercent: number;
+  } | null>(null);
+  const [referralCode, setReferralCode] = useState("");
+  const [showReferral, setShowReferral] = useState(false);
+
+  const validatePromo = useValidatePromoCode();
+  const initiatePlan = useInitiatePlanPayment();
+  const initiateCredits = useInitiateCreditPayment();
+
+  const selectedPackage: BillingPackage | undefined = packageId
+    ? allPackages.find((p) => p._id === packageId)
+    : undefined;
+
+  const selectedBundle = bundleId
+    ? creditBundles.find((b) => b._id === bundleId)
+    : undefined;
+
+  const isCredits = !!bundleId && !packageId;
+
+  const basePrice = selectedPackage?.priceGHS ?? selectedBundle?.priceGHS ?? 0;
+  const discountFraction = appliedPromo ? appliedPromo.discountPercent / 100 : 0;
+  // Student discount
+  const studentDiscount = billingStatus ? 0 : 0; // Already applied server-side
+  const finalPrice = basePrice * (1 - discountFraction);
+
+  const isLoading = initiatePlan.isPending || initiateCredits.isPending;
+
+  async function handleApplyPromo() {
+    if (!promoCode.trim() || !packageId) return;
+    try {
+      const result = await validatePromo.mutateAsync({ code: promoCode.trim(), packageId });
+      if (result.valid) {
+        setAppliedPromo({ code: promoCode.trim(), discountPercent: result.discountPercent });
+        toast.success(`Promo applied: ${result.discountPercent}% off`);
+      } else {
+        toast.error(result.message ?? "Invalid promo code");
+      }
+    } catch {
+      toast.error("Failed to validate promo code");
+    }
+  }
+
+  async function handleCheckout() {
+    try {
+      let result;
+      if (isCredits && bundleId) {
+        result = await initiateCredits.mutateAsync({ bundleId, email: user?.email || "" });
+      } else if (packageId) {
+        result = await initiatePlan.mutateAsync({
+          packageId,
+          email: user?.email || "",
+          promoCode: appliedPromo?.code,
+          referralCode: referralCode.trim() || undefined,
+        });
+      } else {
+        return;
+      }
+
+      if (result?.authorizationUrl) {
+        window.location.href = result.authorizationUrl;
+      }
+    } catch {
+      toast.error("Failed to initiate payment. Please try again.");
+    }
+  }
+
+  if (!selectedPackage && !selectedBundle) {
+    return (
+      <div className="min-h-full px-4 py-8 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-sm font-mono text-muted-foreground mb-4">No plan selected.</p>
+          <button
+            onClick={() => router.push("/app/billing")}
+            className="text-xs font-mono text-primary underline underline-offset-2"
+          >
+            Back to plans
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-full px-4 py-8">
+      <div className="mx-auto max-w-5xl">
+
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="mb-8"
+        >
+          <div className="inline-block border border-primary/40 bg-primary/5 px-2 py-1 mb-4">
+            <span className="text-[9px] font-mono uppercase tracking-[0.25em] text-primary">
+              Checkout
+            </span>
+          </div>
+          <h1 className="text-2xl font-black tracking-tighter">Complete your order</h1>
+        </motion.div>
+
+        {/* Order summary */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="border border-border/50 bg-card/40 p-5 mb-5"
+        >
+          <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground/60 mb-3">
+            Order summary
+          </p>
+
+          {selectedPackage && (
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <p className="text-sm font-semibold">
+                  {TIER_LABELS[selectedPackage.tier] ?? selectedPackage.tier}
+                </p>
+                <p className="text-xs font-mono text-muted-foreground">
+                  {DURATION_LABELS[selectedPackage.durationType] ?? selectedPackage.durationType} plan
+                </p>
+              </div>
+              <span className="text-sm font-mono">GHS {selectedPackage.priceGHS.toFixed(2)}</span>
+            </div>
+          )}
+
+          {selectedBundle && (
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Zap className="size-3 text-amber-400" />
+                <div>
+                  <p className="text-sm font-semibold capitalize">{selectedBundle.name} credits</p>
+                  <p className="text-xs font-mono text-muted-foreground">{selectedBundle.credits} credits</p>
+                </div>
+              </div>
+              <span className="text-sm font-mono">GHS {selectedBundle.priceGHS.toFixed(2)}</span>
+            </div>
+          )}
+
+          {appliedPromo && (
+            <div className="flex items-center justify-between text-primary mt-2 pt-2 border-t border-border/30">
+              <span className="text-xs font-mono">
+                Promo: {appliedPromo.code} ({appliedPromo.discountPercent}% off)
+              </span>
+              <span className="text-xs font-mono">
+                − GHS {(basePrice * discountFraction).toFixed(2)}
+              </span>
+            </div>
+          )}
+
+          <div className="mt-3 pt-3 border-t border-border/40 flex items-center justify-between">
+            <span className="text-xs font-mono text-muted-foreground">Total</span>
+            <span className="text-lg font-black tracking-tighter">
+              GHS {finalPrice.toFixed(2)}
+            </span>
+          </div>
+        </motion.div>
+
+        {/* Promo code (plans only) */}
+        {!isCredits && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="mb-4"
+          >
+            <div className="flex gap-2">
+              <div className="flex-1 flex items-center border border-border/50 bg-background px-3 gap-2">
+                <Tag className="size-3 text-muted-foreground/50 shrink-0" />
+                <input
+                  type="text"
+                  value={promoCode}
+                  onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                  placeholder="PROMO CODE"
+                  disabled={!!appliedPromo}
+                  className="flex-1 py-2.5 text-xs font-mono bg-transparent outline-none placeholder:text-muted-foreground/40 uppercase"
+                />
+              </div>
+              <button
+                onClick={handleApplyPromo}
+                disabled={!promoCode.trim() || !!appliedPromo || validatePromo.isPending}
+                className={cn(
+                  "px-4 text-[10px] font-mono uppercase tracking-[0.15em] border transition-colors",
+                  appliedPromo
+                    ? "border-primary/30 text-primary bg-primary/10 cursor-default"
+                    : "border-border hover:border-primary hover:text-primary",
+                )}
+              >
+                {validatePromo.isPending ? (
+                  <Loader2 className="size-3 animate-spin" />
+                ) : appliedPromo ? (
+                  "Applied"
+                ) : (
+                  "Apply"
+                )}
+              </button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Referral code (plans only) */}
+        {!isCredits && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="mb-6"
+          >
+            {!showReferral ? (
+              <button
+                onClick={() => setShowReferral(true)}
+                className="text-[10px] font-mono text-muted-foreground/50 hover:text-muted-foreground underline underline-offset-2"
+              >
+                Have a referral code?
+              </button>
+            ) : (
+              <div className="flex items-center border border-border/50 bg-background px-3 gap-2">
+                <input
+                  type="text"
+                  value={referralCode}
+                  onChange={(e) => setReferralCode(e.target.value)}
+                  placeholder="Referral code"
+                  className="flex-1 py-2.5 text-xs font-mono bg-transparent outline-none placeholder:text-muted-foreground/40"
+                />
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* Student discount notice */}
+        {billingStatus && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.22 }}
+            className="mb-6 border border-border/30 bg-card/20 px-3 py-2 flex items-start gap-2"
+          >
+            <AlertCircle className="size-3 text-muted-foreground/50 mt-0.5 shrink-0" />
+            <p className="text-[10px] font-mono text-muted-foreground">
+              Any applicable student, referral, or loyalty discounts are applied automatically at checkout.
+            </p>
+          </motion.div>
+        )}
+
+        {/* Pay button */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+        >
+          <button
+            onClick={handleCheckout}
+            disabled={isLoading}
+            className={cn(
+              "w-full py-3.5 text-xs font-mono uppercase tracking-[0.2em] border transition-colors flex items-center justify-center gap-2",
+              isLoading
+                ? "border-primary/30 bg-primary/10 text-primary/50 cursor-not-allowed"
+                : "border-primary bg-primary text-primary-foreground hover:bg-primary/90",
+            )}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="size-3 animate-spin" />
+                Redirecting to Paystack...
+              </>
+            ) : (
+              `Pay GHS ${finalPrice.toFixed(2)} with Paystack`
+            )}
+          </button>
+          <p className="mt-3 text-[9px] font-mono text-center text-muted-foreground/40 uppercase tracking-widest">
+            Secured by Paystack · GHS only
+          </p>
+        </motion.div>
+
+      </div>
+    </div>
+  );
+}

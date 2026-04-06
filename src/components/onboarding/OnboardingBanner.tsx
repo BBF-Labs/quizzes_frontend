@@ -119,40 +119,42 @@ export default function OnboardingBanner() {
         </motion.div>
 
         <Dialog open={showDismissModal} onOpenChange={setShowDismissModal}>
-          <DialogContent className="sm:max-w-sm rounded-none">
-            <DialogHeader>
-              <DialogTitle className="font-mono text-sm uppercase tracking-widest">
-                Hide Onboarding Banner
+          <DialogContent className="sm:max-w-sm rounded-(--radius) bg-background/95 backdrop-blur-md border-primary/20">
+            <DialogHeader className="mb-2">
+              <DialogTitle className="font-mono text-base uppercase tracking-widest text-foreground">
+                Hide Reminder
               </DialogTitle>
-              <DialogDescription className="font-mono text-xs uppercase tracking-wider">
+              <DialogDescription className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
                 Choose when you want to see this reminder again.
               </DialogDescription>
             </DialogHeader>
-            <DialogFooter className="gap-2 sm:justify-start">
+            <div className="flex flex-col gap-2.5 mt-2">
               <Button
                 type="button"
-                variant="outline"
-                className="rounded-none text-[10px] font-mono uppercase tracking-widest"
-                onClick={hideToday}
-              >
-                Hide Today
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="rounded-none text-[10px] font-mono uppercase tracking-widest"
-                onClick={() => remindInDays(3)}
-              >
-                Remind In 3 Days
-              </Button>
-              <Button
-                type="button"
-                className="rounded-none text-[10px] font-mono uppercase tracking-widest"
+                className="w-full rounded-(--radius) text-[11px] font-mono uppercase tracking-widest bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                 onClick={() => setShowDismissModal(false)}
               >
                 Keep Showing
               </Button>
-            </DialogFooter>
+              <div className="grid grid-cols-2 gap-2.5">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full rounded-(--radius) text-[10px] font-mono uppercase tracking-widest border-border/50 text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
+                  onClick={hideToday}
+                >
+                  Hide Today
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full rounded-(--radius) text-[10px] font-mono uppercase tracking-widest border-border/50 text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
+                  onClick={() => remindInDays(3)}
+                >
+                  In 3 Days
+                </Button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </>
