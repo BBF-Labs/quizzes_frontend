@@ -166,7 +166,7 @@ export default function ForgotPasswordPage() {
 
               <div className="space-y-4">
                 <Link href="/login" className="block w-full">
-                  <Button className="w-full rounded-(--radius) bg-primary px-8 py-6 text-primary-foreground font-mono text-xs font-bold uppercase tracking-[0.2em] hover:bg-white hover:text-primary hover:ring-1 hover:ring-inset hover:ring-primary transition-all duration-300 group shadow-[0_0_20px_rgba(0,110,255,0.15)]">
+                  <Button className="w-full rounded-(--radius) bg-primary px-8 py-6 text-primary-foreground font-mono text-xs font-bold uppercase tracking-[0.2em] hover:bg-white hover:text-primary hover:ring-1 hover:ring-inset hover:ring-primary transition-all duration-300 group shadow-[0_0_20px_rgba(0,110,255,0.15)] rounded(--radius)">
                     <span>RETURN TO BASE</span>
                   </Button>
                 </Link>

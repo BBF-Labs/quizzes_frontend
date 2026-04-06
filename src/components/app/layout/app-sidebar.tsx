@@ -51,7 +51,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r border-border/50">
       <SidebarHeader className="h-14 flex items-center px-4">
         <div className="flex items-center gap-3 w-full">
-          <div className="flex items-end space-x-1.5 px-0.5">
+          <Link href="/" className="flex items-end space-x-1.5 px-0.5 hover:opacity-80 transition-opacity">
             <span className="text-lg font-bold tracking-widest text-foreground leading-none">
               Qz.
             </span>
@@ -60,7 +60,7 @@ export function AppSidebar() {
                 / App
               </span>
             )}
-          </div>
+          </Link>
         </div>
       </SidebarHeader>
 
