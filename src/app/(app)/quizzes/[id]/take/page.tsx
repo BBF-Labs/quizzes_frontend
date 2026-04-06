@@ -1,24 +1,34 @@
 "use client";
 
 import { use, useEffect, useState, useMemo, useCallback } from "react";
-import { motion, AnimatePresence, useAnimation } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import {
   ChevronLeft,
   ChevronRight,
-  CheckCircle2,
-  XCircle,
   RotateCcw,
   Trophy,
   SkipForward,
   Clock,
   AlertCircle,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useSystemQuiz } from "@/hooks/app/use-quizzes";
+import { useGradeQuizAnswers } from "@/hooks/app/use-app-library";
+import { useAuth } from "@/contexts/auth-context";
+import {
+  QuizQuestionCard,
+  type FeedbackState,
+} from "@/components/app/quizzes/question-renderer";
 import { QuizConfigScreen } from "@/components/app/quizzes/quiz-config-screen";
-import type { QuizDetail, QuizQuestion, QuizConfig } from "@/types/session";
+import type {
+  QuizDetail,
+  QuizQuestion,
+  QuizConfig,
+  ZGradeResultItem,
+} from "@/types/session";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -27,7 +37,6 @@ function flattenQuestions(
 ): QuizQuestion[] {
   return (lectures || []).flatMap((l) =>
     (l.topics || []).flatMap((t) => {
-      // Backend now flattens questionGroups into questions array
       return (t.questions || []).filter(
         (q) => q && typeof q !== "string",
       ) as QuizQuestion[];
@@ -51,15 +60,23 @@ function ResultsScreen({
   total,
   passed,
   passingScore,
+  hasFreeText,
+  isAuthenticated,
+  isGrading,
   onRetake,
   onBack,
+  onGradeWithZ,
 }: {
   score: number;
   total: number;
   passed: boolean;
   passingScore: number;
+  hasFreeText: boolean;
+  isAuthenticated: boolean;
+  isGrading: boolean;
   onRetake: () => void;
   onBack: () => void;
+  onGradeWithZ: () => void;
 }) {
   const pct = Math.round((score / total) * 100);
   return (
@@ -92,6 +109,25 @@ function ResultsScreen({
           {passed ? "Passed" : `Failed — passing score is ${passingScore}%`}
         </p>
       </div>
+
+      {/* Grade with Z — authenticated only, when free-text answers exist */}
+      {isAuthenticated && hasFreeText && (
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8 text-[11px] font-mono gap-1.5 border-primary/40 text-primary hover:bg-primary/10"
+          onClick={onGradeWithZ}
+          disabled={isGrading}
+        >
+          {isGrading ? (
+            <Loader2 className="size-3 animate-spin" />
+          ) : (
+            <Sparkles className="size-3" />
+          )}
+          {isGrading ? "Grading…" : "Grade with Z"}
+        </Button>
+      )}
+
       <div className="flex gap-3">
         <Button
           variant="outline"
@@ -125,11 +161,18 @@ export default function SystemQuizTakePage({
   const { id } = use(params);
   const router = useRouter();
   const { data: quiz, isLoading, error } = useSystemQuiz(id);
+  const { isAuthenticated } = useAuth();
+  const gradeQuiz = useGradeQuizAnswers();
 
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [current, setCurrent] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [revealed, setRevealed] = useState<Record<string, boolean>>({});
+  const [immediateResults, setImmediateResults] = useState<
+    Record<string, "correct" | "wrong" | null>
+  >({});
+  const [zResults, setZResults] = useState<Record<string, ZGradeResultItem>>(
+    {},
+  );
   const [done, setDone] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [started, setStarted] = useState(false);
@@ -137,7 +180,6 @@ export default function SystemQuizTakePage({
     {},
   );
   const [config, setConfig] = useState<QuizConfig | null>(null);
-  const controls = useAnimation();
 
   const handleStart = (newConfig: QuizConfig) => {
     if (!quiz) return;
@@ -170,25 +212,17 @@ export default function SystemQuizTakePage({
   const handleSelect = useCallback(
     (opt: string) => {
       if (!q) return;
-      if (revealed[q.id]) return;
+      if (immediateResults[q.id]) return;
       setAnswers((prev) => ({ ...prev, [q.id]: opt }));
       if (config?.feedbackMode === "immediate") {
-        setRevealed((prev) => ({ ...prev, [q.id]: true }));
-        const correct = q.correctAnswer;
-        if (opt === correct) {
-          controls.start({
-            scale: [1, 1.02, 1],
-            transition: { duration: 0.4, ease: "easeInOut" },
-          });
-        } else {
-          controls.start({
-            x: [0, -10, 10, -7, 7, -4, 4, 0],
-            transition: { duration: 0.45, ease: "easeInOut" },
-          });
-        }
+        const isCorrect = opt === q.correctAnswer;
+        setImmediateResults((prev) => ({
+          ...prev,
+          [q.id]: isCorrect ? "correct" : "wrong",
+        }));
       }
     },
-    [q, revealed, quiz, controls, config?.feedbackMode],
+    [q, immediateResults, config?.feedbackMode],
   );
 
   const handleNext = () => {
@@ -202,24 +236,75 @@ export default function SystemQuizTakePage({
 
   const handleRetake = () => {
     setAnswers({});
-    setRevealed({});
+    setImmediateResults({});
+    setZResults({});
     setHintsRevealed({});
     setCurrent(0);
     setDone(false);
-    setStarted(false); // Go back to config
+    setStarted(false);
   };
+
+  const handleGradeWithZ = useCallback(async () => {
+    if (!quiz || !config) return;
+    const freeTextAnswered = questions.filter((q) => {
+      const isFreeType =
+        q.type === "short_answer" ||
+        q.type === "essay" ||
+        q.type === "free_text" ||
+        q.type === "fill_in_blank" ||
+        q.type === "fill_in";
+      return isFreeType && answers[q.id] && !zResults[q.id];
+    });
+    if (freeTextAnswered.length === 0) return;
+
+    try {
+      const result = await gradeQuiz.mutateAsync({
+        quizId: id,
+        answers: freeTextAnswered.map((q) => ({
+          questionId: q.id,
+          question: q.question,
+          answer: answers[q.id] ?? "",
+          correctAnswer: q.correctAnswer,
+        })),
+      });
+      const byId: Record<string, ZGradeResultItem> = {};
+      result.results.forEach((r: ZGradeResultItem) => {
+        byId[r.questionId] = r;
+      });
+      setZResults((prev) => ({ ...prev, ...byId }));
+    } catch {}
+  }, [quiz, config, questions, answers, zResults, id, gradeQuiz]);
 
   const score = useMemo(() => {
     return questions.filter((q) => {
       if (!q) return false;
-      const correct = q.correctAnswer;
-      return answers[q.id] === correct;
+      // For MCQ/T-F: exact match
+      if (q.options && q.options.length > 0) {
+        return answers[q.id] === q.correctAnswer;
+      }
+      // For free-text: use Z grade if available
+      if (zResults[q.id]) return zResults[q.id].isCorrect;
+      return false;
     }).length;
-  }, [questions, answers]);
+  }, [questions, answers, zResults]);
+
   const pct = questions.length
     ? Math.round((score / questions.length) * 100)
     : 0;
   const passed = pct >= (quiz?.passingScore ?? 70);
+
+  const hasFreeText = useMemo(
+    () =>
+      questions.some(
+        (q) =>
+          q.type === "short_answer" ||
+          q.type === "essay" ||
+          q.type === "free_text" ||
+          q.type === "fill_in_blank" ||
+          q.type === "fill_in",
+      ),
+    [questions],
+  );
 
   if (isLoading || !quiz) {
     return (
@@ -278,14 +363,22 @@ export default function SystemQuizTakePage({
         total={questions.length}
         passed={passed}
         passingScore={quiz.passingScore ?? 70}
+        hasFreeText={hasFreeText}
+        isAuthenticated={isAuthenticated}
+        isGrading={gradeQuiz.isPending}
         onRetake={handleRetake}
         onBack={() => router.back()}
+        onGradeWithZ={handleGradeWithZ}
       />
     );
   }
 
+  const feedbackState: FeedbackState =
+    config?.feedbackMode === "immediate"
+      ? (immediateResults[q?.id ?? ""] ?? null)
+      : null;
+
   const isAnswered = q ? !!answers[q.id] : false;
-  const isRevealed = q ? !!revealed[q.id] : false;
   const progress = questions.length
     ? ((current + 1) / questions.length) * 100
     : 0;
@@ -336,137 +429,21 @@ export default function SystemQuizTakePage({
           transition={{ duration: 0.18 }}
           className="mb-6"
         >
-          <motion.div
-            animate={controls}
-            className="rounded-(--radius) border border-transparent"
-          >
-            <div className="flex items-start gap-2 mb-5">
-              <Badge
-                variant="outline"
-                className="shrink-0 text-[8px] font-mono h-4 px-1.5 uppercase mt-0.5"
-              >
-                {q.type === "mcq"
-                  ? "MCQ"
-                  : q.type === "true_false"
-                    ? "T/F"
-                    : q.type}
-              </Badge>
-              <p className="font-mono text-sm text-foreground leading-relaxed">
-                {q.question}
-              </p>
-            </div>
-
-            {/* Options */}
-            {q.options && q.options.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                {q.options.map((opt, i) => {
-                  const isSelected = answers[q.id] === opt;
-                  const isCorrect = opt === q.correctAnswer;
-                  let cls =
-                    "w-full text-left border px-4 py-3 font-mono text-[12px] transition-all flex items-center gap-3";
-                  if (!isRevealed) {
-                    cls += isSelected
-                      ? " border-primary bg-primary/10 text-foreground"
-                      : " border-border/40 bg-card/30 text-muted-foreground hover:border-primary/50 hover:bg-primary/5";
-                  } else {
-                    if (isCorrect)
-                      cls +=
-                        " border-primary bg-primary/10 text-primary shadow-[0_0_15px_rgba(var(--primary),0.2)]";
-                    else if (isSelected)
-                      cls +=
-                        " border-destructive/40 bg-destructive/10 text-destructive";
-                    else
-                      cls +=
-                        " border-border/30 bg-card/20 text-muted-foreground/40";
-                  }
-                  return (
-                    <button
-                      key={opt}
-                      type="button"
-                      onClick={() => handleSelect(opt)}
-                      className={cls}
-                    >
-                      <span className="shrink-0 w-5 h-5 border border-current/40 flex items-center justify-center text-[9px] font-bold">
-                        {String.fromCharCode(65 + i)}
-                      </span>
-                      {opt}
-                      {isRevealed && isCorrect && (
-                        <CheckCircle2 className="ml-auto size-3.5 text-green-500 shrink-0" />
-                      )}
-                      {isRevealed && isSelected && !isCorrect && (
-                        <XCircle className="ml-auto size-3.5 text-destructive shrink-0" />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            ) : (
-              /* Free text answer */
-              <div className="space-y-2">
-                <textarea
-                  value={answers[q.id] ?? ""}
-                  onChange={(e) =>
-                    setAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))
-                  }
-                  disabled={isRevealed}
-                  rows={3}
-                  placeholder="Type your answer…"
-                  className="w-full border border-border/40 bg-card/30 px-3 py-2 font-mono text-[12px] focus:outline-none focus:border-primary/50 resize-none transition-colors"
-                />
-                {!isRevealed && (
-                  <Button
-                    size="sm"
-                    className="h-7 text-[10px] font-mono"
-                    disabled={!answers[q.id]?.trim()}
-                    onClick={() =>
-                      setRevealed((prev) => ({ ...prev, [q.id]: true }))
-                    }
-                  >
-                    Check Answer
-                  </Button>
-                )}
-              </div>
-            )}
-
-            {/* Hint / Explanation */}
-            {(hintsRevealed[q.id] ||
-              (isRevealed &&
-                config?.feedbackMode === "immediate" &&
-                isAnswered &&
-                answers[q.id] !== q.correctAnswer)) && (
-              <motion.div
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-4 border border-primary/20 bg-primary/5 px-4 py-3"
-              >
-                <p className="text-[10px] font-mono uppercase tracking-widest text-primary/60 mb-1">
-                  {hintsRevealed[q.id] ? "HINT" : "EXPLANATION"}
-                </p>
-                <p className="text-[11px] font-mono text-foreground italic">
-                  {hintsRevealed[q.id]
-                    ? q.hint
-                    : q.explanation ||
-                      `The correct answer is ${q.correctAnswer}`}
-                </p>
-              </motion.div>
-            )}
-
-            {/* Hint Trigger */}
-            {config?.showHints &&
-              q.hint &&
-              !isRevealed &&
-              !hintsRevealed[q.id] && (
-                <button
-                  onClick={() =>
-                    setHintsRevealed((h) => ({ ...h, [q.id]: true }))
-                  }
-                  className="mt-4 text-[10px] font-mono uppercase tracking-widest text-primary/60 hover:text-primary transition-colors flex items-center gap-1.5"
-                >
-                  <div className="size-1.5 rounded-full bg-primary animate-pulse" />
-                  Show Hint
-                </button>
-              )}
-          </motion.div>
+          <QuizQuestionCard
+            q={q}
+            index={current}
+            total={questions.length}
+            answer={answers[q.id] ?? ""}
+            onAnswer={handleSelect}
+            feedbackState={feedbackState}
+            mode={config?.feedbackMode ?? "deferred"}
+            disabled={false}
+            showHints={config?.showHints ?? false}
+            hintsRevealed={hintsRevealed}
+            onRevealHint={(qid) =>
+              setHintsRevealed((h) => ({ ...h, [qid]: true }))
+            }
+          />
         </motion.div>
       </AnimatePresence>
 

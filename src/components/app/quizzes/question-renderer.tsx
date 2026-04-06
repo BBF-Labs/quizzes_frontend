@@ -223,21 +223,19 @@ export function QuizQuestionCard({
   return (
     <motion.div animate={controls}>
       <div className={`rounded-(--radius) px-5 py-5 border transition-colors ${borderClass}`}>
-        {/* Counter row */}
-        <div className="flex items-center justify-between mb-1.5">
-          <span className="text-[10px] font-mono text-muted-foreground/40">
-            {index + 1} / {total}
-          </span>
-          {mode === "deferred" && answer && (
-            <span className="text-[9px] font-mono text-primary/60 uppercase tracking-widest">
-              answered
-            </span>
-          )}
-        </div>
-
-        {/* Type badge above question */}
-        <div className="mb-2">
+        {/* Badge + counter on the same row — badge left, counter right */}
+        <div className="flex items-center justify-between mb-3">
           <QuestionTypeBadge type={q.type} />
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] font-mono text-muted-foreground/40">
+              {index + 1} / {total}
+            </span>
+            {mode === "deferred" && answer && (
+              <span className="text-[9px] font-mono text-primary/60 uppercase tracking-widest">
+                answered
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Question text */}

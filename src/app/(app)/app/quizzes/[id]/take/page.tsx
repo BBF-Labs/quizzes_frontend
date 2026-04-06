@@ -614,14 +614,12 @@ function ReviewItem({
 
   return (
     <div className={`rounded-(--radius) border px-4 py-3 ${borderColor}`}>
-      <div className="flex items-start justify-between gap-3 mb-2">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-3 mb-2">
+        <QuestionTypeBadge type={q.type} />
+        <div className="flex items-center gap-1.5 shrink-0">
           <span className="text-[9px] font-mono text-muted-foreground/40">
             Q{index + 1}
           </span>
-          <QuestionTypeBadge type={q.type} />
-        </div>
-        <div className="flex items-center gap-1.5 shrink-0">
           {zGraded && (
             <span className="text-[9px] font-mono text-primary/60 flex items-center gap-0.5">
               <Zap className="size-2.5" /> Z: {zResult!.score}%
