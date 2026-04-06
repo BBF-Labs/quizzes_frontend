@@ -141,7 +141,7 @@ function PlanCard({
       {/* Price */}
       <div className="flex items-baseline gap-1 mb-5">
         <span className="text-4xl font-black tracking-tighter">{price}</span>
-        <div className="flex flex-col">
+        <div className="flex items-center gap-1">
           <span className="text-[10px] font-mono text-muted-foreground/60 uppercase">GHS</span>
           <span className="text-[10px] font-mono text-muted-foreground/60 uppercase">
             / {DURATION_LABELS[duration].toLowerCase()}

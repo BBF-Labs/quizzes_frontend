@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { Check, Minus, Zap, ArrowRight, Flame, GraduationCap } from "lucide-react";
 import { Navbar } from "@/components/common";
 import { Footer } from "@/components/landing";
-import { DonationWidget } from "@/components/landing/donation-widget";
+import { Donations } from "@/components/landing";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
 
@@ -27,9 +27,63 @@ const DURATION_LABELS: Record<Duration, string> = {
 };
 
 const TIERS = [
-  { id: "cooked",    name: "Cooked",    tagline: "All-nighter mode.", color: "text-amber-400",  popular: false },
-  { id: "cruising",  name: "Cruising",  tagline: "Steady grind.",     color: "text-sky-400",    popular: true  },
-  { id: "locked_in", name: "Locked In", tagline: "Zero excuses.",     color: "text-primary",    popular: false },
+  {
+    id: "cooked",
+    name: "Cooked",
+    tagline: "All-nighter mode. One shot.",
+    color: "text-amber-400",
+    borderHover: "hover:border-amber-400/30",
+    popular: false,
+    features: [
+      "1 Z session / day",
+      "2 quiz generations / day",
+      "2 flashcard sets / day",
+      "1 mind map / day",
+      "1 upload / day",
+      "Basic analytics",
+    ],
+    notIncluded: ["PDF export", "Priority processing"],
+  },
+  {
+    id: "cruising",
+    name: "Cruising",
+    tagline: "Steady grind. Mid-semester flow.",
+    color: "text-sky-400",
+    borderHover: "hover:border-sky-400/40",
+    popular: true,
+    features: [
+      "3 Z sessions / day",
+      "5 quiz generations / day",
+      "5 flashcard sets / day",
+      "3 mind maps / day",
+      "3 uploads / day",
+      "Full analytics",
+      "PDF export",
+      "10 bonus credits",
+    ],
+    notIncluded: ["Priority processing"],
+  },
+  {
+    id: "locked_in",
+    name: "Locked In",
+    tagline: "Unlimited. Zero excuses.",
+    color: "text-primary",
+    borderHover: "hover:border-primary/40",
+    popular: false,
+    features: [
+      "Unlimited Z sessions",
+      "Unlimited quizzes",
+      "Unlimited flashcard sets",
+      "Unlimited mind maps",
+      "Unlimited uploads",
+      "Full analytics",
+      "PDF export",
+      "Priority processing",
+      "Early feature access",
+      "25 bonus credits",
+    ],
+    notIncluded: [],
+  },
 ];
 
 // Comparison table rows: [label, cooked, cruising, locked_in]
@@ -175,8 +229,9 @@ export default function PricingPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.15 + i * 0.06 }}
                   className={cn(
-                    "relative flex flex-col border bg-card/30 p-6 rounded-(--radius)",
+                    "relative flex flex-col border bg-card/30 p-6 transition-colors duration-300 rounded-(--radius)",
                     tier.popular ? "border-sky-400/30 bg-sky-400/[0.03]" : "border-border/50",
+                    tier.borderHover,
                   )}
                 >
                   {tier.popular && (
@@ -194,11 +249,28 @@ export default function PricingPage() {
 
                   <div className="flex items-baseline gap-1 mb-5">
                     <span className="text-4xl font-black tracking-tighter">{PRICES[tier.id][duration]}</span>
-                    <div className="flex flex-col">
+                    <div className="flex items-center gap-1">
                       <span className="text-[10px] font-mono text-muted-foreground/60 uppercase">GHS</span>
                       <span className="text-[10px] font-mono text-muted-foreground/60 uppercase">/ {DURATION_LABELS[duration].toLowerCase()}</span>
                     </div>
                   </div>
+
+                  <div className="h-px w-full bg-border/40 mb-5" />
+
+                  <ul className="flex flex-col gap-2 flex-1 mb-6">
+                    {tier.features.map((f) => (
+                      <li key={f} className="flex items-center gap-2">
+                        <Check className={cn("size-3 shrink-0", tier.color)} />
+                        <span className="text-xs font-mono text-foreground/80">{f}</span>
+                      </li>
+                    ))}
+                    {tier.notIncluded.map((f) => (
+                      <li key={f} className="flex items-center gap-2 opacity-30">
+                        <span className="size-3 shrink-0 flex items-center justify-center text-[10px] text-muted-foreground">—</span>
+                        <span className="text-xs font-mono text-muted-foreground line-through">{f}</span>
+                      </li>
+                    ))}
+                  </ul>
 
                   {isSuperAdmin ? (
                     <div className="w-full py-2.5 text-[10px] font-mono uppercase tracking-[0.15em] border border-border/40 text-muted-foreground text-center rounded-(--radius) opacity-50 cursor-default">
@@ -427,17 +499,7 @@ export default function PricingPage() {
         </section>
 
         {/* ── Donation ── */}
-        <section className="py-12 md:py-16">
-          <div className="container mx-auto px-4 max-w-xl">
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0, transition: { ease: "easeOut", duration: 0.5 } }}
-              viewport={{ once: true }}
-            >
-              <DonationWidget />
-            </motion.div>
-          </div>
-        </section>
+        <Donations />
 
         {/* ── FAQ / CTA ── */}
         <section className="py-16 md:py-24">
