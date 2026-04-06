@@ -10,6 +10,7 @@ import {
 import { useSessions } from "@/hooks";
 import { useBillingStatus, useStreakStatus, useStreakFreeze } from "@/hooks";
 import { useAnalyticsSummary } from "@/hooks/app/use-app-queries";
+import { useAuth } from "@/contexts/auth-context";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip,
   PieChart, Pie, Cell, ResponsiveContainer,
@@ -204,6 +205,7 @@ function DailyLimitsGrid({
 
 export default function UsagePage() {
   const router = useRouter();
+  const { user } = useAuth();
   const { data: sessions = [], isLoading: sessionsLoading } = useSessions();
   const { data: billing, isLoading: billingLoading } = useBillingStatus();
   const { data: streak, isLoading: streakLoading } = useStreakStatus();
@@ -215,7 +217,8 @@ export default function UsagePage() {
     return { total, active, completed };
   }, [sessions]);
 
-  const isPaidTier = billing?.planTier === "cruising" || billing?.planTier === "locked_in";
+  const isSuperAdmin = user?.role === "super_admin";
+  const isPaidTier = isSuperAdmin || billing?.planTier === "cruising" || billing?.planTier === "locked_in";
   const { data: analytics } = useAnalyticsSummary();
   const isLoading = sessionsLoading || billingLoading || streakLoading;
 
