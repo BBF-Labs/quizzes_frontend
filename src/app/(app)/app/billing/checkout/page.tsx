@@ -89,10 +89,11 @@ export default function CheckoutPage() {
     try {
       let result;
       if (isCredits && bundleId) {
-        result = await initiateCredits.mutateAsync(bundleId);
+        result = await initiateCredits.mutateAsync({ bundleId, email: user?.email || "" });
       } else if (packageId) {
         result = await initiatePlan.mutateAsync({
           packageId,
+          email: user?.email || "",
           promoCode: appliedPromo?.code,
           referralCode: referralCode.trim() || undefined,
         });
