@@ -1,15 +1,24 @@
 import axios from "axios";
-import { clearSession } from "@/lib/session";
+import { clearSession, getAccessToken, getRefreshToken, setSession } from "@/lib/session";
+import type { SessionUser } from "@/lib/session";
 
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
-  withCredentials: true, // send auth_access / auth_refresh cookies automatically
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Flag to prevent multiple refresh calls simultaneously
+// Attach the access token as a Bearer header on every outgoing request.
+api.interceptors.request.use((config) => {
+  const token = getAccessToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Flag to prevent multiple concurrent refresh calls.
 let isRefreshing = false;
 let refreshSubscribers: (() => void)[] = [];
 
@@ -22,7 +31,7 @@ const addRefreshSubscriber = (callback: () => void) => {
   refreshSubscribers.push(callback);
 };
 
-// Auto-refresh on 401 — the auth_refresh httpOnly cookie is sent automatically
+// On 401, attempt a silent token refresh then replay the original request.
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -32,10 +41,8 @@ api.interceptors.response.use(
     if (response?.status === 401 && typeof window !== "undefined") {
       if (!originalRequest._retry) {
         if (isRefreshing) {
-          return new Promise((resolve, reject) => {
-            addRefreshSubscriber(() => {
-              resolve(api(originalRequest));
-            });
+          return new Promise((resolve) => {
+            addRefreshSubscriber(() => resolve(api(originalRequest)));
           });
         }
 
@@ -43,12 +50,20 @@ api.interceptors.response.use(
         isRefreshing = true;
 
         try {
-          // Refresh token is in the httpOnly cookie — no body needed
-          await axios.post(
+          const refreshToken = getRefreshToken();
+          if (!refreshToken) throw new Error("No refresh token");
+
+          const res = await axios.post<{
+            user: SessionUser;
+            accessToken: string;
+            refreshToken: string;
+          }>(
             `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`,
-            {},
-            { withCredentials: true },
+            { refreshToken },
           );
+
+          const { user, accessToken, refreshToken: newRefreshToken } = res.data;
+          setSession(user, accessToken, newRefreshToken);
 
           isRefreshing = false;
           onTokenRefreshed();
