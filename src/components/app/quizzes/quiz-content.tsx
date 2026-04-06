@@ -31,29 +31,31 @@ export function QuestionRow({ q }: QuestionRowProps) {
 
   return (
     <div className="border border-border/30 bg-card/20 px-4 py-3">
-      <div className="flex items-start gap-2">
+      <div className="flex flex-col gap-1.5">
         <Badge
           variant="outline"
-          className="shrink-0 text-[8px] font-mono h-4 px-1.5 uppercase mt-0.5"
+          className="self-start text-[8px] font-mono h-4 px-1.5 uppercase"
         >
           {typeLabel}
         </Badge>
-        <p className="text-[12px] font-mono text-foreground leading-relaxed">
-          {q.question}
-        </p>
+        <p
+          className="text-[12px] font-mono text-foreground leading-relaxed"
+          dangerouslySetInnerHTML={{ __html: q.question }}
+        />
       </div>
 
       {/* Options */}
       {q.options && q.options.length > 0 && (
-        <ul className="mt-2 ml-8 flex flex-col gap-1">
+        <ul className="mt-2 flex flex-col gap-1">
           {q.options.map((opt, i) => (
             <li
               key={i}
-              className={`text-[10px] font-mono ${
+              className={`text-[10px] font-mono flex items-baseline gap-1 ${
                 opt === q.correctAnswer ? "text-green-500 font-bold" : "text-muted-foreground/60"
               }`}
             >
-              <span className="opacity-40">{String.fromCharCode(65 + i)}.</span> {opt}
+              <span className="opacity-40 shrink-0">{String.fromCharCode(65 + i)}.</span>
+              <span dangerouslySetInnerHTML={{ __html: opt }} />
             </li>
           ))}
         </ul>
@@ -61,8 +63,8 @@ export function QuestionRow({ q }: QuestionRowProps) {
 
       {/* Correct answer fallback for non-MCQ */}
       {q.correctAnswer && (!q.options || q.options.length === 0) && (
-        <p className="mt-2 ml-8 text-[10px] font-mono text-muted-foreground/50">
-          Answer: <span className="text-green-500 font-bold">{q.correctAnswer}</span>
+        <p className="mt-2 text-[10px] font-mono text-muted-foreground/50">
+          Answer: <span className="text-green-500 font-bold" dangerouslySetInnerHTML={{ __html: q.correctAnswer }} />
         </p>
       )}
     </div>
