@@ -234,7 +234,7 @@ export default function FlashcardsPage() {
 
                   <Link
                     href={`/app/flashcards/${set.id}`}
-                    className="block p-4"
+                    className="block p-4 pr-6"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <p className="font-mono font-bold text-sm text-foreground line-clamp-2 pr-2">
