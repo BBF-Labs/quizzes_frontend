@@ -627,7 +627,7 @@ function OptionBtn({
       >
         {letter}
       </span>
-      <span className="leading-relaxed">{opt}</span>
+      <span className="leading-relaxed" dangerouslySetInnerHTML={{ __html: opt }} />
       {(isCorrectSelected || isRevealedCorrect) && (
         <CheckCircle2 className="size-3.5 text-primary ml-auto mt-0.5 shrink-0" />
       )}
@@ -701,26 +701,38 @@ function QuestionCard({
       <div
         className={`rounded-(--radius) px-5 py-5 border transition-colors ${borderClass}`}
       >
-        <div className="flex items-center gap-2 mb-3">
-          <Badge
-            variant="outline"
-            className="text-[9px] font-mono h-4 px-1.5 uppercase"
-          >
-            {q.type === "mcq" ? "MCQ" : "Free Text"}
-          </Badge>
+        <div className="flex items-center justify-between mb-1.5">
           <span className="text-[10px] font-mono text-muted-foreground/40">
             {index + 1} / {total}
           </span>
           {mode === "deferred" && answer && (
-            <span className="ml-auto text-[9px] font-mono text-primary/60 uppercase tracking-widest">
+            <span className="text-[9px] font-mono text-primary/60 uppercase tracking-widest">
               answered
             </span>
           )}
         </div>
 
-        <p className="font-mono text-sm leading-relaxed text-foreground mb-5">
-          {q.question}
-        </p>
+        <Badge
+          variant="outline"
+          className="text-[9px] font-mono h-4 px-1.5 uppercase mb-2"
+        >
+          {q.type === "mcq"
+            ? "MCQ"
+            : q.type === "true_false"
+              ? "True / False"
+              : q.type === "short_answer"
+                ? "Short Answer"
+                : q.type === "fill_in_blank" || q.type === "fill_in"
+                  ? "Fill in Blank"
+                  : q.type === "essay"
+                    ? "Essay"
+                    : "Free Text"}
+        </Badge>
+
+        <p
+          className="font-mono text-sm leading-relaxed text-foreground mb-5"
+          dangerouslySetInnerHTML={{ __html: q.question }}
+        />
 
         {q.type === "mcq" && q.options && (
           <div className="flex flex-col gap-2">
@@ -759,11 +771,14 @@ function QuestionCard({
             <p className="text-[10px] font-mono uppercase tracking-widest text-primary/60 mb-1">
               {showHintUI ? "HINT" : "EXPLANATION"}
             </p>
-            <p className="text-[11px] font-mono text-foreground italic">
-              {showHintUI
-                ? q.hint
-                : q.explanation || `The correct answer is ${q.correctAnswer}`}
-            </p>
+            <p
+              className="text-[11px] font-mono text-foreground italic"
+              dangerouslySetInnerHTML={{
+                __html: showHintUI
+                  ? (q.hint ?? "")
+                  : (q.explanation || `The correct answer is ${q.correctAnswer}`),
+              }}
+            />
           </motion.div>
         )}
 
@@ -825,7 +840,17 @@ function ReviewItem({
             variant="outline"
             className="text-[9px] font-mono h-4 px-1.5 uppercase"
           >
-            {q.type === "mcq" ? "MCQ" : "Free"}
+            {q.type === "mcq"
+              ? "MCQ"
+              : q.type === "true_false"
+                ? "T/F"
+                : q.type === "short_answer"
+                  ? "Short"
+                  : q.type === "fill_in_blank" || q.type === "fill_in"
+                    ? "Fill"
+                    : q.type === "essay"
+                      ? "Essay"
+                      : "Free"}
           </Badge>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
@@ -841,9 +866,10 @@ function ReviewItem({
         </div>
       </div>
 
-      <p className="font-mono text-[11px] text-foreground leading-relaxed mb-3">
-        {q.question}
-      </p>
+      <p
+        className="font-mono text-[11px] text-foreground leading-relaxed mb-3"
+        dangerouslySetInnerHTML={{ __html: q.question }}
+      />
 
       {q.type === "mcq" && q.options && (
         <div className="flex flex-col gap-1 mb-1">
@@ -862,7 +888,7 @@ function ReviewItem({
                 }`}
               >
                 <span>{letters[i]}.</span>
-                <span>{opt}</span>
+                <span dangerouslySetInnerHTML={{ __html: opt }} />
                 {isRight && (
                   <span className="ml-auto text-[9px] uppercase tracking-widest text-green-500/60">
                     correct
