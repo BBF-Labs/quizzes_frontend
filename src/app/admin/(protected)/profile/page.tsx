@@ -120,7 +120,7 @@ export default function ProfilePage() {
 
           const resData = data.data ?? data;
           if (resData.accessToken) {
-            updateSession(resData.accessToken, resData.refreshToken);
+            updateSession();
           }
 
           setCurrentPassword("");

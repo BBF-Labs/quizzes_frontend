@@ -136,7 +136,7 @@ export default function ProfilePage() {
           toast.success("Profile updated");
           const resData = data.data ?? data;
           if (resData.accessToken) {
-            updateSession(resData.accessToken, resData.refreshToken);
+            updateSession();
           }
           setCurrentPassword("");
           setNewPassword("");
