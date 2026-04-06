@@ -48,6 +48,7 @@ export type SessionUser = {
   isSubscribed?: boolean;
   profilePicture?: string;
   studentId?: string;
+  bio?: string;
   notificationSettings?: any;
   onboarding?: {
     completed: boolean;
