@@ -75,7 +75,7 @@ export function QuizCard({
         </button>
       )}
 
-      <Link href={href} className="block p-4">
+      <Link href={href} className="block p-4 pr-6">
         <div className="flex items-start justify-between gap-2">
           <p className="font-mono font-bold text-sm text-foreground line-clamp-2 pr-2">
             {title}
