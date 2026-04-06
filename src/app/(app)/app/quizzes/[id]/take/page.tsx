@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef, use, useMemo } from "react";
-import { motion, AnimatePresence, useAnimation } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import {
   ChevronLeft,
@@ -22,6 +22,12 @@ import {
   Loader2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import {
+  QuizQuestionCard,
+  QuestionMarkdown,
+  QuestionTypeBadge,
+  type FeedbackState,
+} from "@/components/app/quizzes/question-renderer";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
@@ -49,7 +55,6 @@ interface SavedProgress {
   savedAt: string;
 }
 
-type FeedbackState = "correct" | "wrong" | null;
 type Screen = "resume" | "config" | "quiz" | "results";
 
 // ─── Storage helpers ──────────────────────────────────────────────────────────
@@ -571,230 +576,8 @@ function QuestionMap({
   );
 }
 
-// ─── Option button ─────────────────────────────────────────────────────────────
-
-function OptionBtn({
-  opt,
-  index,
-  selected,
-  feedbackState,
-  isCorrectOption,
-  disabled,
-  onClick,
-}: {
-  opt: string;
-  index: number;
-  selected: boolean;
-  feedbackState: FeedbackState;
-  isCorrectOption: boolean;
-  disabled: boolean;
-  onClick: () => void;
-}) {
-  const letter = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[index];
-
-  const isWrongSelected = feedbackState === "wrong" && selected;
-  const isRevealedCorrect = feedbackState === "wrong" && isCorrectOption;
-  const isCorrectSelected = feedbackState === "correct" && selected;
-
-  const containerClass =
-    isCorrectSelected || isRevealedCorrect
-      ? "border-primary bg-primary/10 text-primary shadow-[0_0_15px_rgba(var(--primary),0.1)]"
-      : isWrongSelected
-        ? "border-red-500/60 bg-red-500/10 text-red-400"
-        : selected && !feedbackState
-          ? "border-primary bg-primary/10 text-foreground"
-          : disabled
-            ? "border-border/20 bg-card/10 text-muted-foreground/30 cursor-default"
-            : "border-border/40 bg-card/20 text-muted-foreground hover:border-primary/50 hover:text-foreground cursor-pointer";
-
-  const letterClass =
-    isCorrectSelected || isRevealedCorrect
-      ? "border-primary text-primary bg-primary/10"
-      : isWrongSelected
-        ? "border-red-500/60 text-red-400 bg-red-500/10"
-        : selected && !feedbackState
-          ? "border-primary text-primary bg-primary/10"
-          : "border-border/40";
-
-  return (
-    <button
-      type="button"
-      onClick={disabled ? undefined : onClick}
-      className={`rounded-(--radius) w-full text-left px-4 py-3 border font-mono text-[11px] transition-all flex items-start gap-3 ${containerClass}`}
-    >
-      <span
-        className={`rounded-(--radius) shrink-0 size-5 border flex items-center justify-center text-[9px] font-bold mt-0.5 ${letterClass}`}
-      >
-        {letter}
-      </span>
-      <span className="leading-relaxed" dangerouslySetInnerHTML={{ __html: opt }} />
-      {(isCorrectSelected || isRevealedCorrect) && (
-        <CheckCircle2 className="size-3.5 text-primary ml-auto mt-0.5 shrink-0" />
-      )}
-      {isWrongSelected && (
-        <XCircle className="size-3.5 text-red-500 ml-auto mt-0.5 shrink-0" />
-      )}
-    </button>
-  );
-}
-
-// ─── Question card ─────────────────────────────────────────────────────────────
-
-function QuestionCard({
-  q,
-  index,
-  total,
-  answer,
-  onAnswer,
-  feedbackState,
-  mode,
-  disabled,
-  showHints,
-  hintsRevealed,
-  onRevealHint,
-}: {
-  q: QuizQuestion;
-  index: number;
-  total: number;
-  answer: string;
-  onAnswer: (v: string) => void;
-  feedbackState: FeedbackState;
-  mode: "immediate" | "deferred";
-  disabled: boolean;
-  showHints: boolean;
-  hintsRevealed: Record<string, boolean>;
-  onRevealHint: (id: string) => void;
-}) {
-  const controls = useAnimation();
-  const borderClass =
-    feedbackState === "correct"
-      ? "border-primary/40 bg-primary/5"
-      : feedbackState === "wrong"
-        ? "border-red-500/40 bg-red-500/5"
-        : "border-border/40 bg-card/20";
-
-  const isRevealed = !!feedbackState;
-  const isAnswered = !!answer;
-  const showExplanation =
-    isRevealed &&
-    mode === "immediate" &&
-    isAnswered &&
-    feedbackState === "wrong";
-  const showHintUI = hintsRevealed[q.id];
-
-  useEffect(() => {
-    if (feedbackState === "correct") {
-      controls.start({
-        scale: [1, 1.025, 1],
-        transition: { duration: 0.45, ease: "easeInOut" },
-      });
-    } else if (feedbackState === "wrong") {
-      controls.start({
-        x: [0, -10, 10, -7, 7, -4, 4, 0],
-        transition: { duration: 0.45, ease: "easeInOut" },
-      });
-    }
-  }, [feedbackState, controls]);
-
-  return (
-    <motion.div animate={controls}>
-      <div
-        className={`rounded-(--radius) px-5 py-5 border transition-colors ${borderClass}`}
-      >
-        <div className="flex items-center justify-between mb-1.5">
-          <span className="text-[10px] font-mono text-muted-foreground/40">
-            {index + 1} / {total}
-          </span>
-          {mode === "deferred" && answer && (
-            <span className="text-[9px] font-mono text-primary/60 uppercase tracking-widest">
-              answered
-            </span>
-          )}
-        </div>
-
-        <Badge
-          variant="outline"
-          className="text-[9px] font-mono h-4 px-1.5 uppercase mb-2"
-        >
-          {q.type === "mcq"
-            ? "MCQ"
-            : q.type === "true_false"
-              ? "True / False"
-              : q.type === "short_answer"
-                ? "Short Answer"
-                : q.type === "fill_in_blank" || q.type === "fill_in"
-                  ? "Fill in Blank"
-                  : q.type === "essay"
-                    ? "Essay"
-                    : "Free Text"}
-        </Badge>
-
-        <p
-          className="font-mono text-sm leading-relaxed text-foreground mb-5"
-          dangerouslySetInnerHTML={{ __html: q.question }}
-        />
-
-        {q.type === "mcq" && q.options && (
-          <div className="flex flex-col gap-2">
-            {q.options.map((opt, i) => (
-              <OptionBtn
-                key={i}
-                opt={opt}
-                index={i}
-                selected={answer === opt}
-                feedbackState={mode === "immediate" ? feedbackState : null}
-                isCorrectOption={opt === q.correctAnswer}
-                disabled={disabled || (mode === "immediate" && !!feedbackState)}
-                onClick={() => onAnswer(opt)}
-              />
-            ))}
-          </div>
-        )}
-
-        {q.type === "free_text" && (
-          <textarea
-            value={answer}
-            onChange={(e) => onAnswer(e.target.value)}
-            placeholder="Type your answer…"
-            rows={4}
-            disabled={disabled}
-            className="rounded-(--radius) w-full border border-border/50 bg-card/30 px-4 py-3 font-mono text-[12px] placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 resize-none transition-colors disabled:opacity-40"
-          />
-        )}
-
-        {(showHintUI || showExplanation) && (
-          <motion.div
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-4 border border-primary/20 bg-primary/5 px-4 py-3"
-          >
-            <p className="text-[10px] font-mono uppercase tracking-widest text-primary/60 mb-1">
-              {showHintUI ? "HINT" : "EXPLANATION"}
-            </p>
-            <p
-              className="text-[11px] font-mono text-foreground italic"
-              dangerouslySetInnerHTML={{
-                __html: showHintUI
-                  ? (q.hint ?? "")
-                  : (q.explanation || `The correct answer is ${q.correctAnswer}`),
-              }}
-            />
-          </motion.div>
-        )}
-
-        {showHints && q.hint && !isRevealed && !showHintUI && (
-          <button
-            onClick={() => onRevealHint(q.id)}
-            className="mt-4 text-[10px] font-mono uppercase tracking-widest text-primary/60 hover:text-primary transition-colors flex items-center gap-1.5"
-          >
-            <div className="size-1.5 rounded-full bg-primary animate-pulse" />
-            Show Hint
-          </button>
-        )}
-      </div>
-    </motion.div>
-  );
-}
+// QuestionCard and OptionBtn are now QuizQuestionCard / QuizOptionBtn from question-renderer.tsx
+const QuestionCard = QuizQuestionCard;
 
 // ─── Review item ───────────────────────────────────────────────────────────────
 
@@ -836,22 +619,7 @@ function ReviewItem({
           <span className="text-[9px] font-mono text-muted-foreground/40">
             Q{index + 1}
           </span>
-          <Badge
-            variant="outline"
-            className="text-[9px] font-mono h-4 px-1.5 uppercase"
-          >
-            {q.type === "mcq"
-              ? "MCQ"
-              : q.type === "true_false"
-                ? "T/F"
-                : q.type === "short_answer"
-                  ? "Short"
-                  : q.type === "fill_in_blank" || q.type === "fill_in"
-                    ? "Fill"
-                    : q.type === "essay"
-                      ? "Essay"
-                      : "Free"}
-          </Badge>
+          <QuestionTypeBadge type={q.type} />
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           {zGraded && (
@@ -866,10 +634,9 @@ function ReviewItem({
         </div>
       </div>
 
-      <p
-        className="font-mono text-[11px] text-foreground leading-relaxed mb-3"
-        dangerouslySetInnerHTML={{ __html: q.question }}
-      />
+      <div className="mb-3">
+        <QuestionMarkdown content={q.question} className="text-[11px]" />
+      </div>
 
       {q.type === "mcq" && q.options && (
         <div className="flex flex-col gap-1 mb-1">
@@ -888,7 +655,7 @@ function ReviewItem({
                 }`}
               >
                 <span>{letters[i]}.</span>
-                <span dangerouslySetInnerHTML={{ __html: opt }} />
+                <QuestionMarkdown content={opt} className="text-[10px] flex-1" />
                 {isRight && (
                   <span className="ml-auto text-[9px] uppercase tracking-widest text-green-500/60">
                     correct
@@ -905,7 +672,7 @@ function ReviewItem({
         </div>
       )}
 
-      {q.type === "free_text" && (
+      {(q.type === "free_text" || q.type === "short_answer" || q.type === "essay" || q.type === "fill_in_blank" || q.type === "fill_in") && (
         <div className="space-y-2">
           <div>
             <p className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40 mb-0.5">
@@ -924,9 +691,7 @@ function ReviewItem({
               <p className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40 mb-0.5">
                 Reference answer
               </p>
-              <p className="text-[11px] font-mono text-green-500">
-                {q.correctAnswer}
-              </p>
+              <QuestionMarkdown content={q.correctAnswer} className="text-[11px] text-green-500" />
             </div>
           )}
           {zGraded && (

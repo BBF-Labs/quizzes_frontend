@@ -15,6 +15,7 @@ import {
   Unlock,
 } from "lucide-react";
 import { SquareLoader } from "@/components/ui/square-loader";
+import { QuestionMarkdown, QuizOptionBtn } from "@/components/app/quizzes/question-renderer";
 
 import { cn } from "@/lib/utils";
 import type {
@@ -137,28 +138,23 @@ function AskQuestionCard({
       icon={<HelpCircle className="size-3" />}
       label="Question"
     >
-      <p className="text-sm text-foreground leading-relaxed">
-        {payload.question}
-      </p>
+      <QuestionMarkdown content={payload.question} />
 
       {!resolved && (
         <>
           {payload.options ? (
             <div className="flex flex-col gap-1.5">
-              {payload.options.map((opt) => (
-                <button
+              {payload.options.map((opt, i) => (
+                <QuizOptionBtn
                   key={opt}
-                  type="button"
+                  opt={opt}
+                  index={i}
+                  selected={selectedOption === opt}
+                  feedbackState={null}
+                  isCorrectOption={false}
+                  disabled={false}
                   onClick={() => setSelectedOption(opt)}
-                  className={cn(
-                    "text-left px-3 py-2 text-sm font-mono border transition-colors",
-                    selectedOption === opt
-                      ? "border-primary/60 bg-primary/10 text-primary"
-                      : "border-border/40 bg-transparent text-foreground hover:border-primary/40",
-                  )}
-                >
-                  {opt}
-                </button>
+                />
               ))}
             </div>
           ) : (
@@ -226,29 +222,26 @@ function AskQuestionsCard({
       <div className="space-y-4">
         {payload.questions.map((q, i) => (
           <div key={q.id} className="space-y-2">
-            <p className="text-sm text-foreground leading-relaxed">
-              <span className="font-mono text-[10px] text-muted-foreground mr-2">
+            <div className="flex gap-2">
+              <span className="font-mono text-[10px] text-muted-foreground shrink-0 mt-0.5">
                 {i + 1}.
               </span>
-              {q.question}
-            </p>
+              <QuestionMarkdown content={q.question} />
+            </div>
             {!resolved &&
               (q.options ? (
                 <div className="flex flex-col gap-1">
-                  {q.options.map((opt) => (
-                    <button
+                  {q.options.map((opt, oi) => (
+                    <QuizOptionBtn
                       key={opt}
-                      type="button"
+                      opt={opt}
+                      index={oi}
+                      selected={answers[q.id] === opt}
+                      feedbackState={null}
+                      isCorrectOption={false}
+                      disabled={false}
                       onClick={() => setAnswer(q.id, opt)}
-                      className={cn(
-                        "text-left px-3 py-1.5 text-sm font-mono border transition-colors",
-                        answers[q.id] === opt
-                          ? "border-primary/60 bg-primary/10 text-primary"
-                          : "border-border/40 bg-transparent text-foreground hover:border-primary/40",
-                      )}
-                    >
-                      {opt}
-                    </button>
+                    />
                   ))}
                 </div>
               ) : (
@@ -312,30 +305,25 @@ function ShowQuizCard({
       <div className="space-y-4">
         {payload.questions.map((q, i) => (
           <div key={q.id} className="space-y-2">
-            <p className="text-sm text-foreground leading-relaxed">
-              <span className="font-mono text-[10px] text-muted-foreground mr-2">
+            <div className="flex gap-2">
+              <span className="font-mono text-[10px] text-muted-foreground shrink-0 mt-0.5">
                 Q{i + 1}.
               </span>
-              {q.question}
-            </p>
+              <QuestionMarkdown content={q.question} />
+            </div>
             {!resolved && (
-              <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
-                {q.options.map((opt) => (
-                  <button
+              <div className="flex flex-col gap-1">
+                {q.options.map((opt, oi) => (
+                  <QuizOptionBtn
                     key={opt}
-                    type="button"
-                    onClick={() =>
-                      setSelected((prev) => ({ ...prev, [q.id]: opt }))
-                    }
-                    className={cn(
-                      "text-left px-3 py-1.5 text-sm font-mono border transition-colors",
-                      selected[q.id] === opt
-                        ? "border-primary/60 bg-primary/10 text-primary"
-                        : "border-border/40 bg-transparent text-foreground hover:border-primary/40",
-                    )}
-                  >
-                    {opt}
-                  </button>
+                    opt={opt}
+                    index={oi}
+                    selected={selected[q.id] === opt}
+                    feedbackState={null}
+                    isCorrectOption={false}
+                    disabled={false}
+                    onClick={() => setSelected((prev) => ({ ...prev, [q.id]: opt }))}
+                  />
                 ))}
               </div>
             )}

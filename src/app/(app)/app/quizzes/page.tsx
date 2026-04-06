@@ -191,6 +191,7 @@ export default function QuizzesPage() {
                   courseTitle={quiz.courseTitle}
                   courseCode={quiz.courseCode}
                   questionCount={quiz.questionCount ?? 0}
+                  lectureCount={quiz.lectureCount}
                   averageScore={quiz.averageScore}
                   createdAt={quiz.createdAt}
                   onDelete={handleDelete}
