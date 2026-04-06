@@ -23,6 +23,8 @@ import {
 
 import { useBreadcrumbStore } from "@/store/breadcrumb";
 import { useGlobalAppEvents } from "@/hooks/app/use-global-app-events";
+import { useStreakStatus } from "@/hooks";
+import { Flame } from "lucide-react";
 
 export function AppLayoutWrapper({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -43,6 +45,7 @@ export function AppLayoutWrapper({ children }: { children: ReactNode }) {
     "profile",
     "courses",
     "timetable",
+    "billing",
   ]);
   const sessionId = isAppSection && routePart && !staticRoutes.has(routePart) ? routePart : "";
   const isSessionDetail = !!sessionId;
@@ -58,6 +61,7 @@ export function AppLayoutWrapper({ children }: { children: ReactNode }) {
     profile: "Profile",
     courses: "My Courses",
     timetable: "Exam Timetable",
+    billing: "Billing",
   };
   const detailLabelMap: Record<string, string> = {
     flashcards: "Set",
@@ -71,7 +75,8 @@ export function AppLayoutWrapper({ children }: { children: ReactNode }) {
   // Always call hooks unconditionally (Rules of Hooks)
   const { user, logout } = useAuth();
   const dynamicTitle = useBreadcrumbStore((state) => state.dynamicTitle);
-  
+  const { data: streak } = useStreakStatus();
+
   // Attach global socket listener to automatically refresh TanStack caches
   useGlobalAppEvents();
 
@@ -150,7 +155,15 @@ export function AppLayoutWrapper({ children }: { children: ReactNode }) {
                 </BreadcrumbList>
               </Breadcrumb>
             </div>
-            <div className="ml-auto flex items-center gap-2">
+            <div className="ml-auto flex items-center gap-3">
+              {streak && streak.current > 0 && (
+                <div className="flex items-center gap-1 border border-amber-400/30 bg-amber-400/5 px-2 py-1">
+                  <Flame className="size-3 text-amber-400" />
+                  <span className="text-[10px] font-mono font-bold text-amber-400 tabular-nums">
+                    {streak.current}
+                  </span>
+                </div>
+              )}
               <ThemeToggle />
               <UserProfileDropdown user={user} onLogout={logout} />
             </div>

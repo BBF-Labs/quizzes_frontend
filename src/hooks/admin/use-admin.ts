@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 
 export interface IAdminStats {
@@ -133,6 +133,7 @@ export function useUsers(
     limit?: number;
     search?: string;
     role?: string;
+    isBanned?: boolean;
   } = {},
 ) {
   return useQuery({
@@ -141,6 +142,26 @@ export function useUsers(
       const response = await api.get("/admin/users/users", { params: options });
       const payload = response.data?.data ?? response.data;
       return normalizePaginatedAudience(payload, options); // Reuse for now or define IUserPayload
+    },
+  });
+}
+
+export function useUpdateUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<IAudienceEntry>;
+    }) => {
+      const response = await api.put(`/admin/users/users/${id}`, data);
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
     },
   });
 }

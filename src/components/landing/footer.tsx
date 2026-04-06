@@ -107,7 +107,7 @@ export function Footer() {
               Contact
             </Link>
             <Link
-              href="#"
+              href="/privacy"
               className="text-[13px] font-mono text-muted-foreground hover:text-foreground transition-colors"
             >
               Privacy Policy
@@ -123,7 +123,7 @@ export function Footer() {
               onSubmit={handleSubscribe}
               className="flex flex-col w-full mt-2"
             >
-              <div className="flex w-full">
+              <div className="flex w-full bg-secondary/80 rounded-(--radius) focus-within:ring-1 focus-within:ring-primary items-stretch overflow-hidden">
                 <input
                   type="email"
                   placeholder={
@@ -133,12 +133,12 @@ export function Footer() {
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={status === "loading" || status === "success"}
                   required
-                  className="flex-1 bg-secondary/80 border-none text-xs font-mono uppercase px-4 py-3 placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary rounded-(--radius) disabled:opacity-50"
+                  className="flex-1 bg-transparent border-none text-xs font-mono uppercase px-4 py-3 placeholder:text-muted-foreground focus:outline-none disabled:opacity-50"
                 />
                 <button
                   type="submit"
                   disabled={status === "loading" || status === "success"}
-                  className="bg-primary text-primary-foreground px-4 py-3 flex items-center justify-center hover:bg-white hover:text-primary hover:ring-1 hover:ring-inset hover:ring-primary transition-all duration-300 disabled:opacity-50"
+                  className="bg-primary text-primary-foreground px-5 flex items-center justify-center hover:bg-white hover:text-primary transition-all duration-300 disabled:opacity-50 rounded-l-none"
                 >
                   <ArrowRight
                     className={`w-4 h-4 ${status === "loading" ? "animate-pulse" : ""}`}
