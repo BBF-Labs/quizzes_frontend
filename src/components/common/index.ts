@@ -6,3 +6,4 @@ export * from "./theme-toggle";
 export * from "./pagination-controller";
 export * from "./user-profile-dropdown";
 export * from "./auth-guard";
+export * from "./cookie-consent";

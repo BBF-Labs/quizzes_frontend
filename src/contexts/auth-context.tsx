@@ -6,12 +6,13 @@ import React, {
   useEffect,
 } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 import { api } from "@/lib/api";
 import {
   ensurePushSubscription,
   getCurrentPushEndpoint,
 } from "@/lib/push-notifications";
-import { clearSession, setSession, getRefreshToken } from "@/lib/session";
+import { clearSession, signalSessionActive } from "@/lib/session";
 import { queryKeys } from "@/lib/query-keys";
 import { hydrateSessionUserFromToken, SessionUser } from "@/hooks";
 import { isInvalidSessionError, useSessionValidation } from "@/hooks";
@@ -46,8 +47,8 @@ interface AuthContextValue {
     username: string,
     password: string,
   ) => Promise<void>;
-  logout: () => void;
-  updateSession: (accessToken: string, refreshToken?: string) => void;
+  logout: () => Promise<void>;
+  updateSession: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -65,18 +66,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const user = hydrateSessionUserFromToken();
       if (user) return user;
 
-      // Access token expired but refresh token may still be valid — try silently.
-      const refreshToken = getRefreshToken();
-      if (!refreshToken) return null;
-
+      // No auth_user cookie — try a silent refresh. The httpOnly auth_refresh
+      // cookie is sent automatically via withCredentials.
       try {
-        const res = await api.post("/auth/refresh", { refreshToken });
-        const resData = res.data?.data ?? res.data;
-        const newToken = resData?.accessToken;
-        if (newToken) {
-          setSession({ accessToken: newToken });
-          return hydrateSessionUserFromToken();
-        }
+        await axios.post(
+          `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`,
+          {},
+          { withCredentials: true },
+        );
+        return hydrateSessionUserFromToken();
       } catch {
         clearSession();
       }
@@ -108,8 +106,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, [qc]),
   );
 
-  const isValidating =
-    Boolean(user) && (validationQuery.isLoading || validationQuery.isFetching);
+  // Only block on the initial validation (no cache). Background refetches
+  // should not show the auth spinner — the user is already confirmed via JWT.
+  const isValidating = Boolean(user) && validationQuery.isLoading;
   const isAuthenticated = Boolean(user);
   const isLoading = isHydrating || isValidating;
   const isSuperAdminRole = user?.role === "super_admin";
@@ -138,24 +137,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       const resData = res.data?.data ?? res.data;
-      const accessToken: string = resData?.accessToken;
-      const refreshToken: string = resData?.refreshToken;
-
-      if (!accessToken) throw new Error("No access token returned from login");
-
-      setSession(
-        {
-          accessToken,
-          refreshToken: refreshToken ?? null,
-        },
-        { persist: rememberMe },
-      );
-
+      // Cookies (auth_access, auth_refresh, auth_user) are set by the server.
       const sessionUser = hydrateSessionUserFromToken();
       if (!sessionUser) {
-        throw new Error("Invalid access token returned from login");
+        throw new Error("Session cookie not set after login");
       }
 
+      signalSessionActive();
       return sessionUser;
     },
     onSuccess: async (user) => {
@@ -198,19 +186,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         username,
         password,
       });
-      const resData = res.data;
-      const accessToken: string = resData?.accessToken;
-      const refreshToken: string = resData?.refreshToken;
-      if (!accessToken) throw new Error("No access token returned from signup");
-      setSession(
-        { accessToken, refreshToken: refreshToken ?? null },
-        { persist: false },
-      );
+      // Cookies set by server on signup
       const sessionUser = hydrateSessionUserFromToken();
       if (!sessionUser) {
-        throw new Error("Invalid access token returned from signup");
+        throw new Error("Session cookie not set after signup");
       }
 
+      signalSessionActive();
       return {
         ...sessionUser,
         name: sessionUser.name || name,
@@ -239,33 +221,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [signupMutation],
   );
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    try {
+      // Clear httpOnly cookies server-side
+      await api.post("/auth/logout");
+    } catch {
+      // Proceed even if the request fails
+    }
     clearSession();
-
     qc.setQueryData(queryKeys.authSession, null);
     qc.removeQueries({ queryKey: queryKeys.onboardingStatus });
     qc.invalidateQueries({ queryKey: queryKeys.authSession });
   }, [qc]);
 
-  const updateSession = useCallback(
-    (accessToken: string, refreshToken?: string) => {
-      // Re-persist tokens
-      setSession({
-        accessToken,
-        refreshToken: refreshToken ?? null,
-      });
-
-      // Update local state by re-parsing the new token
-      const sessionUser = hydrateSessionUserFromToken();
-      if (sessionUser) {
-        qc.setQueryData(queryKeys.authSession, sessionUser);
-      }
-      qc.invalidateQueries({
-        queryKey: [...queryKeys.authSession, "validation"],
-      });
-    },
-    [qc],
-  );
+  const updateSession = useCallback(() => {
+    // Re-read auth_user cookie after a profile update or token refresh
+    const sessionUser = hydrateSessionUserFromToken();
+    if (sessionUser) {
+      qc.setQueryData(queryKeys.authSession, sessionUser);
+    }
+    qc.invalidateQueries({
+      queryKey: [...queryKeys.authSession, "validation"],
+    });
+  }, [qc]);
 
   return (
     <AuthContext.Provider

@@ -1,43 +1,28 @@
 import axios from "axios";
-import {
-  clearSession,
-  getAccessToken,
-  getRefreshToken,
-  setSession,
-} from "@/lib/session";
+import { clearSession } from "@/lib/session";
 
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
+  withCredentials: true, // send auth_access / auth_refresh cookies automatically
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Inject Bearer token on every request
-api.interceptors.request.use((config) => {
-  if (typeof window !== "undefined") {
-    const token = getAccessToken();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-  }
-  return config;
-});
-
 // Flag to prevent multiple refresh calls simultaneously
 let isRefreshing = false;
-let refreshSubscribers: ((token: string) => void)[] = [];
+let refreshSubscribers: (() => void)[] = [];
 
-const onTokenRefreshed = (token: string) => {
-  refreshSubscribers.map((callback) => callback(token));
+const onTokenRefreshed = () => {
+  refreshSubscribers.forEach((cb) => cb());
   refreshSubscribers = [];
 };
 
-const addRefreshSubscriber = (callback: (token: string) => void) => {
+const addRefreshSubscriber = (callback: () => void) => {
   refreshSubscribers.push(callback);
 };
 
-// Auto-refresh on 401
+// Auto-refresh on 401 — the auth_refresh httpOnly cookie is sent automatically
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -45,13 +30,10 @@ api.interceptors.response.use(
     const originalRequest = config;
 
     if (response?.status === 401 && typeof window !== "undefined") {
-      const refreshToken = getRefreshToken();
-
-      if (refreshToken && !originalRequest._retry) {
+      if (!originalRequest._retry) {
         if (isRefreshing) {
-          return new Promise((resolve) => {
-            addRefreshSubscriber((token) => {
-              originalRequest.headers.Authorization = `Bearer ${token}`;
+          return new Promise((resolve, reject) => {
+            addRefreshSubscriber(() => {
               resolve(api(originalRequest));
             });
           });
@@ -61,45 +43,29 @@ api.interceptors.response.use(
         isRefreshing = true;
 
         try {
-          // Attempt refresh
-          const res = await axios.post(
+          // Refresh token is in the httpOnly cookie — no body needed
+          await axios.post(
             `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`,
-            {
-              refreshToken,
-            },
+            {},
+            { withCredentials: true },
           );
 
-          const resData = res.data?.data ?? res.data;
-          const newToken = resData?.accessToken;
-          if (newToken) {
-            setSession({ accessToken: newToken });
-            isRefreshing = false;
-            onTokenRefreshed(newToken);
-
-            // Retry original request
-            originalRequest.headers.Authorization = `Bearer ${newToken}`;
-            return api(originalRequest);
-          }
-
-          // Refresh returned 200 but no token — clean up and force logout
           isRefreshing = false;
-          refreshSubscribers = [];
-          clearSession();
-          window.location.href = "/login";
+          onTokenRefreshed();
+          return api(originalRequest);
         } catch (refreshError) {
           isRefreshing = false;
           refreshSubscribers = [];
-          // Refresh failed -> clear memory session and redirect to login
           clearSession();
           window.location.href = "/login";
           return Promise.reject(refreshError);
         }
       } else {
-        // No refresh token or retry failed -> logout
         clearSession();
         window.location.href = "/login";
       }
     }
+
     return Promise.reject(error);
   },
 );

@@ -1,20 +1,17 @@
 import { useEffect } from "react";
+import { AUTH_STATE_KEY } from "@/lib/session";
 
-const SESSION_KEYS = new Set([
-  "auth_token",
-  "auth_refresh_token",
-  "auth_remember_me",
-  "admin_token",
-  "admin_refresh_token",
-  "admin_remember_me",
-]);
-
+/**
+ * Fires onSessionChange whenever another tab logs in or out.
+ * We use a lightweight localStorage signal (auth_state = "active"|"inactive")
+ * rather than storing tokens — httpOnly cookies are tab-shared automatically.
+ */
 export function useSessionSync(onSessionChange: () => void) {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     const handleStorage = (event: StorageEvent) => {
-      if (!event.key || SESSION_KEYS.has(event.key)) {
+      if (event.key === AUTH_STATE_KEY) {
         onSessionChange();
       }
     };
