@@ -518,6 +518,35 @@ export const useRetryMessage = (sessionId: string) => {
   });
 };
 
+export const useRateMessage = (sessionId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ messageId, rating }: { messageId: string; rating: 1 | -1 }) => {
+      await api.post(`/app/${sessionId}/messages/${messageId}/rate`, { rating });
+    },
+    onMutate: async ({ messageId, rating }) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.app.detail(sessionId) });
+      const previous = queryClient.getQueryData(queryKeys.app.detail(sessionId));
+      queryClient.setQueryData<ZApp>(queryKeys.app.detail(sessionId), (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          zMessages: old.zMessages.map((m) =>
+            m.messageId === messageId ? { ...m, rating } : m
+          ),
+        };
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(queryKeys.app.detail(sessionId), context.previous);
+      }
+    },
+  });
+};
+
 // Aliases for backward compatibility
 export const useCreateSession = useCreateApp;
 export const useStartSession = useStartApp;

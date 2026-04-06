@@ -12,3 +12,4 @@ export * from "./recommendations-preview";
 export * from "./social-proof";
 export * from "./stats-section";
 export * from "./quizzes-section";
+export * from "./pricing";

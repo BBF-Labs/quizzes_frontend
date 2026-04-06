@@ -14,8 +14,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PaginationController } from "@/components/common";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useUsers } from "@/hooks";
+import { useUpdateUser } from "@/hooks/admin/use-admin";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { MoreHorizontal, Ban, RotateCcw, User as UserIcon } from "lucide-react";
 
 export default function UsersPage() {
   const router = useRouter();
@@ -24,6 +35,7 @@ export default function UsersPage() {
   const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
   const search = searchParams.get("search") ?? "";
   const roleFilter = searchParams.get("role") ?? "";
+  const banFilter = searchParams.get("isBanned") ?? "";
 
   const updateQueryParams = (updates: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -45,7 +57,31 @@ export default function UsersPage() {
     limit: 20,
     search: search || undefined,
     role: roleFilter || undefined,
+    isBanned: banFilter ? banFilter === "true" : undefined,
   });
+
+  const { mutate: updateUser, isPending: isUpdating } = useUpdateUser();
+
+  const handleRoleChange = (userId: string, newRole: string) => {
+    updateUser(
+      { id: userId, data: { role: newRole } },
+      {
+        onSuccess: () => toast.success("User role updated"),
+        onError: (err: any) => toast.error(err.message || "Failed to update role"),
+      }
+    );
+  };
+
+  const handleToggleBan = (userId: string, currentBanStatus: boolean) => {
+    const isBanned = !currentBanStatus;
+    updateUser(
+      { id: userId, data: { isBanned } },
+      {
+        onSuccess: () => toast.success(isBanned ? "User banned" : "User unbanned"),
+        onError: (err: any) => toast.error(err.message || "Failed to update account status"),
+      }
+    );
+  };
 
   const users = usersData?.data || [];
   const totalPages =
@@ -96,7 +132,7 @@ export default function UsersPage() {
             });
           }}
         >
-          <SelectTrigger className="w-full sm:w-auto sm:min-w-130 rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+          <SelectTrigger className="w-full sm:w-auto sm:min-w-[120px] rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
             <SelectValue placeholder="All Roles" />
           </SelectTrigger>
           <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
@@ -128,7 +164,40 @@ export default function UsersPage() {
               value="super_admin"
               className="rounded-(--radius) font-mono text-xs uppercase"
             >
-              Super Admin
+              Admin
+            </SelectItem>
+          </SelectContent>
+        </Select>
+        <Select
+          value={banFilter || "all"}
+          onValueChange={(value) => {
+            updateQueryParams({
+              isBanned: value === "all" ? null : value,
+              page: "1",
+            });
+          }}
+        >
+          <SelectTrigger className="w-full sm:w-auto sm:min-w-[120px] rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+            <SelectValue placeholder="All Status" />
+          </SelectTrigger>
+          <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
+            <SelectItem
+              value="all"
+              className="rounded-(--radius) font-mono text-xs uppercase"
+            >
+              All Status
+            </SelectItem>
+            <SelectItem
+              value="false"
+              className="rounded-(--radius) font-mono text-xs uppercase text-green-500"
+            >
+              Active
+            </SelectItem>
+            <SelectItem
+              value="true"
+              className="rounded-(--radius) font-mono text-xs uppercase text-destructive"
+            >
+              Banned
             </SelectItem>
           </SelectContent>
         </Select>
@@ -212,18 +281,23 @@ export default function UsersPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-1.5">
-                          {user.role === "creator" ||
-                          user.role === "moderator" ||
-                          user.role === "super_admin" ? (
-                            <Shield className="size-3 text-blue-500" />
-                          ) : (
-                            <GraduationCap className="size-3 text-zinc-500" />
-                          )}
-                          <span className="text-muted-foreground">
-                            {user.role}
-                          </span>
-                        </div>
+                        <Select
+                          disabled={isUpdating}
+                          value={user.role}
+                          onValueChange={(value) => handleRoleChange(user._id, value)}
+                        >
+                          <SelectTrigger className="h-7 w-[110px] bg-transparent border-primary/20 text-[10px] font-bold uppercase transition-all hover:bg-primary/5">
+                            <div className="flex items-center gap-1.5 truncate">
+                              <SelectValue />
+                            </div>
+                          </SelectTrigger>
+                          <SelectContent className="bg-background/95 backdrop-blur-md border-primary/20">
+                            <SelectItem value="student" className="text-[10px] font-bold uppercase">Student</SelectItem>
+                            <SelectItem value="creator" className="text-[10px] font-bold uppercase">Creator</SelectItem>
+                            <SelectItem value="moderator" className="text-[10px] font-bold uppercase">Moderator</SelectItem>
+                            <SelectItem value="super_admin" className="text-[10px] font-bold uppercase">Admin</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-4">
@@ -260,13 +334,40 @@ export default function UsersPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="size-8 rounded-(--radius) group-hover:bg-primary/10 group-hover:text-primary transition-all"
-                        >
-                          <ExternalLink className="size-3.5" />
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-8 rounded-(--radius) group-hover:bg-primary/10 group-hover:text-primary transition-all"
+                            >
+                              <MoreHorizontal className="size-3.5" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48 bg-background/95 backdrop-blur-md border-primary/20 p-1.5">
+                            <DropdownMenuLabel className="text-[9px] uppercase tracking-widest text-muted-foreground px-2 py-1.5">Actions</DropdownMenuLabel>
+                            <DropdownMenuItem className="gap-2 text-[10px] font-bold uppercase cursor-pointer rounded-(--radius) mb-0.5">
+                              <UserIcon className="size-3" /> View Profile
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="gap-2 text-[10px] font-bold uppercase cursor-pointer rounded-(--radius) mb-0.5">
+                              <ExternalLink className="size-3" /> External Link
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator className="bg-primary/10 my-1.5" />
+                            <DropdownMenuItem 
+                              onClick={() => handleToggleBan(user._id, !!user.isBanned)}
+                              className={cn(
+                                "gap-2 text-[10px] font-bold uppercase cursor-pointer rounded-(--radius)",
+                                user.isBanned ? "text-green-500 focus:text-green-500" : "text-destructive focus:text-destructive"
+                              )}
+                            >
+                              {user.isBanned ? (
+                                <><RotateCcw className="size-3" /> Unban Account</>
+                              ) : (
+                                <><Ban className="size-3" /> Ban Account</>
+                              )}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </td>
                     </tr>
                   ))

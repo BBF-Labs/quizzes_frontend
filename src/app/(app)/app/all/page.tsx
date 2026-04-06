@@ -19,7 +19,7 @@ export default function AllSessionsPage() {
 
   return (
     <div className="min-h-full px-4 py-8">
-      <div className="mx-auto max-w-2xl">
+      <div className="mx-auto max-w-5xl">
         {/* Search */}
         <div className="relative mb-6">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/50" />
@@ -83,7 +83,10 @@ export default function AllSessionsPage() {
             className="flex flex-col gap-2"
           >
             {filtered.map((session, i) => {
-              const title = session.title || `Session ${session.id.slice(0, 8)}`;
+              const title =
+                session.name ||
+                session.title ||
+                `Session ${session.id.slice(0, 8)}`;
               return (
                 <motion.div
                   key={session.id}
@@ -120,7 +123,7 @@ export default function AllSessionsPage() {
                     </div>
                     <span
                       className={cn(
-                        "text-[9px] font-mono font-bold uppercase tracking-widest px-2 py-0.5 border shrink-0",
+                        "text-[9px] font-mono font-bold uppercase tracking-widest px-2 py-0.5 border shrink-0 rounded-(--radius)",
                         session.status === "active"
                           ? "border-green-500/40 bg-green-500/10 text-green-500"
                           : "border-border/50 bg-muted/30 text-muted-foreground",

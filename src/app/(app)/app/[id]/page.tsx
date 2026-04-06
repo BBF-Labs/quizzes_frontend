@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Paperclip, X, Settings2, Plus, ArrowUp } from "lucide-react";
 import { useAppApprove } from "@/hooks";
-import { useRetryMessage } from "@/hooks/app/use-app-actions";
+import { useRetryMessage, useRateMessage } from "@/hooks/app/use-app-actions";
 import { useAppLayout } from "./layout";
 import { cn } from "@/lib/utils";
 import { MessageFeed } from "@/components/app/center/MessageFeed";
@@ -27,6 +27,7 @@ export default function ChatPage() {
 
   const approveMutation = useAppApprove();
   const retryMutation = useRetryMessage(sessionId);
+  const rateMutation = useRateMessage(sessionId);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -210,6 +211,9 @@ export default function ChatPage() {
         onEditMessage={(messageId: string, newContent: string) => {
           truncateFrom(messageId);
           sendMessage(newContent);
+        }}
+        onRateMessage={(messageId: string, rating: 1 | -1) => {
+          rateMutation.mutate({ messageId, rating });
         }}
       />
 

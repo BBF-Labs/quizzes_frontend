@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import type { ZSessionMessage } from "@/types/session";
-import { MessageSquare, Copy, RotateCcw, Pencil, Check } from "lucide-react";
+import { MessageSquare, Copy, RotateCcw, Pencil, Check, ThumbsUp, ThumbsDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface MessageBubbleProps {
@@ -12,6 +12,7 @@ interface MessageBubbleProps {
   authorName?: string;
   onRetry?: (id: string, content: string) => void;
   onEdit?: (id: string, newContent: string) => void;
+  onRate?: (messageId: string, rating: 1 | -1) => void;
 }
 
 export function MessageBubble({
@@ -20,6 +21,7 @@ export function MessageBubble({
   authorName,
   onRetry,
   onEdit,
+  onRate,
 }: MessageBubbleProps) {
   if (message.type === "tool_call" || message.type === "tool_result") {
     return null;
@@ -47,6 +49,7 @@ export function MessageBubble({
       message={message}
       authorName={authorName}
       onRetry={onRetry}
+      onRate={onRate}
     />
   );
 }
@@ -208,10 +211,12 @@ function ZMessage({
   message,
   authorName,
   onRetry,
+  onRate,
 }: {
   message: ZSessionMessage;
   authorName?: string;
   onRetry?: (id: string, content: string) => void;
+  onRate?: (messageId: string, rating: 1 | -1) => void;
 }) {
   const [hovered, setHovered] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -291,6 +296,32 @@ function ZMessage({
                 <RotateCcw className="size-2.5" />
                 Retry
               </button>
+            )}
+            {onRate && message.role === "z" && (
+              <>
+                <button
+                  onClick={() => onRate(message.messageId || message.id, 1)}
+                  className={cn(
+                    "flex items-center gap-1 text-[9px] font-mono uppercase transition-colors",
+                    message.rating === 1
+                      ? "text-emerald-500"
+                      : "text-muted-foreground hover:text-emerald-500"
+                  )}
+                >
+                  <ThumbsUp className="size-2.5" />
+                </button>
+                <button
+                  onClick={() => onRate(message.messageId || message.id, -1)}
+                  className={cn(
+                    "flex items-center gap-1 text-[9px] font-mono uppercase transition-colors",
+                    message.rating === -1
+                      ? "text-destructive"
+                      : "text-muted-foreground hover:text-destructive"
+                  )}
+                >
+                  <ThumbsDown className="size-2.5" />
+                </button>
+              </>
             )}
           </motion.div>
         )}

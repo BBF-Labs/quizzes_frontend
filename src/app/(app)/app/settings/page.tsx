@@ -1,8 +1,24 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { Brain, Users, Tag } from "lucide-react";
+import {
+  Brain,
+  Users,
+  Tag,
+  GraduationCap,
+  Loader2,
+  CheckCircle,
+  Clock,
+  XCircle,
+} from "lucide-react";
+import { useStudentVerifyStatus, useInitiateStudentVerify } from "@/hooks";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import { Mail } from "lucide-react";
 
 // ─── localStorage-backed toggle ───────────────────────────────────────────────
 
@@ -98,7 +114,173 @@ function ToggleRow({
   );
 }
 
+// ─── Student Verification Section ────────────────────────────────────────────
+
+function StudentVerificationSection() {
+  const [email, setEmail] = useState("");
+  const { data: status, isLoading } = useStudentVerifyStatus();
+  const initiate = useInitiateStudentVerify();
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email.trim()) return;
+    try {
+      await initiate.mutateAsync(email.trim().toLowerCase());
+      toast.success("Verification email sent. Check your inbox.");
+      setEmail("");
+    } catch (err: unknown) {
+      const msg =
+        err && typeof err === "object" && "response" in err
+          ? (err as { response?: { data?: { message?: string } } }).response
+              ?.data?.message
+          : undefined;
+      toast.error(msg ?? "Failed to send verification email.");
+    }
+  }
+
+  const STATUS_CONFIG = {
+    verified: { icon: CheckCircle, label: "Verified", color: "text-primary" },
+    pending: { icon: Clock, label: "Email sent", color: "text-amber-400" },
+    expired: { icon: XCircle, label: "Expired", color: "text-destructive" },
+    rejected: { icon: XCircle, label: "Rejected", color: "text-destructive" },
+    unverified: {
+      icon: GraduationCap,
+      label: "Not verified",
+      color: "text-muted-foreground",
+    },
+  } as const;
+
+  const cfg = STATUS_CONFIG[status?.status ?? "unverified"];
+  const StatusIcon = cfg.icon;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.25 }}
+      className="border border-border/40 bg-card/30 px-4 py-4 flex flex-col gap-4"
+    >
+      <div className="flex items-center gap-3">
+        <GraduationCap className="size-4 text-muted-foreground/60 shrink-0" />
+        <div className="flex-1">
+          <p className="text-[12px] font-mono font-semibold text-foreground uppercase tracking-wide">
+            Student Verification
+          </p>
+          <p className="text-[11px] font-mono text-muted-foreground mt-0.5">
+            Verify your university email for 10% off any plan.
+          </p>
+        </div>
+        {isLoading ? (
+          <Loader2 className="size-3 animate-spin text-muted-foreground" />
+        ) : (
+          <div className={cn("flex items-center gap-1", cfg.color)}>
+            <StatusIcon className="size-3" />
+            <span className="text-[10px] font-mono">{cfg.label}</span>
+          </div>
+        )}
+      </div>
+
+      {status?.status === "verified" && status.studentEmail && (
+        <div className="text-[11px] font-mono text-muted-foreground px-0">
+          Verified as{" "}
+          <span className="text-foreground">{status.studentEmail}</span>
+          {status.expiresAt && (
+            <span className="text-muted-foreground/50">
+              {" "}
+              · Valid until {new Date(status.expiresAt).toLocaleDateString()}
+            </span>
+          )}
+        </div>
+      )}
+
+      {(status?.status === "unverified" ||
+        status?.status === "expired" ||
+        !status) && (
+        <form onSubmit={handleSubmit} className="flex gap-2">
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@university.edu.gh"
+            required
+            className="flex-1 border border-border/50 bg-background px-3 py-2 text-xs font-mono outline-none placeholder:text-muted-foreground/40 focus:border-primary/50 transition-colors"
+          />
+          <button
+            type="submit"
+            disabled={initiate.isPending || !email.trim()}
+            className={cn(
+              "px-4 text-[10px] font-mono uppercase tracking-[0.15em] border transition-colors flex items-center gap-1.5",
+              initiate.isPending
+                ? "border-primary/30 text-primary/50 cursor-not-allowed"
+                : "border-primary text-primary hover:bg-primary/10",
+            )}
+          >
+            {initiate.isPending && (
+              <Loader2 className="size-2.5 animate-spin" />
+            )}
+            Verify
+          </button>
+        </form>
+      )}
+
+      {status?.status === "pending" && (
+        <p className="text-[11px] font-mono text-muted-foreground">
+          A verification link was sent to{" "}
+          <span className="text-foreground">{status.studentEmail}</span>. Check
+          your inbox.
+        </p>
+      )}
+    </motion.div>
+  );
+}
+
+// ─── Weekly digest toggle ─────────────────────────────────────────────────────
+
+function useWeeklyDigest() {
+  const queryClient = useQueryClient();
+
+  const { data: enabled = false } = useQuery({
+    queryKey: ["notifications", "weeklyDigest"],
+    queryFn: async () => {
+      const res = await api.get<{ data: { weeklyDigest?: boolean } }>(
+        "/users/notifications",
+      );
+      return res.data.data?.weeklyDigest ?? false;
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const { mutate: setDigest, isPending } = useMutation({
+    mutationFn: async (value: boolean) => {
+      await api.put("/users/notifications", { weeklyDigest: value });
+    },
+    onMutate: async (value) => {
+      await queryClient.cancelQueries({
+        queryKey: ["notifications", "weeklyDigest"],
+      });
+      const prev = queryClient.getQueryData(["notifications", "weeklyDigest"]);
+      queryClient.setQueryData(["notifications", "weeklyDigest"], value);
+      return { prev };
+    },
+    onError: (_err, _value, context) => {
+      if (context?.prev !== undefined) {
+        queryClient.setQueryData(
+          ["notifications", "weeklyDigest"],
+          context.prev,
+        );
+      }
+      toast.error("Failed to update notification settings");
+    },
+  });
+
+  return { enabled, setDigest, isPending };
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export default function SessionSettingsPage() {
+  const searchParams = useSearchParams();
+  const activeTab = searchParams.get("tab");
   const [thinkingMode, toggleThinking] = useLocalToggle(
     "qz_setting_thinking_mode",
     true,
@@ -107,6 +289,7 @@ export default function SessionSettingsPage() {
     "qz_setting_auto_title",
     true,
   );
+  const { enabled: weeklyDigest, setDigest } = useWeeklyDigest();
   const [defaultMode, setDefaultMode] = useLocalSelect(
     "qz_setting_default_mode",
     "ai",
@@ -114,7 +297,7 @@ export default function SessionSettingsPage() {
 
   return (
     <div className="min-h-full px-4 py-8">
-      <div className="mx-auto max-w-2xl">
+      <div className="mx-auto max-w-5xl">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -187,6 +370,39 @@ export default function SessionSettingsPage() {
                 </button>
               ))}
             </div>
+          </div>
+        </motion.div>
+
+        {/* Notification preferences */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.15 }}
+          className="mt-4"
+        >
+          <ToggleRow
+            label="Weekly Study Digest"
+            description="Receive a Monday morning email summarising your sessions and progress from the past week."
+            value={weeklyDigest}
+            onToggle={() => setDigest(!weeklyDigest)}
+            icon={Mail}
+          />
+        </motion.div>
+
+        {/* Student verification */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="mt-6"
+        >
+          <div
+            id="verification"
+            className={cn(
+              activeTab === "verification" && "ring-1 ring-primary/30",
+            )}
+          >
+            <StudentVerificationSection />
           </div>
         </motion.div>
 

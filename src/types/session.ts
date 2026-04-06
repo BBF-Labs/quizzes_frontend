@@ -132,6 +132,7 @@ export interface ZAppMessage {
   isStreaming?: boolean;
   status?: "sending" | "sent" | "error";
   replyToMessageId?: string;
+  rating?: 1 | -1;
 }
 
 export type ConnectionType = "sse" | "polling" | "disconnected";
@@ -304,6 +305,7 @@ export interface ZApp {
 export interface ZAppSummary {
   id: string;
   title?: string;
+  name?: string;
   courseId?: string;
   mode: "free" | "structured";
   startedAt?: string;
@@ -429,7 +431,14 @@ export interface QuizSummary {
 export interface QuizQuestion {
   id: string;
   question: string;
-  type: "mcq" | "free_text" | "true_false" | "short_answer" | "fill_in" | "fill_in_blank" | "essay";
+  type:
+    | "mcq"
+    | "free_text"
+    | "true_false"
+    | "short_answer"
+    | "fill_in"
+    | "fill_in_blank"
+    | "essay";
   options?: string[];
   correctAnswer?: string;
   hint?: string;
