@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/auth-context";
+import { setSession } from "@/lib/session";
 import { useProfileCheck, useProfileUpdate } from "@/hooks";
 import { useUploadFile, IUpload } from "@/hooks";
 import { toast } from "sonner";
@@ -132,12 +133,13 @@ export default function ProfilePage() {
         notificationSettings: notifSettings,
       },
       {
-        onSuccess: (data: { data?: { accessToken?: string; refreshToken?: string }; accessToken?: string; refreshToken?: string }) => {
+        onSuccess: (data: { data?: { user?: any; accessToken?: string; refreshToken?: string }; user?: any; accessToken?: string; refreshToken?: string }) => {
           toast.success("Profile updated");
           const resData = data.data ?? data;
-          if (resData.accessToken) {
-            updateSession();
+          if (resData.accessToken && resData.user) {
+            setSession(resData.user, resData.accessToken, resData.refreshToken ?? "");
           }
+          updateSession();
           setCurrentPassword("");
           setNewPassword("");
           setConfirmPassword("");
