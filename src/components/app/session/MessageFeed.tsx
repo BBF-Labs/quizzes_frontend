@@ -28,9 +28,11 @@ export function MessageFeed({
   onAction,
   onRetryMessage,
   onEditMessage,
+  onRateMessage,
 }: MessageFeedProps & {
   onRetryMessage?: (id: string, content: string) => void;
   onEditMessage?: (id: string, newContent: string) => void;
+  onRateMessage?: (messageId: string, rating: 1 | -1) => void;
 }) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -93,6 +95,7 @@ export function MessageFeed({
             message={msg}
             onRetry={onRetryMessage}
             onEdit={onEditMessage}
+            onRate={onRateMessage}
           />
         );
       })}

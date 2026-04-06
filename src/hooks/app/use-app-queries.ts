@@ -42,3 +42,26 @@ export const useApp = (sessionId: string, enabled = true) => {
 // Aliases for backward compatibility
 export const useSession = useApp;
 export const useSessions = useApps;
+
+export interface AnalyticsSummary {
+  sessionsByPhase: Record<string, number>;
+  totalMessagesSent: number;
+  artifactsByType: Record<string, number>;
+  avgSessionDurationMinutes: number;
+  studyDaysThisMonth: number;
+  totalSessions: number;
+  completedSessions: number;
+  positiveRatings: number;
+  negativeRatings: number;
+}
+
+export const useAnalyticsSummary = () => {
+  return useQuery({
+    queryKey: queryKeys.analytics.summary(),
+    queryFn: async () => {
+      const res = await api.get<{ data: AnalyticsSummary }>("/app/analytics/summary");
+      return res.data.data;
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+};
