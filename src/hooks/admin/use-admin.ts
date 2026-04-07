@@ -21,6 +21,7 @@ export interface IAudienceEntry {
   role?: string;
   isSubscribed?: boolean;
   isBanned?: boolean;
+  banReason?: string;
 }
 
 export interface IPaginatedAudience {

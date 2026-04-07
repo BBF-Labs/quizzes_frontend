@@ -16,6 +16,9 @@ import {
   X,
   Check,
   Settings,
+  FileJson,
+  AlertCircle,
+  CheckCircle2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -798,6 +801,211 @@ function EditInfoPanel({
   );
 }
 
+// ─── JSON Import Panel ────────────────────────────────────────────────────────
+
+interface ParsedImportQuestion {
+  question: string;
+  type: string;
+  options?: string[];
+  answer: string;
+  explanation?: string;
+  hint?: string;
+}
+
+function JsonImportPanel({ quizId, onDone }: { quizId: string; onDone: () => void }) {
+  const addMutation = useAdminAddQuizQuestion(quizId);
+  const [jsonRaw, setJsonRaw] = useState("");
+  const [parsed, setParsed] = useState<ParsedImportQuestion[] | null>(null);
+  const [parseError, setParseError] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+
+  const handleParse = () => {
+    setParseError(null);
+    setParsed(null);
+    try {
+      const obj = JSON.parse(jsonRaw);
+      const questions: ParsedImportQuestion[] = Array.isArray(obj) ? obj : obj.questions;
+      if (!Array.isArray(questions)) throw new Error('JSON must be an array or have a "questions" array');
+      for (const [i, q] of questions.entries()) {
+        if (!q.question) throw new Error(`Question ${i + 1} missing "question" field`);
+        if (!q.type) throw new Error(`Question ${i + 1} missing "type" field`);
+        if (!q.answer) throw new Error(`Question ${i + 1} missing "answer" field`);
+      }
+      setParsed(questions);
+    } catch (err: any) {
+      setParseError(err.message ?? "Invalid JSON");
+    }
+  };
+
+  const handleImport = async () => {
+    if (!parsed) return;
+    setImporting(true);
+    try {
+      for (const q of parsed) {
+        await addMutation.mutateAsync({
+          lectureIndex: 0,
+          topicIndex: 0,
+          type: q.type,
+          question: q.question,
+          options: q.options ?? [],
+          answer: q.answer,
+          explanation: q.explanation || undefined,
+          hint: q.hint || undefined,
+        });
+      }
+      toast.success(`${parsed.length} question${parsed.length !== 1 ? "s" : ""} imported`);
+      onDone();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? "Import failed");
+      setImporting(false);
+    }
+  };
+
+  const QUESTION_TYPE_COLORS: Record<string, string> = {
+    mcq:           "text-blue-400 border-blue-400/30 bg-blue-400/10",
+    true_false:    "text-green-400 border-green-400/30 bg-green-400/10",
+    short_answer:  "text-amber-400 border-amber-400/30 bg-amber-400/10",
+    essay:         "text-purple-400 border-purple-400/30 bg-purple-400/10",
+    fill_in_blank: "text-cyan-400 border-cyan-400/30 bg-cyan-400/10",
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="border border-primary/30 bg-primary/5 p-4 space-y-3"
+    >
+      <div className="flex items-center gap-2">
+        <FileJson className="size-3.5 text-primary" />
+        <p className="text-[11px] font-mono uppercase tracking-widest font-bold">JSON Import</p>
+      </div>
+      <p className="text-[10px] font-mono text-muted-foreground/60">
+        Paste a JSON array of questions or{" "}
+        <span className="font-mono text-muted-foreground/40">{"{ questions: [...] }"}</span>.
+        All questions are added to lecture 0 / topic 0.
+      </p>
+
+      <textarea
+        value={jsonRaw}
+        onChange={(e) => { setJsonRaw(e.target.value); setParsed(null); setParseError(null); }}
+        rows={10}
+        placeholder={`[\n  {\n    "question": "What is a process?",\n    "type": "mcq",\n    "options": ["A running program", "A file", "A thread", "Memory"],\n    "answer": "A running program"\n  }\n]`}
+        className="w-full border border-border/50 bg-background/40 px-3 py-2 text-[11px] font-mono focus:outline-none focus:border-primary/50 resize-none transition-colors leading-relaxed"
+      />
+
+      {parseError && (
+        <div className="flex items-start gap-2 border border-destructive/30 bg-destructive/10 px-3 py-2">
+          <AlertCircle className="size-3.5 text-destructive shrink-0 mt-0.5" />
+          <p className="text-[10px] font-mono text-destructive">{parseError}</p>
+        </div>
+      )}
+
+      {parsed && (
+        <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="border border-border/40 bg-card/30 p-3 space-y-2">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="size-3.5 text-green-400 shrink-0" />
+            <p className="text-[10px] font-mono text-green-400 uppercase tracking-widest">
+              Valid — {parsed.length} question{parsed.length !== 1 ? "s" : ""} ready to import
+            </p>
+          </div>
+          <div className="space-y-1 max-h-40 overflow-y-auto">
+            {parsed.map((q, i) => (
+              <div key={i} className="flex items-start gap-2 py-1 border-t border-border/20">
+                <span className="text-[9px] font-mono text-muted-foreground/30 w-5 shrink-0 pt-px">{i + 1}.</span>
+                <span className={`text-[8px] font-mono uppercase tracking-widest px-1 py-0.5 border shrink-0 ${QUESTION_TYPE_COLORS[q.type] ?? "text-muted-foreground border-border/30"}`}>
+                  {q.type.replace("_", " ")}
+                </span>
+                <p className="text-[11px] font-mono text-foreground/80 line-clamp-1 flex-1">{q.question}</p>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      <div className="flex justify-end gap-2 pt-1">
+        <button
+          type="button"
+          onClick={onDone}
+          className="px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest border border-border/40 hover:bg-secondary/20 transition-colors"
+        >
+          Cancel
+        </button>
+        {!parsed ? (
+          <button
+            type="button"
+            onClick={handleParse}
+            disabled={!jsonRaw.trim()}
+            className="px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest border border-primary/40 text-primary hover:bg-primary/10 disabled:opacity-40 transition-all"
+          >
+            Validate JSON
+          </button>
+        ) : (
+          <Button
+            size="sm"
+            className="h-8 gap-1.5 text-[10px] font-mono"
+            onClick={handleImport}
+            disabled={importing}
+          >
+            {importing ? <Loader2 className="size-3 animate-spin" /> : <FileJson className="size-3" />}
+            Import {parsed.length} Question{parsed.length !== 1 ? "s" : ""}
+          </Button>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── Empty content state ──────────────────────────────────────────────────────
+
+function EmptyContentState({ quizId }: { quizId: string }) {
+  const [showAdd, setShowAdd] = useState(false);
+  const addMutation = useAdminAddQuizQuestion(quizId);
+
+  const handleAdd = async (form: QuestionFormState) => {
+    try {
+      await addMutation.mutateAsync({
+        lectureIndex: 0,
+        topicIndex: 0,
+        type: form.type,
+        question: form.question,
+        options: form.options,
+        answer: form.answer,
+        explanation: form.explanation || undefined,
+        hint: form.hint || undefined,
+      });
+      toast.success("Question added");
+      setShowAdd(false);
+    } catch {
+      toast.error("Failed to add question");
+    }
+  };
+
+  if (showAdd) {
+    return (
+      <QuestionForm
+        initial={blankForm()}
+        onSave={handleAdd}
+        onCancel={() => setShowAdd(false)}
+        saving={addMutation.isPending}
+      />
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-center gap-4 py-12 border border-border/20 text-center">
+      <p className="text-[11px] font-mono text-muted-foreground/40">
+        No content yet — use AI Generate or JSON Import above, or add a question manually.
+      </p>
+      <button
+        onClick={() => setShowAdd(true)}
+        className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest border border-primary/40 text-primary hover:bg-primary/10 transition-all"
+      >
+        <Plus className="size-3" /> Add First Question
+      </button>
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminQuizDetailPage({
@@ -812,6 +1020,7 @@ export default function AdminQuizDetailPage({
   const archiveMutation = useAdminArchiveQuiz();
   const [showAI, setShowAI] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const [showJson, setShowJson] = useState(false);
   const [openLectures, setOpenLectures] = useState<Set<number>>(new Set([0]));
 
   const toggleLecture = (i: number) =>
@@ -897,7 +1106,7 @@ export default function AdminQuizDetailPage({
           {/* Actions */}
           <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
             <button
-              onClick={() => { setShowEdit((v) => !v); setShowAI(false); }}
+              onClick={() => { setShowEdit((v) => !v); setShowAI(false); setShowJson(false); }}
               className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest border transition-all ${
                 showEdit
                   ? "border-primary bg-primary/10 text-primary"
@@ -908,7 +1117,7 @@ export default function AdminQuizDetailPage({
               Edit Info
             </button>
             <button
-              onClick={() => { setShowAI((v) => !v); setShowEdit(false); }}
+              onClick={() => { setShowAI((v) => !v); setShowEdit(false); setShowJson(false); }}
               className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest border transition-all ${
                 showAI
                   ? "border-primary bg-primary/10 text-primary"
@@ -917,6 +1126,17 @@ export default function AdminQuizDetailPage({
             >
               <Sparkles className="size-3" />
               AI Generate
+            </button>
+            <button
+              onClick={() => { setShowJson((v) => !v); setShowEdit(false); setShowAI(false); }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest border transition-all ${
+                showJson
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border/40 text-muted-foreground/60 hover:border-primary/40 hover:text-primary"
+              }`}
+            >
+              <FileJson className="size-3" />
+              JSON Import
             </button>
             {quiz.status !== "published" && (
               <Button size="sm" className="h-8 gap-1.5 text-[10px] font-mono" onClick={handlePublish} disabled={publishMutation.isPending}>
@@ -976,6 +1196,11 @@ export default function AdminQuizDetailPage({
         <AIGeneratePanel quizId={id} courseId={quiz.courseId} onDone={() => setShowAI(false)} />
       )}
 
+      {/* JSON import panel */}
+      {showJson && (
+        <JsonImportPanel quizId={id} onDone={() => setShowJson(false)} />
+      )}
+
       {/* Content */}
       <div>
         <div className="border-b border-border/40 pb-2 mb-3 flex items-center justify-between">
@@ -986,9 +1211,7 @@ export default function AdminQuizDetailPage({
         </div>
 
         {!(quiz.lectures ?? []).length ? (
-          <p className="text-[11px] font-mono text-muted-foreground/40 py-12 text-center">
-            No content yet — use AI generation above or add questions manually.
-          </p>
+          <EmptyContentState quizId={id} />
         ) : (
           <div className="space-y-2">
             {(quiz.lectures ?? []).map((l, li) => {

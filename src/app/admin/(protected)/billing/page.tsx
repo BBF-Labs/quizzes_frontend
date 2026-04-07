@@ -14,6 +14,14 @@ import {
   useAdminPackages,
   type CreatePromoCodePayload,
 } from "@/hooks/admin/use-billing-admin";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { PaginationController } from "@/components/common";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -107,7 +115,7 @@ function PromoCodeRow({
       {/* Status + actions */}
       <div className="flex items-center gap-3">
         <span className={cn(
-          "text-[9px] font-mono uppercase tracking-widest px-1.5 py-0.5 border",
+          "text-[9px] font-mono uppercase tracking-widest px-1.5 py-0.5 border rounded-(--radius)",
           code.isActive && !isExpired
             ? "text-green-400 border-green-400/30 bg-green-400/10"
             : "text-muted-foreground border-border/30 bg-card/30",
@@ -341,39 +349,62 @@ function PromoCodesTab() {
 
 // ─── Payments Section ─────────────────────────────────────────────────────────
 
+const PAYMENTS_LIMIT = 20;
+
 function PaymentsTab() {
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
+  const [page, setPage] = useState(1);
 
-  const { data: payments = [], isLoading } = useAdminPayments({
+  const { data: paymentsData, isLoading } = useAdminPayments({
     status: statusFilter || undefined,
     type: typeFilter || undefined,
+    page,
+    limit: PAYMENTS_LIMIT,
   });
 
-  const filterCls = "border border-border/50 bg-background/40 px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest focus:outline-none focus:border-primary/50 transition-colors";
+  const payments = paymentsData?.data ?? [];
+  const total = paymentsData?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAYMENTS_LIMIT));
+
+  const handleFilterChange = (key: "status" | "type", value: string) => {
+    setPage(1);
+    if (key === "status") setStatusFilter(value === "all" ? "" : value);
+    else setTypeFilter(value === "all" ? "" : value);
+  };
 
   return (
     <div className="space-y-4">
       {/* Filters */}
       <div className="flex items-center gap-3">
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={filterCls}>
-          <option value="">All Statuses</option>
-          <option value="success">Success</option>
-          <option value="failed">Failed</option>
-          <option value="pending">Pending</option>
-          <option value="processing">Processing</option>
-          <option value="abandoned">Abandoned</option>
-          <option value="reversed">Reversed</option>
-        </select>
-        <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className={filterCls}>
-          <option value="">All Types</option>
-          <option value="plan">Plan</option>
-          <option value="credits">Credits</option>
-          <option value="course">Course</option>
-          <option value="quiz">Quiz</option>
-        </select>
+        <Select value={statusFilter || "all"} onValueChange={(v) => handleFilterChange("status", v)}>
+          <SelectTrigger className="w-auto min-w-[140px] rounded-(--radius) bg-background/40 border-border/50 font-mono text-[10px] uppercase tracking-widest focus-visible:ring-0 focus:ring-0">
+            <SelectValue placeholder="All Statuses" />
+          </SelectTrigger>
+          <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-[10px] uppercase">
+            <SelectItem value="all" className="rounded-(--radius) font-mono text-[10px] uppercase">All Statuses</SelectItem>
+            <SelectItem value="success" className="rounded-(--radius) font-mono text-[10px] uppercase">Success</SelectItem>
+            <SelectItem value="failed" className="rounded-(--radius) font-mono text-[10px] uppercase">Failed</SelectItem>
+            <SelectItem value="pending" className="rounded-(--radius) font-mono text-[10px] uppercase">Pending</SelectItem>
+            <SelectItem value="processing" className="rounded-(--radius) font-mono text-[10px] uppercase">Processing</SelectItem>
+            <SelectItem value="abandoned" className="rounded-(--radius) font-mono text-[10px] uppercase">Abandoned</SelectItem>
+            <SelectItem value="reversed" className="rounded-(--radius) font-mono text-[10px] uppercase">Reversed</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={typeFilter || "all"} onValueChange={(v) => handleFilterChange("type", v)}>
+          <SelectTrigger className="w-auto min-w-[120px] rounded-(--radius) bg-background/40 border-border/50 font-mono text-[10px] uppercase tracking-widest focus-visible:ring-0 focus:ring-0">
+            <SelectValue placeholder="All Types" />
+          </SelectTrigger>
+          <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-[10px] uppercase">
+            <SelectItem value="all" className="rounded-(--radius) font-mono text-[10px] uppercase">All Types</SelectItem>
+            <SelectItem value="plan" className="rounded-(--radius) font-mono text-[10px] uppercase">Plan</SelectItem>
+            <SelectItem value="credits" className="rounded-(--radius) font-mono text-[10px] uppercase">Credits</SelectItem>
+            <SelectItem value="course" className="rounded-(--radius) font-mono text-[10px] uppercase">Course</SelectItem>
+            <SelectItem value="quiz" className="rounded-(--radius) font-mono text-[10px] uppercase">Quiz</SelectItem>
+          </SelectContent>
+        </Select>
         <p className="text-[10px] font-mono text-muted-foreground/40 ml-auto">
-          {payments.length} result{payments.length !== 1 ? "s" : ""}
+          {total} result{total !== 1 ? "s" : ""}
         </p>
       </div>
 
@@ -395,40 +426,47 @@ function PaymentsTab() {
       )}
 
       {!isLoading && payments.length > 0 && (
-        <div className="space-y-1.5">
+        <div className="border border-border/30">
           {/* Header */}
-          <div className="flex items-center gap-4 px-4 py-1">
+          <div className="flex items-center gap-4 px-4 py-1 border-b border-border/20">
             <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40 flex-1">Reference</span>
             <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40 w-20 text-right">Amount</span>
             <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40 w-16">Type</span>
             <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40 w-24">Date</span>
             <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40 w-24">Status</span>
           </div>
-          {payments.map((p) => (
-            <div
-              key={p._id}
-              className="flex items-center gap-4 border border-border/30 bg-card/30 px-4 py-2.5 hover:border-border/50 transition-all"
-            >
-              <span className="font-mono text-[11px] text-foreground/80 flex-1 truncate">
-                {p.reference}
-              </span>
-              <span className="font-mono font-bold text-[12px] w-20 text-right">
-                GHS {(p.amount / 100).toFixed(2)}
-              </span>
-              <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/60 w-16">
-                {p.type}
-              </span>
-              <span className="text-[10px] font-mono text-muted-foreground/50 w-24">
-                {new Date(p.createdAt).toLocaleDateString()}
-              </span>
-              <span className={cn(
-                "text-[9px] font-mono uppercase tracking-widest px-1.5 py-0.5 border w-24 text-center",
-                PAYMENT_STATUS_COLORS[p.status] ?? "text-muted-foreground border-border/30",
-              )}>
-                {p.status}
-              </span>
-            </div>
-          ))}
+          <div className="divide-y divide-border/20">
+            {payments.map((p) => (
+              <div
+                key={p._id}
+                className="flex items-center gap-4 bg-card/30 px-4 py-2.5 hover:bg-card/50 transition-all"
+              >
+                <span className="font-mono text-[11px] text-foreground/80 flex-1 truncate">
+                  {p.reference}
+                </span>
+                <span className="font-mono font-bold text-[12px] w-20 text-right">
+                  GHS {(p.amount / 100).toFixed(2)}
+                </span>
+                <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/60 w-16">
+                  {p.type}
+                </span>
+                <span className="text-[10px] font-mono text-muted-foreground/50 w-24">
+                  {new Date(p.createdAt).toLocaleDateString()}
+                </span>
+                <span className={cn(
+                  "text-[9px] font-mono uppercase tracking-widest px-1.5 py-0.5 border rounded-(--radius) w-24 text-center",
+                  PAYMENT_STATUS_COLORS[p.status] ?? "text-muted-foreground border-border/30",
+                )}>
+                  {p.status}
+                </span>
+              </div>
+            ))}
+          </div>
+          <PaginationController
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
         </div>
       )}
     </div>
@@ -489,7 +527,7 @@ function PackagesTab() {
                     GHS {pkg.priceGHS ?? pkg.price}
                   </p>
                   <span className={cn(
-                    "text-[8px] font-mono uppercase tracking-widest px-1 py-0.5 border",
+                    "text-[8px] font-mono uppercase tracking-widest px-1 py-0.5 border rounded-(--radius)",
                     pkg.isActive
                       ? "text-green-400 border-green-400/30 bg-green-400/10"
                       : "text-muted-foreground border-border/30",
