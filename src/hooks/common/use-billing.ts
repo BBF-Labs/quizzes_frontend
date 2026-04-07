@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { queryKeys } from "@/lib/query-keys";
+import { useAuth } from "@/contexts/auth-context";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -114,12 +115,14 @@ export function useCreditBundles() {
 // ─── Billing Status ──────────────────────────────────────────────────────────
 
 export function useBillingStatus() {
+  const { user } = useAuth();
   return useQuery({
     queryKey: queryKeys.billing.status(),
     queryFn: async () => {
       const res = await api.get<{ data: BillingStatus }>("/subscriptions/users/me/billing-status");
       return res.data.data;
     },
+    enabled: !!user,
     staleTime: 1000 * 30,
     refetchOnWindowFocus: true,
   });
@@ -128,12 +131,14 @@ export function useBillingStatus() {
 // ─── Streak ──────────────────────────────────────────────────────────────────
 
 export function useStreakStatus() {
+  const { user } = useAuth();
   return useQuery({
     queryKey: queryKeys.billing.streak(),
     queryFn: async () => {
       const res = await api.get<{ data: StreakStatus }>("/subscriptions/streak/status");
       return res.data.data;
     },
+    enabled: !!user,
     staleTime: 1000 * 60 * 5,
   });
 }
@@ -154,12 +159,14 @@ export function useStreakFreeze() {
 // ─── Student Verification ────────────────────────────────────────────────────
 
 export function useStudentVerifyStatus() {
+  const { user } = useAuth();
   return useQuery({
     queryKey: queryKeys.billing.studentVerify(),
     queryFn: async () => {
       const res = await api.get<{ data: StudentVerifyStatus | null }>("/subscriptions/student-verify/status");
       return res.data.data ?? { status: "unverified", studentEmail: null, expiresAt: null } as StudentVerifyStatus;
     },
+    enabled: !!user,
     staleTime: 1000 * 60 * 5,
   });
 }

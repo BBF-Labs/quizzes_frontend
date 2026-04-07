@@ -10,9 +10,17 @@ import { Button } from "@/components/ui/button";
 import { Accordion } from "@/components/ui/accordion";
 import { api } from "@/lib/api";
 import { useBreadcrumbStore } from "@/store/breadcrumb";
-import type { QuizDetail, QuizLecture, QuizTopic, QuizQuestion } from "@/types/session";
+import type {
+  QuizDetail,
+  QuizLecture,
+  QuizTopic,
+  QuizQuestion,
+} from "@/types/session";
 
-import { LectureSection, QuizStatsBar } from "@/components/app/quizzes/quiz-content";
+import {
+  LectureSection,
+  QuizStatsBar,
+} from "@/components/app/quizzes/quiz-content";
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -93,10 +101,32 @@ export default function QuizDetailPage({
                     .join(" · ")}
                 </p>
               )}
-              <QuizStatsBar
-                questionCount={totalQuestions ?? 0}
-                lectureCount={quiz.lectures.length}
-              />
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
+                <QuizStatsBar
+                  questionCount={totalQuestions ?? 0}
+                  lectureCount={quiz.lectures.length}
+                  className="w-full sm:flex-1"
+                />
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 sm:flex-none h-8 gap-1.5 text-[10px] font-mono"
+                    onClick={() => router.push("/app")}
+                  >
+                    <BookOpen className="size-3.5" />
+                    Study
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="flex-1 sm:flex-none h-8 gap-1.5 text-[10px] font-mono"
+                    onClick={() => router.push(`/app/quizzes/${id}/take`)}
+                  >
+                    <PlayCircle className="size-3.5" />
+                    Take Quiz
+                  </Button>
+                </div>
+              </div>
             </motion.div>
 
             {/* Lectures */}
@@ -114,49 +144,25 @@ export default function QuizDetailPage({
                 initial="hidden"
                 animate="visible"
               >
-              <Accordion type="multiple" className="grid gap-3">
-                {quiz.lectures.map((lecture, idx) => (
-                  <motion.div
-                    key={`${lecture.lectureTitle}-${idx}`}
-                    variants={{
-                      hidden: { opacity: 0, y: 10 },
-                      visible: {
-                        opacity: 1,
-                        y: 0,
-                        transition: { duration: 0.22 },
-                      },
-                    }}
-                  >
-                    <LectureSection lecture={lecture} index={idx} />
-                  </motion.div>
-                ))}
-              </Accordion>
+                <Accordion type="multiple" className="grid gap-3">
+                  {quiz.lectures.map((lecture, idx) => (
+                    <motion.div
+                      key={`${lecture.lectureTitle}-${idx}`}
+                      variants={{
+                        hidden: { opacity: 0, y: 10 },
+                        visible: {
+                          opacity: 1,
+                          y: 0,
+                          transition: { duration: 0.22 },
+                        },
+                      }}
+                    >
+                      <LectureSection lecture={lecture} index={idx} />
+                    </motion.div>
+                  ))}
+                </Accordion>
               </motion.div>
             )}
-
-            {/* Actions */}
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="flex gap-3 mt-6"
-            >
-              <Button
-                variant="outline"
-                className="flex-1 h-10 gap-2 text-[11px] font-mono"
-                onClick={() => router.push("/app")}
-              >
-                <BookOpen className="size-3.5" />
-                Study with Z
-              </Button>
-              <Button
-                className="flex-1 h-10 gap-2 text-[11px] font-mono"
-                onClick={() => router.push(`/app/quizzes/${id}/take`)}
-              >
-                <PlayCircle className="size-3.5" />
-                Take Quiz
-              </Button>
-            </motion.div>
           </>
         )}
       </div>
