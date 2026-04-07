@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Plus, X, Tag, CreditCard, Package2, ToggleLeft, ToggleRight, Trash2 } from "lucide-react";
+import { Plus, X, Tag, CreditCard, Package2, ToggleLeft, ToggleRight, Trash2, Settings2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   useAdminPromoCodes,
@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PaginationController } from "@/components/common";
 
@@ -586,22 +587,24 @@ export default function AdminBillingPage() {
       </motion.div>
 
       {/* Tabs */}
-      <div className="flex border-b border-border/30">
-        {TABS.map(({ key, label, icon: Icon }) => (
-          <button
-            key={key}
-            onClick={() => setTab(key)}
-            className={cn(
-              "flex items-center gap-2 px-4 py-2.5 text-[10px] font-mono uppercase tracking-widest border-b-2 transition-all",
-              tab === key
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground/50 hover:text-muted-foreground",
-            )}
+      <div className="border-b border-border/30 w-full">
+        <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
+          <TabsList
+            variant="line"
+            className="bg-transparent w-auto min-w-full justify-start h-auto px-0 overflow-x-auto overflow-y-hidden no-scrollbar flex-nowrap shrink-0 border-none"
           >
-            <Icon className="size-3" />
-            {label}
-          </button>
-        ))}
+            {TABS.map(({ key, label, icon: Icon }) => (
+              <TabsTrigger
+                key={key}
+                value={key}
+                className="relative rounded-none! border-none bg-transparent data-[state=active]:bg-transparent px-6 pb-4 text-muted-foreground data-[state=active]:text-primary transition-all after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-200"
+              >
+                <Icon className="size-3 mr-1.5" />
+                {label.toUpperCase()}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
       </div>
 
       {/* Tab content */}
