@@ -317,8 +317,12 @@ export default function LibraryPage() {
       const upload = await uploadFile.mutateAsync({ file });
       await createMaterial.mutateAsync({ uploadId: upload._id, title: file.name });
       toast.success("Material uploaded successfully");
-    } catch {
-      toast.error("Failed to upload material");
+    } catch (err: any) {
+      if (err?.response?.status === 402) {
+        toast.error("Daily upload limit reached. Upgrade your plan to upload more materials.");
+      } else {
+        toast.error("Failed to upload material");
+      }
     } finally {
       setIsUploading(false);
       if (e.target) e.target.value = "";
@@ -329,8 +333,12 @@ export default function LibraryPage() {
     try {
       await generateFlashcards.mutateAsync({ materialId });
       toast.success("Flashcard generation started in background");
-    } catch {
-      toast.error("Failed to start generation");
+    } catch (err: any) {
+      if (err?.response?.status === 402) {
+        toast.error("Daily flashcard limit reached. Upgrade your plan or use credits.");
+      } else {
+        toast.error("Failed to start generation");
+      }
     }
   };
 
@@ -338,8 +346,12 @@ export default function LibraryPage() {
     try {
       await generateQuiz.mutateAsync({ materialId });
       toast.success("Quiz generation started in background");
-    } catch {
-      toast.error("Failed to start generation");
+    } catch (err: any) {
+      if (err?.response?.status === 402) {
+        toast.error("Daily quiz limit reached. Upgrade your plan or use credits.");
+      } else {
+        toast.error("Failed to start generation");
+      }
     }
   };
 
@@ -347,8 +359,12 @@ export default function LibraryPage() {
     try {
       await generateMindMap.mutateAsync({ materialId });
       toast.success("Mind Map generation started in background");
-    } catch {
-      toast.error("Failed to start generation");
+    } catch (err: any) {
+      if (err?.response?.status === 402) {
+        toast.error("Daily mind map limit reached. Upgrade your plan or use credits.");
+      } else {
+        toast.error("Failed to start generation");
+      }
     }
   };
 

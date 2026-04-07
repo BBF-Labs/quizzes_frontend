@@ -86,8 +86,12 @@ export function GenerationDialog({
       });
       setSelectedMaterialId(material.id);
       toast.success("Material uploaded and selected!", { id: toastId });
-    } catch (err) {
-      toast.error("Upload failed. Please try again.", { id: toastId });
+    } catch (err: any) {
+      if (err?.response?.status === 402) {
+        toast.error("Daily upload limit reached. Upgrade your plan to upload more materials.", { id: toastId });
+      } else {
+        toast.error("Upload failed. Please try again.", { id: toastId });
+      }
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -113,8 +117,13 @@ export function GenerationDialog({
       // Reset state for next time
       setSelectedMaterialId(null);
       setSearchQuery("");
-    } catch (err) {
-      toast.error("Failed to start generation. Please try again.");
+    } catch (err: any) {
+      if (err?.response?.status === 402) {
+        const featureLabel = type === "quiz" ? "quiz" : type === "flashcards" ? "flashcard" : "mind map";
+        toast.error(`Daily ${featureLabel} limit reached. Upgrade your plan or use credits.`);
+      } else {
+        toast.error("Failed to start generation. Please try again.");
+      }
     } finally {
       setIsGenerating(false);
     }
