@@ -14,6 +14,7 @@ import {
   Sparkles,
   Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useSystemQuiz, useStartSystemQuiz, useConfirmSystemQuizAttempt } from "@/hooks/app/use-quizzes";
 import { useGradeQuizAnswers } from "@/hooks/app/use-app-library";
@@ -199,7 +200,17 @@ export default function SystemQuizTakePage({
 
       setStarted(true);
     } catch (err: any) {
-      // Handle "Attempt limit reached" via toast or integrated error state
+      if (err.response?.status === 403) {
+        toast.error("Quiz attempt limit reached.", {
+          description: "Upgrade to premium for unlimited attempts and advanced Z grading.",
+          action: {
+            label: "View Plans",
+            onClick: () => router.push("/app/billing"),
+          },
+        });
+      } else {
+        toast.error(err.message || "Failed to start quiz");
+      }
     }
   };
 

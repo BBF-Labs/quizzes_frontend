@@ -11,10 +11,14 @@ import {
   ChevronRight,
   PlayCircle,
   Tag,
+  AlertCircle,
+  Sparkles,
+  Zap,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Accordion } from "@/components/ui/accordion";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSystemQuiz } from "@/hooks/app/use-quizzes";
 import type { QuizLecture, QuizTopic, QuizQuestion } from "@/types/session";
 import { useState } from "react";
@@ -95,6 +99,29 @@ export default function SystemQuizDetailPage({
                 </p>
               )}
 
+              {quiz.remainingAttempts === 0 && (
+                <Alert className="mb-6 border-primary/20 bg-primary/5">
+                  <Zap className="size-4 text-primary" />
+                  <AlertTitle className="text-[11px] font-mono uppercase tracking-widest font-bold">
+                    Attempt Limit Reached
+                  </AlertTitle>
+                  <AlertDescription className="text-[11px] font-mono mt-1">
+                    You've reached your free attempt limit for this 12-hour window. Get <strong>unlimited attempts</strong> and more with a premium subscription.
+                    <div className="mt-3">
+                      <Button 
+                        size="sm" 
+                        variant="default" 
+                        className="h-7 text-[10px] px-3 font-mono gap-1.5"
+                        onClick={() => router.push("/app/billing")}
+                      >
+                        <Sparkles className="size-3" />
+                        View Plans
+                      </Button>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
+
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
                 <QuizStatsBar
                   questionCount={totalQuestions}
@@ -117,6 +144,7 @@ export default function SystemQuizDetailPage({
                     size="sm"
                     className="flex-1 sm:flex-none h-8 gap-1.5 text-[10px] font-mono"
                     onClick={() => router.push(`/quizzes/${id}/take`)}
+                    disabled={quiz.remainingAttempts === 0}
                   >
                     <PlayCircle className="size-3.5" />
                     Take Quiz
