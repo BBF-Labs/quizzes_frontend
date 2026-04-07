@@ -112,6 +112,12 @@ export function Footer() {
             >
               Privacy Policy
             </Link>
+            <Link
+              href="/terms"
+              className="text-[13px] font-mono text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Terms &amp; Conditions
+            </Link>
           </div>
 
           {/* Column 4: Subscribe */}
