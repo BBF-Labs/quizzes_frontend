@@ -259,6 +259,43 @@ export const useAdminPatchQuiz = (id: string) => {
   });
 };
 
+export const useAdminAddQuizLecture = (quizId: string) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { title: string; description?: string }) => {
+      const res = await api.post<ApiData<AdminQuizDetail>>(
+        `/admin/learning/quizzes/${quizId}/lectures`,
+        data,
+      );
+      return res.data?.data;
+    },
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["admin", "quizzes", quizId] }),
+  });
+};
+
+export const useAdminAddQuizTopic = (quizId: string) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      lectureIndex,
+      ...data
+    }: {
+      lectureIndex: number;
+      title: string;
+      description?: string;
+    }) => {
+      const res = await api.post<ApiData<AdminQuizDetail>>(
+        `/admin/learning/quizzes/${quizId}/lectures/${lectureIndex}/topics`,
+        data,
+      );
+      return res.data?.data;
+    },
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["admin", "quizzes", quizId] }),
+  });
+};
+
 export const useAdminAddQuizQuestion = (quizId: string) => {
   const qc = useQueryClient();
   return useMutation({

@@ -15,7 +15,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useSystemQuiz } from "@/hooks/app/use-quizzes";
+import { useSystemQuiz, useStartSystemQuiz, useConfirmSystemQuizAttempt } from "@/hooks/app/use-quizzes";
 import { useGradeQuizAnswers } from "@/hooks/app/use-app-library";
 import { useAuth } from "@/contexts/auth-context";
 import {
@@ -163,6 +163,8 @@ export default function SystemQuizTakePage({
   const { data: quiz, isLoading, error } = useSystemQuiz(id);
   const { isAuthenticated } = useAuth();
   const gradeQuiz = useGradeQuizAnswers();
+  const startQuiz = useStartSystemQuiz();
+  const confirmQuiz = useConfirmSystemQuizAttempt();
 
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [current, setCurrent] = useState(0);
@@ -181,19 +183,24 @@ export default function SystemQuizTakePage({
   );
   const [config, setConfig] = useState<QuizConfig | null>(null);
 
-  const handleStart = (newConfig: QuizConfig) => {
-    if (!quiz) return;
-    setConfig(newConfig);
-    const flat = flattenQuestions(quiz.lectures);
-    setQuestions(newConfig.shuffle ? shuffle(flat) : flat);
+  const handleStart = async (newConfig: QuizConfig) => {
+    try {
+      const fullQuiz = await startQuiz.mutateAsync(id);
+      if (!fullQuiz) return;
+      setConfig(newConfig);
+      const flat = flattenQuestions(fullQuiz.lectures);
+      setQuestions(newConfig.shuffle ? shuffle(flat) : flat);
 
-    if (newConfig.timerMode === "total" && newConfig.timerSeconds > 0) {
-      setTimeLeft(newConfig.timerSeconds);
-    } else {
-      setTimeLeft(null);
+      if (newConfig.timerMode === "total" && newConfig.timerSeconds > 0) {
+        setTimeLeft(newConfig.timerSeconds);
+      } else {
+        setTimeLeft(null);
+      }
+
+      setStarted(true);
+    } catch (err: any) {
+      // Handle "Attempt limit reached" via toast or integrated error state
     }
-
-    setStarted(true);
   };
 
   // Countdown timer
@@ -225,9 +232,14 @@ export default function SystemQuizTakePage({
     [q, immediateResults, config?.feedbackMode],
   );
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (current < questions.length - 1) setCurrent((c) => c + 1);
-    else setDone(true);
+    else {
+      try {
+        await confirmQuiz.mutateAsync(id);
+      } catch {}
+      setDone(true);
+    }
   };
 
   const handlePrev = () => setCurrent((c) => Math.max(0, c - 1));
@@ -351,6 +363,8 @@ export default function SystemQuizTakePage({
               : "deferred",
           }}
           onStart={handleStart}
+          isLoading={startQuiz.isPending}
+          error={startQuiz.error as Error | null}
         />
       </div>
     );

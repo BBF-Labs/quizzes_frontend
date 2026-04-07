@@ -266,6 +266,23 @@ export const useGenerateQuiz = () => {
   });
 };
 
+export const useStartQuiz = () =>
+  useMutation({
+    mutationFn: async (quizId: string) => {
+      const res = await api.post<ApiData<QuizDetail>>(
+        `/app/quizzes/${quizId}/start`,
+      );
+      return res.data.data;
+    },
+  });
+
+export const useConfirmQuizAttempt = () =>
+  useMutation({
+    mutationFn: async (quizId: string) => {
+      await api.post(`/app/quizzes/${quizId}/confirm-attempt`);
+    },
+  });
+
 export const useGradeQuizAnswers = () =>
   useMutation({
     mutationFn: async (data: {

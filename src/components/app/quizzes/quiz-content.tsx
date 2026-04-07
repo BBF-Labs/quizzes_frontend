@@ -56,7 +56,11 @@ interface TopicSectionProps {
 }
 
 export function TopicSection({ topic }: TopicSectionProps) {
-  const questions = topic.questions || [];
+  const rawQuestions = topic.questions || [];
+  const hasFullQuestions =
+    rawQuestions.length > 0 &&
+    typeof rawQuestions[0] !== "string" &&
+    (rawQuestions[0] as any).question;
 
   return (
     <div className="border-l border-border/50 ml-3 pl-4 py-2 space-y-4">
@@ -66,15 +70,20 @@ export function TopicSection({ topic }: TopicSectionProps) {
           {topic.topicTitle}
         </h4>
         <Badge variant="secondary" className="text-[8px] h-4 px-1.5">
-          {questions.length} Questions
+          {topic.questionCount ?? rawQuestions.length} Questions
         </Badge>
       </div>
-      
-      <div className="grid gap-1">
-        {questions.map((q, idx) => (
-          <QuestionRow key={q.id || `q-${idx}`} q={q} />
-        ))}
-      </div>
+
+      {hasFullQuestions && (
+        <div className="grid gap-1">
+          {rawQuestions.map((q, idx) => (
+            <QuestionRow
+              key={(q as any).id || (q as any)._id || `q-${idx}`}
+              q={q as QuizQuestion}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
