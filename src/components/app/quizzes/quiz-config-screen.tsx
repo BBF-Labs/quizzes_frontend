@@ -10,6 +10,7 @@ import {
   Target,
   ChevronRight,
   BookOpen,
+  Sparkles,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import type { QuizDetail, QuizConfig } from "@/types/session";
+import { useRouter } from "next/navigation";
 
 interface Props {
   quiz: QuizDetail;
@@ -59,6 +61,9 @@ export function QuizConfigScreen({
   const [selectedKeys, setSelectedKeys] = useState<string[]>(
     initialConfig?.selectedKeys || allTopicKeys(quiz)
   );
+
+  const router = useRouter();
+
   const [feedbackMode, setFeedbackMode] = useState<"immediate" | "deferred">(
     initialConfig?.feedbackMode || "immediate"
   );
@@ -174,8 +179,8 @@ export function QuizConfigScreen({
                           allOn
                             ? "border-primary bg-primary"
                             : someOn
-                            ? "border-primary/50 bg-primary/20"
-                            : "border-border/50"
+                              ? "border-primary/50 bg-primary/20"
+                              : "border-border/50"
                         }`}
                       >
                         {(allOn || someOn) && (
@@ -186,7 +191,12 @@ export function QuizConfigScreen({
                         {l.lectureTitle}
                       </span>
                       <span className="text-[9px] font-mono text-muted-foreground/40">
-                        {l.topics.reduce((s, t) => s + (t.questionCount ?? t.questions?.length ?? 0), 0)} Qs
+                        {l.topics.reduce(
+                          (s, t) =>
+                            s + (t.questionCount ?? t.questions?.length ?? 0),
+                          0,
+                        )}{" "}
+                        Qs
                       </span>
                     </button>
                     {l.topics.length > 1 && (
@@ -203,7 +213,9 @@ export function QuizConfigScreen({
                             >
                               <span
                                 className={`size-3 border shrink-0 flex items-center justify-center ${
-                                  on ? "border-primary bg-primary" : "border-border/40"
+                                  on
+                                    ? "border-primary bg-primary"
+                                    : "border-border/40"
                                 }`}
                               >
                                 {on && (
@@ -214,7 +226,7 @@ export function QuizConfigScreen({
                                 {t.topicTitle}
                               </span>
                               <span className="text-[9px] font-mono text-muted-foreground/30">
-                                {(t.questionCount ?? t.questions?.length ?? 0)}Q
+                                {t.questionCount ?? t.questions?.length ?? 0}Q
                               </span>
                             </button>
                           );
@@ -301,7 +313,11 @@ export function QuizConfigScreen({
                       : "text-muted-foreground/60 hover:text-foreground"
                   }`}
                 >
-                  {m === "none" ? "None" : m === "per_question" ? "Per Q" : "Total"}
+                  {m === "none"
+                    ? "None"
+                    : m === "per_question"
+                      ? "Per Q"
+                      : "Total"}
                 </button>
               ))}
             </div>
@@ -402,7 +418,10 @@ export function QuizConfigScreen({
                 set: setAllowSkip,
               },
             ].map((opt) => (
-              <div key={opt.label} className="flex items-center justify-between">
+              <div
+                key={opt.label}
+                className="flex items-center justify-between"
+              >
                 <div>
                   <p className="text-[11px] font-bold font-mono uppercase">
                     {opt.label}
@@ -450,7 +469,24 @@ export function QuizConfigScreen({
                 Error Starting Quiz
               </p>
               <p className="text-[10px] font-mono text-destructive/60 mt-0.5 leading-relaxed">
-                {error.message}
+                {error.message.includes("403") ? (
+                  <>
+                    You've reached your free attempt limit for this 12-hour
+                    window. Get <strong>unlimited attempts</strong> and more
+                    with a premium subscription.
+                    <div className="mt-3">
+                      <Button
+                        className="w-full h-12 text-[11px] font-mono font-black uppercase tracking-[0.2em] mt-2 shadow-lg shadow-primary/10"
+                        onClick={() => router.push("/app/billing")}
+                      >
+                        <Sparkles className="size-3" />
+                        View Plans
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  error.message
+                )}
               </p>
             </div>
           </div>
