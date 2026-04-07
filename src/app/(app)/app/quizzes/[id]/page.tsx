@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { use } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { BookOpen, ChevronDown, ChevronRight, PlayCircle } from "lucide-react";
+import { BookOpen, PlayCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Accordion } from "@/components/ui/accordion";
@@ -86,41 +86,17 @@ export default function QuizDetailPage({
               animate={{ opacity: 1, y: 0 }}
               className="mb-8"
             >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  {(quiz.courseTitle || quiz.courseCode) && (
-                    <p className="mb-2 text-[11px] font-mono text-muted-foreground/60">
-                      {[quiz.courseTitle, quiz.courseCode]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </p>
-                  )}
-                  <QuizStatsBar
-                    questionCount={totalQuestions ?? 0}
-                    lectureCount={quiz.lectures.length}
-                    className="flex-1"
-                  />
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 gap-1 text-[10px] font-mono"
-                    onClick={() => router.push("/app")}
-                  >
-                    <BookOpen className="size-3" />
-                    Study
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="h-7 gap-1 text-[10px] font-mono"
-                    onClick={() => router.push(`/app/quizzes/${id}/take`)}
-                  >
-                    <PlayCircle className="size-3" />
-                    Take Quiz
-                  </Button>
-                </div>
-              </div>
+              {(quiz.courseTitle || quiz.courseCode) && (
+                <p className="mb-2 text-[11px] font-mono text-muted-foreground/60">
+                  {[quiz.courseTitle, quiz.courseCode]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </p>
+              )}
+              <QuizStatsBar
+                questionCount={totalQuestions ?? 0}
+                lectureCount={quiz.lectures.length}
+              />
             </motion.div>
 
             {/* Lectures */}
@@ -157,6 +133,30 @@ export default function QuizDetailPage({
               </Accordion>
               </motion.div>
             )}
+
+            {/* Actions */}
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="flex gap-3 mt-6"
+            >
+              <Button
+                variant="outline"
+                className="flex-1 h-10 gap-2 text-[11px] font-mono"
+                onClick={() => router.push("/app")}
+              >
+                <BookOpen className="size-3.5" />
+                Study with Z
+              </Button>
+              <Button
+                className="flex-1 h-10 gap-2 text-[11px] font-mono"
+                onClick={() => router.push(`/app/quizzes/${id}/take`)}
+              >
+                <PlayCircle className="size-3.5" />
+                Take Quiz
+              </Button>
+            </motion.div>
           </>
         )}
       </div>
