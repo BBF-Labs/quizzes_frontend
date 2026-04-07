@@ -13,7 +13,10 @@ import {
   useAdminPayments,
   useAdminPackages,
   type CreatePromoCodePayload,
+  type AdminPackage,
 } from "@/hooks/admin/use-billing-admin";
+import { PlanCard, PLAN_DURATION_LABELS } from "@/components/common";
+import { type BillingPackage, type PlanDuration } from "@/hooks/common/use-billing";
 import {
   Select,
   SelectContent,
@@ -42,18 +45,6 @@ const PAYMENT_STATUS_COLORS: Record<string, string> = {
   reversed:   "text-orange-400 border-orange-400/30 bg-orange-400/10",
   ongoing:    "text-cyan-400 border-cyan-400/30 bg-cyan-400/10",
   queued:     "text-purple-400 border-purple-400/30 bg-purple-400/10",
-};
-
-const TIER_LABELS: Record<string, string> = {
-  cooked: "Cooked",
-  cruising: "Cruising",
-  locked_in: "Locked In",
-};
-
-const DURATION_LABELS: Record<string, string> = {
-  daily: "Daily",
-  weekly: "Weekly",
-  semester: "Semester",
 };
 
 // ─── Promo Code Section ───────────────────────────────────────────────────────
@@ -475,24 +466,67 @@ function PaymentsTab() {
 
 // ─── Packages Section ─────────────────────────────────────────────────────────
 
+const DURATIONS: PlanDuration[] = ["daily", "weekly", "semester"];
+const TIER_ORDER: Record<string, number> = { cooked: 0, cruising: 1, locked_in: 2 };
+
+function toCardPackage(pkg: AdminPackage): BillingPackage {
+  return {
+    _id: pkg._id,
+    name: pkg.name,
+    tier: pkg.tier!,
+    durationType: pkg.durationType!,
+    priceGHS: pkg.priceGHS ?? pkg.price,
+    isActive: pkg.isActive,
+    limits: {
+      tutorSessionsPerDay: pkg.limits?.tutorSessionsPerDay ?? null,
+      quizGenerationsPerDay: pkg.limits?.quizGenerationsPerDay ?? null,
+      flashcardSetsPerDay: pkg.limits?.flashcardSetsPerDay ?? null,
+      mindMapsPerDay: pkg.limits?.mindMapsPerDay ?? null,
+      materialUploadsPerDay: pkg.limits?.materialUploadsPerDay ?? null,
+      pdfExport: pkg.limits?.pdfExport ?? false,
+      analyticsLevel: pkg.limits?.analyticsLevel ?? "basic",
+      priorityProcessing: pkg.limits?.priorityProcessing ?? false,
+      earlyFeatureAccess: pkg.limits?.earlyFeatureAccess ?? false,
+      bonusCreditsOnSignup: pkg.limits?.bonusCreditsOnSignup ?? 0,
+    },
+  };
+}
+
 function PackagesTab() {
   const { data: packages = [], isLoading } = useAdminPackages();
+
+  const subPackages = packages.filter((p) => p.tier && p.durationType);
+
+  const grouped = DURATIONS.map((duration) => ({
+    duration,
+    pkgs: subPackages
+      .filter((p) => p.durationType === duration)
+      .sort((a, b) => (TIER_ORDER[a.tier!] ?? 0) - (TIER_ORDER[b.tier!] ?? 0))
+      .map(toCardPackage),
+  }));
 
   return (
     <div className="space-y-3">
       <p className="text-[10px] font-mono text-muted-foreground/40 uppercase tracking-widest">
-        {packages.length} package{packages.length !== 1 ? "s" : ""} · read-only
+        {subPackages.length} package{subPackages.length !== 1 ? "s" : ""} · read-only
       </p>
 
       {isLoading && (
-        <div className="grid grid-cols-3 gap-3">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-40 animate-pulse bg-card/40 border border-border/30" />
+        <div className="space-y-6">
+          {DURATIONS.map((d) => (
+            <div key={d} className="space-y-2">
+              <div className="h-3 w-16 animate-pulse bg-card/40" />
+              <div className="grid grid-cols-3 gap-3">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="h-64 animate-pulse bg-card/40 border border-border/30" />
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       )}
 
-      {!isLoading && packages.length === 0 && (
+      {!isLoading && subPackages.length === 0 && (
         <div className="flex flex-col items-center gap-3 py-12 border border-border/20">
           <Package2 className="size-5 text-muted-foreground/30" />
           <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/40">
@@ -501,73 +535,27 @@ function PackagesTab() {
         </div>
       )}
 
-      {!isLoading && packages.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {packages.map((pkg) => (
-            <div
-              key={pkg._id}
-              className={cn(
-                "border bg-card/30 p-4 space-y-3",
-                pkg.isActive ? "border-border/40" : "border-border/20 opacity-50",
-              )}
-            >
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="font-mono font-bold text-sm">
-                    {pkg.tier ? TIER_LABELS[pkg.tier] : pkg.name}
-                  </p>
-                  {pkg.tier && pkg.durationType && (
-                    <p className="text-[10px] font-mono text-muted-foreground/60">
-                      {DURATION_LABELS[pkg.durationType]}
-                    </p>
-                  )}
-                </div>
-                <div className="text-right">
-                  <p className="font-mono font-black text-lg">
-                    GHS {pkg.priceGHS ?? pkg.price}
-                  </p>
-                  <span className={cn(
-                    "text-[8px] font-mono uppercase tracking-widest px-1 py-0.5 border rounded-(--radius)",
-                    pkg.isActive
-                      ? "text-green-400 border-green-400/30 bg-green-400/10"
-                      : "text-muted-foreground border-border/30",
-                  )}>
-                    {pkg.isActive ? "Active" : "Inactive"}
-                  </span>
+      {!isLoading && subPackages.length > 0 && (
+        <div className="space-y-8">
+          {grouped.map(({ duration, pkgs }) =>
+            pkgs.length === 0 ? null : (
+              <div key={duration}>
+                <p className="text-[9px] font-mono uppercase tracking-[0.2em] text-muted-foreground/40 mb-3">
+                  {PLAN_DURATION_LABELS[duration]}
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {pkgs.map((pkg, i) => (
+                    <PlanCard
+                      key={pkg._id}
+                      pkg={pkg}
+                      isPopular={pkg.tier === "cruising"}
+                      delay={i * 0.04}
+                    />
+                  ))}
                 </div>
               </div>
-
-              {pkg.limits && (
-                <div className="space-y-1 border-t border-border/20 pt-3">
-                  {[
-                    ["Tutor sessions/day", pkg.limits.tutorSessionsPerDay],
-                    ["Quiz gen/day", pkg.limits.quizGenerationsPerDay],
-                    ["Flashcard sets/day", pkg.limits.flashcardSetsPerDay],
-                    ["Mind maps/day", pkg.limits.mindMapsPerDay],
-                    ["Material uploads/day", pkg.limits.materialUploadsPerDay],
-                  ].map(([label, val]) => (
-                    <div key={label as string} className="flex justify-between">
-                      <span className="text-[9px] font-mono text-muted-foreground/50">{label as string}</span>
-                      <span className={cn(
-                        "text-[9px] font-mono",
-                        val === null ? "text-primary" : "text-foreground",
-                      )}>
-                        {val === null ? "∞" : (val ?? "–")}
-                      </span>
-                    </div>
-                  ))}
-                  <div className="flex justify-between">
-                    <span className="text-[9px] font-mono text-muted-foreground/50">PDF Export</span>
-                    <span className="text-[9px] font-mono">{pkg.limits.pdfExport ? "✓" : "✗"}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-[9px] font-mono text-muted-foreground/50">Analytics</span>
-                    <span className="text-[9px] font-mono capitalize">{pkg.limits.analyticsLevel ?? "–"}</span>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
+            )
+          )}
         </div>
       )}
     </div>
