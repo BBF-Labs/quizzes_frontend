@@ -51,6 +51,13 @@ export const queryKeys = {
         [...queryKeys.library.materials.root(), "detail", id] as const,
     },
   },
+  publicLibrary: {
+    root: ["public-library"] as const,
+    list: (filters?: Record<string, unknown>) =>
+      [...queryKeys.publicLibrary.root, "list", filters] as const,
+    detail: (id: string) =>
+      [...queryKeys.publicLibrary.root, "detail", id] as const,
+  },
   systemQuizzes: {
     root: ["system-quizzes"] as const,
     list: () => [...queryKeys.systemQuizzes.root, "list"] as const,

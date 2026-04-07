@@ -12,6 +12,13 @@ import { usePathname, useRouter } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle, UserProfileDropdown } from "@/components/common";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ChevronDown } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import OnboardingBanner from "@/components/onboarding/OnboardingBanner";
 import { DonationBanner } from "@/components/landing/donation-banner";
@@ -23,6 +30,43 @@ import {
   ONBOARDING_BANNER_VISIBILITY_EVENT,
   isOnboardingBannerTemporarilyHidden,
 } from "@/lib/onboarding-banner";
+
+const EXPLORE_LINKS = [
+  { href: "/quizzes", label: "Quizzes" },
+  { href: "/library", label: "Library" },
+  { href: "/timetable", label: "Timetable" },
+];
+
+function MobileExploreSection() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="w-full">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between px-4 py-2 rounded-(--radius) font-mono tracking-widest uppercase text-sm text-foreground hover:bg-accent transition-colors"
+      >
+        Explore
+        <ChevronDown className={`size-3.5 opacity-60 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div className="ml-4 mt-1 flex flex-col gap-0.5 border-l border-border/40 pl-3">
+          {EXPLORE_LINKS.map(({ href, label }) => (
+            <Link key={href} href={href} className="w-full">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start rounded-(--radius) font-mono tracking-widest uppercase text-muted-foreground h-8 text-xs"
+              >
+                {label}
+              </Button>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -134,18 +178,29 @@ export function Navbar() {
               <span className="text-xs font-mono font-medium tracking-[0.15em] text-muted-foreground hover:text-foreground cursor-pointer transition-colors uppercase">
                 Features
               </span>
-              <Link
-                href="/quizzes"
-                className="text-xs font-mono font-medium tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors uppercase"
-              >
-                Quizzes
-              </Link>
-              <Link
-                href="/timetable"
-                className="text-xs font-mono font-medium tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors uppercase"
-              >
-                Timetable
-              </Link>
+              <DropdownMenu>
+                <DropdownMenuTrigger className="flex items-center gap-1 text-xs font-mono font-medium tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors uppercase outline-none">
+                  Explore
+                  <ChevronDown className="size-3 opacity-60" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="font-mono min-w-[140px]">
+                  <DropdownMenuItem asChild>
+                    <Link href="/quizzes" className="text-[11px] tracking-widest uppercase cursor-pointer">
+                      Quizzes
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/library" className="text-[11px] tracking-widest uppercase cursor-pointer">
+                      Library
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/timetable" className="text-[11px] tracking-widest uppercase cursor-pointer">
+                      Timetable
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Link
                 href="/pricing"
                 className="text-xs font-mono font-medium tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors uppercase"
@@ -228,22 +283,7 @@ export function Navbar() {
               >
                 Features
               </Button>
-              <Link href="/quizzes" className="w-full">
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start rounded-(--radius) font-mono tracking-widest uppercase"
-                >
-                  Quizzes
-                </Button>
-              </Link>
-              <Link href="/timetable" className="w-full">
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start rounded-(--radius) font-mono tracking-widest uppercase"
-                >
-                  Timetable
-                </Button>
-              </Link>
+              <MobileExploreSection />
               <Link href="/pricing" className="w-full">
                 <Button
                   variant="ghost"

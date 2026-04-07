@@ -106,16 +106,24 @@ export default function SystemQuizDetailPage({
                     Attempt Limit Reached
                   </AlertTitle>
                   <AlertDescription className="text-[11px] font-mono mt-1">
-                    You've reached your free attempt limit for this 12-hour window. Get <strong>unlimited attempts</strong> and more with a premium subscription.
+                    {quiz.nextAttemptAt ? (() => {
+                      const next = new Date(quiz.nextAttemptAt!);
+                      const diffMs = next.getTime() - Date.now();
+                      const h = Math.floor(diffMs / 3_600_000);
+                      const m = Math.floor((diffMs % 3_600_000) / 60_000);
+                      const timeStr = h > 0 ? `${h}h ${m}m` : `${m}m`;
+                      return <>Next attempt available in <strong>{timeStr}</strong> ({next.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}).</>;
+                    })() : <>You've reached your free attempt limit for this 12-hour window.</>}
+                    {" "}Get <strong>unlimited attempts</strong> with a premium plan.
                     <div className="mt-3">
-                      <Button 
-                        size="sm" 
-                        variant="default" 
+                      <Button
+                        size="sm"
+                        variant="default"
                         className="h-7 text-[10px] px-3 font-mono gap-1.5"
-                        onClick={() => router.push("/app/billing")}
+                        onClick={() => router.push("/pricing")}
                       >
                         <Sparkles className="size-3" />
-                        View Plans
+                        Upgrade
                       </Button>
                     </div>
                   </AlertDescription>
