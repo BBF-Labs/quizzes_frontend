@@ -9,7 +9,6 @@ import {
   XCircle,
   Clock,
   Users,
-  ChevronRight,
   X,
 } from "lucide-react";
 import {
@@ -19,6 +18,7 @@ import {
   type LibraryStatus,
 } from "@/hooks/admin/use-admin-library";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -236,12 +236,8 @@ function LibraryRow({
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-const STATUS_TABS: { label: string; value: LibraryStatus | "all" }[] = [
-  { label: "All", value: "all" },
-  { label: "Pending Review", value: "pending_review" },
-  { label: "Published", value: "published" },
-  { label: "Rejected", value: "rejected" },
-];
+const TAB_TRIGGER_CLS =
+  "relative rounded-none! border-none bg-transparent data-[state=active]:bg-transparent px-6 pb-4 text-muted-foreground data-[state=active]:text-primary transition-all after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-200";
 
 export default function AdminLibraryPage() {
   const [statusFilter, setStatusFilter] = useState<LibraryStatus | "all">("pending_review");
@@ -279,91 +275,111 @@ export default function AdminLibraryPage() {
   };
 
   return (
-    <div className="flex flex-col h-full max-w-5xl mx-auto px-6 py-8">
+    <div className="space-y-8">
 
       {/* Header */}
-      <div className="mb-8">
-        <p className="text-[10px] font-mono uppercase tracking-[0.25em] text-primary/70 mb-1">
-          Admin / Library
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+        <div className="inline-block border border-primary/60 px-2 py-1 mb-2 bg-primary/5">
+          <span className="text-[10px] font-mono tracking-widest uppercase text-primary">
+            Content
+          </span>
+        </div>
+        <h1 className="text-2xl font-mono font-bold tracking-widest uppercase">
+          Public Library
+        </h1>
+        <p className="text-[11px] font-mono text-muted-foreground/50 mt-1 uppercase tracking-widest">
+          Review submissions and manage the public study catalogue
         </p>
-        <h1 className="text-2xl font-black tracking-tight mb-1">Public Library</h1>
-        <p className="text-[12px] font-mono text-muted-foreground/60">
-          Review user-submitted materials and manage the public study library.
-        </p>
-      </div>
+      </motion.div>
 
       {/* Status Tabs */}
-      <div className="flex gap-1 mb-6 border-b border-border/30 pb-0">
-        {STATUS_TABS.map((tab) => (
-          <button
-            key={tab.value}
-            onClick={() => { setStatusFilter(tab.value); setPage(1); }}
-            className={cn(
-              "px-3 py-2 text-[10px] font-mono uppercase tracking-widest transition-colors border-b-2 -mb-px",
-              statusFilter === tab.value
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground/50 hover:text-foreground"
-            )}
+      <Tabs
+        value={statusFilter}
+        onValueChange={(v) => { setStatusFilter(v as LibraryStatus | "all"); setPage(1); }}
+      >
+        <div className="border-b border-border/30 w-full">
+          <TabsList
+            variant="line"
+            className="bg-transparent w-auto min-w-full justify-start h-auto px-0 overflow-x-auto overflow-y-hidden no-scrollbar flex-nowrap shrink-0 border-none"
           >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+            <TabsTrigger value="pending_review" className={TAB_TRIGGER_CLS}>
+              PENDING REVIEW
+            </TabsTrigger>
+            <TabsTrigger value="published" className={TAB_TRIGGER_CLS}>
+              PUBLISHED
+            </TabsTrigger>
+            <TabsTrigger value="rejected" className={TAB_TRIGGER_CLS}>
+              REJECTED
+            </TabsTrigger>
+            <TabsTrigger value="all" className={TAB_TRIGGER_CLS}>
+              ALL
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
-      {/* Content */}
-      {isLoading ? (
-        <div className="space-y-3">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-20 animate-pulse bg-card/40 border border-border/30" />
-          ))}
-        </div>
-      ) : items.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 border border-dashed border-border/30">
-          <BookOpen className="size-10 text-muted-foreground/20 mb-3" />
-          <p className="text-[11px] font-mono text-muted-foreground/40 uppercase tracking-widest">
-            No items
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {items.map((item) => (
-            <LibraryRow
-              key={item._id}
-              item={item}
-              onPublish={handlePublish}
-              onReject={setRejectTarget}
-              isPending={review.isPending}
-            />
-          ))}
-        </div>
-      )}
+        {/* Content */}
+        <motion.div
+          key={statusFilter}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.15 }}
+          className="pt-2"
+        >
+          {isLoading ? (
+            <div className="space-y-3">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-20 animate-pulse bg-card/40 border border-border/30" />
+              ))}
+            </div>
+          ) : items.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 border border-dashed border-border/30">
+              <BookOpen className="size-10 text-muted-foreground/20 mb-3" />
+              <p className="text-[11px] font-mono text-muted-foreground/40 uppercase tracking-widest">
+                No items
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {items.map((item) => (
+                <LibraryRow
+                  key={item._id}
+                  item={item}
+                  onPublish={handlePublish}
+                  onReject={setRejectTarget}
+                  isPending={review.isPending}
+                />
+              ))}
+            </div>
+          )}
 
-      {/* Pagination */}
-      {pagination && pagination.totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 mt-8">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-7 text-[10px] font-mono"
-            disabled={page <= 1}
-            onClick={() => setPage((p) => p - 1)}
-          >
-            Previous
-          </Button>
-          <span className="text-[10px] font-mono text-muted-foreground/50">
-            {page} / {pagination.totalPages}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-7 text-[10px] font-mono"
-            disabled={page >= pagination.totalPages}
-            onClick={() => setPage((p) => p + 1)}
-          >
-            Next
-          </Button>
-        </div>
-      )}
+          {/* Pagination */}
+          {pagination && pagination.totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-8">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-[10px] font-mono"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => p - 1)}
+              >
+                Previous
+              </Button>
+              <span className="text-[10px] font-mono text-muted-foreground/50">
+                {page} / {pagination.totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-[10px] font-mono"
+                disabled={page >= pagination.totalPages}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                Next
+              </Button>
+            </div>
+          )}
+        </motion.div>
+      </Tabs>
 
       {/* Reject Dialog */}
       {rejectTarget && (
