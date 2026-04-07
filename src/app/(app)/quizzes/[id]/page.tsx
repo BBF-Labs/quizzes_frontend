@@ -95,30 +95,30 @@ export default function SystemQuizDetailPage({
                 </p>
               )}
 
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
                 <QuizStatsBar
                   questionCount={totalQuestions}
                   lectureCount={quiz.lectures.length}
                   passingScore={quiz.passingScore}
                   settings={quiz.settings}
-                  className="flex-1"
+                  className="w-full sm:flex-1"
                 />
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-2 w-full sm:w-auto">
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-7 gap-1 text-[10px] font-mono"
+                    className="flex-1 sm:flex-none h-8 gap-1.5 text-[10px] font-mono"
                     onClick={() => router.push("/app")}
                   >
-                    <BookOpen className="size-3" />
+                    <BookOpen className="size-3.5" />
                     Study
                   </Button>
                   <Button
                     size="sm"
-                    className="h-7 gap-1 text-[10px] font-mono"
+                    className="flex-1 sm:flex-none h-8 gap-1.5 text-[10px] font-mono"
                     onClick={() => router.push(`/quizzes/${id}/take`)}
                   >
-                    <PlayCircle className="size-3" />
+                    <PlayCircle className="size-3.5" />
                     Take Quiz
                   </Button>
                 </div>

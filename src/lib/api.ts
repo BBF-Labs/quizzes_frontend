@@ -72,12 +72,10 @@ api.interceptors.response.use(
           isRefreshing = false;
           refreshSubscribers = [];
           clearSession();
-          window.location.href = "/login";
           return Promise.reject(refreshError);
         }
       } else {
         clearSession();
-        window.location.href = "/login";
       }
     }
 

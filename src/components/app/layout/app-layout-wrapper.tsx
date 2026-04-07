@@ -110,7 +110,7 @@ export function AppLayoutWrapper({ children }: { children: ReactNode }) {
               <div className="h-4 w-px bg-border/50" />
               <Breadcrumb>
                 <BreadcrumbList>
-                  <BreadcrumbItem>
+                  <BreadcrumbItem className={breadcrumbSegments.length > 1 ? "hidden sm:inline-flex" : ""}>
                     <BreadcrumbLink asChild>
                       <Link
                         href="/app"
@@ -122,15 +122,17 @@ export function AppLayoutWrapper({ children }: { children: ReactNode }) {
                   </BreadcrumbItem>
                   {breadcrumbSegments.length > 0 && (
                     <>
-                      <BreadcrumbSeparator />
+                      <BreadcrumbSeparator className={breadcrumbSegments.length > 1 ? "hidden sm:inline-flex" : ""} />
                       {breadcrumbSegments.map((segment, index) => {
                         const isLast = index === breadcrumbSegments.length - 1;
-                        const href = `/${segments.slice(0, index + 2).join("/")}`;
+                        const href = `/${segments.slice(0, index + breadcrumbOffset + 1).join("/")}`;
                         const label = formatSegment(segment, index);
+                        const isSecondLast = index === breadcrumbSegments.length - 2;
+                        const showOnMobile = isLast || isSecondLast;
 
                         return (
                           <React.Fragment key={`${href}-${segment}`}>
-                            <BreadcrumbItem>
+                            <BreadcrumbItem className={!showOnMobile ? "hidden sm:inline-flex" : ""}>
                               {isLast ? (
                                 <BreadcrumbPage className="text-[10px] font-mono tracking-widest uppercase text-foreground">
                                   {label}
@@ -146,7 +148,7 @@ export function AppLayoutWrapper({ children }: { children: ReactNode }) {
                                 </BreadcrumbLink>
                               )}
                             </BreadcrumbItem>
-                            {!isLast && <BreadcrumbSeparator />}
+                            {!isLast && <BreadcrumbSeparator className={index < breadcrumbSegments.length - 2 ? "hidden sm:inline-flex" : ""} />}
                           </React.Fragment>
                         );
                       })}
