@@ -89,7 +89,7 @@ export function Footer() {
               Company
             </h4>
             <Link
-              href="#"
+              href="/about"
               className="text-[13px] font-mono text-muted-foreground hover:text-foreground transition-colors"
             >
               About Us
