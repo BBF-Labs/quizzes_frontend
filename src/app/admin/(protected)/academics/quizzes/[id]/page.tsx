@@ -30,6 +30,7 @@ import {
   useAdminGenerateQuizAI,
   useAdminPatchQuiz,
   useAdminAddQuizQuestion,
+  useAdminBatchUploadQuizQuestions,
   useAdminUpdateQuizQuestion,
   useAdminRemoveQuizQuestion,
   type AdminQuizDetail,
@@ -812,12 +813,24 @@ interface ParsedImportQuestion {
   hint?: string;
 }
 
-function JsonImportPanel({ quizId, onDone }: { quizId: string; onDone: () => void }) {
-  const addMutation = useAdminAddQuizQuestion(quizId);
+function JsonImportPanel({
+  quizId,
+  quiz,
+  onDone,
+}: {
+  quizId: string;
+  quiz: AdminQuizDetail;
+  onDone: () => void;
+}) {
+  const batchMutation = useAdminBatchUploadQuizQuestions(quizId);
   const [jsonRaw, setJsonRaw] = useState("");
   const [parsed, setParsed] = useState<ParsedImportQuestion[] | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
-  const [importing, setImporting] = useState(false);
+  const [lectureIndex, setLectureIndex] = useState(0);
+  const [topicIndex, setTopicIndex] = useState(0);
+
+  const lectures = quiz.lectures ?? [];
+  const topics = lectures[lectureIndex]?.topics ?? [];
 
   const handleParse = () => {
     setParseError(null);
@@ -839,25 +852,23 @@ function JsonImportPanel({ quizId, onDone }: { quizId: string; onDone: () => voi
 
   const handleImport = async () => {
     if (!parsed) return;
-    setImporting(true);
     try {
-      for (const q of parsed) {
-        await addMutation.mutateAsync({
-          lectureIndex: 0,
-          topicIndex: 0,
+      await batchMutation.mutateAsync({
+        questions: parsed.map((q) => ({
+          lectureIndex,
+          topicIndex,
           type: q.type,
           question: q.question,
           options: q.options ?? [],
           answer: q.answer,
           explanation: q.explanation || undefined,
           hint: q.hint || undefined,
-        });
-      }
+        })),
+      });
       toast.success(`${parsed.length} question${parsed.length !== 1 ? "s" : ""} imported`);
       onDone();
     } catch (err: any) {
       toast.error(err?.response?.data?.message ?? "Import failed");
-      setImporting(false);
     }
   };
 
@@ -882,8 +893,38 @@ function JsonImportPanel({ quizId, onDone }: { quizId: string; onDone: () => voi
       <p className="text-[10px] font-mono text-muted-foreground/60">
         Paste a JSON array of questions or{" "}
         <span className="font-mono text-muted-foreground/40">{"{ questions: [...] }"}</span>.
-        All questions are added to lecture 0 / topic 0.
+        All questions are batch-inserted into the selected lecture and topic.
       </p>
+
+      {/* Lecture / Topic selectors */}
+      {lectures.length > 0 && (
+        <div className="flex items-center gap-3">
+          <div className="flex flex-col gap-1">
+            <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40">Lecture</label>
+            <select
+              value={lectureIndex}
+              onChange={(e) => { setLectureIndex(Number(e.target.value)); setTopicIndex(0); }}
+              className="border border-border/50 bg-background/40 px-2 py-1 text-[11px] font-mono focus:outline-none focus:border-primary/50"
+            >
+              {lectures.map((l, i) => (
+                <option key={i} value={i}>{l.lectureTitle || l.title || `Lecture ${i + 1}`}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40">Topic</label>
+            <select
+              value={topicIndex}
+              onChange={(e) => setTopicIndex(Number(e.target.value))}
+              className="border border-border/50 bg-background/40 px-2 py-1 text-[11px] font-mono focus:outline-none focus:border-primary/50"
+            >
+              {topics.map((t, i) => (
+                <option key={i} value={i}>{t.topicTitle || t.title || `Topic ${i + 1}`}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
 
       <textarea
         value={jsonRaw}
@@ -944,9 +985,9 @@ function JsonImportPanel({ quizId, onDone }: { quizId: string; onDone: () => voi
             size="sm"
             className="h-8 gap-1.5 text-[10px] font-mono"
             onClick={handleImport}
-            disabled={importing}
+            disabled={batchMutation.isPending}
           >
-            {importing ? <Loader2 className="size-3 animate-spin" /> : <FileJson className="size-3" />}
+            {batchMutation.isPending ? <Loader2 className="size-3 animate-spin" /> : <FileJson className="size-3" />}
             Import {parsed.length} Question{parsed.length !== 1 ? "s" : ""}
           </Button>
         )}
@@ -1198,7 +1239,7 @@ export default function AdminQuizDetailPage({
 
       {/* JSON import panel */}
       {showJson && (
-        <JsonImportPanel quizId={id} onDone={() => setShowJson(false)} />
+        <JsonImportPanel quizId={id} quiz={quiz} onDone={() => setShowJson(false)} />
       )}
 
       {/* Content */}
