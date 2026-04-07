@@ -158,7 +158,7 @@ function StudentVerificationSection() {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.25 }}
-      className="border border-border/40 bg-card/30 px-4 py-4 flex flex-col gap-4"
+      className="border border-radius-(--radius) border-border/40 bg-card/30 px-4 py-4 flex flex-col gap-4"
     >
       <div className="flex items-center gap-3">
         <GraduationCap className="size-4 text-muted-foreground/60 shrink-0" />

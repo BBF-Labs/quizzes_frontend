@@ -201,11 +201,24 @@ export default function SystemQuizTakePage({
       setStarted(true);
     } catch (err: any) {
       if (err.response?.status === 403) {
-        toast.error("Quiz attempt limit reached.", {
-          description: "Upgrade to premium for unlimited attempts and advanced Z grading.",
+        const nextAttemptAt: string | null = err.response?.data?.errors?.nextAttemptAt ?? null;
+        let description = "Upgrade to premium for unlimited attempts and advanced Z grading.";
+        if (nextAttemptAt) {
+          const nextDate = new Date(nextAttemptAt);
+          const now = Date.now();
+          const diffMs = nextDate.getTime() - now;
+          if (diffMs > 0) {
+            const h = Math.floor(diffMs / 3_600_000);
+            const m = Math.floor((diffMs % 3_600_000) / 60_000);
+            const timeStr = h > 0 ? `${h}h ${m}m` : `${m}m`;
+            description = `Next attempt available in ${timeStr} (${nextDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}).`;
+          }
+        }
+        toast.error("Daily limit reached.", {
+          description,
           action: {
-            label: "View Plans",
-            onClick: () => router.push("/app/billing"),
+            label: "Upgrade",
+            onClick: () => router.push("/pricing"),
           },
         });
       } else {

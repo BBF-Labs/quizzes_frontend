@@ -523,6 +523,7 @@ export interface SystemQuizDetail {
   tags: string[];
   lectures: QuizLecture[];
   remainingAttempts: number | null;
+  nextAttemptAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
