@@ -122,17 +122,26 @@ export function useAdminDeactivatePromoCode() {
 
 // ─── Payment hooks ────────────────────────────────────────────────────────────
 
-export function useAdminPayments(params: { status?: string; type?: string } = {}) {
+export interface PaginatedPayments {
+  data: AdminPayment[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export function useAdminPayments(params: { status?: string; type?: string; page?: number; limit?: number } = {}) {
   return useQuery({
     queryKey: ["admin", "payments", params],
     queryFn: async () => {
       const query = new URLSearchParams();
       if (params.status) query.set("status", params.status);
       if (params.type) query.set("type", params.type);
-      const res = await api.get<ApiData<AdminPayment[]>>(
+      if (params.page) query.set("page", String(params.page));
+      if (params.limit) query.set("limit", String(params.limit));
+      const res = await api.get<ApiData<PaginatedPayments>>(
         `/admin/subscriptions/payments?${query}`,
       );
-      return res.data?.data ?? [];
+      return res.data?.data ?? { data: [], total: 0, page: 1, limit: 20 };
     },
     staleTime: 1000 * 30,
   });

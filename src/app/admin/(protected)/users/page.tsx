@@ -22,11 +22,84 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useState } from "react";
 import { useUsers } from "@/hooks";
 import { useUpdateUser } from "@/hooks/admin/use-admin";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { MoreHorizontal, Ban, RotateCcw, User as UserIcon } from "lucide-react";
+import { MoreHorizontal, Ban, RotateCcw, User as UserIcon, X } from "lucide-react";
+
+// ─── Ban Dialog ───────────────────────────────────────────────────────────────
+
+function BanDialog({
+  userName,
+  onConfirm,
+  onCancel,
+  isPending,
+}: {
+  userName: string;
+  onConfirm: (reason: string) => void;
+  onCancel: () => void;
+  isPending: boolean;
+}) {
+  const [reason, setReason] = useState("");
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.97 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="w-full max-w-md border border-destructive/40 bg-card p-6 shadow-xl"
+      >
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <p className="text-[10px] font-mono uppercase tracking-widest text-destructive mb-1">
+              Ban Account
+            </p>
+            <p className="font-mono font-bold text-sm">{userName}</p>
+          </div>
+          <button onClick={onCancel} className="text-muted-foreground/40 hover:text-muted-foreground">
+            <X className="size-4" />
+          </button>
+        </div>
+
+        <div className="mb-4">
+          <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1.5">
+            Reason <span className="text-muted-foreground/30">(sent to user in the ban email)</span>
+          </label>
+          <textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="e.g. Violation of platform policies, inappropriate content…"
+            rows={3}
+            className="w-full border border-border/50 bg-background/40 px-3 py-2 text-[12px] font-mono focus:outline-none focus:border-destructive/50 resize-none transition-colors"
+          />
+          <p className="text-[9px] font-mono text-muted-foreground/40 mt-1">
+            Leave blank to use the default reason.
+          </p>
+        </div>
+
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 text-[10px] font-mono uppercase tracking-widest border border-border/40 hover:bg-secondary/20 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => onConfirm(reason)}
+            disabled={isPending}
+            className="px-4 py-2 text-[10px] font-mono uppercase tracking-widest bg-destructive text-destructive-foreground hover:opacity-90 disabled:opacity-50 transition-all"
+          >
+            {isPending ? "Banning…" : "Confirm Ban"}
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function UsersPage() {
   const router = useRouter();
@@ -61,6 +134,7 @@ export default function UsersPage() {
   });
 
   const { mutate: updateUser, isPending: isUpdating } = useUpdateUser();
+  const [banTarget, setBanTarget] = useState<{ id: string; name: string } | null>(null);
 
   const handleRoleChange = (userId: string, newRole: string) => {
     updateUser(
@@ -72,13 +146,23 @@ export default function UsersPage() {
     );
   };
 
-  const handleToggleBan = (userId: string, currentBanStatus: boolean) => {
-    const isBanned = !currentBanStatus;
+  const handleBanConfirm = (reason: string) => {
+    if (!banTarget) return;
     updateUser(
-      { id: userId, data: { isBanned } },
+      { id: banTarget.id, data: { isBanned: true, banReason: reason || undefined } },
       {
-        onSuccess: () => toast.success(isBanned ? "User banned" : "User unbanned"),
-        onError: (err: any) => toast.error(err.message || "Failed to update account status"),
+        onSuccess: () => { toast.success("User banned"); setBanTarget(null); },
+        onError: (err: any) => toast.error(err.message || "Failed to ban account"),
+      }
+    );
+  };
+
+  const handleUnban = (userId: string) => {
+    updateUser(
+      { id: userId, data: { isBanned: false } },
+      {
+        onSuccess: () => toast.success("User unbanned"),
+        onError: (err: any) => toast.error(err.message || "Failed to unban account"),
       }
     );
   };
@@ -91,6 +175,15 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-8">
+      {banTarget && (
+        <BanDialog
+          userName={banTarget.name}
+          onConfirm={handleBanConfirm}
+          onCancel={() => setBanTarget(null)}
+          isPending={isUpdating}
+        />
+      )}
+
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -353,8 +446,12 @@ export default function UsersPage() {
                               <ExternalLink className="size-3" /> External Link
                             </DropdownMenuItem>
                             <DropdownMenuSeparator className="bg-primary/10 my-1.5" />
-                            <DropdownMenuItem 
-                              onClick={() => handleToggleBan(user._id, !!user.isBanned)}
+                            <DropdownMenuItem
+                              onClick={() =>
+                                user.isBanned
+                                  ? handleUnban(user._id)
+                                  : setBanTarget({ id: user._id, name: user.name ?? user.email })
+                              }
                               className={cn(
                                 "gap-2 text-[10px] font-bold uppercase cursor-pointer rounded-(--radius)",
                                 user.isBanned ? "text-green-500 focus:text-green-500" : "text-destructive focus:text-destructive"
