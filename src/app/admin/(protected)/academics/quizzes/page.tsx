@@ -1,10 +1,21 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Plus, Search, X, GraduationCap, Trash2, Eye, FileJson, FormInput, AlertCircle, CheckCircle2 } from "lucide-react";
+import {
+  Plus,
+  Search,
+  X,
+  GraduationCap,
+  Trash2,
+  Eye,
+  FileJson,
+  FormInput,
+  AlertCircle,
+  CheckCircle2,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
@@ -33,8 +44,6 @@ import {
 } from "@/hooks/admin/use-academics";
 import { PaginationController } from "@/components/common/pagination-controller";
 
-
-
 const STATUS_COLORS: Record<string, string> = {
   draft: "text-yellow-500 border-yellow-500/30 bg-yellow-500/10",
   published: "text-green-500 border-green-500/30 bg-green-500/10",
@@ -45,26 +54,53 @@ const STATUS_COLORS: Record<string, string> = {
 
 interface ParsedQuestion {
   question: string;
-  type: "mcq" | "true_false" | "short_answer" | "essay" | "fill_in_blank";
+  type: string;
   options: string[];
   answer: string;
   explanation?: string;
   hint?: string;
 }
 
-interface ParsedQuizJson {
+interface ParsedTopic {
   title: string;
-  description?: string;
-  passingScore?: number;
-  tags?: string[];
   questions: ParsedQuestion[];
 }
 
+interface ParsedLecture {
+  title: string;
+  topics: ParsedTopic[];
+}
+
+interface ParsedQuizJson {
+  title?: string;
+  description?: string;
+  passingScore?: number;
+  tags?: string[];
+  questions?: ParsedQuestion[];
+  lectures?: ParsedLecture[];
+}
+
+const normalizeQuestionType = (type: string): string => {
+  const t = type.toLowerCase().trim();
+  if (t === "true_false" || t === "true-false") return "true-false";
+  if (t === "mcq") return "mcq";
+  if (t === "short_answer" || t === "short-answer") return "short-answer";
+  if (t === "essay") return "essay";
+  if (
+    t === "fill_in" ||
+    t === "fill_in_blank" ||
+    t === "fill-in" ||
+    t === "fill-in-blank"
+  )
+    return "fill-in";
+  return t.replace(/_/g, "-");
+};
+
 const QUESTION_TYPE_COLORS: Record<string, string> = {
-  mcq:           "text-blue-400 border-blue-400/30 bg-blue-400/10",
-  true_false:    "text-green-400 border-green-400/30 bg-green-400/10",
-  short_answer:  "text-amber-400 border-amber-400/30 bg-amber-400/10",
-  essay:         "text-purple-400 border-purple-400/30 bg-purple-400/10",
+  mcq: "text-blue-400 border-blue-400/30 bg-blue-400/10",
+  true_false: "text-green-400 border-green-400/30 bg-green-400/10",
+  short_answer: "text-amber-400 border-amber-400/30 bg-amber-400/10",
+  essay: "text-purple-400 border-purple-400/30 bg-purple-400/10",
   fill_in_blank: "text-cyan-400 border-cyan-400/30 bg-cyan-400/10",
 };
 
@@ -88,7 +124,10 @@ function CoursePicker({
       value={courseId}
       onValueChange={(val) => {
         const course = courses.find((c) => c._id === val);
-        onCourseChange(val as string, course ? `${course.code} - ${course.title}` : "");
+        onCourseChange(
+          val as string,
+          course ? `${course.code} - ${course.title}` : "",
+        );
       }}
     >
       <ComboboxInput
@@ -99,10 +138,16 @@ function CoursePicker({
         required
       />
       <ComboboxContent className="font-mono border-border/40">
-        <ComboboxEmpty className="font-mono text-[10px] uppercase p-2">No courses found</ComboboxEmpty>
+        <ComboboxEmpty className="font-mono text-[10px] uppercase p-2">
+          No courses found
+        </ComboboxEmpty>
         <ComboboxList className="max-h-60 no-scrollbar">
           {courses.map((c: any) => (
-            <ComboboxItem key={c._id} value={c._id} className="text-[10px] uppercase tracking-tighter">
+            <ComboboxItem
+              key={c._id}
+              value={c._id}
+              className="text-[10px] uppercase tracking-tighter"
+            >
               <span className="font-bold text-primary mr-2">{c.code}</span>
               <span className="truncate">{c.title}</span>
             </ComboboxItem>
@@ -129,11 +174,19 @@ function CreateQuizForm({ onClose }: { onClose: () => void }) {
     const t = setTimeout(() => setDebouncedSearch(courseSearch), 300);
     return () => clearTimeout(t);
   }, [courseSearch]);
-  const { data: coursesResult } = useAdminCourses({ limit: 50, search: debouncedSearch });
+  const { data: coursesResult } = useAdminCourses({
+    limit: 50,
+    search: debouncedSearch,
+  });
   const courses = coursesResult?.data ?? [];
 
   // ── Form mode ──
-  const [form, setForm] = useState({ title: "", description: "", passingScore: 70, tags: "" });
+  const [form, setForm] = useState({
+    title: "",
+    description: "",
+    passingScore: 70,
+    tags: "",
+  });
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,7 +194,10 @@ function CreateQuizForm({ onClose }: { onClose: () => void }) {
       const quiz = await createMutation.mutateAsync({
         ...form,
         courseId,
-        tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
+        tags: form.tags
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean),
       });
       toast.success("Quiz created");
       if (quiz?._id) router.push(`/admin/academics/quizzes/${quiz._id}`);
@@ -157,18 +213,70 @@ function CreateQuizForm({ onClose }: { onClose: () => void }) {
   const [parseError, setParseError] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
 
+  const totalQuestions = useMemo(() => {
+    if (!parsed) return 0;
+    if (parsed.lectures) {
+      return parsed.lectures.reduce(
+        (acc, l) =>
+          acc + l.topics.reduce((tacc, t) => tacc + t.questions.length, 0),
+        0,
+      );
+    }
+    return parsed.questions?.length || 0;
+  }, [parsed]);
+
+  const validateQuestion = (q: any, label: string) => {
+    if (!q.question) throw new Error(`${label} missing "question" field`);
+    if (!q.type) throw new Error(`${label} missing "type" field`);
+    if (!q.answer) throw new Error(`${label} missing "answer" field`);
+  };
+
   const handleParse = () => {
     setParseError(null);
     setParsed(null);
     try {
       const obj = JSON.parse(jsonRaw);
-      if (!obj.title || typeof obj.title !== "string") throw new Error("JSON must have a \"title\" string");
-      if (!Array.isArray(obj.questions)) throw new Error("JSON must have a \"questions\" array");
-      for (const [i, q] of obj.questions.entries()) {
-        if (!q.question) throw new Error(`Question ${i + 1} missing "question" field`);
-        if (!q.type) throw new Error(`Question ${i + 1} missing "type" field`);
-        if (!q.answer) throw new Error(`Question ${i + 1} missing "answer" field`);
+      const isNested = Array.isArray(obj.lectures);
+      const isFlat = Array.isArray(obj.questions);
+
+      if (!isNested && !isFlat) {
+        throw new Error(
+          'JSON must have a "questions" array or a "lectures" array',
+        );
       }
+
+      if (isNested) {
+        if (!obj.title) {
+          obj.title = obj.lectures[0]?.title || "Imported Quiz";
+        }
+        for (const [li, l] of obj.lectures.entries()) {
+          if (!l.title) throw new Error(`Lecture ${li + 1} missing "title"`);
+          if (!Array.isArray(l.topics))
+            throw new Error(`Lecture ${li + 1} missing "topics" array`);
+          for (const [ti, t] of l.topics.entries()) {
+            if (!t.title)
+              throw new Error(
+                `Topic ${ti + 1} in Lecture ${li + 1} missing "title"`,
+              );
+            if (!Array.isArray(t.questions))
+              throw new Error(
+                `Topic ${ti + 1} in Lecture ${li + 1} missing "questions" array`,
+              );
+            for (const [qi, q] of t.questions.entries()) {
+              validateQuestion(q, `L${li + 1} T${ti + 1} Q${qi + 1}`);
+              q.type = normalizeQuestionType(q.type);
+            }
+          }
+        }
+      } else {
+        if (!obj.title || typeof obj.title !== "string")
+          throw new Error('JSON must have a "title" string');
+        for (const [i, q] of obj.questions.entries()) {
+          validateQuestion(q, `Question ${i + 1}`);
+          q.type = normalizeQuestionType(q.type);
+        }
+      }
+
       setParsed(obj as ParsedQuizJson);
     } catch (err: any) {
       setParseError(err.message ?? "Invalid JSON");
@@ -176,7 +284,9 @@ function CreateQuizForm({ onClose }: { onClose: () => void }) {
   };
 
   // Need a ref to addQuestion since quizId isn't known until after creation
-  const addQuestionRef = useRef<((quizId: string, q: ParsedQuestion, idx: number) => Promise<void>) | null>(null);
+  const addQuestionRef = useRef<
+    ((quizId: string, q: ParsedQuestion, idx: number) => Promise<void>) | null
+  >(null);
 
   const handleJsonImport = async () => {
     if (!parsed || !courseId) {
@@ -185,8 +295,11 @@ function CreateQuizForm({ onClose }: { onClose: () => void }) {
     }
     setImporting(true);
     try {
+      const api = (await import("@/lib/api")).api;
+
+      // 1. Create Quiz Shell
       const quiz = await createMutation.mutateAsync({
-        title: parsed.title,
+        title: parsed.title || "Imported Quiz",
         description: parsed.description,
         courseId,
         passingScore: parsed.passingScore ?? 70,
@@ -194,39 +307,71 @@ function CreateQuizForm({ onClose }: { onClose: () => void }) {
       });
       if (!quiz?._id) throw new Error("No quiz ID returned");
 
-      // Add questions sequentially (lectureIndex 0, topicIndex 0 as default slot)
-      for (let i = 0; i < parsed.questions.length; i++) {
-        const q = parsed.questions[i];
-        await addQuestionRef.current?.(quiz._id, q, i);
+      // 2. Process Nested Format
+      if (parsed.lectures) {
+        for (let li = 0; li < parsed.lectures.length; li++) {
+          const lec = parsed.lectures[li];
+          // Create Lecture
+          await api.post(`/admin/learning/quizzes/${quiz._id}/lectures`, {
+            title: lec.title,
+          });
+
+          for (let ti = 0; ti < lec.topics.length; ti++) {
+            const top = lec.topics[ti];
+            // Create Topic
+            await api.post(
+              `/admin/learning/quizzes/${quiz._id}/lectures/${li}/topics`,
+              {
+                title: top.title,
+              },
+            );
+
+            // Create Questions
+            for (const q of top.questions) {
+              await api.post(`/admin/learning/quizzes/${quiz._id}/questions`, {
+                lectureIndex: li,
+                topicIndex: ti,
+                type: q.type,
+                question: q.question,
+                options: q.options ?? [],
+                answer: q.answer,
+                explanation: q.explanation,
+                hint: q.hint,
+              });
+            }
+          }
+        }
+      }
+      // 3. Process Flat Format
+      else if (parsed.questions) {
+        for (const q of parsed.questions) {
+          await api.post(`/admin/learning/quizzes/${quiz._id}/questions`, {
+            lectureIndex: 0,
+            topicIndex: 0,
+            type: q.type,
+            question: q.question,
+            options: q.options ?? [],
+            answer: q.answer,
+            explanation: q.explanation,
+            hint: q.hint,
+          });
+        }
       }
 
-      toast.success(`Quiz imported with ${parsed.questions.length} question${parsed.questions.length !== 1 ? "s" : ""}`);
+      toast.success("Quiz imported successfully");
       router.push(`/admin/academics/quizzes/${quiz._id}`);
     } catch (err: any) {
-      toast.error(err?.response?.data?.message ?? err.message ?? "Import failed");
+      console.error("[Import] Error:", err);
+      toast.error(
+        err?.response?.data?.message ?? err.message ?? "Import failed",
+      );
     } finally {
       setImporting(false);
     }
   };
 
-  // Inline add-question function that uses the returned quizId
-  addQuestionRef.current = async (quizId: string, q: ParsedQuestion, _idx: number) => {
-    await (await import("@/lib/api")).api.post(
-      `/admin/learning/quizzes/${quizId}/questions`,
-      {
-        lectureIndex: 0,
-        topicIndex: 0,
-        type: q.type,
-        question: q.question,
-        options: q.options ?? [],
-        answer: q.answer,
-        explanation: q.explanation,
-        hint: q.hint,
-      },
-    );
-  };
-
-  const fieldCls = "w-full border border-border/50 bg-background/40 px-3 py-2 text-[12px] font-mono focus:outline-none focus:border-primary/50 transition-colors";
+  const fieldCls =
+    "w-full border border-border/50 bg-background/40 px-3 py-2 text-[12px] font-mono focus:outline-none focus:border-primary/50 transition-colors";
 
   return (
     <motion.div
@@ -260,43 +405,101 @@ function CreateQuizForm({ onClose }: { onClose: () => void }) {
             <FileJson className="size-3" /> JSON
           </button>
         </div>
-        <button onClick={onClose} className="text-muted-foreground/40 hover:text-muted-foreground">
+        <button
+          onClick={onClose}
+          className="text-muted-foreground/40 hover:text-muted-foreground"
+        >
           <X className="size-3.5" />
         </button>
       </div>
 
       {/* ── Form mode ── */}
       {mode === "form" && (
-        <form onSubmit={handleFormSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <form
+          onSubmit={handleFormSubmit}
+          className="grid grid-cols-1 sm:grid-cols-2 gap-3"
+        >
           <div className="sm:col-span-2">
-            <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">Title *</label>
-            <input required value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="Quiz title" className={fieldCls} />
+            <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">
+              Title *
+            </label>
+            <input
+              required
+              value={form.title}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, title: e.target.value }))
+              }
+              placeholder="Quiz title"
+              className={fieldCls}
+            />
           </div>
           <div className="sm:col-span-2">
-            <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">Description</label>
-            <textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} rows={2} className={cn(fieldCls, "resize-none")} />
+            <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">
+              Description
+            </label>
+            <textarea
+              value={form.description}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, description: e.target.value }))
+              }
+              rows={2}
+              className={cn(fieldCls, "resize-none")}
+            />
           </div>
           <div>
-            <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">Course *</label>
+            <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">
+              Course *
+            </label>
             <CoursePicker
               courseId={courseId}
               courseSearch={courseSearch}
               courses={courses}
-              onCourseChange={(id, label) => { setCourseId(id); setCourseSearch(label); }}
+              onCourseChange={(id, label) => {
+                setCourseId(id);
+                setCourseSearch(label);
+              }}
               onSearchChange={setCourseSearch}
             />
           </div>
           <div>
-            <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">Passing Score (%)</label>
-            <input type="number" min={0} max={100} value={form.passingScore} onChange={(e) => setForm((f) => ({ ...f, passingScore: +e.target.value }))} className={fieldCls} />
+            <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">
+              Passing Score (%)
+            </label>
+            <input
+              type="number"
+              min={0}
+              max={100}
+              value={form.passingScore}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, passingScore: +e.target.value }))
+              }
+              className={fieldCls}
+            />
           </div>
           <div className="sm:col-span-2">
-            <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">Tags (comma-separated)</label>
-            <input value={form.tags} onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))} placeholder="e.g. algorithms, data structures" className={fieldCls} />
+            <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">
+              Tags (comma-separated)
+            </label>
+            <input
+              value={form.tags}
+              onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))}
+              placeholder="e.g. algorithms, data structures"
+              className={fieldCls}
+            />
           </div>
           <div className="sm:col-span-2 flex justify-end gap-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-[10px] font-mono uppercase tracking-widest border border-border/40 hover:bg-secondary/20 transition-colors">Cancel</button>
-            <button type="submit" disabled={createMutation.isPending} className="px-4 py-2 text-[10px] font-mono uppercase tracking-widest bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50 transition-all">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-[10px] font-mono uppercase tracking-widest border border-border/40 hover:bg-secondary/20 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={createMutation.isPending}
+              className="px-4 py-2 text-[10px] font-mono uppercase tracking-widest bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50 transition-all"
+            >
               {createMutation.isPending ? "Creating…" : "Create Draft →"}
             </button>
           </div>
@@ -307,12 +510,17 @@ function CreateQuizForm({ onClose }: { onClose: () => void }) {
       {mode === "json" && (
         <div className="space-y-3">
           <div>
-            <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">Course *</label>
+            <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">
+              Course *
+            </label>
             <CoursePicker
               courseId={courseId}
               courseSearch={courseSearch}
               courses={courses}
-              onCourseChange={(id, label) => { setCourseId(id); setCourseSearch(label); }}
+              onCourseChange={(id, label) => {
+                setCourseId(id);
+                setCourseSearch(label);
+              }}
               onSearchChange={setCourseSearch}
             />
           </div>
@@ -328,10 +536,17 @@ function CreateQuizForm({ onClose }: { onClose: () => void }) {
             </div>
             <textarea
               value={jsonRaw}
-              onChange={(e) => { setJsonRaw(e.target.value); setParsed(null); setParseError(null); }}
+              onChange={(e) => {
+                setJsonRaw(e.target.value);
+                setParsed(null);
+                setParseError(null);
+              }}
               rows={10}
               placeholder={`{\n  "title": "Operating Systems Quiz",\n  "passingScore": 70,\n  "questions": [\n    {\n      "question": "What is a process?",\n      "type": "mcq",\n      "options": ["A running program", "A file", "A thread", "Memory"],\n      "answer": "A running program"\n    }\n  ]\n}`}
-              className={cn(fieldCls, "resize-none font-mono text-[11px] leading-relaxed")}
+              className={cn(
+                fieldCls,
+                "resize-none font-mono text-[11px] leading-relaxed",
+              )}
             />
           </div>
 
@@ -339,40 +554,102 @@ function CreateQuizForm({ onClose }: { onClose: () => void }) {
           {parseError && (
             <div className="flex items-start gap-2 border border-destructive/30 bg-destructive/10 px-3 py-2">
               <AlertCircle className="size-3.5 text-destructive shrink-0 mt-0.5" />
-              <p className="text-[10px] font-mono text-destructive">{parseError}</p>
+              <p className="text-[10px] font-mono text-destructive">
+                {parseError}
+              </p>
             </div>
           )}
 
           {/* Preview */}
           {parsed && (
-            <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="border border-border/40 bg-card/30 p-3 space-y-2">
+            <motion.div
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="border border-border/40 bg-card/30 p-3 space-y-2"
+            >
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="size-3.5 text-green-400 shrink-0" />
-                <p className="text-[10px] font-mono text-green-400 uppercase tracking-widest">Valid — ready to import</p>
+                <p className="text-[10px] font-mono text-green-400 uppercase tracking-widest">
+                  Valid — ready to import
+                </p>
               </div>
               <p className="font-mono font-bold text-sm">{parsed.title}</p>
-              {parsed.description && <p className="text-[11px] font-mono text-muted-foreground/60">{parsed.description}</p>}
+              {parsed.description && (
+                <p className="text-[11px] font-mono text-muted-foreground/60">
+                  {parsed.description}
+                </p>
+              )}
               <div className="flex items-center gap-3 text-[9px] font-mono text-muted-foreground/50">
-                <span>{parsed.questions.length} question{parsed.questions.length !== 1 ? "s" : ""}</span>
+                <span>
+                  {totalQuestions} question{totalQuestions !== 1 ? "s" : ""}
+                </span>
                 <span>Pass {parsed.passingScore ?? 70}%</span>
-                {(parsed.tags ?? []).length > 0 && <span>{parsed.tags!.join(", ")}</span>}
+                {(parsed.tags ?? []).length > 0 && (
+                  <span>{parsed.tags!.join(", ")}</span>
+                )}
               </div>
               <div className="space-y-1 max-h-48 overflow-y-auto no-scrollbar">
-                {parsed.questions.map((q, i) => (
-                  <div key={i} className="flex items-start gap-2 py-1 border-t border-border/20">
-                    <span className="text-[9px] font-mono text-muted-foreground/30 w-5 shrink-0 pt-px">{i + 1}.</span>
-                    <span className={cn("text-[8px] font-mono uppercase tracking-widest px-1 py-0.5 border shrink-0", QUESTION_TYPE_COLORS[q.type] ?? "text-muted-foreground border-border/30")}>
-                      {q.type.replace("_", " ")}
-                    </span>
-                    <p className="text-[11px] font-mono text-foreground/80 line-clamp-1 flex-1">{q.question}</p>
-                  </div>
-                ))}
+                {parsed.lectures
+                  ? parsed.lectures.flatMap((l, li) =>
+                      l.topics.flatMap((t, ti) =>
+                        t.questions.map((q, qi) => (
+                          <div
+                            key={`${li}-${ti}-${qi}`}
+                            className="flex items-start gap-2 py-1 border-t border-border/20"
+                          >
+                            <span className="text-[9px] font-mono text-muted-foreground/30 w-10 shrink-0 pt-px uppercase">
+                              L{li + 1}T{ti + 1}
+                            </span>
+                            <span
+                              className={cn(
+                                "text-[8px] font-mono uppercase tracking-widest px-1 py-0.5 border shrink-0",
+                                QUESTION_TYPE_COLORS[q.type] ??
+                                  "text-muted-foreground border-border/30",
+                              )}
+                            >
+                              {q.type.replace("-", " ")}
+                            </span>
+                            <p className="text-[11px] font-mono text-foreground/80 line-clamp-1 flex-1">
+                              {q.question}
+                            </p>
+                          </div>
+                        )),
+                      ),
+                    )
+                  : parsed.questions?.map((q, i) => (
+                      <div
+                        key={i}
+                        className="flex items-start gap-2 py-1 border-t border-border/20"
+                      >
+                        <span className="text-[9px] font-mono text-muted-foreground/30 w-5 shrink-0 pt-px">
+                          {i + 1}.
+                        </span>
+                        <span
+                          className={cn(
+                            "text-[8px] font-mono uppercase tracking-widest px-1 py-0.5 border shrink-0",
+                            QUESTION_TYPE_COLORS[q.type] ??
+                              "text-muted-foreground border-border/30",
+                          )}
+                        >
+                          {q.type.replace("-", " ")}
+                        </span>
+                        <p className="text-[11px] font-mono text-foreground/80 line-clamp-1 flex-1">
+                          {q.question}
+                        </p>
+                      </div>
+                    ))}
               </div>
             </motion.div>
           )}
 
           <div className="flex justify-end gap-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-[10px] font-mono uppercase tracking-widest border border-border/40 hover:bg-secondary/20 transition-colors">Cancel</button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-[10px] font-mono uppercase tracking-widest border border-border/40 hover:bg-secondary/20 transition-colors"
+            >
+              Cancel
+            </button>
             {!parsed ? (
               <button
                 type="button"
@@ -389,7 +666,9 @@ function CreateQuizForm({ onClose }: { onClose: () => void }) {
                 disabled={importing || !courseId}
                 className="px-4 py-2 text-[10px] font-mono uppercase tracking-widest bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50 transition-all"
               >
-                {importing ? "Importing…" : `Import ${parsed.questions.length} Questions →`}
+                {importing
+                  ? "Importing…"
+                  : `Import ${totalQuestions} Questions →`}
               </button>
             )}
           </div>
@@ -433,8 +712,6 @@ export default function AdminQuizzesPage() {
     return () => clearTimeout(t);
   }, [search]);
 
-
-
   const { data: result, isLoading } = useAdminQuizzes({
     page,
     limit: pageSize,
@@ -444,9 +721,6 @@ export default function AdminQuizzesPage() {
   const quizzes = result?.data ?? [];
   const totalPages = result?.pagination.totalPages ?? 1;
   const totalCount = result?.pagination.total ?? 0;
-
-
-
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this quiz? This cannot be undone.")) return;
@@ -461,7 +735,10 @@ export default function AdminQuizzesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
         <div className="flex items-center justify-between">
           <div>
             <div className="inline-block border border-primary/60 px-2 py-1 mb-2 bg-primary/5">
@@ -469,7 +746,9 @@ export default function AdminQuizzesPage() {
                 Academics
               </span>
             </div>
-            <h1 className="text-2xl font-mono font-bold tracking-widest uppercase">Quizzes</h1>
+            <h1 className="text-2xl font-mono font-bold tracking-widest uppercase">
+              Quizzes
+            </h1>
           </div>
           <button
             onClick={() => setShowCreate((v) => !v)}
@@ -519,16 +798,28 @@ export default function AdminQuizzesPage() {
             <SelectValue placeholder="All Statuses" />
           </SelectTrigger>
           <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
-            <SelectItem value="all" className="rounded-(--radius) font-mono text-xs uppercase">
+            <SelectItem
+              value="all"
+              className="rounded-(--radius) font-mono text-xs uppercase"
+            >
               All Statuses
             </SelectItem>
-            <SelectItem value="draft" className="rounded-(--radius) font-mono text-xs uppercase">
+            <SelectItem
+              value="draft"
+              className="rounded-(--radius) font-mono text-xs uppercase"
+            >
               Draft
             </SelectItem>
-            <SelectItem value="published" className="rounded-(--radius) font-mono text-xs uppercase">
+            <SelectItem
+              value="published"
+              className="rounded-(--radius) font-mono text-xs uppercase"
+            >
               Published
             </SelectItem>
-            <SelectItem value="archived" className="rounded-(--radius) font-mono text-xs uppercase">
+            <SelectItem
+              value="archived"
+              className="rounded-(--radius) font-mono text-xs uppercase"
+            >
               Archived
             </SelectItem>
           </SelectContent>
@@ -539,7 +830,10 @@ export default function AdminQuizzesPage() {
       {isLoading && (
         <div className="space-y-2">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-14 animate-pulse bg-card/40 border border-border/30" />
+            <div
+              key={i}
+              className="h-14 animate-pulse bg-card/40 border border-border/30"
+            />
           ))}
         </div>
       )}
@@ -620,7 +914,6 @@ export default function AdminQuizzesPage() {
           />
         </div>
       )}
-
 
       <p className="text-[10px] font-mono text-muted-foreground/30 uppercase tracking-widest">
         {totalCount} quiz{totalCount !== 1 ? "zes" : ""}
