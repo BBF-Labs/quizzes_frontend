@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { PaginationController } from "@/components/common";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -195,14 +196,18 @@ function CreatePromoCodeForm({ onClose }: { onClose: () => void }) {
 
         <div>
           <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">Type *</label>
-          <select
+          <Select
             value={form.type}
-            onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as "percentage" | "flat" }))}
-            className={fieldCls}
+            onValueChange={(v) => setForm((f) => ({ ...f, type: v as "percentage" | "flat" }))}
           >
-            <option value="percentage">Percentage (%)</option>
-            <option value="flat">Flat (GHS)</option>
-          </select>
+            <SelectTrigger className="w-full rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
+              <SelectItem value="percentage" className="rounded-(--radius) font-mono text-xs uppercase">Percentage (%)</SelectItem>
+              <SelectItem value="flat" className="rounded-(--radius) font-mono text-xs uppercase">Flat (GHS)</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div>
@@ -225,11 +230,9 @@ function CreatePromoCodeForm({ onClose }: { onClose: () => void }) {
             Max Uses
           </label>
           <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={hasMaxUses}
-              onChange={(e) => setHasMaxUses(e.target.checked)}
-              className="size-3"
+              onCheckedChange={(v) => setHasMaxUses(!!v)}
             />
             <input
               type="number"
@@ -248,11 +251,9 @@ function CreatePromoCodeForm({ onClose }: { onClose: () => void }) {
             Expiry Date
           </label>
           <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={hasExpiry}
-              onChange={(e) => setHasExpiry(e.target.checked)}
-              className="size-3"
+              onCheckedChange={(v) => setHasExpiry(!!v)}
             />
             <input
               type="date"
@@ -369,29 +370,29 @@ function PaymentsTab() {
       {/* Filters */}
       <div className="flex items-center gap-3">
         <Select value={statusFilter || "all"} onValueChange={(v) => handleFilterChange("status", v)}>
-          <SelectTrigger className="w-auto min-w-[140px] rounded-(--radius) bg-background/40 border-border/50 font-mono text-[10px] uppercase tracking-widest focus-visible:ring-0 focus:ring-0">
+          <SelectTrigger className="w-auto min-w-[140px] rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
             <SelectValue placeholder="All Statuses" />
           </SelectTrigger>
-          <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-[10px] uppercase">
-            <SelectItem value="all" className="rounded-(--radius) font-mono text-[10px] uppercase">All Statuses</SelectItem>
-            <SelectItem value="success" className="rounded-(--radius) font-mono text-[10px] uppercase">Success</SelectItem>
-            <SelectItem value="failed" className="rounded-(--radius) font-mono text-[10px] uppercase">Failed</SelectItem>
-            <SelectItem value="pending" className="rounded-(--radius) font-mono text-[10px] uppercase">Pending</SelectItem>
-            <SelectItem value="processing" className="rounded-(--radius) font-mono text-[10px] uppercase">Processing</SelectItem>
-            <SelectItem value="abandoned" className="rounded-(--radius) font-mono text-[10px] uppercase">Abandoned</SelectItem>
-            <SelectItem value="reversed" className="rounded-(--radius) font-mono text-[10px] uppercase">Reversed</SelectItem>
+          <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
+            <SelectItem value="all" className="rounded-(--radius) font-mono text-xs uppercase">All Statuses</SelectItem>
+            <SelectItem value="success" className="rounded-(--radius) font-mono text-xs uppercase">Success</SelectItem>
+            <SelectItem value="failed" className="rounded-(--radius) font-mono text-xs uppercase">Failed</SelectItem>
+            <SelectItem value="pending" className="rounded-(--radius) font-mono text-xs uppercase">Pending</SelectItem>
+            <SelectItem value="processing" className="rounded-(--radius) font-mono text-xs uppercase">Processing</SelectItem>
+            <SelectItem value="abandoned" className="rounded-(--radius) font-mono text-xs uppercase">Abandoned</SelectItem>
+            <SelectItem value="reversed" className="rounded-(--radius) font-mono text-xs uppercase">Reversed</SelectItem>
           </SelectContent>
         </Select>
         <Select value={typeFilter || "all"} onValueChange={(v) => handleFilterChange("type", v)}>
-          <SelectTrigger className="w-auto min-w-[120px] rounded-(--radius) bg-background/40 border-border/50 font-mono text-[10px] uppercase tracking-widest focus-visible:ring-0 focus:ring-0">
+          <SelectTrigger className="w-auto min-w-[120px] rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
             <SelectValue placeholder="All Types" />
           </SelectTrigger>
-          <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-[10px] uppercase">
-            <SelectItem value="all" className="rounded-(--radius) font-mono text-[10px] uppercase">All Types</SelectItem>
-            <SelectItem value="plan" className="rounded-(--radius) font-mono text-[10px] uppercase">Plan</SelectItem>
-            <SelectItem value="credits" className="rounded-(--radius) font-mono text-[10px] uppercase">Credits</SelectItem>
-            <SelectItem value="course" className="rounded-(--radius) font-mono text-[10px] uppercase">Course</SelectItem>
-            <SelectItem value="quiz" className="rounded-(--radius) font-mono text-[10px] uppercase">Quiz</SelectItem>
+          <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
+            <SelectItem value="all" className="rounded-(--radius) font-mono text-xs uppercase">All Types</SelectItem>
+            <SelectItem value="plan" className="rounded-(--radius) font-mono text-xs uppercase">Plan</SelectItem>
+            <SelectItem value="credits" className="rounded-(--radius) font-mono text-xs uppercase">Credits</SelectItem>
+            <SelectItem value="course" className="rounded-(--radius) font-mono text-xs uppercase">Course</SelectItem>
+            <SelectItem value="quiz" className="rounded-(--radius) font-mono text-xs uppercase">Quiz</SelectItem>
           </SelectContent>
         </Select>
         <p className="text-[10px] font-mono text-muted-foreground/40 ml-auto">
