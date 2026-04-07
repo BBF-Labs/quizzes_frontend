@@ -58,6 +58,11 @@ export const queryKeys = {
     detail: (id: string) =>
       [...queryKeys.publicLibrary.root, "detail", id] as const,
   },
+  adminLibrary: {
+    root: ["admin-library"] as const,
+    list: (filters?: Record<string, unknown>) =>
+      [...queryKeys.adminLibrary.root, "list", filters] as const,
+  },
   systemQuizzes: {
     root: ["system-quizzes"] as const,
     list: () => [...queryKeys.systemQuizzes.root, "list"] as const,
