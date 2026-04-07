@@ -484,7 +484,7 @@ export interface QuizDetail {
   lectures: QuizLecture[];
   createdAt: string;
   /** Remaining attempts in the current 12-hour window. null = unlimited (paid tier). */
-  remainingAttempts?: number | null;
+  remainingAttempts: number | null;
 }
 
 // ─── System Quizzes (Qz-team created) ────────────────────────────────────────
@@ -522,6 +522,7 @@ export interface SystemQuizDetail {
   };
   tags: string[];
   lectures: QuizLecture[];
+  remainingAttempts: number | null;
   createdAt: string;
   updatedAt: string;
 }
