@@ -462,7 +462,9 @@ export interface QuizTopic {
   topicTitle: string;
   /** Admin-facing quizzes use 'title' instead of 'topicTitle' */
   title?: string;
-  questions: QuizQuestion[];
+  questions?: QuizQuestion[];
+  /** Number of questions — returned by GET (structure-only). Use instead of questions.length on config screen. */
+  questionCount?: number;
   /** Admin-facing quizzes group questions by type */
   questionTypes?: { type: string; questions: QuizQuestion[] }[];
 }
@@ -481,6 +483,8 @@ export interface QuizDetail {
   courseCode?: string;
   lectures: QuizLecture[];
   createdAt: string;
+  /** Remaining attempts in the current 12-hour window. null = unlimited (paid tier). */
+  remainingAttempts?: number | null;
 }
 
 // ─── System Quizzes (Qz-team created) ────────────────────────────────────────

@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation} from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { queryKeys } from "@/lib/query-keys";
 import type { SystemQuizSummary, SystemQuizDetail } from "@/types/session";
@@ -49,4 +49,21 @@ export const useSystemQuiz = (id: string, enabled = true) =>
       return res.data?.data ?? null;
     },
     enabled: enabled && !!id,
+  });
+
+export const useStartSystemQuiz = () =>
+  useMutation({
+    mutationFn: async (quizId: string) => {
+      const res = await api.post<{ data: SystemQuizDetail }>(
+        `/learning/quizzes/${quizId}/start`,
+      );
+      return res.data.data;
+    },
+  });
+
+export const useConfirmSystemQuizAttempt = () =>
+  useMutation({
+    mutationFn: async (quizId: string) => {
+      await api.post(`/learning/quizzes/${quizId}/confirm-attempt`);
+    },
   });

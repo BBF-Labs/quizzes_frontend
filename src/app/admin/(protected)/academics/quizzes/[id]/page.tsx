@@ -22,6 +22,13 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import {
   useAdminQuiz,
@@ -30,6 +37,8 @@ import {
   useAdminGenerateQuizAI,
   useAdminPatchQuiz,
   useAdminAddQuizQuestion,
+  useAdminAddQuizLecture,
+  useAdminAddQuizTopic,
   useAdminBatchUploadQuizQuestions,
   useAdminUpdateQuizQuestion,
   useAdminRemoveQuizQuestion,
@@ -811,6 +820,34 @@ interface ParsedImportQuestion {
   answer: string;
   explanation?: string;
   hint?: string;
+  // Populated for structured imports
+  _lectureTitle?: string;
+  _topicTitle?: string;
+}
+
+interface StructuredImportLecture {
+  title: string;
+  topics: { title: string; questions: ParsedImportQuestion[] }[];
+}
+
+interface ParsedResult {
+  kind: "flat" | "structured";
+  questions: ParsedImportQuestion[];
+  lectures?: StructuredImportLecture[];
+}
+
+const QUESTION_TYPE_COLORS: Record<string, string> = {
+  mcq:           "text-blue-400 border-blue-400/30 bg-blue-400/10",
+  true_false:    "text-green-400 border-green-400/30 bg-green-400/10",
+  short_answer:  "text-amber-400 border-amber-400/30 bg-amber-400/10",
+  essay:         "text-purple-400 border-purple-400/30 bg-purple-400/10",
+  fill_in_blank: "text-cyan-400 border-cyan-400/30 bg-cyan-400/10",
+};
+
+function validateQuestion(q: ParsedImportQuestion, label: string) {
+  if (!q.question) throw new Error(`${label} missing "question" field`);
+  if (!q.type) throw new Error(`${label} missing "type" field`);
+  if (!q.answer) throw new Error(`${label} missing "answer" field`);
 }
 
 function JsonImportPanel({
@@ -823,9 +860,12 @@ function JsonImportPanel({
   onDone: () => void;
 }) {
   const batchMutation = useAdminBatchUploadQuizQuestions(quizId);
+  const addLectureMutation = useAdminAddQuizLecture(quizId);
+  const addTopicMutation = useAdminAddQuizTopic(quizId);
   const [jsonRaw, setJsonRaw] = useState("");
-  const [parsed, setParsed] = useState<ParsedImportQuestion[] | null>(null);
+  const [parsed, setParsed] = useState<ParsedResult | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
+  // Used only for flat imports
   const [lectureIndex, setLectureIndex] = useState(0);
   const [topicIndex, setTopicIndex] = useState(0);
 
@@ -837,14 +877,42 @@ function JsonImportPanel({
     setParsed(null);
     try {
       const obj = JSON.parse(jsonRaw);
-      const questions: ParsedImportQuestion[] = Array.isArray(obj) ? obj : obj.questions;
-      if (!Array.isArray(questions)) throw new Error('JSON must be an array or have a "questions" array');
-      for (const [i, q] of questions.entries()) {
-        if (!q.question) throw new Error(`Question ${i + 1} missing "question" field`);
-        if (!q.type) throw new Error(`Question ${i + 1} missing "type" field`);
-        if (!q.answer) throw new Error(`Question ${i + 1} missing "answer" field`);
+
+      // ── Structured format: { lectures: [...] } ──────────────────────────
+      if (obj && typeof obj === "object" && !Array.isArray(obj) && Array.isArray(obj.lectures)) {
+        const structuredLectures: StructuredImportLecture[] = [];
+        const flatQuestions: ParsedImportQuestion[] = [];
+
+        for (const [li, lec] of (obj.lectures as any[]).entries()) {
+          if (!lec.title) throw new Error(`Lecture ${li + 1} missing "title"`);
+          const topics: StructuredImportLecture["topics"] = [];
+
+          for (const [ti, top] of (lec.topics as any[] ?? []).entries()) {
+            if (!top.title) throw new Error(`Lecture ${li + 1} → Topic ${ti + 1} missing "title"`);
+            const qs: ParsedImportQuestion[] = [];
+            for (const [qi, q] of (top.questions as any[] ?? []).entries()) {
+              validateQuestion(q, `Lecture "${lec.title}" → Topic "${top.title}" → Q${qi + 1}`);
+              const enriched = { ...q, _lectureTitle: lec.title, _topicTitle: top.title };
+              qs.push(enriched);
+              flatQuestions.push(enriched);
+            }
+            topics.push({ title: top.title, questions: qs });
+          }
+          structuredLectures.push({ title: lec.title, topics });
+        }
+
+        if (flatQuestions.length === 0) throw new Error("No questions found in structured JSON");
+        setParsed({ kind: "structured", questions: flatQuestions, lectures: structuredLectures });
+        return;
       }
-      setParsed(questions);
+
+      // ── Flat format: [...] or { questions: [...] } ──────────────────────
+      const questions: ParsedImportQuestion[] = Array.isArray(obj) ? obj : obj.questions;
+      if (!Array.isArray(questions)) throw new Error('JSON must be an array, { questions: [...] }, or { lectures: [...] }');
+      for (const [i, q] of questions.entries()) {
+        validateQuestion(q, `Question ${i + 1}`);
+      }
+      setParsed({ kind: "flat", questions });
     } catch (err: any) {
       setParseError(err.message ?? "Invalid JSON");
     }
@@ -853,32 +921,87 @@ function JsonImportPanel({
   const handleImport = async () => {
     if (!parsed) return;
     try {
-      await batchMutation.mutateAsync({
-        questions: parsed.map((q) => ({
-          lectureIndex,
-          topicIndex,
-          type: q.type,
-          question: q.question,
-          options: q.options ?? [],
-          answer: q.answer,
-          explanation: q.explanation || undefined,
-          hint: q.hint || undefined,
-        })),
-      });
-      toast.success(`${parsed.length} question${parsed.length !== 1 ? "s" : ""} imported`);
+      if (parsed.kind === "flat") {
+        await batchMutation.mutateAsync({
+          questions: parsed.questions.map((q) => ({
+            lectureIndex,
+            topicIndex,
+            type: q.type,
+            question: q.question,
+            options: q.options ?? [],
+            answer: q.answer,
+            explanation: q.explanation || undefined,
+            hint: q.hint || undefined,
+          })),
+        });
+      } else {
+        // ── Structured import: create missing lectures/topics first ──
+        // Build a live index map from the current quiz state
+        const lecTitleToIdx = new Map<string, number>(
+          lectures.map((l, i) => [(l.title || l.lectureTitle || "").toLowerCase(), i])
+        );
+        let nextLecIdx = lectures.length;
+        // topicTitleToIdx[lecIdx] → Map<title → topicIdx>
+        const topTitleToIdx = new Map<number, Map<string, number>>(
+          lectures.map((l, li) => [
+            li,
+            new Map((l.topics ?? []).map((t, ti) => [(t.title || t.topicTitle || "").toLowerCase(), ti])),
+          ])
+        );
+
+        const questionBatch: AddQuestionPayload[] = [];
+
+        for (const lec of parsed.lectures ?? []) {
+          const lKey = lec.title.toLowerCase();
+          let lIdx = lecTitleToIdx.get(lKey);
+          if (lIdx === undefined) {
+            await addLectureMutation.mutateAsync({ title: lec.title });
+            lIdx = nextLecIdx++;
+            lecTitleToIdx.set(lKey, lIdx);
+            topTitleToIdx.set(lIdx, new Map());
+          }
+
+          const topMap = topTitleToIdx.get(lIdx) ?? new Map<string, number>();
+          let nextTopIdx = topMap.size;
+
+          for (const top of lec.topics) {
+            const tKey = top.title.toLowerCase();
+            let tIdx = topMap.get(tKey);
+            if (tIdx === undefined) {
+              await addTopicMutation.mutateAsync({ lectureIndex: lIdx, title: top.title });
+              tIdx = nextTopIdx++;
+              topMap.set(tKey, tIdx);
+            }
+
+            for (const q of top.questions) {
+              questionBatch.push({
+                lectureIndex: lIdx,
+                topicIndex: tIdx,
+                type: q.type,
+                question: q.question,
+                options: q.options ?? [],
+                answer: q.answer,
+                explanation: q.explanation || undefined,
+                hint: q.hint || undefined,
+              });
+            }
+          }
+        }
+
+        if (questionBatch.length > 0) {
+          await batchMutation.mutateAsync({ questions: questionBatch });
+        }
+      }
+
+      toast.success(`${parsed.questions.length} question${parsed.questions.length !== 1 ? "s" : ""} imported`);
       onDone();
     } catch (err: any) {
       toast.error(err?.response?.data?.message ?? "Import failed");
     }
   };
 
-  const QUESTION_TYPE_COLORS: Record<string, string> = {
-    mcq:           "text-blue-400 border-blue-400/30 bg-blue-400/10",
-    true_false:    "text-green-400 border-green-400/30 bg-green-400/10",
-    short_answer:  "text-amber-400 border-amber-400/30 bg-amber-400/10",
-    essay:         "text-purple-400 border-purple-400/30 bg-purple-400/10",
-    fill_in_blank: "text-cyan-400 border-cyan-400/30 bg-cyan-400/10",
-  };
+  const isImporting =
+    batchMutation.isPending || addLectureMutation.isPending || addTopicMutation.isPending;
 
   return (
     <motion.div
@@ -891,37 +1014,55 @@ function JsonImportPanel({
         <p className="text-[11px] font-mono uppercase tracking-widest font-bold">JSON Import</p>
       </div>
       <p className="text-[10px] font-mono text-muted-foreground/60">
-        Paste a JSON array of questions or{" "}
-        <span className="font-mono text-muted-foreground/40">{"{ questions: [...] }"}</span>.
-        All questions are batch-inserted into the selected lecture and topic.
+        Paste a <span className="text-muted-foreground/80">flat</span> array{" "}
+        <span className="font-mono text-muted-foreground/40">{"[{ question, type, answer }]"}</span>{" "}
+        or a <span className="text-muted-foreground/80">structured</span> object{" "}
+        <span className="font-mono text-muted-foreground/40">{"{ lectures: [{ title, topics: [{ title, questions }] }] }"}</span>.
+        New lectures and topics are created automatically for structured imports.
       </p>
 
-      {/* Lecture / Topic selectors */}
-      {lectures.length > 0 && (
-        <div className="flex items-center gap-3">
+      {/* Lecture / Topic selectors — flat mode only */}
+      {parsed?.kind !== "structured" && lectures.length > 0 && (
+        <div className="flex items-center gap-3 flex-wrap">
           <div className="flex flex-col gap-1">
-            <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40">Lecture</label>
-            <select
-              value={lectureIndex}
-              onChange={(e) => { setLectureIndex(Number(e.target.value)); setTopicIndex(0); }}
-              className="border border-border/50 bg-background/40 px-2 py-1 text-[11px] font-mono focus:outline-none focus:border-primary/50"
+            <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40">
+              Target Lecture
+            </label>
+            <Select
+              value={String(lectureIndex)}
+              onValueChange={(v) => { setLectureIndex(Number(v)); setTopicIndex(0); }}
             >
-              {lectures.map((l, i) => (
-                <option key={i} value={i}>{l.lectureTitle || l.title || `Lecture ${i + 1}`}</option>
-              ))}
-            </select>
+              <SelectTrigger className="w-auto min-w-[160px] rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
+                {lectures.map((l, i) => (
+                  <SelectItem key={i} value={String(i)} className="rounded-(--radius) font-mono text-xs uppercase">
+                    {l.title || l.lectureTitle || `Lecture ${i + 1}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40">Topic</label>
-            <select
-              value={topicIndex}
-              onChange={(e) => setTopicIndex(Number(e.target.value))}
-              className="border border-border/50 bg-background/40 px-2 py-1 text-[11px] font-mono focus:outline-none focus:border-primary/50"
+            <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40">
+              Target Topic
+            </label>
+            <Select
+              value={String(topicIndex)}
+              onValueChange={(v) => setTopicIndex(Number(v))}
             >
-              {topics.map((t, i) => (
-                <option key={i} value={i}>{t.topicTitle || t.title || `Topic ${i + 1}`}</option>
-              ))}
-            </select>
+              <SelectTrigger className="w-auto min-w-[160px] rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
+                {topics.map((t, i) => (
+                  <SelectItem key={i} value={String(i)} className="rounded-(--radius) font-mono text-xs uppercase">
+                    {t.title || t.topicTitle || `Topic ${i + 1}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       )}
@@ -930,7 +1071,7 @@ function JsonImportPanel({
         value={jsonRaw}
         onChange={(e) => { setJsonRaw(e.target.value); setParsed(null); setParseError(null); }}
         rows={10}
-        placeholder={`[\n  {\n    "question": "What is a process?",\n    "type": "mcq",\n    "options": ["A running program", "A file", "A thread", "Memory"],\n    "answer": "A running program"\n  }\n]`}
+        placeholder={`// Flat format:\n[\n  { "question": "What is a process?", "type": "mcq", "options": ["A running program", "A file"], "answer": "A running program" }\n]\n\n// Structured format:\n{\n  "lectures": [\n    {\n      "title": "Introduction to OS",\n      "topics": [\n        {\n          "title": "Processes",\n          "questions": [\n            { "question": "...", "type": "mcq", "options": [...], "answer": "..." }\n          ]\n        }\n      ]\n    }\n  ]\n}`}
         className="w-full border border-border/50 bg-background/40 px-3 py-2 text-[11px] font-mono focus:outline-none focus:border-primary/50 resize-none transition-colors leading-relaxed"
       />
 
@@ -946,20 +1087,47 @@ function JsonImportPanel({
           <div className="flex items-center gap-2">
             <CheckCircle2 className="size-3.5 text-green-400 shrink-0" />
             <p className="text-[10px] font-mono text-green-400 uppercase tracking-widest">
-              Valid — {parsed.length} question{parsed.length !== 1 ? "s" : ""} ready to import
+              Valid · {parsed.questions.length} question{parsed.questions.length !== 1 ? "s" : ""}
+              {parsed.kind === "structured" && ` across ${parsed.lectures?.length} lecture${parsed.lectures?.length !== 1 ? "s" : ""}`}
             </p>
           </div>
-          <div className="space-y-1 max-h-40 overflow-y-auto">
-            {parsed.map((q, i) => (
-              <div key={i} className="flex items-start gap-2 py-1 border-t border-border/20">
-                <span className="text-[9px] font-mono text-muted-foreground/30 w-5 shrink-0 pt-px">{i + 1}.</span>
-                <span className={`text-[8px] font-mono uppercase tracking-widest px-1 py-0.5 border shrink-0 ${QUESTION_TYPE_COLORS[q.type] ?? "text-muted-foreground border-border/30"}`}>
-                  {q.type.replace("_", " ")}
-                </span>
-                <p className="text-[11px] font-mono text-foreground/80 line-clamp-1 flex-1">{q.question}</p>
-              </div>
-            ))}
-          </div>
+
+          {parsed.kind === "structured" ? (
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {parsed.lectures?.map((lec, li) => (
+                <div key={li}>
+                  <p className="text-[9px] font-mono uppercase tracking-widest text-primary/70 mb-1">
+                    {lec.title}
+                  </p>
+                  {lec.topics.map((top, ti) => (
+                    <div key={ti} className="pl-3 border-l border-border/30 mb-1.5">
+                      <p className="text-[9px] font-mono text-muted-foreground/60 mb-1">{top.title}</p>
+                      {top.questions.map((q, qi) => (
+                        <div key={qi} className="flex items-start gap-2 py-0.5">
+                          <span className={`text-[8px] font-mono uppercase tracking-widest px-1 py-0.5 border shrink-0 ${QUESTION_TYPE_COLORS[q.type] ?? "text-muted-foreground border-border/30"}`}>
+                            {q.type.replace("_", " ")}
+                          </span>
+                          <p className="text-[10px] font-mono text-foreground/70 line-clamp-1 flex-1">{q.question}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-1 max-h-40 overflow-y-auto">
+              {parsed.questions.map((q, i) => (
+                <div key={i} className="flex items-start gap-2 py-1 border-t border-border/20">
+                  <span className="text-[9px] font-mono text-muted-foreground/30 w-5 shrink-0 pt-px">{i + 1}.</span>
+                  <span className={`text-[8px] font-mono uppercase tracking-widest px-1 py-0.5 border shrink-0 ${QUESTION_TYPE_COLORS[q.type] ?? "text-muted-foreground border-border/30"}`}>
+                    {q.type.replace("_", " ")}
+                  </span>
+                  <p className="text-[11px] font-mono text-foreground/80 line-clamp-1 flex-1">{q.question}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </motion.div>
       )}
 
@@ -985,10 +1153,10 @@ function JsonImportPanel({
             size="sm"
             className="h-8 gap-1.5 text-[10px] font-mono"
             onClick={handleImport}
-            disabled={batchMutation.isPending}
+            disabled={isImporting}
           >
-            {batchMutation.isPending ? <Loader2 className="size-3 animate-spin" /> : <FileJson className="size-3" />}
-            Import {parsed.length} Question{parsed.length !== 1 ? "s" : ""}
+            {isImporting ? <Loader2 className="size-3 animate-spin" /> : <FileJson className="size-3" />}
+            Import {parsed.questions.length} Question{parsed.questions.length !== 1 ? "s" : ""}
           </Button>
         )}
       </div>
@@ -996,17 +1164,245 @@ function JsonImportPanel({
   );
 }
 
+// ─── Inline section-creation helpers ─────────────────────────────────────────
+
+function AddLectureInline({ quizId }: { quizId: string }) {
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const mutation = useAdminAddQuizLecture(quizId);
+
+  const handleSave = async () => {
+    if (!title.trim()) return;
+    try {
+      await mutation.mutateAsync({ title: title.trim() });
+      toast.success("Lecture added");
+      setTitle("");
+      setOpen(false);
+    } catch {
+      toast.error("Failed to add lecture");
+    }
+  };
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="flex items-center gap-1.5 text-[9px] font-mono uppercase tracking-widest text-primary/60 hover:text-primary transition-colors"
+      >
+        <Plus className="size-3" /> Add Lecture
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2 border border-primary/20 bg-primary/5 px-3 py-2">
+      <input
+        autoFocus
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter") handleSave(); if (e.key === "Escape") setOpen(false); }}
+        placeholder="Lecture title…"
+        className="flex-1 bg-transparent text-[12px] font-mono focus:outline-none text-foreground placeholder:text-muted-foreground/40"
+      />
+      <button
+        type="button"
+        onClick={handleSave}
+        disabled={!title.trim() || mutation.isPending}
+        className="text-[9px] font-mono uppercase tracking-widest text-primary hover:opacity-80 disabled:opacity-40 transition-all flex items-center gap-1"
+      >
+        {mutation.isPending ? <Loader2 className="size-3 animate-spin" /> : <Check className="size-3" />}
+        Save
+      </button>
+      <button type="button" onClick={() => setOpen(false)} className="text-muted-foreground/40 hover:text-muted-foreground">
+        <X className="size-3" />
+      </button>
+    </div>
+  );
+}
+
+function AddTopicInline({ quizId, lectureIndex }: { quizId: string; lectureIndex: number }) {
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const mutation = useAdminAddQuizTopic(quizId);
+
+  const handleSave = async () => {
+    if (!title.trim()) return;
+    try {
+      await mutation.mutateAsync({ lectureIndex, title: title.trim() });
+      toast.success("Topic added");
+      setTitle("");
+      setOpen(false);
+    } catch {
+      toast.error("Failed to add topic");
+    }
+  };
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="flex items-center gap-1 text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 hover:text-primary transition-colors"
+      >
+        <Plus className="size-3" /> Add Topic
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2 border border-border/40 bg-card/30 px-3 py-1.5">
+      <input
+        autoFocus
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter") handleSave(); if (e.key === "Escape") setOpen(false); }}
+        placeholder="Topic title…"
+        className="flex-1 bg-transparent text-[12px] font-mono focus:outline-none text-foreground placeholder:text-muted-foreground/40"
+      />
+      <button
+        type="button"
+        onClick={handleSave}
+        disabled={!title.trim() || mutation.isPending}
+        className="text-[9px] font-mono uppercase text-primary hover:opacity-80 disabled:opacity-40 transition-all flex items-center gap-1"
+      >
+        {mutation.isPending ? <Loader2 className="size-3 animate-spin" /> : <Check className="size-3" />}
+        Save
+      </button>
+      <button type="button" onClick={() => setOpen(false)} className="text-muted-foreground/40 hover:text-muted-foreground">
+        <X className="size-3" />
+      </button>
+    </div>
+  );
+}
+
+function ContentSection({
+  quizId,
+  quiz,
+  openLectures,
+  toggleLecture,
+}: {
+  quizId: string;
+  quiz: AdminQuizDetail;
+  openLectures: Set<number>;
+  toggleLecture: (i: number) => void;
+}) {
+  return (
+    <div>
+      <div className="border-b border-border/40 pb-2 mb-3 flex items-center justify-between">
+        <h2 className="text-[11px] font-mono uppercase tracking-widest font-bold">Content</h2>
+        <span className="text-[9px] font-mono text-muted-foreground/40">
+          {(quiz.lectures ?? []).length} lecture{(quiz.lectures ?? []).length !== 1 ? "s" : ""}
+        </span>
+      </div>
+
+      {!(quiz.lectures ?? []).length ? (
+        <EmptyContentState quizId={quizId} quiz={quiz} />
+      ) : (
+        <div className="space-y-2">
+          {(quiz.lectures ?? []).map((l, li) => {
+            const topicCount = (l.topics ?? []).length;
+            const lectureQ = (l.topics ?? []).reduce(
+              (s, t) =>
+                s +
+                ((t.questionTypes ?? []).reduce((ss, qt) => ss + (qt.questions ?? []).length, 0) ||
+                  (t.questions ?? []).length),
+              0,
+            );
+            return (
+              <div key={li} className="border border-border/40 bg-card/20">
+                <button
+                  type="button"
+                  onClick={() => toggleLecture(li)}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-secondary/10 transition-colors"
+                >
+                  {openLectures.has(li) ? (
+                    <ChevronDown className="size-3.5 shrink-0 text-muted-foreground/50" />
+                  ) : (
+                    <ChevronRight className="size-3.5 shrink-0 text-muted-foreground/50" />
+                  )}
+                  <span className="font-mono font-bold text-sm text-foreground flex-1 truncate">
+                    {l.lectureTitle || l.title}
+                  </span>
+                  <span className="text-[9px] font-mono text-muted-foreground/40 shrink-0">
+                    {topicCount} topics · {lectureQ} Qs
+                  </span>
+                </button>
+
+                {openLectures.has(li) && (
+                  <div className="px-4 pb-4 space-y-4 border-t border-border/20 pt-3">
+                    {(l.topics ?? []).map((t, ti) => (
+                      <TopicSection
+                        key={ti}
+                        topic={t}
+                        lectureIndex={li}
+                        topicIndex={ti}
+                        quizId={quizId}
+                      />
+                    ))}
+                    {!(l.topics ?? []).length && (
+                      <p className="text-[10px] font-mono text-muted-foreground/30 py-1">
+                        No topics yet.
+                      </p>
+                    )}
+                    <AddTopicInline quizId={quizId} lectureIndex={li} />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          <div className="pt-1">
+            <AddLectureInline quizId={quizId} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Empty content state ──────────────────────────────────────────────────────
 
-function EmptyContentState({ quizId }: { quizId: string }) {
+function EmptyContentState({
+  quizId,
+  quiz,
+}: {
+  quizId: string;
+  quiz: AdminQuizDetail;
+}) {
   const [showAdd, setShowAdd] = useState(false);
+  const [lectureTitle, setLectureTitle] = useState("");
+  const [topicTitle, setTopicTitle] = useState("");
+  const addLectureMutation = useAdminAddQuizLecture(quizId);
+  const addTopicMutation = useAdminAddQuizTopic(quizId);
   const addMutation = useAdminAddQuizQuestion(quizId);
+
+  const lectures = quiz.lectures ?? [];
+  const hasStructure = lectures.length > 0;
+
+  // For quizzes that already have lectures/topics, just pick where to add
+  const [lectureIndex, setLectureIndex] = useState(0);
+  const [topicIndex, setTopicIndex] = useState(0);
+  const topics = lectures[lectureIndex]?.topics ?? [];
+
+  const isSaving =
+    addLectureMutation.isPending || addTopicMutation.isPending || addMutation.isPending;
 
   const handleAdd = async (form: QuestionFormState) => {
     try {
+      let lIdx = lectureIndex;
+      let tIdx = topicIndex;
+
+      if (!hasStructure) {
+        // Create lecture then topic first
+        await addLectureMutation.mutateAsync({ title: lectureTitle.trim() || "Lecture 1" });
+        lIdx = 0;
+        await addTopicMutation.mutateAsync({ lectureIndex: 0, title: topicTitle.trim() || "Topic 1" });
+        tIdx = 0;
+      }
+
       await addMutation.mutateAsync({
-        lectureIndex: 0,
-        topicIndex: 0,
+        lectureIndex: lIdx,
+        topicIndex: tIdx,
         type: form.type,
         question: form.question,
         options: form.options,
@@ -1023,12 +1419,81 @@ function EmptyContentState({ quizId }: { quizId: string }) {
 
   if (showAdd) {
     return (
-      <QuestionForm
-        initial={blankForm()}
-        onSave={handleAdd}
-        onCancel={() => setShowAdd(false)}
-        saving={addMutation.isPending}
-      />
+      <div className="space-y-3">
+        {/* Section pickers */}
+        {!hasStructure ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 border border-border/30 bg-card/20">
+            <div>
+              <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">
+                Lecture Title
+              </label>
+              <input
+                value={lectureTitle}
+                onChange={(e) => setLectureTitle(e.target.value)}
+                placeholder="e.g. Introduction to OS"
+                className="w-full border border-border/50 bg-background/40 px-3 py-2 text-[12px] font-mono focus:outline-none focus:border-primary/50 transition-colors"
+              />
+            </div>
+            <div>
+              <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">
+                Topic Title
+              </label>
+              <input
+                value={topicTitle}
+                onChange={(e) => setTopicTitle(e.target.value)}
+                placeholder="e.g. Processes"
+                className="w-full border border-border/50 bg-background/40 px-3 py-2 text-[12px] font-mono focus:outline-none focus:border-primary/50 transition-colors"
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3 flex-wrap p-4 border border-border/30 bg-card/20">
+            <div className="flex flex-col gap-1">
+              <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40">Lecture</label>
+              <Select
+                value={String(lectureIndex)}
+                onValueChange={(v) => { setLectureIndex(Number(v)); setTopicIndex(0); }}
+              >
+                <SelectTrigger className="w-auto min-w-[160px] rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
+                  {lectures.map((l, i) => (
+                    <SelectItem key={i} value={String(i)} className="rounded-(--radius) font-mono text-xs uppercase">
+                      {l.title || l.lectureTitle || `Lecture ${i + 1}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40">Topic</label>
+              <Select
+                value={String(topicIndex)}
+                onValueChange={(v) => setTopicIndex(Number(v))}
+              >
+                <SelectTrigger className="w-auto min-w-[160px] rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
+                  {topics.map((t, i) => (
+                    <SelectItem key={i} value={String(i)} className="rounded-(--radius) font-mono text-xs uppercase">
+                      {t.title || t.topicTitle || `Topic ${i + 1}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        )}
+
+        <QuestionForm
+          initial={blankForm()}
+          onSave={handleAdd}
+          onCancel={() => setShowAdd(false)}
+          saving={isSaving}
+        />
+      </div>
     );
   }
 
@@ -1243,71 +1708,7 @@ export default function AdminQuizDetailPage({
       )}
 
       {/* Content */}
-      <div>
-        <div className="border-b border-border/40 pb-2 mb-3 flex items-center justify-between">
-          <h2 className="text-[11px] font-mono uppercase tracking-widest font-bold">Content</h2>
-          <span className="text-[9px] font-mono text-muted-foreground/40">
-            {(quiz.lectures ?? []).length} lecture{(quiz.lectures ?? []).length !== 1 ? "s" : ""}
-          </span>
-        </div>
-
-        {!(quiz.lectures ?? []).length ? (
-          <EmptyContentState quizId={id} />
-        ) : (
-          <div className="space-y-2">
-            {(quiz.lectures ?? []).map((l, li) => {
-              const topicCount = (l.topics ?? []).length;
-              const lectureQ = (l.topics ?? []).reduce(
-                (s, t) =>
-                  s +
-                  ((t.questionTypes ?? []).reduce((ss, qt) => ss + (qt.questions ?? []).length, 0) ||
-                    (t.questions ?? []).length),
-                0,
-              );
-              return (
-                <div key={li} className="border border-border/40 bg-card/20">
-                  <button
-                    type="button"
-                    onClick={() => toggleLecture(li)}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-secondary/10 transition-colors"
-                  >
-                    {openLectures.has(li) ? (
-                      <ChevronDown className="size-3.5 shrink-0 text-muted-foreground/50" />
-                    ) : (
-                      <ChevronRight className="size-3.5 shrink-0 text-muted-foreground/50" />
-                    )}
-                    <span className="font-mono font-bold text-sm text-foreground flex-1 truncate">
-                      {l.lectureTitle || l.title}
-                    </span>
-                    <span className="text-[9px] font-mono text-muted-foreground/40 shrink-0">
-                      {topicCount} topics · {lectureQ} Qs
-                    </span>
-                  </button>
-
-                  {openLectures.has(li) && (
-                    <div className="px-4 pb-4 space-y-4 border-t border-border/20 pt-3">
-                      {(l.topics ?? []).map((t, ti) => (
-                        <TopicSection
-                          key={ti}
-                          topic={t}
-                          lectureIndex={li}
-                          topicIndex={ti}
-                          quizId={id}
-                        />
-                      ))}
-                      {!(l.topics ?? []).length && (
-                        <p className="text-[10px] font-mono text-muted-foreground/30 py-2">
-                          No topics in this lecture.
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+      <ContentSection quizId={id} quiz={quiz} openLectures={openLectures} toggleLecture={toggleLecture} />
     </div>
   );
 }

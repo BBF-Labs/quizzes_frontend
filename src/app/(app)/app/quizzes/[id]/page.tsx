@@ -47,7 +47,12 @@ export default function QuizDetailPage({
   }, [quiz?.title]);
 
   const totalQuestions = quiz?.lectures.reduce(
-    (sum, l) => sum + l.topics.reduce((s, t) => s + t.questions.length, 0),
+    (sum, l) =>
+      sum +
+      l.topics.reduce(
+        (s, t) => s + (t.questionCount ?? t.questions?.length ?? 0),
+        0,
+      ),
     0,
   );
 

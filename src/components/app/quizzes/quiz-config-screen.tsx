@@ -20,9 +20,11 @@ import type { QuizDetail, QuizConfig } from "@/types/session";
 
 interface Props {
   quiz: QuizDetail;
-  onStart: (config: QuizConfig) => void;
+  onStart: (config: QuizConfig) => void | Promise<void>;
   initialConfig?: Partial<QuizConfig>;
   showTopicSelection?: boolean;
+  isLoading?: boolean;
+  error?: Error | null;
 }
 
 const TIMER_PER_Q_OPTIONS = [
@@ -50,6 +52,8 @@ export function QuizConfigScreen({
   onStart,
   initialConfig,
   showTopicSelection = true,
+  isLoading = false,
+  error = null,
 }: Props) {
   // --- State ---
   const [selectedKeys, setSelectedKeys] = useState<string[]>(
@@ -84,7 +88,10 @@ export function QuizConfigScreen({
         s +
         l.topics.reduce(
           (ts, t, ti) =>
-            ts + (selectedKeys.includes(`${li}:${ti}`) ? t.questions.length : 0),
+            ts +
+            (selectedKeys.includes(`${li}:${ti}`)
+              ? (t.questionCount ?? t.questions?.length ?? 0)
+              : 0),
           0
         ),
       0
@@ -93,7 +100,7 @@ export function QuizConfigScreen({
 
   const hasFreeTxt = useMemo(() => {
     return quiz.lectures.some((l) =>
-      l.topics.some((t) => t.questions.some((q) => q.type === "free_text"))
+      l.topics.some((t) => (t.questions ?? []).some((q) => q.type === "free_text"))
     );
   }, [quiz]);
 
@@ -179,7 +186,7 @@ export function QuizConfigScreen({
                         {l.lectureTitle}
                       </span>
                       <span className="text-[9px] font-mono text-muted-foreground/40">
-                        {l.topics.reduce((s, t) => s + t.questions.length, 0)} Qs
+                        {l.topics.reduce((s, t) => s + (t.questionCount ?? t.questions?.length ?? 0), 0)} Qs
                       </span>
                     </button>
                     {l.topics.length > 1 && (
@@ -207,7 +214,7 @@ export function QuizConfigScreen({
                                 {t.topicTitle}
                               </span>
                               <span className="text-[9px] font-mono text-muted-foreground/30">
-                                {t.questions.length}Q
+                                {(t.questionCount ?? t.questions?.length ?? 0)}Q
                               </span>
                             </button>
                           );
@@ -433,9 +440,25 @@ export function QuizConfigScreen({
           </section>
         )}
 
+        {error && (
+          <div className="flex items-center gap-3 rounded-(--radius) border border-destructive/20 bg-destructive/5 px-4 py-3 mb-4">
+            <div className="size-8 rounded-full bg-destructive/10 flex items-center justify-center shrink-0">
+              <span className="text-destructive font-bold text-xs">!</span>
+            </div>
+            <div>
+              <p className="text-[10px] font-mono font-black uppercase text-destructive">
+                Error Starting Quiz
+              </p>
+              <p className="text-[10px] font-mono text-destructive/60 mt-0.5 leading-relaxed">
+                {error.message}
+              </p>
+            </div>
+          </div>
+        )}
+
         <Button
           className="w-full h-12 text-[11px] font-mono font-black uppercase tracking-[0.2em] mt-2 shadow-lg shadow-primary/10"
-          disabled={totalSelected === 0}
+          disabled={totalSelected === 0 || isLoading}
           onClick={() =>
             onStart({
               selectedKeys,

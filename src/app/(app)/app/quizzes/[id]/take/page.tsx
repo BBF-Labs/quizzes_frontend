@@ -98,7 +98,7 @@ function buildQuestions(quiz: QuizDetail, config: QuizConfig): QuizQuestion[] {
     .flatMap((l, li) =>
       l.topics.flatMap((t, ti) => {
         if (!config.selectedKeys.includes(`${li}:${ti}`)) return [];
-        return t.questions ?? [];
+        return (t.questions ?? []) as QuizQuestion[];
       }),
     )
     .filter(Boolean);
@@ -189,7 +189,7 @@ function ConfigScreen({
   onStart,
 }: {
   quiz: QuizDetail;
-  onStart: (config: QuizConfig) => void;
+  onStart: (config: QuizConfig) => void | Promise<void>;
 }) {
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [feedbackMode, setFeedbackMode] = useState<"immediate" | "deferred">(
@@ -211,7 +211,10 @@ function ConfigScreen({
       s +
       l.topics.reduce(
         (ts, t, ti) =>
-          ts + (selectedKeys.includes(`${li}:${ti}`) ? t.questions.length : 0),
+          ts +
+          (selectedKeys.includes(`${li}:${ti}`)
+            ? (t.questionCount ?? t.questions?.length ?? 0)
+            : 0),
         0,
       ),
     0,
@@ -233,7 +236,7 @@ function ConfigScreen({
   };
 
   const hasFreeTxt = quiz.lectures.some((l) =>
-    l.topics.some((t) => t.questions.some((q) => q.type === "free_text")),
+    l.topics.some((t) => (t.questions ?? []).some((q) => q.type === "free_text")),
   );
 
   return (
@@ -288,7 +291,7 @@ function ConfigScreen({
                       {l.lectureTitle}
                     </span>
                     <span className="text-[9px] font-mono text-muted-foreground/40">
-                      {l.topics.reduce((s, t) => s + t.questions.length, 0)} Qs
+                      {l.topics.reduce((s, t) => s + (t.questionCount ?? t.questions?.length ?? 0), 0)} Qs
                     </span>
                   </button>
                   {l.topics.length > 1 && (
@@ -314,7 +317,7 @@ function ConfigScreen({
                               {t.topicTitle}
                             </span>
                             <span className="text-[9px] font-mono text-muted-foreground/30">
-                              {t.questions.length}Q
+                              {(t.questionCount ?? t.questions?.length ?? 0)}Q
                             </span>
                           </button>
                         );
@@ -1108,11 +1111,12 @@ export default function QuizTakePage({
 
   const startQuiz = useCallback(
     (cfg: QuizConfig, resumeData?: SavedProgress) => {
-      if (!quiz) return;
       setConfig(cfg);
 
+      const quizWithQuestions: QuizDetail = quiz!;
+
       if (resumeData) {
-        const allQs = buildQuestions(quiz, cfg);
+        const allQs = buildQuestions(quizWithQuestions, cfg);
         const ordered = resumeData.questionIds
           .map((qid) => allQs.find((q) => q.id === qid))
           .filter(Boolean) as QuizQuestion[];
@@ -1123,7 +1127,7 @@ export default function QuizTakePage({
         setStreak(resumeData.streak);
         setMaxStreak(resumeData.maxStreak);
       } else {
-        const qs = buildQuestions(quiz, cfg);
+        const qs = buildQuestions(quizWithQuestions, cfg);
         setQuestions(qs);
         setCurrent(0);
         setAnswers({});
