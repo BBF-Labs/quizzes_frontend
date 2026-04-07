@@ -242,7 +242,7 @@ function PhaseFunnel({
   const max = Math.max(...phases.map((p) => p.count), 1);
 
   return (
-    <div className="border border-border/50 bg-card/40 p-5">
+    <div className="border border-border/50 bg-card/40 p-5 rounded-(--radius)">
       <div className="flex items-center justify-between mb-5">
         <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground/60">
           Phase Distribution
@@ -296,7 +296,7 @@ function ArtifactBreakdown({ artifactsByType }: { artifactsByType: Record<string
   if (entries.length === 0) return null;
 
   return (
-    <div className="border border-border/50 bg-card/40 p-5">
+    <div className="border border-border/50 bg-card/40 p-5 rounded-(--radius)">
       <div className="flex items-center justify-between mb-5">
         <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground/60">
           Artifacts Generated
@@ -349,7 +349,7 @@ function SatisfactionBar({
   const score = Math.round((positiveRatings / total) * 100);
 
   return (
-    <div className="border border-border/50 bg-card/40 p-5">
+    <div className="border border-border/50 bg-card/40 p-5 rounded-(--radius)">
       <div className="flex items-center justify-between mb-4">
         <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground/60">
           Z Response Satisfaction
@@ -574,7 +574,7 @@ export default function UsagePage() {
 
                 {/* Key metrics */}
                 <div className="grid grid-cols-3 gap-3">
-                  <div className="border border-border/50 bg-card/40 px-4 py-4 flex flex-col gap-2">
+                  <div className="border border-border/50 bg-card/40 px-4 py-4 flex flex-col gap-2 rounded-(--radius)">
                     <div className="flex items-center justify-between">
                       <span className="text-[9px] font-mono uppercase tracking-[0.2em] text-muted-foreground/50">
                         Completion Rate
@@ -587,7 +587,7 @@ export default function UsagePage() {
                     </p>
                   </div>
 
-                  <div className="border border-border/50 bg-card/40 px-4 py-4 flex flex-col gap-2">
+                  <div className="border border-border/50 bg-card/40 px-4 py-4 flex flex-col gap-2 rounded-(--radius)">
                     <div className="flex items-center justify-between">
                       <span className="text-[9px] font-mono uppercase tracking-[0.2em] text-muted-foreground/50">
                         Msgs / Session
@@ -600,7 +600,7 @@ export default function UsagePage() {
                     </p>
                   </div>
 
-                  <div className="border border-border/50 bg-card/40 px-4 py-4 flex flex-col gap-2">
+                  <div className="border border-border/50 bg-card/40 px-4 py-4 flex flex-col gap-2 rounded-(--radius)">
                     <div className="flex items-center justify-between">
                       <span className="text-[9px] font-mono uppercase tracking-[0.2em] text-muted-foreground/50">
                         Avg Duration

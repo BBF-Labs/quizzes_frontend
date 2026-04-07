@@ -14,6 +14,7 @@ import {
   BookOpen,
   Calendar,
   Database,
+  CreditCard,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import {
@@ -97,6 +98,16 @@ const navigation = [
         title: "Timetables",
         url: "/admin/academics/timetables",
         icon: Calendar,
+      },
+    ],
+  },
+  {
+    title: "Billing",
+    items: [
+      {
+        title: "Billing",
+        url: "/admin/billing",
+        icon: CreditCard,
       },
     ],
   },

@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Plus, Search, X, GraduationCap, Trash2, Eye } from "lucide-react";
+import { Plus, Search, X, GraduationCap, Trash2, Eye, FileJson, FormInput, AlertCircle, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
@@ -23,11 +23,13 @@ import {
   ComboboxEmpty,
 } from "@/components/ui/combobox";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import {
   useAdminQuizzes,
   useAdminCreateQuiz,
   useAdminDeleteQuiz,
   useAdminCourses,
+  useAdminAddQuizQuestion,
 } from "@/hooks/admin/use-academics";
 import { PaginationController } from "@/components/common/pagination-controller";
 
@@ -39,45 +41,192 @@ const STATUS_COLORS: Record<string, string> = {
   archived: "text-muted-foreground border-border/40 bg-card/40",
 };
 
+// ─── Shared types ─────────────────────────────────────────────────────────────
+
+interface ParsedQuestion {
+  question: string;
+  type: "mcq" | "true_false" | "short_answer" | "essay" | "fill_in_blank";
+  options: string[];
+  answer: string;
+  explanation?: string;
+  hint?: string;
+}
+
+interface ParsedQuizJson {
+  title: string;
+  description?: string;
+  passingScore?: number;
+  tags?: string[];
+  questions: ParsedQuestion[];
+}
+
+const QUESTION_TYPE_COLORS: Record<string, string> = {
+  mcq:           "text-blue-400 border-blue-400/30 bg-blue-400/10",
+  true_false:    "text-green-400 border-green-400/30 bg-green-400/10",
+  short_answer:  "text-amber-400 border-amber-400/30 bg-amber-400/10",
+  essay:         "text-purple-400 border-purple-400/30 bg-purple-400/10",
+  fill_in_blank: "text-cyan-400 border-cyan-400/30 bg-cyan-400/10",
+};
+
+// ─── Shared course picker ─────────────────────────────────────────────────────
+
+function CoursePicker({
+  courseId,
+  courseSearch,
+  courses,
+  onCourseChange,
+  onSearchChange,
+}: {
+  courseId: string;
+  courseSearch: string;
+  courses: any[];
+  onCourseChange: (id: string, label: string) => void;
+  onSearchChange: (v: string) => void;
+}) {
+  return (
+    <Combobox
+      value={courseId}
+      onValueChange={(val) => {
+        const course = courses.find((c) => c._id === val);
+        onCourseChange(val as string, course ? `${course.code} - ${course.title}` : "");
+      }}
+    >
+      <ComboboxInput
+        placeholder="Search course…"
+        className="w-full border border-border/50 bg-background/40 px-3 py-2 text-[12px] font-mono focus:outline-none focus:border-primary/50 transition-colors h-[34px] uppercase tracking-widest"
+        value={courseSearch}
+        onChange={(e) => onSearchChange(e.target.value)}
+        required
+      />
+      <ComboboxContent className="font-mono border-border/40">
+        <ComboboxEmpty className="font-mono text-[10px] uppercase p-2">No courses found</ComboboxEmpty>
+        <ComboboxList className="max-h-60 no-scrollbar">
+          {courses.map((c: any) => (
+            <ComboboxItem key={c._id} value={c._id} className="text-[10px] uppercase tracking-tighter">
+              <span className="font-bold text-primary mr-2">{c.code}</span>
+              <span className="truncate">{c.title}</span>
+            </ComboboxItem>
+          ))}
+        </ComboboxList>
+      </ComboboxContent>
+    </Combobox>
+  );
+}
+
 // ─── Create form ──────────────────────────────────────────────────────────────
 
 function CreateQuizForm({ onClose }: { onClose: () => void }) {
+  const router = useRouter();
   const createMutation = useAdminCreateQuiz();
+
+  const [mode, setMode] = useState<"form" | "json">("form");
+
+  // Shared course state
   const [courseSearch, setCourseSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-
+  const [courseId, setCourseId] = useState("");
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(courseSearch), 300);
     return () => clearTimeout(t);
   }, [courseSearch]);
-
   const { data: coursesResult } = useAdminCourses({ limit: 50, search: debouncedSearch });
   const courses = coursesResult?.data ?? [];
 
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    courseId: "",
-    passingScore: 70,
-    tags: "",
-  });
+  // ── Form mode ──
+  const [form, setForm] = useState({ title: "", description: "", passingScore: 70, tags: "" });
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await createMutation.mutateAsync({
+      const quiz = await createMutation.mutateAsync({
         ...form,
-        tags: form.tags
-          .split(",")
-          .map((t) => t.trim())
-          .filter(Boolean),
+        courseId,
+        tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
       });
       toast.success("Quiz created");
-      onClose();
+      if (quiz?._id) router.push(`/admin/academics/quizzes/${quiz._id}`);
+      else onClose();
     } catch {
       toast.error("Failed to create quiz");
     }
   };
+
+  // ── JSON mode ──
+  const [jsonRaw, setJsonRaw] = useState("");
+  const [parsed, setParsed] = useState<ParsedQuizJson | null>(null);
+  const [parseError, setParseError] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+
+  const handleParse = () => {
+    setParseError(null);
+    setParsed(null);
+    try {
+      const obj = JSON.parse(jsonRaw);
+      if (!obj.title || typeof obj.title !== "string") throw new Error("JSON must have a \"title\" string");
+      if (!Array.isArray(obj.questions)) throw new Error("JSON must have a \"questions\" array");
+      for (const [i, q] of obj.questions.entries()) {
+        if (!q.question) throw new Error(`Question ${i + 1} missing "question" field`);
+        if (!q.type) throw new Error(`Question ${i + 1} missing "type" field`);
+        if (!q.answer) throw new Error(`Question ${i + 1} missing "answer" field`);
+      }
+      setParsed(obj as ParsedQuizJson);
+    } catch (err: any) {
+      setParseError(err.message ?? "Invalid JSON");
+    }
+  };
+
+  // Need a ref to addQuestion since quizId isn't known until after creation
+  const addQuestionRef = useRef<((quizId: string, q: ParsedQuestion, idx: number) => Promise<void>) | null>(null);
+
+  const handleJsonImport = async () => {
+    if (!parsed || !courseId) {
+      toast.error("Select a course first");
+      return;
+    }
+    setImporting(true);
+    try {
+      const quiz = await createMutation.mutateAsync({
+        title: parsed.title,
+        description: parsed.description,
+        courseId,
+        passingScore: parsed.passingScore ?? 70,
+        tags: parsed.tags ?? [],
+      });
+      if (!quiz?._id) throw new Error("No quiz ID returned");
+
+      // Add questions sequentially (lectureIndex 0, topicIndex 0 as default slot)
+      for (let i = 0; i < parsed.questions.length; i++) {
+        const q = parsed.questions[i];
+        await addQuestionRef.current?.(quiz._id, q, i);
+      }
+
+      toast.success(`Quiz imported with ${parsed.questions.length} question${parsed.questions.length !== 1 ? "s" : ""}`);
+      router.push(`/admin/academics/quizzes/${quiz._id}`);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? err.message ?? "Import failed");
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  // Inline add-question function that uses the returned quizId
+  addQuestionRef.current = async (quizId: string, q: ParsedQuestion, _idx: number) => {
+    await (await import("@/lib/api")).api.post(
+      `/admin/learning/quizzes/${quizId}/questions`,
+      {
+        lectureIndex: 0,
+        topicIndex: 0,
+        type: q.type,
+        question: q.question,
+        options: q.options ?? [],
+        answer: q.answer,
+        explanation: q.explanation,
+        hint: q.hint,
+      },
+    );
+  };
+
+  const fieldCls = "w-full border border-border/50 bg-background/40 px-3 py-2 text-[12px] font-mono focus:outline-none focus:border-primary/50 transition-colors";
 
   return (
     <motion.div
@@ -85,116 +234,167 @@ function CreateQuizForm({ onClose }: { onClose: () => void }) {
       animate={{ opacity: 1, y: 0 }}
       className="border border-primary/30 bg-primary/5 p-4 mb-6"
     >
+      {/* Header + mode toggle */}
       <div className="flex items-center justify-between mb-4">
-        <p className="text-[11px] font-mono uppercase tracking-widest font-bold">New Quiz</p>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setMode("form")}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1 text-[9px] font-mono uppercase tracking-widest border transition-all",
+              mode === "form"
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border/40 text-muted-foreground/50 hover:text-muted-foreground",
+            )}
+          >
+            <FormInput className="size-3" /> Form
+          </button>
+          <button
+            onClick={() => setMode("json")}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1 text-[9px] font-mono uppercase tracking-widest border transition-all",
+              mode === "json"
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border/40 text-muted-foreground/50 hover:text-muted-foreground",
+            )}
+          >
+            <FileJson className="size-3" /> JSON
+          </button>
+        </div>
         <button onClick={onClose} className="text-muted-foreground/40 hover:text-muted-foreground">
           <X className="size-3.5" />
         </button>
       </div>
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div className="sm:col-span-2">
-          <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">
-            Title *
-          </label>
-          <input
-            required
-            value={form.title}
-            onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-            placeholder="Quiz title"
-            className="w-full border border-border/50 bg-background/40 px-3 py-2 text-[12px] font-mono focus:outline-none focus:border-primary/50 transition-colors"
-          />
-        </div>
-        <div className="sm:col-span-2">
-          <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">
-            Description
-          </label>
-          <textarea
-            value={form.description}
-            onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-            rows={2}
-            className="w-full border border-border/50 bg-background/40 px-3 py-2 text-[12px] font-mono focus:outline-none focus:border-primary/50 resize-none transition-colors"
-          />
-        </div>
-        <div>
-          <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">
-            Course *
-          </label>
-          <Combobox
-            value={form.courseId}
-            onValueChange={(val) => {
-              const courseId = val as string;
-              setForm((f) => ({ ...f, courseId }));
-              const course = courses.find((c) => c._id === courseId);
-              if (course) setCourseSearch(`${course.code} - ${course.title}`);
-            }}
-          >
-            <ComboboxInput
-              placeholder="Search course…"
-              className="w-full border border-border/50 bg-background/40 px-3 py-2 text-[12px] font-mono focus:outline-none focus:border-primary/50 transition-colors h-[34px] uppercase tracking-widest"
-              value={courseSearch}
-              onChange={(e) => setCourseSearch(e.target.value)}
-              required
+
+      {/* ── Form mode ── */}
+      {mode === "form" && (
+        <form onSubmit={handleFormSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="sm:col-span-2">
+            <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">Title *</label>
+            <input required value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="Quiz title" className={fieldCls} />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">Description</label>
+            <textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} rows={2} className={cn(fieldCls, "resize-none")} />
+          </div>
+          <div>
+            <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">Course *</label>
+            <CoursePicker
+              courseId={courseId}
+              courseSearch={courseSearch}
+              courses={courses}
+              onCourseChange={(id, label) => { setCourseId(id); setCourseSearch(label); }}
+              onSearchChange={setCourseSearch}
             />
-            <ComboboxContent className="font-mono border-border/40">
-              <ComboboxEmpty className="font-mono text-[10px] uppercase p-2">
-                No courses found
-              </ComboboxEmpty>
-              <ComboboxList className="max-h-60 no-scrollbar">
-                {courses.map((c: any) => (
-                  <ComboboxItem
-                    key={c._id}
-                    value={c._id}
-                    className="text-[10px] uppercase tracking-tighter"
-                  >
-                    <span className="font-bold text-primary mr-2">{c.code}</span>
-                    <span className="truncate">{c.title}</span>
-                  </ComboboxItem>
+          </div>
+          <div>
+            <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">Passing Score (%)</label>
+            <input type="number" min={0} max={100} value={form.passingScore} onChange={(e) => setForm((f) => ({ ...f, passingScore: +e.target.value }))} className={fieldCls} />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">Tags (comma-separated)</label>
+            <input value={form.tags} onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))} placeholder="e.g. algorithms, data structures" className={fieldCls} />
+          </div>
+          <div className="sm:col-span-2 flex justify-end gap-2">
+            <button type="button" onClick={onClose} className="px-4 py-2 text-[10px] font-mono uppercase tracking-widest border border-border/40 hover:bg-secondary/20 transition-colors">Cancel</button>
+            <button type="submit" disabled={createMutation.isPending} className="px-4 py-2 text-[10px] font-mono uppercase tracking-widest bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50 transition-all">
+              {createMutation.isPending ? "Creating…" : "Create Draft →"}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* ── JSON mode ── */}
+      {mode === "json" && (
+        <div className="space-y-3">
+          <div>
+            <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">Course *</label>
+            <CoursePicker
+              courseId={courseId}
+              courseSearch={courseSearch}
+              courses={courses}
+              onCourseChange={(id, label) => { setCourseId(id); setCourseSearch(label); }}
+              onSearchChange={setCourseSearch}
+            />
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50">
+                Quiz JSON *
+              </label>
+              <span className="text-[8px] font-mono text-muted-foreground/30">
+                {`{ title, description?, passingScore?, tags?, questions[] }`}
+              </span>
+            </div>
+            <textarea
+              value={jsonRaw}
+              onChange={(e) => { setJsonRaw(e.target.value); setParsed(null); setParseError(null); }}
+              rows={10}
+              placeholder={`{\n  "title": "Operating Systems Quiz",\n  "passingScore": 70,\n  "questions": [\n    {\n      "question": "What is a process?",\n      "type": "mcq",\n      "options": ["A running program", "A file", "A thread", "Memory"],\n      "answer": "A running program"\n    }\n  ]\n}`}
+              className={cn(fieldCls, "resize-none font-mono text-[11px] leading-relaxed")}
+            />
+          </div>
+
+          {/* Parse error */}
+          {parseError && (
+            <div className="flex items-start gap-2 border border-destructive/30 bg-destructive/10 px-3 py-2">
+              <AlertCircle className="size-3.5 text-destructive shrink-0 mt-0.5" />
+              <p className="text-[10px] font-mono text-destructive">{parseError}</p>
+            </div>
+          )}
+
+          {/* Preview */}
+          {parsed && (
+            <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="border border-border/40 bg-card/30 p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="size-3.5 text-green-400 shrink-0" />
+                <p className="text-[10px] font-mono text-green-400 uppercase tracking-widest">Valid — ready to import</p>
+              </div>
+              <p className="font-mono font-bold text-sm">{parsed.title}</p>
+              {parsed.description && <p className="text-[11px] font-mono text-muted-foreground/60">{parsed.description}</p>}
+              <div className="flex items-center gap-3 text-[9px] font-mono text-muted-foreground/50">
+                <span>{parsed.questions.length} question{parsed.questions.length !== 1 ? "s" : ""}</span>
+                <span>Pass {parsed.passingScore ?? 70}%</span>
+                {(parsed.tags ?? []).length > 0 && <span>{parsed.tags!.join(", ")}</span>}
+              </div>
+              <div className="space-y-1 max-h-48 overflow-y-auto no-scrollbar">
+                {parsed.questions.map((q, i) => (
+                  <div key={i} className="flex items-start gap-2 py-1 border-t border-border/20">
+                    <span className="text-[9px] font-mono text-muted-foreground/30 w-5 shrink-0 pt-px">{i + 1}.</span>
+                    <span className={cn("text-[8px] font-mono uppercase tracking-widest px-1 py-0.5 border shrink-0", QUESTION_TYPE_COLORS[q.type] ?? "text-muted-foreground border-border/30")}>
+                      {q.type.replace("_", " ")}
+                    </span>
+                    <p className="text-[11px] font-mono text-foreground/80 line-clamp-1 flex-1">{q.question}</p>
+                  </div>
                 ))}
-              </ComboboxList>
-            </ComboboxContent>
-          </Combobox>
+              </div>
+            </motion.div>
+          )}
+
+          <div className="flex justify-end gap-2">
+            <button type="button" onClick={onClose} className="px-4 py-2 text-[10px] font-mono uppercase tracking-widest border border-border/40 hover:bg-secondary/20 transition-colors">Cancel</button>
+            {!parsed ? (
+              <button
+                type="button"
+                onClick={handleParse}
+                disabled={!jsonRaw.trim()}
+                className="px-4 py-2 text-[10px] font-mono uppercase tracking-widest border border-primary/50 text-primary hover:bg-primary/10 disabled:opacity-40 transition-all"
+              >
+                Parse JSON
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleJsonImport}
+                disabled={importing || !courseId}
+                className="px-4 py-2 text-[10px] font-mono uppercase tracking-widest bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50 transition-all"
+              >
+                {importing ? "Importing…" : `Import ${parsed.questions.length} Questions →`}
+              </button>
+            )}
+          </div>
         </div>
-        <div>
-          <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">
-            Passing Score (%)
-          </label>
-          <input
-            type="number"
-            min={0}
-            max={100}
-            value={form.passingScore}
-            onChange={(e) => setForm((f) => ({ ...f, passingScore: +e.target.value }))}
-            className="w-full border border-border/50 bg-background/40 px-3 py-2 text-[12px] font-mono focus:outline-none focus:border-primary/50 transition-colors"
-          />
-        </div>
-        <div className="sm:col-span-2">
-          <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">
-            Tags (comma-separated)
-          </label>
-          <input
-            value={form.tags}
-            onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))}
-            placeholder="e.g. algorithms, data structures"
-            className="w-full border border-border/50 bg-background/40 px-3 py-2 text-[12px] font-mono focus:outline-none focus:border-primary/50 transition-colors"
-          />
-        </div>
-        <div className="sm:col-span-2 flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 text-[10px] font-mono uppercase tracking-widest border border-border/40 hover:bg-secondary/20 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={createMutation.isPending}
-            className="px-4 py-2 text-[10px] font-mono uppercase tracking-widest bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50 transition-all"
-          >
-            {createMutation.isPending ? "Creating…" : "Create Draft"}
-          </button>
-        </div>
-      </form>
+      )}
     </motion.div>
   );
 }
