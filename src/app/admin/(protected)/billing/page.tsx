@@ -364,8 +364,8 @@ function PaymentsTab() {
   });
 
   const payments = paymentsData?.data ?? [];
-  const total = paymentsData?.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(total / PAYMENTS_LIMIT));
+  const total = paymentsData?.pagination?.total ?? 0;
+  const totalPages = paymentsData?.pagination?.totalPages ?? 1;
 
   const handleFilterChange = (key: "status" | "type", value: string) => {
     setPage(1);

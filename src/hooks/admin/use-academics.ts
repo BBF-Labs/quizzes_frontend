@@ -274,6 +274,25 @@ export const useAdminAddQuizQuestion = (quizId: string) => {
   });
 };
 
+export interface BatchUploadQuestionsPayload {
+  questions: AddQuestionPayload[];
+}
+
+export const useAdminBatchUploadQuizQuestions = (quizId: string) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: BatchUploadQuestionsPayload) => {
+      const res = await api.post<ApiData<{ inserted: number; questions: AdminQuestion[] }>>(
+        `/admin/learning/quizzes/${quizId}/questions/batch`,
+        data,
+      );
+      return res.data?.data;
+    },
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["admin", "quizzes", quizId] }),
+  });
+};
+
 export const useAdminUpdateQuizQuestion = (quizId: string) => {
   const qc = useQueryClient();
   return useMutation({
