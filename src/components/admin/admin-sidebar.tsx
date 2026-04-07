@@ -15,6 +15,7 @@ import {
   Calendar,
   Database,
   CreditCard,
+  Library,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import {
@@ -78,6 +79,16 @@ const navigation = [
         title: "Waitlist",
         url: "/admin/waitlist",
         icon: UserPlus,
+      },
+    ],
+  },
+  {
+    title: "Content",
+    items: [
+      {
+        title: "Library",
+        url: "/admin/library",
+        icon: Library,
       },
     ],
   },
