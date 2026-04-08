@@ -83,7 +83,7 @@ function RejectDialog({
       <motion.div
         initial={{ opacity: 0, scale: 0.97 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-md border border-destructive/40 bg-card p-6 shadow-xl"
+        className="w-full max-w-md border border-destructive/40 bg-card p-6 shadow-xl rounded-(--radius)"
       >
         <div className="flex items-start justify-between mb-4">
           <div>
@@ -155,7 +155,7 @@ function LibraryRow({
     <motion.div
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      className="border border-border/30 bg-card/20 p-4 flex flex-col sm:flex-row sm:items-center gap-4"
+      className="border border-border/30 bg-card/20 p-4 rounded-(--radius) flex flex-col sm:flex-row sm:items-center gap-4"
     >
       {/* Left: Info */}
       <div className="flex-1 min-w-0">
