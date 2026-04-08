@@ -9,14 +9,24 @@ import { cn } from "@/lib/utils";
 
 export function ReferralCard() {
   const { data: status, isLoading } = useReferralStatus();
-  const [copied, setCopied] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
 
-  const handleCopy = () => {
+  const handleCopyCode = () => {
     if (!status?.code) return;
     navigator.clipboard.writeText(status.code);
-    setCopied(true);
+    setCopiedCode(true);
     toast.success("Referral code copied!");
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopiedCode(false), 2000);
+  };
+
+  const handleCopyLink = () => {
+    if (!status?.code) return;
+    const link = `${window.location.origin}/signup?ref=${status.code}`;
+    navigator.clipboard.writeText(link);
+    setCopiedLink(true);
+    toast.success("Invite link copied!");
+    setTimeout(() => setCopiedLink(false), 2000);
   };
 
   if (isLoading) {
@@ -54,40 +64,33 @@ export function ReferralCard() {
         </div>
 
         <div className="flex flex-col items-center gap-4 w-full md:w-auto">
-          <div className="relative w-full md:w-48">
-            <div className="absolute inset-0 bg-primary/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <div className="flex flex-col gap-2 w-full md:w-48">
             <button
-              onClick={handleCopy}
-              className="relative w-full h-14 bg-background border border-border/40 hover:border-primary/50 flex flex-col items-center justify-center transition-all duration-300 group/btn rounded-(--radius)"
+              onClick={handleCopyCode}
+              className="relative w-full h-12 bg-background border border-border/40 hover:border-primary/50 flex items-center justify-between px-4 transition-all duration-300 group/btn rounded-(--radius)"
             >
+              <span className="text-sm font-mono font-bold tracking-widest text-primary">
+                {status.code}
+              </span>
               <div className="flex items-center gap-2">
-                <span className="text-lg font-mono font-bold tracking-widest text-primary">
-                  {status.code}
+                <span className="text-[10px] font-mono uppercase text-muted-foreground/60">
+                  {copiedCode ? "Copied" : "Code"}
                 </span>
-                <AnimatePresence mode="wait">
-                  {copied ? (
-                    <motion.div
-                      key="check"
-                      initial={{ opacity: 0, scale: 0.5 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.5 }}
-                    >
-                      <Check className="size-3 text-emerald-500" />
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      key="copy"
-                      initial={{ opacity: 0, scale: 0.5 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.5 }}
-                    >
-                      <Copy className="size-3 text-muted-foreground group-hover/btn:text-primary transition-colors" />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                {copiedCode ? (
+                  <Check className="size-3 text-emerald-500" />
+                ) : (
+                  <Copy className="size-3 text-muted-foreground group-hover/btn:text-primary transition-colors" />
+                )}
               </div>
-              <span className="text-[8px] font-mono uppercase tracking-[0.2em] text-muted-foreground/60">
-                {copied ? "Copied" : "Click to copy"}
+            </button>
+
+            <button
+              onClick={handleCopyLink}
+              className="relative w-full h-10 bg-primary/5 border border-primary/20 hover:bg-primary/10 flex items-center justify-center gap-2 transition-all duration-300 rounded-(--radius)"
+            >
+              <Sparkles className="size-3 text-primary animate-pulse" />
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-primary">
+                {copiedLink ? "Link Copied" : "Copy Invite Link"}
               </span>
             </button>
           </div>

@@ -9,6 +9,8 @@ import {
   Loader2,
   ShieldCheck,
   XCircle,
+  PartyPopper,
+  Link as LinkIcon,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { api } from "@/lib/api";
@@ -40,6 +42,25 @@ function SignupForm() {
 
   const debouncedUsername = useDebounce(username.trim().toLowerCase(), 500);
   const debouncedEmail = useDebounce(email.trim().toLowerCase(), 500);
+
+  const [referralCode, setReferralCode] = useState("");
+  const [referrerName, setReferrerName] = useState("");
+
+  useEffect(() => {
+    const code = searchParams.get("ref") || searchParams.get("referral");
+    if (code) {
+      setReferralCode(code);
+      api
+        .get(`/subscriptions/referral/public-lookup/${code}`)
+        .then((res) => {
+          setReferrerName(res.data?.data?.name || "");
+        })
+        .catch(() => {
+          setReferralCode("");
+          setReferrerName("");
+        });
+    }
+  }, [searchParams]);
 
   const isUsernameCheckable = debouncedUsername.length >= 3;
   const isEmailCheckable = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(debouncedEmail);
@@ -108,7 +129,7 @@ function SignupForm() {
 
     setLoading(true);
     try {
-      await signup(name, email, username, password);
+      await signup(name, email, username, password, referralCode || undefined);
       // Append redirectUrl if it exists so Onboarding page can forward the user along after completion.
       const dest = redirectUrl
         ? `/onboarding?redirectUrl=${encodeURIComponent(redirectUrl)}`
@@ -172,6 +193,26 @@ function SignupForm() {
             BetaForge Labs — Quiz Platform
           </p>
           <div className="h-px w-12 bg-primary/40 mt-6" />
+
+          {referrerName && (
+            <motion.div
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="mt-6 p-3 bg-primary/5 border border-primary/20 flex items-start gap-3"
+            >
+              <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                <PartyPopper className="size-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-[10px] font-mono font-bold text-primary uppercase tracking-wider">
+                  Invite Applied
+                </p>
+                <p className="text-[11px] font-mono text-muted-foreground mt-0.5 leading-relaxed">
+                  You&apos;re being referred by <span className="text-foreground font-bold">{referrerName}</span>. Your 15% discount will be at checkout!
+                </p>
+              </div>
+            </motion.div>
+          )}
         </div>
 
         {/* Form */}

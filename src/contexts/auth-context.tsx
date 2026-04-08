@@ -51,6 +51,7 @@ interface AuthContextValue {
     email: string,
     username: string,
     password: string,
+    referralCode?: string,
   ) => Promise<void>;
   logout: () => Promise<void>;
   updateSession: () => void;
@@ -182,11 +183,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email,
       username,
       password,
+      referralCode,
     }: {
       name: string;
       email: string;
       username: string;
       password: string;
+      referralCode?: string;
     }) => {
       const res = await api.post<{
         user: User;
@@ -197,6 +200,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email,
         username,
         password,
+        referralCode,
       });
 
       const { user, accessToken, refreshToken } = res.data;
@@ -218,13 +222,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   const signup = useCallback(
-    (name: string, email: string, username: string, password: string) =>
+    (
+      name: string,
+      email: string,
+      username: string,
+      password: string,
+      referralCode?: string,
+    ) =>
       signupMutation
         .mutateAsync({
           name,
           email: email.trim().toLowerCase(),
           username: username.trim().toLowerCase(),
           password,
+          referralCode,
         })
         .then(() => undefined),
     [signupMutation],
