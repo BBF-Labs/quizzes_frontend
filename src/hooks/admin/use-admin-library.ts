@@ -39,12 +39,13 @@ interface AdminLibraryResponse {
   };
 }
 
-export function useAdminLibrary(filters: { status?: LibraryStatus; page?: number; limit?: number } = {}) {
+export function useAdminLibrary(filters: { status?: LibraryStatus | "all"; search?: string; page?: number; limit?: number } = {}) {
   return useQuery({
     queryKey: queryKeys.adminLibrary.list(filters as Record<string, unknown>),
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (filters.status) params.set("status", filters.status);
+      if (filters.status && filters.status !== "all") params.set("status", filters.status);
+      if (filters.search) params.set("search", filters.search);
       if (filters.page) params.set("page", String(filters.page));
       if (filters.limit) params.set("limit", String(filters.limit));
       const res = await api.get<{ data: AdminLibraryItem[]; pagination: AdminLibraryResponse["pagination"] }>(

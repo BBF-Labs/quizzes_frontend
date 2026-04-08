@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   BookOpen,
@@ -9,6 +9,7 @@ import {
   XCircle,
   Clock,
   Users,
+  Search,
   X,
 } from "lucide-react";
 import {
@@ -18,7 +19,14 @@ import {
   type LibraryStatus,
 } from "@/hooks/admin/use-admin-library";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -236,16 +244,21 @@ function LibraryRow({
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-const TAB_TRIGGER_CLS =
-  "relative rounded-none! border-none bg-transparent data-[state=active]:bg-transparent px-6 pb-4 text-muted-foreground data-[state=active]:text-primary transition-all after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-200";
-
 export default function AdminLibraryPage() {
   const [statusFilter, setStatusFilter] = useState<LibraryStatus | "all">("pending_review");
+  const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [rejectTarget, setRejectTarget] = useState<AdminLibraryItem | null>(null);
 
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
   const { data, isLoading } = useAdminLibrary({
     ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+    ...(debouncedSearch ? { search: debouncedSearch } : {}),
     page,
     limit: 20,
   });
@@ -292,94 +305,117 @@ export default function AdminLibraryPage() {
         </p>
       </motion.div>
 
-      {/* Status Tabs */}
-      <Tabs
-        value={statusFilter}
-        onValueChange={(v) => { setStatusFilter(v as LibraryStatus | "all"); setPage(1); }}
-      >
-        <div className="border-b border-border/30 w-full">
-          <TabsList
-            variant="line"
-            className="bg-transparent w-auto min-w-full justify-start h-auto px-0 overflow-x-auto overflow-y-hidden no-scrollbar flex-nowrap shrink-0 border-none"
-          >
-            <TabsTrigger value="pending_review" className={TAB_TRIGGER_CLS}>
-              PENDING REVIEW
-            </TabsTrigger>
-            <TabsTrigger value="published" className={TAB_TRIGGER_CLS}>
-              PUBLISHED
-            </TabsTrigger>
-            <TabsTrigger value="rejected" className={TAB_TRIGGER_CLS}>
-              REJECTED
-            </TabsTrigger>
-            <TabsTrigger value="all" className={TAB_TRIGGER_CLS}>
-              ALL
-            </TabsTrigger>
-          </TabsList>
+      {/* Search and Filters */}
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <Input
+            placeholder="Search library items..."
+            className="pl-9 rounded-(--radius) bg-background/50 font-mono text-xs uppercase tracking-widest"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+          />
+          {search && (
+            <button
+              onClick={() => {
+                setSearch("");
+                setPage(1);
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-muted-foreground"
+            >
+              <X className="size-3.5" />
+            </button>
+          )}
         </div>
-
-        {/* Content */}
-        <motion.div
-          key={statusFilter}
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.15 }}
-          className="pt-2"
+        <Select
+          value={statusFilter}
+          onValueChange={(value) => {
+            setStatusFilter(value as LibraryStatus | "all");
+            setPage(1);
+          }}
         >
-          {isLoading ? (
-            <div className="space-y-3">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-20 animate-pulse bg-card/40 border border-border/30" />
-              ))}
-            </div>
-          ) : items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 border border-dashed border-border/30">
-              <BookOpen className="size-10 text-muted-foreground/20 mb-3" />
-              <p className="text-[11px] font-mono text-muted-foreground/40 uppercase tracking-widest">
-                No items
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {items.map((item) => (
-                <LibraryRow
-                  key={item._id}
-                  item={item}
-                  onPublish={handlePublish}
-                  onReject={setRejectTarget}
-                  isPending={review.isPending}
-                />
-              ))}
-            </div>
-          )}
+          <SelectTrigger className="w-full sm:w-auto sm:min-w-[160px] rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
+            <SelectItem value="pending_review" className="rounded-(--radius) font-mono text-xs uppercase">Pending Review</SelectItem>
+            <SelectItem value="published" className="rounded-(--radius) font-mono text-xs uppercase">Published</SelectItem>
+            <SelectItem value="rejected" className="rounded-(--radius) font-mono text-xs uppercase">Rejected</SelectItem>
+            <SelectItem value="all" className="rounded-(--radius) font-mono text-xs uppercase">All Statuses</SelectItem>
+          </SelectContent>
+        </Select>
+        {pagination && (
+          <p className="text-[10px] font-mono text-muted-foreground/40 sm:ml-auto shrink-0">
+            {pagination.total} result{pagination.total !== 1 ? "s" : ""}
+          </p>
+        )}
+      </div>
 
-          {/* Pagination */}
-          {pagination && pagination.totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-8">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 text-[10px] font-mono"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => p - 1)}
-              >
-                Previous
-              </Button>
-              <span className="text-[10px] font-mono text-muted-foreground/50">
-                {page} / {pagination.totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 text-[10px] font-mono"
-                disabled={page >= pagination.totalPages}
-                onClick={() => setPage((p) => p + 1)}
-              >
-                Next
-              </Button>
-            </div>
-          )}
-        </motion.div>
-      </Tabs>
+      {/* Content */}
+      <motion.div
+        key={statusFilter + debouncedSearch}
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.15 }}
+        className="pt-2"
+      >
+        {isLoading ? (
+          <div className="space-y-3">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-20 animate-pulse bg-card/40 border border-border/30" />
+            ))}
+          </div>
+        ) : items.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 border border-dashed border-border/30">
+            <BookOpen className="size-10 text-muted-foreground/20 mb-3" />
+            <p className="text-[11px] font-mono text-muted-foreground/40 uppercase tracking-widest">
+              No items
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {items.map((item) => (
+              <LibraryRow
+                key={item._id}
+                item={item}
+                onPublish={handlePublish}
+                onReject={setRejectTarget}
+                isPending={review.isPending}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {pagination && pagination.totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 mt-8">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-[10px] font-mono"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              Previous
+            </Button>
+            <span className="text-[10px] font-mono text-muted-foreground/50">
+              {page} / {pagination.totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-[10px] font-mono"
+              disabled={page >= pagination.totalPages}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Next
+            </Button>
+          </div>
+        )}
+      </motion.div>
 
       {/* Reject Dialog */}
       {rejectTarget && (
