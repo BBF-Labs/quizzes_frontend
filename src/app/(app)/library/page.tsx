@@ -3,23 +3,34 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import {
-  Search,
   FileText,
   BookOpen,
-  Calendar,
   Tag,
   Users,
-  Zap,
-  Filter,
-  X,
+  Search,
+  Calendar,
   Download,
+  Plus,
+  Check,
+  LoaderCircle,
+  Zap,
+  X,
 } from "lucide-react";
-import { usePublicLibrary, type LibraryFilters, type LibraryItem, getLibraryDownloadUrl } from "@/hooks/app/use-public-library";
+import {
+  usePublicLibrary,
+  type LibraryFilters,
+  type LibraryItem,
+  getLibraryDownloadUrl,
+  useImportMaterial,
+} from "@/hooks/app/use-public-library";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/auth-context";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { useDebounce } from "@/hooks/common/use-debounce";
+import { cn } from "@/lib/utils";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -39,7 +50,17 @@ function mimeLabel(mime: string): string {
 
 // ─── Card ─────────────────────────────────────────────────────────────────────
 
-function LibraryCard({ item, onStudy }: { item: LibraryItem; onStudy: (id: string) => void }) {
+function LibraryCard({
+  item,
+  onStudy,
+}: {
+  item: LibraryItem;
+  onStudy: (id: string) => void;
+}) {
+  const { user } = useAuth();
+  const importMutation = useImportMaterial();
+  const [isAdded, setIsAdded] = useState(false);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -142,6 +163,42 @@ function LibraryCard({ item, onStudy }: { item: LibraryItem; onStudy: (id: strin
           <Zap className="size-3" />
           Study with Z
         </Button>
+        {user && (
+          <Button
+            size="sm"
+            variant="outline"
+            className={cn(
+              "h-8 px-3 text-[9px] font-mono gap-1.5 border-border/40 transition-all",
+              isAdded && "text-primary border-primary/20 bg-primary/5",
+            )}
+            disabled={importMutation.isPending || isAdded}
+            onClick={() =>
+              importMutation.mutate(item._id, {
+                onSuccess: () => {
+                  setIsAdded(true);
+                  toast.success("Material added to your library");
+                },
+                onError: (err: any) => {
+                  if (err.response?.status === 409) {
+                    setIsAdded(true);
+                    toast.info("Already in your library");
+                  } else {
+                    toast.error("Failed to add to library");
+                  }
+                },
+              })
+            }
+          >
+            {importMutation.isPending ? (
+              <LoaderCircle className="size-3 animate-spin" />
+            ) : isAdded ? (
+              <Check className="size-3" />
+            ) : (
+              <Plus className="size-3" />
+            )}
+            {isAdded ? "Added" : "Add to Library"}
+          </Button>
+        )}
         <Button
           size="sm"
           variant="outline"
@@ -183,7 +240,9 @@ export default function PublicLibraryPage() {
     setPage(1);
   };
 
-  const hasActiveFilters = search || Object.keys(filters).some((k) => filters[k as keyof LibraryFilters]);
+  const hasActiveFilters =
+    search ||
+    Object.keys(filters).some((k) => filters[k as keyof LibraryFilters]);
 
   const handleStudy = (id: string) => {
     // Route to app, passing the library item id as a material to load
@@ -193,7 +252,6 @@ export default function PublicLibraryPage() {
   return (
     <div className="min-h-full px-4 py-10">
       <div className="max-w-6xl mx-auto">
-
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -207,7 +265,8 @@ export default function PublicLibraryPage() {
             Study Materials
           </h1>
           <p className="text-[12px] font-mono text-muted-foreground/60">
-            Curated lecture notes, past papers, and resources from universities across Ghana.
+            Curated lecture notes, past papers, and resources from universities
+            across Ghana.
           </p>
         </motion.div>
 
@@ -218,7 +277,10 @@ export default function PublicLibraryPage() {
             <Input
               placeholder="Search materials, courses, topics..."
               value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
               className="pl-9 h-9 font-mono text-[11px]"
             />
           </div>
@@ -238,7 +300,8 @@ export default function PublicLibraryPage() {
         {/* Results count */}
         {!isLoading && pagination && (
           <p className="text-[10px] font-mono text-muted-foreground/40 mb-4">
-            {pagination.total} {pagination.total === 1 ? "material" : "materials"} found
+            {pagination.total}{" "}
+            {pagination.total === 1 ? "material" : "materials"} found
           </p>
         )}
 
@@ -246,7 +309,10 @@ export default function PublicLibraryPage() {
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-52 animate-pulse bg-card/40 border border-border/30" />
+              <div
+                key={i}
+                className="h-52 animate-pulse bg-card/40 border border-border/30"
+              />
             ))}
           </div>
         ) : items.length === 0 ? (

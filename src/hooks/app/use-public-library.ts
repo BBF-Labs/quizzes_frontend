@@ -93,6 +93,15 @@ export function useSubmitToLibrary() {
   });
 }
 
+export function useImportMaterial() {
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await api.post(`/learning/library/${id}/import`, {});
+      return res.data;
+    },
+  });
+}
+
 export function getLibraryDownloadUrl(id: string) {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL;
   return `${baseUrl}/learning/library/${id}/download`;

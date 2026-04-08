@@ -15,6 +15,7 @@ import {
   Globe,
   X,
   Tag,
+  Import,
 } from "lucide-react";
 import {
   useLibraryMaterials,
@@ -78,7 +79,10 @@ function SubmitToLibraryModal({
         subject: form.subject.trim() || undefined,
         year: form.year ? Number(form.year) : undefined,
         tags: form.tags
-          ? form.tags.split(",").map((t) => t.trim()).filter(Boolean)
+          ? form.tags
+              .split(",")
+              .map((t) => t.trim())
+              .filter(Boolean)
           : [],
         courseId: form.courseId || undefined,
       });
@@ -199,7 +203,10 @@ function SubmitToLibraryModal({
                 </span>
                 <button
                   type="button"
-                  onClick={() => { set("courseId", ""); set("courseSearch", ""); }}
+                  onClick={() => {
+                    set("courseId", "");
+                    set("courseSearch", "");
+                  }}
                   className="text-muted-foreground/40 hover:text-muted-foreground ml-2"
                 >
                   <X className="size-3" />
@@ -232,7 +239,9 @@ function SubmitToLibraryModal({
                         className="w-full text-left px-3 py-2 text-[11px] font-mono hover:bg-primary/5 transition-colors border-b border-border/20 last:border-0"
                       >
                         <span className="text-primary/80">{c.code}</span>
-                        <span className="text-muted-foreground ml-2">{c.title}</span>
+                        <span className="text-muted-foreground ml-2">
+                          {c.title}
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -262,8 +271,8 @@ function SubmitToLibraryModal({
 
           <p className="text-[10px] font-mono text-muted-foreground/40 leading-relaxed">
             Your submission will be reviewed before appearing in the public
-            library. Do not submit copyrighted material you don&apos;t have rights
-            to share.
+            library. Do not submit copyrighted material you don&apos;t have
+            rights to share.
           </p>
 
           {/* Actions */}
@@ -303,7 +312,9 @@ export default function LibraryPage() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [isUploading, setIsUploading] = useState(false);
-  const [submitTarget, setSubmitTarget] = useState<MaterialSummary | null>(null);
+  const [submitTarget, setSubmitTarget] = useState<MaterialSummary | null>(
+    null,
+  );
 
   const filteredMaterials = (materials || []).filter((m) =>
     (m.title || "").toLowerCase().includes(searchQuery.toLowerCase()),
@@ -315,11 +326,16 @@ export default function LibraryPage() {
     setIsUploading(true);
     try {
       const upload = await uploadFile.mutateAsync({ file });
-      await createMaterial.mutateAsync({ uploadId: upload._id, title: file.name });
+      await createMaterial.mutateAsync({
+        uploadId: upload._id,
+        title: file.name,
+      });
       toast.success("Material uploaded successfully");
     } catch (err: any) {
       if (err?.response?.status === 402) {
-        toast.error("Daily upload limit reached. Upgrade your plan to upload more materials.");
+        toast.error(
+          "Daily upload limit reached. Upgrade your plan to upload more materials.",
+        );
       } else {
         toast.error("Failed to upload material");
       }
@@ -335,7 +351,9 @@ export default function LibraryPage() {
       toast.success("Flashcard generation started in background");
     } catch (err: any) {
       if (err?.response?.status === 402) {
-        toast.error("Daily flashcard limit reached. Upgrade your plan or use credits.");
+        toast.error(
+          "Daily flashcard limit reached. Upgrade your plan or use credits.",
+        );
       } else {
         toast.error("Failed to start generation");
       }
@@ -348,7 +366,9 @@ export default function LibraryPage() {
       toast.success("Quiz generation started in background");
     } catch (err: any) {
       if (err?.response?.status === 402) {
-        toast.error("Daily quiz limit reached. Upgrade your plan or use credits.");
+        toast.error(
+          "Daily quiz limit reached. Upgrade your plan or use credits.",
+        );
       } else {
         toast.error("Failed to start generation");
       }
@@ -361,7 +381,9 @@ export default function LibraryPage() {
       toast.success("Mind Map generation started in background");
     } catch (err: any) {
       if (err?.response?.status === 402) {
-        toast.error("Daily mind map limit reached. Upgrade your plan or use credits.");
+        toast.error(
+          "Daily mind map limit reached. Upgrade your plan or use credits.",
+        );
       } else {
         toast.error("Failed to start generation");
       }
@@ -390,7 +412,7 @@ export default function LibraryPage() {
           </p>
         </div>
 
-        <label className="group relative flex items-center justify-center gap-2 bg-primary px-4 py-2 cursor-pointer hover:bg-primary/90 transition-all">
+        <label className="group relative flex items-center justify-center gap-2 bg-primary px-4 py-2 cursor-pointer hover:bg-primary/90 transition-all rounded-(--radius)">
           <Plus className="size-4 text-primary-foreground" />
           <span className="font-mono text-[11px] uppercase tracking-widest text-primary-foreground">
             {isUploading ? "Uploading..." : "Add Material"}
@@ -510,6 +532,13 @@ export default function LibraryPage() {
                           Rejected
                         </span>
                       )}
+
+                      {material.isImported && (
+                        <span className="flex items-center gap-1 text-[9px] font-mono text-purple-500 uppercase tracking-tighter border border-purple-500/20 px-1 ml-1">
+                          <Import className="size-2.5" />
+                          Imported
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-1">
@@ -526,7 +555,9 @@ export default function LibraryPage() {
                       ) : (
                         <>
                           <button
-                            onClick={() => handleGenerateFlashcards(material.id)}
+                            onClick={() =>
+                              handleGenerateFlashcards(material.id)
+                            }
                             disabled={material.processingStatus !== "ready"}
                             className="inline-flex items-center gap-1 px-2 py-1 text-[9px] font-mono uppercase tracking-widest text-muted-foreground hover:text-primary disabled:opacity-30 transition-colors"
                           >
@@ -556,8 +587,9 @@ export default function LibraryPage() {
                     </div>
                   </div>
 
-                  {/* Share to Library — only for ready materials not already published/pending */}
+                  {/* Share to Library — only for ready materials not already published/pending and NOT imported */}
                   {material.processingStatus === "ready" &&
+                    !material.isImported &&
                     (!material.libraryStatus ||
                       material.libraryStatus === "rejected") && (
                       <button
