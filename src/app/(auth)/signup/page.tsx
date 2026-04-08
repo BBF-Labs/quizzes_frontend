@@ -44,7 +44,7 @@ function SignupForm() {
   const debouncedEmail = useDebounce(email.trim().toLowerCase(), 500);
 
   const [referralCode, setReferralCode] = useState("");
-  const [referrerName, setReferrerName] = useState("");
+  const [referrerDisplayName, setReferrerDisplayName] = useState("");
 
   useEffect(() => {
     const code = searchParams.get("ref") || searchParams.get("referral");
@@ -53,7 +53,7 @@ function SignupForm() {
       api
         .get(`/subscriptions/referral/public-lookup/${code}`)
         .then((res) => {
-          setReferrerName(res.data?.data?.name || "");
+          setReferrerDisplayName(res.data?.data?.displayName || "");
         })
         .catch(() => {
           setReferralCode("");
@@ -194,7 +194,7 @@ function SignupForm() {
           </p>
           <div className="h-px w-12 bg-primary/40 mt-6" />
 
-          {referrerName && (
+          {referrerDisplayName && (
             <motion.div
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
@@ -208,7 +208,7 @@ function SignupForm() {
                   Invite Applied
                 </p>
                 <p className="text-[11px] font-mono text-muted-foreground mt-0.5 leading-relaxed">
-                  You&apos;re being referred by <span className="text-foreground font-bold">{referrerName}</span>. Your 15% discount will be at checkout!
+                  You&apos;re using <span className="text-foreground font-bold">{referrerDisplayName}</span> referral code. A <span className="text-primary font-bold">15% discount</span> is waiting for you!
                 </p>
               </div>
             </motion.div>
