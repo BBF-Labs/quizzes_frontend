@@ -57,7 +57,7 @@ function SignupForm() {
         })
         .catch(() => {
           setReferralCode("");
-          setReferrerName("");
+          setReferrerDisplayName("");
         });
     }
   }, [searchParams]);
