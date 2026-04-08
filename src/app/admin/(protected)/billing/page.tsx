@@ -438,7 +438,7 @@ function PaymentsTab() {
                   {p.reference}
                 </span>
                 <span className="font-mono font-bold text-[12px] w-20 text-right">
-                  GHS {(p.amount / 100).toFixed(2)}
+                  GHS {(p.amount ?? 0).toFixed(2)}
                 </span>
                 <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/60 w-16">
                   {p.type}
