@@ -41,11 +41,13 @@ export function DonationBanner() {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [donations.length]);
 
-  if (hidden || donations.length === 0) return null;
+  const total = ledger?.totalRaisedGHS ?? 0;
+  if (hidden || donations.length === 0 || total < 1000) return null;
 
   const current = donations[idx];
-  const donorLabel = current.isAnonymous ? "Someone" : (current.donorName || "Someone");
-  const total = ledger?.totalRaisedGHS ?? 0;
+  const donorLabel = current.isAnonymous
+    ? "Someone"
+    : current.donorName || "Someone";
 
   const prev = () => setIdx((i) => (i - 1 + donations.length) % donations.length);
   const next = () => setIdx((i) => (i + 1) % donations.length);
