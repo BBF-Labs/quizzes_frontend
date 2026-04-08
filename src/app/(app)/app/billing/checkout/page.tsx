@@ -73,12 +73,14 @@ export default function CheckoutPage() {
   async function handleApplyPromo() {
     if (!promoCode.trim() || !packageId) return;
     try {
-      const result = await validatePromo.mutateAsync({ code: promoCode.trim(), packageId });
-      if (result.valid) {
-        setAppliedPromo({ code: promoCode.trim(), discountPercent: result.discountPercent });
-        toast.success(`Promo applied: ${result.discountPercent}% off`);
+      const result: any = await validatePromo.mutateAsync({ code: promoCode.trim(), packageId });
+      const applied = result.discounts?.find((d: any) => d.type === "promo");
+      
+      if (applied) {
+        setAppliedPromo({ code: promoCode.trim(), discountPercent: applied.percentage });
+        toast.success(`Promo applied: ${applied.percentage}% off`);
       } else {
-        toast.error(result.message ?? "Invalid promo code");
+        toast.error("Invalid or expired promo code");
       }
     } catch {
       toast.error("Failed to validate promo code");

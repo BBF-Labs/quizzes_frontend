@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { PaginationController } from "@/components/common";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -51,7 +52,7 @@ const PAYMENT_STATUS_COLORS: Record<string, string> = {
 
 // ─── Promo Code Section ───────────────────────────────────────────────────────
 
-function PromoCodeRow({
+function PromoCodeCard({
   code,
 }: {
   code: import("@/hooks/admin/use-billing-admin").AdminPromoCode;
@@ -81,56 +82,66 @@ function PromoCodeRow({
   const isExpired = code.expiresAt ? new Date(code.expiresAt) < new Date() : false;
 
   return (
-    <div className="flex items-center gap-4 border border-border/30 bg-card/30 px-4 py-3 hover:border-border/50 transition-all">
-      {/* Code */}
-      <span className="font-mono font-bold text-sm text-foreground min-w-[10rem]">
-        {code.code}
-      </span>
-
-      {/* Type + value */}
-      <span className="text-[10px] font-mono text-muted-foreground min-w-[6rem]">
-        {code.type === "percentage" ? `${code.value}% off` : `GHS ${code.value} off`}
-      </span>
-
-      {/* Uses */}
-      <span className="text-[10px] font-mono text-muted-foreground min-w-[5rem]">
-        {code.usedCount} / {code.maxUses ?? "∞"} uses
-      </span>
-
-      {/* Expires */}
-      <span className={cn("text-[10px] font-mono flex-1", isExpired ? "text-destructive/70" : "text-muted-foreground/60")}>
-        {code.expiresAt
-          ? `Expires ${new Date(code.expiresAt).toLocaleDateString()}`
-          : "No expiry"}
-        {isExpired && " · Expired"}
-      </span>
-
-      {/* Status + actions */}
-      <div className="flex items-center gap-3">
+    <div className="flex flex-col border border-border/30 bg-card/10 p-5 hover:border-border/60 transition-all group relative overflow-hidden">
+      {/* Accent bar */}
+      <div className={cn("absolute top-0 left-0 w-full h-1", code.isActive && !isExpired ? "bg-primary" : "bg-muted-foreground/30")} />
+      
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <h3 className="font-mono font-bold text-lg tracking-widest text-primary flex items-center gap-2">
+            <Tag className="size-4" />
+            {code.code}
+          </h3>
+          <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/60 mt-1">
+            {code.type === "percentage" ? `${code.value}% Discount` : `GHS ${code.value} Flat`}
+          </p>
+        </div>
         <span className={cn(
-          "text-[9px] font-mono uppercase tracking-widest px-1.5 py-0.5 border rounded-(--radius)",
+          "text-[9px] font-mono uppercase tracking-widest px-2 py-1 border",
           code.isActive && !isExpired
             ? "text-green-400 border-green-400/30 bg-green-400/10"
             : "text-muted-foreground border-border/30 bg-card/30",
         )}>
-          {code.isActive && !isExpired ? "Active" : "Inactive"}
+          {code.isActive ? (isExpired ? "Expired" : "Active") : "Inactive"}
         </span>
+      </div>
 
+      <div className="space-y-2 mb-6 flex-1">
+        <div className="flex items-center justify-between text-[11px] font-mono border-b border-border/10 pb-2">
+          <span className="text-muted-foreground/50 uppercase">Redemptions</span>
+          <span className="font-bold text-foreground/80">{code.usedCount} / {code.maxUses ?? "∞"}</span>
+        </div>
+        <div className="flex items-center justify-between text-[11px] font-mono border-b border-border/10 pb-2">
+          <span className="text-muted-foreground/50 uppercase">Expiry Date</span>
+          <span className={cn("font-bold text-foreground/80", isExpired && "text-destructive")}>
+            {code.expiresAt ? new Date(code.expiresAt).toLocaleDateString() : "Never"}
+          </span>
+        </div>
+        <div className="flex items-center justify-between text-[11px] font-mono">
+          <span className="text-muted-foreground/50 uppercase">Created By</span>
+          <span className="font-bold text-foreground/80 truncate max-w-[120px]">{code.createdBy || "System"}</span>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center gap-2 pt-4 mt-auto border-t border-border/10">
         <button
           onClick={toggle}
           disabled={update.isPending}
-          title={code.isActive ? "Deactivate" : "Activate"}
-          className="text-muted-foreground/40 hover:text-primary transition-colors"
+          className="flex-1 flex items-center justify-center gap-1.5 py-2 text-[10px] font-mono uppercase tracking-widest border border-border/40 hover:bg-secondary/20 transition-colors disabled:opacity-50"
         >
-          {code.isActive
-            ? <ToggleRight className="size-4 text-primary/60" />
-            : <ToggleLeft className="size-4" />}
+          {code.isActive ? (
+            <><ToggleRight className="size-3.5 text-primary/60" /> Disable</>
+          ) : (
+            <><ToggleLeft className="size-3.5 text-muted-foreground" /> Enable</>
+          )}
         </button>
 
         <button
           onClick={remove}
           disabled={deactivate.isPending}
-          className="text-muted-foreground/40 hover:text-destructive transition-colors"
+          className="flex items-center justify-center p-2 border border-destructive/20 text-destructive/60 hover:bg-destructive/10 hover:text-destructive transition-colors disabled:opacity-50"
+          title="Delete Promo Code"
         >
           <Trash2 className="size-3.5" />
         </button>
@@ -158,7 +169,7 @@ function CreatePromoCodeForm({ onClose }: { onClose: () => void }) {
       await create.mutateAsync({
         ...form,
         code: form.code.toUpperCase(),
-        expiresAt: hasExpiry && form.expiresAt ? new Date(`${form.expiresAt}T23:59:59Z`).toISOString() : null,
+        expiresAt: hasExpiry && form.expiresAt ? new Date(form.expiresAt).toISOString() : null,
         maxUses: hasMaxUses && form.maxUses && form.maxUses > 0 ? form.maxUses : null,
       });
       toast.success("Promo code created");
@@ -256,13 +267,13 @@ function CreatePromoCodeForm({ onClose }: { onClose: () => void }) {
               checked={hasExpiry}
               onCheckedChange={(v) => setHasExpiry(!!v)}
             />
-            <input
-              type="date"
-              disabled={!hasExpiry}
-              value={form.expiresAt ?? ""}
-              onChange={(e) => setForm((f) => ({ ...f, expiresAt: e.target.value }))}
-              className={cn(fieldCls, "flex-1", !hasExpiry && "opacity-40")}
+          <div className={cn("flex flex-1 items-center gap-2", !hasExpiry && "opacity-40 pointer-events-none")}>
+            <DateTimePicker
+              date={form.expiresAt ? new Date(form.expiresAt) : undefined}
+              setDate={(d) => setForm((f) => ({ ...f, expiresAt: d.toISOString() }))}
+              className="w-full"
             />
+          </div>
           </div>
         </div>
 
@@ -322,17 +333,9 @@ function PromoCodesTab() {
       )}
 
       {!isLoading && codes.length > 0 && (
-        <div className="space-y-1.5">
-          {/* Header */}
-          <div className="flex items-center gap-4 px-4 py-1">
-            <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40 min-w-[10rem]">Code</span>
-            <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40 min-w-[6rem]">Discount</span>
-            <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40 min-w-[5rem]">Uses</span>
-            <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40 flex-1">Expiry</span>
-            <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40">Status</span>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {codes.map((c) => (
-            <PromoCodeRow key={c._id} code={c} />
+            <PromoCodeCard key={c._id} code={c} />
           ))}
         </div>
       )}

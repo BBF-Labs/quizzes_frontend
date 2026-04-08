@@ -293,7 +293,13 @@ function AddEntryForm({
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(courseSearch), 300);
+    let normalized = courseSearch.trim();
+    // Fix typography: dict -> dcit
+    normalized = normalized.replace(/dict/i, "dcit");
+    // Add space between letters and numbers (e.g. dcit401 -> dcit 401)
+    normalized = normalized.replace(/^([a-zA-Z]+)(\d+)/, "$1 $2");
+
+    const t = setTimeout(() => setDebouncedSearch(normalized), 300);
     return () => clearTimeout(t);
   }, [courseSearch]);
 
