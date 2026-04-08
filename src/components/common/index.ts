@@ -8,3 +8,4 @@ export * from "./user-profile-dropdown";
 export * from "./auth-guard";
 export * from "./cookie-consent";
 export * from "./plan-card";
+export * from "./referral-card";

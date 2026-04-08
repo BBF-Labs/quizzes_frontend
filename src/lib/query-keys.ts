@@ -86,6 +86,7 @@ export const queryKeys = {
     status: () => [...queryKeys.billing.root, "status"] as const,
     streak: () => [...queryKeys.billing.root, "streak"] as const,
     studentVerify: () => [...queryKeys.billing.root, "student-verify"] as const,
+    referralStatus: () => [...queryKeys.billing.root, "referral-status"] as const,
   },
   donations: {
     root: ["donations"] as const,
