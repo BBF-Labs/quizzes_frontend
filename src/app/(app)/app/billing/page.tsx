@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Zap, Flame } from "lucide-react";
-import { usePackages, useCreditBundles, useBillingStatus, type PlanDuration, type BillingPackage } from "@/hooks";
+import { usePackages, useCreditBundles, useBillingStatus, useStudentVerifyStatus, type PlanDuration, type BillingPackage } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { PlanCard, PLAN_TIER_META, PLAN_DURATION_LABELS, ReferralCard } from "@/components/common";
 
@@ -58,6 +58,7 @@ export default function BillingPage() {
   const { data: allPackages = [], isLoading: pkgsLoading } = usePackages();
   const { data: creditBundles = [], isLoading: bundlesLoading } = useCreditBundles();
   const { data: billingStatus } = useBillingStatus();
+  const { data: studentStatus } = useStudentVerifyStatus();
 
   const filtered = allPackages.filter((p) => p.durationType === duration && p.isActive);
   const tierOrder: Record<string, number> = { cooked: 0, cruising: 1, locked_in: 2 };
@@ -239,15 +240,25 @@ export default function BillingPage() {
           transition={{ delay: 0.6 }}
           className="mt-10 border border-border/20 bg-card/20 px-4 py-3 flex items-start gap-3"
         >
-          <span className="text-xs font-mono text-muted-foreground">
-            <span className="text-foreground font-semibold">Student?</span> Verify your university email for 10% off.{" "}
-            <button
-              onClick={() => router.push("/app/settings?tab=verification")}
-              className="text-primary underline underline-offset-2 hover:no-underline"
-            >
-              Verify now
-            </button>
-          </span>
+          {studentStatus?.status === "verified" ? (
+            <span className="text-xs font-mono text-emerald-500 flex items-center gap-2">
+              <span className="p-1 bg-emerald-500/10 rounded-full">
+                <Zap className="size-3" />
+              </span>
+              <span className="font-bold uppercase tracking-wider">Student Discount Active</span>
+              <span className="text-muted-foreground/60">— Your 10% discount is applied automatically at checkout.</span>
+            </span>
+          ) : (
+            <span className="text-xs font-mono text-muted-foreground">
+              <span className="text-foreground font-semibold">Student?</span> Verify your university email for 10% off.{" "}
+              <button
+                onClick={() => router.push("/app/settings?tab=verification")}
+                className="text-primary underline underline-offset-2 hover:no-underline"
+              >
+                Verify now
+              </button>
+            </span>
+          )}
         </motion.div>
 
       </div>
