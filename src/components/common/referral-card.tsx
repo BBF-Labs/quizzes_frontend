@@ -3,7 +3,7 @@
 import { useReferralStatus } from "@/hooks/common/use-billing";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Copy, Gift, Users, Check, Sparkles } from "lucide-react";
+import { Copy, Gift, Users, Check, Sparkles, Link2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -88,7 +88,7 @@ export function ReferralCard() {
               onClick={handleCopyLink}
               className="relative w-full h-10 bg-primary/5 border border-primary/20 hover:bg-primary/10 flex items-center justify-center gap-2 transition-all duration-300 rounded-(--radius)"
             >
-              <Sparkles className="size-3 text-primary animate-pulse" />
+              <Link2 className="size-3 text-primary" />
               <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-primary">
                 {copiedLink ? "Link Copied" : "Copy Invite Link"}
               </span>
