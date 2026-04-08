@@ -18,7 +18,8 @@ export function useSessionValidation(enabled: boolean) {
 }
 
 export function isInvalidSessionError(error: unknown): boolean {
-  const axiosError = error as AxiosError;
+  if (error instanceof Error && error.message === "UNAUTHENTICATED") return true;
+  const axiosError = error as any;
   const status = axiosError?.response?.status;
   return status === 401 || status === 403;
 }
