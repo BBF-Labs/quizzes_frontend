@@ -184,6 +184,19 @@ export function useInitiateStudentVerify() {
   });
 }
 
+export function useConfirmStudentVerify() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (token: string) => {
+      const res = await api.get(`/subscriptions/student-verify/confirm?token=${token}`);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.billing.studentVerify() });
+    },
+  });
+}
+
 // ─── Payments ────────────────────────────────────────────────────────────────
 
 export function useInitiatePlanPayment() {
