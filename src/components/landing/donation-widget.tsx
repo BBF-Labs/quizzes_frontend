@@ -60,7 +60,7 @@ export function DonationWidget() {
       </div>
 
       {/* Ledger counter */}
-      {ledger && (
+      {ledger && ledger.totalRaisedGHS >= 1000 && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -206,7 +206,7 @@ export function DonationWidget() {
       </form>
 
       {/* Recent donors */}
-      {ledger && ledger.donations.length > 0 && (
+      {ledger && ledger.totalRaisedGHS >= 1000 && ledger.donations.length > 0 && (
         <div className="mt-5 space-y-1">
           <p className="text-[9px] font-mono uppercase tracking-[0.2em] text-muted-foreground/40 mb-2">
             Recent supporters
