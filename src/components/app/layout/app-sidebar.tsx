@@ -107,7 +107,7 @@ export function AppSidebar() {
                   <Link href="/app/all">
                     <MessageSquare className="size-4" />
                     <span className="font-mono text-[11px] uppercase tracking-widest">
-                      Screens
+                      Sessions
                     </span>
                   </Link>
                 </SidebarMenuButton>
