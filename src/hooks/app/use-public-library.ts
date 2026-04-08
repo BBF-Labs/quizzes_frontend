@@ -52,9 +52,10 @@ export function usePublicLibrary(filters: LibraryFilters = {}) {
       Object.entries(filters).forEach(([k, v]) => {
         if (v !== undefined && v !== "") params.set(k, String(v));
       });
-      const res = await api.get<{ data: LibraryItem[]; pagination: LibraryResponse["pagination"] }>(
-        `/learning/library?${params.toString()}`
-      );
+      const res = await api.get<{
+        data: LibraryItem[];
+        pagination: LibraryResponse["pagination"];
+      }>(`/learning/library?${params.toString()}`);
       return res.data;
     },
     staleTime: 60_000,
@@ -65,7 +66,9 @@ export function usePublicLibraryItem(id: string) {
   return useQuery({
     queryKey: queryKeys.publicLibrary.detail(id),
     queryFn: async () => {
-      const res = await api.get<{ data: LibraryItem }>(`/learning/library/${id}`);
+      const res = await api.get<{ data: LibraryItem }>(
+        `/learning/library/${id}`,
+      );
       return res.data?.data;
     },
     enabled: !!id,
@@ -88,4 +91,9 @@ export function useSubmitToLibrary() {
       return res.data;
     },
   });
+}
+
+export function getLibraryDownloadUrl(id: string) {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+  return `${baseUrl}/learning/library/${id}/download`;
 }

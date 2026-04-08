@@ -12,8 +12,9 @@ import {
   Zap,
   Filter,
   X,
+  Download,
 } from "lucide-react";
-import { usePublicLibrary, type LibraryFilters, type LibraryItem } from "@/hooks/app/use-public-library";
+import { usePublicLibrary, type LibraryFilters, type LibraryItem, getLibraryDownloadUrl } from "@/hooks/app/use-public-library";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -132,14 +133,23 @@ function LibraryCard({ item, onStudy }: { item: LibraryItem; onStudy: (id: strin
       </div>
 
       {/* Action */}
-      <div className="px-4 pb-4 pt-2 border-t border-border/20 mt-auto">
+      <div className="px-4 pb-4 pt-2 border-t border-border/20 mt-auto flex gap-2">
         <Button
           size="sm"
-          className="w-full h-8 text-[10px] font-mono gap-1.5"
+          className="flex-1 h-8 text-[10px] font-mono gap-1.5"
           onClick={() => onStudy(item._id)}
         >
           <Zap className="size-3" />
           Study with Z
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8 w-8 p-0 border-border/40 hover:bg-primary/5 hover:border-primary/20 transition-all"
+          title="Download Source File"
+          onClick={() => window.open(getLibraryDownloadUrl(item._id), "_blank")}
+        >
+          <Download className="size-3.5" />
         </Button>
       </div>
     </motion.div>
