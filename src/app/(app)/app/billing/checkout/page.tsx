@@ -46,6 +46,10 @@ export default function CheckoutPage() {
     discountPercent: number;
   } | null>(null);
   const [referralCode, setReferralCode] = useState("");
+  const [appliedReferral, setAppliedReferral] = useState<{
+    code: string;
+    discountPercent: number;
+  } | null>(null);
   const [showReferral, setShowReferral] = useState(false);
 
   const validatePromo = useValidatePromoCode();
@@ -71,28 +75,47 @@ export default function CheckoutPage() {
 
   const isLoading = initiatePlan.isPending || initiateCredits.isPending;
 
-  async function handleApplyPromo() {
-    if (!promoCode.trim() || !packageId) return;
+  async function handleApplyCodes(type: "promo" | "referral") {
+    const currentPromo = type === "promo" ? promoCode.trim() : appliedPromo?.code;
+    const currentReferral =
+      type === "referral" ? referralCode.trim() : appliedReferral?.code;
+
+    if (!packageId && !bundleId) return;
+
     try {
       const result: any = await validatePromo.mutateAsync({
-        code: promoCode.trim(),
-        packageId,
+        code: currentPromo || undefined,
+        referralCode: currentReferral || undefined,
+        packageId: packageId || undefined,
+        bundleId: bundleId || undefined,
       });
-      const applied = result.discounts?.find((d: any) => d.type === "promo");
 
-      if (applied) {
+      const promoDiscount = result.discounts?.find((d: any) => d.type === "promo");
+      const referralDiscount = result.discounts?.find(
+        (d: any) => d.type === "referral" && d.label.toLowerCase().includes("signup")
+      );
+
+      if (type === "promo" && promoDiscount) {
         setAppliedPromo({
           code: promoCode.trim(),
-          discountPercent: applied.percentage,
+          discountPercent: promoDiscount.percentage,
         });
-        setDiscountResult(result);
-        toast.success(`Promo applied: ${applied.percentage}% off`);
-      } else {
+        toast.success(`Promo applied: ${promoDiscount.percentage}% off`);
+      } else if (type === "referral" && referralDiscount) {
+        setAppliedReferral({
+          code: referralCode.trim(),
+          discountPercent: referralDiscount.percentage,
+        });
+        toast.success(`Referral applied: ${referralDiscount.percentage}% off`);
+      } else if (type === "promo") {
         toast.error("Invalid or expired promo code");
+      } else if (type === "referral") {
+        toast.error("Invalid or already used referral code");
       }
+
+      setDiscountResult(result);
     } catch (err: any) {
-      const msg =
-        err?.response?.data?.message || "Failed to validate promo code";
+      const msg = err?.response?.data?.message || "Failed to validate code";
       toast.error(msg);
     }
   }
@@ -100,7 +123,43 @@ export default function CheckoutPage() {
   function handleRemovePromo() {
     setAppliedPromo(null);
     setPromoCode("");
-    setDiscountResult(null);
+    // Re-validate with just referral if it exists
+    if (appliedReferral) {
+      handleRemoveCode("promo");
+    } else {
+      setDiscountResult(null);
+    }
+  }
+
+  async function handleRemoveCode(toRemove: "promo" | "referral") {
+    const nextPromo = toRemove === "promo" ? undefined : appliedPromo?.code;
+    const nextReferral =
+      toRemove === "referral" ? undefined : appliedReferral?.code;
+
+    if (toRemove === "promo") {
+      setAppliedPromo(null);
+      setPromoCode("");
+    } else {
+      setAppliedReferral(null);
+      setReferralCode("");
+    }
+
+    if (!nextPromo && !nextReferral) {
+      setDiscountResult(null);
+      return;
+    }
+
+    try {
+      const result: any = await validatePromo.mutateAsync({
+        code: nextPromo,
+        referralCode: nextReferral,
+        packageId: packageId || undefined,
+        bundleId: bundleId || undefined,
+      });
+      setDiscountResult(result);
+    } catch {
+      setDiscountResult(null);
+    }
   }
 
   async function handleCheckout() {
@@ -275,7 +334,11 @@ export default function CheckoutPage() {
                 />
               </div>
               <button
-                onClick={appliedPromo ? handleRemovePromo : handleApplyPromo}
+                onClick={
+                  appliedPromo
+                    ? () => handleRemoveCode("promo")
+                    : () => handleApplyCodes("promo")
+                }
                 disabled={
                   (!promoCode.trim() && !appliedPromo) ||
                   validatePromo.isPending
@@ -315,14 +378,43 @@ export default function CheckoutPage() {
                 Have a referral code?
               </button>
             ) : (
-              <div className="flex items-center border border-border/50 bg-background px-3 gap-2">
-                <input
-                  type="text"
-                  value={referralCode}
-                  onChange={(e) => setReferralCode(e.target.value)}
-                  placeholder="Referral code"
-                  className="flex-1 py-2.5 text-xs font-mono bg-transparent outline-none placeholder:text-muted-foreground/40"
-                />
+              <div className="flex gap-2">
+                <div className="flex-1 flex items-center border border-border/50 bg-background px-3 gap-2">
+                  <Tag className="size-3 text-muted-foreground/50 shrink-0" />
+                  <input
+                    type="text"
+                    value={referralCode}
+                    onChange={(e) => setReferralCode(e.target.value)}
+                    placeholder="REFERRAL CODE"
+                    disabled={!!appliedReferral}
+                    className="flex-1 py-2.5 text-xs font-mono bg-transparent outline-none placeholder:text-muted-foreground/40 uppercase"
+                  />
+                </div>
+                <button
+                  onClick={
+                    appliedReferral
+                      ? () => handleRemoveCode("referral")
+                      : () => handleApplyCodes("referral")
+                  }
+                  disabled={
+                    (!referralCode.trim() && !appliedReferral) ||
+                    validatePromo.isPending
+                  }
+                  className={cn(
+                    "px-4 text-[10px] font-mono uppercase tracking-[0.15em] border transition-colors",
+                    appliedReferral
+                      ? "border-destructive/30 text-destructive bg-destructive/5 hover:bg-destructive/10"
+                      : "border-border hover:border-primary hover:text-primary",
+                  )}
+                >
+                  {validatePromo.isPending ? (
+                    <Loader2 className="size-3 animate-spin" />
+                  ) : appliedReferral ? (
+                    "Remove"
+                  ) : (
+                    "Apply"
+                  )}
+                </button>
               </div>
             )}
           </motion.div>

@@ -246,7 +246,12 @@ export function useVerifyPayment() {
 
 export function useValidatePromoCode() {
   return useMutation({
-    mutationFn: async (input: { code: string; packageId: string }) => {
+    mutationFn: async (input: {
+      code?: string;
+      referralCode?: string;
+      packageId?: string;
+      bundleId?: string;
+    }) => {
       const res = await api.post<{ data: any }>(
         "/subscriptions/promo-codes/validate",
         input,
