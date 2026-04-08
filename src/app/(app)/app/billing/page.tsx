@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { Zap, Flame } from "lucide-react";
 import { usePackages, useCreditBundles, useBillingStatus, type PlanDuration, type BillingPackage } from "@/hooks";
 import { cn } from "@/lib/utils";
-import { PlanCard, PLAN_TIER_META, PLAN_DURATION_LABELS } from "@/components/common";
+import { PlanCard, PLAN_TIER_META, PLAN_DURATION_LABELS, ReferralCard } from "@/components/common";
 
 // ─── Credit Bundle Cards ──────────────────────────────────────────────────────
 
@@ -220,6 +220,16 @@ export default function BillingPage() {
               ))}
             </div>
           )}
+        </motion.div>
+
+        {/* Referral Section */}
+        <motion.div
+           initial={{ opacity: 0, y: 12 }}
+           animate={{ opacity: 1, y: 0 }}
+           transition={{ delay: 0.55 }}
+           className="mb-10"
+        >
+          <ReferralCard />
         </motion.div>
 
         {/* Student discount nudge */}

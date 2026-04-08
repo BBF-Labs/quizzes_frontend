@@ -255,3 +255,24 @@ export function useValidatePromoCode() {
     },
   });
 }
+
+export interface ReferralStatus {
+  code: string;
+  referredCount: number;
+  hasPendingDiscount: boolean;
+}
+
+// ─── Referral Status ──────────────────────────────────────────────────────────
+
+export function useReferralStatus() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: queryKeys.billing.referralStatus(),
+    queryFn: async () => {
+      const res = await api.get<{ data: ReferralStatus }>("/subscriptions/referral/me");
+      return res.data.data;
+    },
+    enabled: !!user,
+    staleTime: 1000 * 60 * 60, // 1 hour - referral code doesn't change
+  });
+}
