@@ -1,3 +1,4 @@
+import { OrganizationJsonLd, WebAppJsonLd } from "@/components/common";
 import { Navbar } from "@/components/common";
 import { Hero } from "@/components/landing";
 import { MeetZ } from "@/components/landing";
@@ -19,6 +20,8 @@ import { Donations } from "@/components/landing";
 export default function Home() {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
+      <OrganizationJsonLd />
+      <WebAppJsonLd />
       <Navbar />
       <main className="flex-1">
         <Hero />
