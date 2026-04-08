@@ -49,7 +49,7 @@ export function ReferralCard() {
             Share the knowledge, <br /> get 15% off.
           </h3>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Invite your friends to BBF Labs. When they complete their first subscription, you&apos;ll get a 15% discount on your next renewal.
+            Invite your friends to Qz. When they complete their first subscription, you&apos;ll get a 15% discount on your next renewal.
           </p>
         </div>
 
@@ -95,7 +95,7 @@ export function ReferralCard() {
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
               <Users className="size-3 text-muted-foreground" />
-              <div className="flex flex-col">
+              <div className="flex items-center gap-1.5">
                 <span className="text-sm font-bold leading-none">
                   {status.referredCount}
                 </span>
