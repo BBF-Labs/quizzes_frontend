@@ -158,8 +158,8 @@ function CreatePromoCodeForm({ onClose }: { onClose: () => void }) {
       await create.mutateAsync({
         ...form,
         code: form.code.toUpperCase(),
-        expiresAt: hasExpiry ? form.expiresAt : null,
-        maxUses: hasMaxUses ? form.maxUses : null,
+        expiresAt: hasExpiry && form.expiresAt ? new Date(`${form.expiresAt}T23:59:59Z`).toISOString() : null,
+        maxUses: hasMaxUses && form.maxUses && form.maxUses > 0 ? form.maxUses : null,
       });
       toast.success("Promo code created");
       onClose();
