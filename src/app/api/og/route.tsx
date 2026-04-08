@@ -6,15 +6,14 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
 
-    // Dynamic title from query params
-    const hasTitle = searchParams.has('title');
-    const title = hasTitle
-      ? searchParams.get('title')?.slice(0, 100)
-      : 'BETAFORGE LABS';
+    // Dynamic parameters from query string
+    const title = searchParams.get('title') || 'BETAFORGE LABS';
+    const description = searchParams.get('description') || 'Study Smarter. Know your rank. Master it all.';
+    const subtitle = searchParams.get('subtitle') || 'WAITLIST NOW OPEN';
+    const type = searchParams.get('type') || 'page';
 
     const { origin } = new URL(request.url);
     const logoUrl = `${origin}/logo.png`;
-    const studentsUrl = `${origin}/students.png`;
 
     return new ImageResponse(
       (
@@ -46,138 +45,120 @@ export async function GET(request: Request) {
             }}
           />
 
-          {/* Glow Effect */}
+          {/* Large Glow Effect */}
           <div
             style={{
               position: 'absolute',
               top: '50%',
-              left: '25%',
+              left: '50%',
               transform: 'translate(-50%, -50%)',
-              width: '600px',
-              height: '400px',
-              background: 'radial-gradient(circle, rgba(0, 110, 255, 0.15) 0%, transparent 70%)',
+              width: '1000px',
+              height: '800px',
+              background: 'radial-gradient(circle, rgba(0, 110, 255, 0.08) 0%, transparent 70%)',
               borderRadius: '100%',
             }}
           />
 
-          {/* Left Column - Content */}
+          {/* Main Content Area */}
           <div
             style={{
               display: 'flex',
               flexDirection: 'column',
-              width: '60%',
+              width: '100%',
               height: '100%',
-              padding: '60px 0 60px 60px',
+              padding: '80px',
               justifyContent: 'center',
               zIndex: 10,
             }}
           >
-            {/* Waitlist Badge */}
+            {/* Badge / Subtitle */}
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
-                border: '1px solid rgba(0, 110, 255, 0.4)',
-                backgroundColor: 'rgba(0, 110, 255, 0.1)',
-                padding: '6px 12px',
-                marginBottom: '32px',
+                gap: '10px',
+                border: '1px solid rgba(0, 110, 255, 0.3)',
+                backgroundColor: 'rgba(0, 110, 255, 0.05)',
+                padding: '8px 16px',
+                marginBottom: '40px',
+                alignSelf: 'flex-start',
               }}
             >
               <div style={{ width: '6px', height: '6px', backgroundColor: '#006eff' }} />
-              <div style={{ color: '#006eff', fontSize: '12px', fontWeight: 'bold', letterSpacing: '0.15em' }}>
-                WAITLIST NOW OPEN
+              <div style={{ color: '#006eff', fontSize: '14px', fontWeight: 'bold', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
+                {subtitle}
               </div>
             </div>
 
-            {/* Logo and Title Section */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            {/* Title Section */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '24px' }}>
                 <img
                   src={logoUrl}
                   alt="Logo"
-                  width="48"
-                  height="48"
-                  style={{ objectFit: 'contain' }}
+                  width="60"
+                  height="60"
+                  style={{ objectFit: 'contain', marginTop: '10px' }}
                 />
                 <div
                   style={{
-                    fontSize: '80px',
+                    fontSize: title.length > 20 ? '70px' : '96px',
                     fontWeight: '900',
                     color: '#ffffff',
-                    lineHeight: 0.9,
+                    lineHeight: 1.0,
                     letterSpacing: '-0.04em',
-                    display: 'flex',
-                    flexDirection: 'column',
+                    maxWidth: '900px',
                   }}
                 >
-                  <span style={{ color: '#006eff' }}>{title}</span>
+                  {title}
                 </div>
               </div>
 
               <div
                 style={{
-                  fontSize: '24px',
+                  fontSize: '32px',
                   color: '#94a3b8',
-                  maxWidth: '500px',
+                  maxWidth: '800px',
                   lineHeight: '1.4',
                   fontWeight: '300',
-                  marginTop: '12px',
+                  marginTop: '16px',
+                  marginLeft: '84px',
                 }}
               >
-                Study Smarter. Know your rank. Master it all.
+                {description}
               </div>
             </div>
 
-            {/* Stats / Features */}
-            <div style={{ display: 'flex', gap: '32px', marginTop: '48px', borderLeft: '2px solid #006eff', paddingLeft: '20px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <div style={{ color: '#ffffff', fontSize: '18px', fontWeight: 'bold' }}>100%</div>
-                <div style={{ color: '#64748b', fontSize: '10px', letterSpacing: '0.1em' }}>CURRICULUM SYNC</div>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <div style={{ color: '#ffffff', fontSize: '18px', fontWeight: 'bold' }}>REAL-TIME</div>
-                <div style={{ color: '#64748b', fontSize: '10px', letterSpacing: '0.1em' }}>AI INSIGHTS</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column - Image */}
-          <div
-            style={{
-              display: 'flex',
-              width: '40%',
-              height: '100%',
-              position: 'relative',
-            }}
-          >
-            <img
-              src={studentsUrl}
-              alt="Students"
+            {/* Platform Branding */}
+            <div
               style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                transform: 'scaleX(-1)',
-                maskImage: 'linear-gradient(to right, transparent, black 20%)',
+                position: 'absolute',
+                bottom: '80px',
+                left: '164px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
               }}
-            />
+            >
+              <div style={{ width: '20px', height: '1px', backgroundColor: '#006eff' }} />
+              <div style={{ color: '#475569', fontSize: '14px', fontWeight: 'bold', letterSpacing: '0.1em' }}>
+                QZ STUDY PLATFORM | BFLABS.TECH
+              </div>
+            </div>
           </div>
 
-          {/* Decorative Corner Element */}
+          {/* Decorative Corner Blobs */}
           <div
             style={{
               position: 'absolute',
-              bottom: '40px',
-              right: '40px',
-              display: 'flex',
-              gap: '4px',
+              top: '-100px',
+              right: '-100px',
+              width: '400px',
+              height: '400px',
+              background: 'radial-gradient(circle, rgba(0, 110, 255, 0.05) 0%, transparent 70%)',
+              borderRadius: '100%',
             }}
-          >
-            <div style={{ width: '4px', height: '4px', backgroundColor: '#006eff', opacity: 0.5 }} />
-            <div style={{ width: '4px', height: '4px', backgroundColor: '#006eff', opacity: 0.3 }} />
-            <div style={{ width: '4px', height: '4px', backgroundColor: '#006eff', opacity: 0.1 }} />
-          </div>
+          />
         </div>
       ),
       {
