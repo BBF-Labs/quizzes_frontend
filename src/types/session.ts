@@ -578,6 +578,7 @@ export interface MaterialSummary {
   flashcardsGenerated: boolean;
   quizGenerated: boolean;
   libraryStatus?: "pending_review" | "published" | "rejected" | null;
+  isImported?: boolean;
   createdAt: string;
 }
 
