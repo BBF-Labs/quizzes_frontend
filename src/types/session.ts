@@ -577,6 +577,7 @@ export interface MaterialSummary {
   processingStatus: "pending" | "processing" | "ready" | "failed";
   flashcardsGenerated: boolean;
   quizGenerated: boolean;
+  libraryStatus?: "pending_review" | "published" | "rejected" | null;
   createdAt: string;
 }
 

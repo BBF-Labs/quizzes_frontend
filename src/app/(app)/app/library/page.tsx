@@ -490,6 +490,26 @@ export default function LibraryPage() {
                           Processing
                         </span>
                       )}
+
+                      {/* Contribution Status Badge */}
+                      {material.libraryStatus === "published" && (
+                        <span className="flex items-center gap-1 text-[9px] font-mono text-primary uppercase tracking-tighter border border-primary/20 px-1 ml-1">
+                          <Globe className="size-2.5" />
+                          Published
+                        </span>
+                      )}
+                      {material.libraryStatus === "pending_review" && (
+                        <span className="flex items-center gap-1 text-[9px] font-mono text-muted-foreground uppercase tracking-tighter border border-border/40 px-1 ml-1">
+                          <Globe className="size-2.5" />
+                          Reviewing
+                        </span>
+                      )}
+                      {material.libraryStatus === "rejected" && (
+                        <span className="flex items-center gap-1 text-[9px] font-mono text-destructive uppercase tracking-tighter border border-destructive/20 px-1 ml-1 line-through opacity-50">
+                          <Globe className="size-2.5" />
+                          Rejected
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-1">
@@ -536,16 +556,18 @@ export default function LibraryPage() {
                     </div>
                   </div>
 
-                  {/* Share to Library — only for ready materials */}
-                  {material.processingStatus === "ready" && (
-                    <button
-                      onClick={() => setSubmitTarget(material)}
-                      className="w-full flex items-center justify-center gap-1.5 py-1.5 text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 hover:text-primary hover:bg-primary/5 border border-border/20 hover:border-primary/20 transition-all"
-                    >
-                      <Globe className="size-3" />
-                      Share to Public Library
-                    </button>
-                  )}
+                  {/* Share to Library — only for ready materials not already published/pending */}
+                  {material.processingStatus === "ready" &&
+                    (!material.libraryStatus ||
+                      material.libraryStatus === "rejected") && (
+                      <button
+                        onClick={() => setSubmitTarget(material)}
+                        className="w-full flex items-center justify-center gap-1.5 py-1.5 text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 hover:text-primary hover:bg-primary/5 border border-border/20 hover:border-primary/20 transition-all"
+                      >
+                        <Globe className="size-3" />
+                        Share to Public Library
+                      </button>
+                    )}
                 </div>
               </motion.div>
             ))}
