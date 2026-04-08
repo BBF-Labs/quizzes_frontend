@@ -276,7 +276,7 @@ function PublicExamsContent() {
 
               <div className="col-span-1 lg:col-span-2 lg:max-h-160 flex flex-col">
                 <div className="p-4 border-b border-border/50 bg-background/80 flex items-center gap-4 font-mono text-xs">
-                  <div className="w-6 h-6 border border-primary/40 bg-primary/20 flex items-center justify-center text-primary font-bold shrink-0 rounded-none">
+                  <div className="w-6 h-6 border border-primary/40 bg-primary/20 flex items-center justify-center text-primary font-bold shrink-0 rounded-(--radius)">
                     Z
                   </div>
                   <div className="font-bold text-foreground uppercase tracking-widest flex items-center gap-3">
@@ -330,7 +330,7 @@ function PublicExamsContent() {
                           </div>
 
                           {entry.assignedVenue && (
-                            <div className="bg-primary/5 p-3 flex items-center gap-3 border border-primary/10 rounded-none mb-4">
+                            <div className="bg-primary/5 p-3 flex items-center gap-3 border border-primary/10 rounded-(--radius) mb-4">
                               <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
                               <span className="text-xs font-mono text-primary uppercase tracking-wider">
                                 Your venue: {entry.assignedVenue}
@@ -348,7 +348,7 @@ function PublicExamsContent() {
                                 <Badge
                                   key={vIdx}
                                   variant="outline"
-                                  className="rounded-none border-border/50 bg-background font-mono text-[10px] py-1 px-3"
+                                  className="rounded-(--radius) border-border/50 bg-background font-mono text-[10px] py-1 px-3"
                                 >
                                   {v.venue}
                                   {v.indexStart && (

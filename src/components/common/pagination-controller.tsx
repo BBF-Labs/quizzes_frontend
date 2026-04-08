@@ -78,7 +78,7 @@ export function PaginationController({
   return (
     <div
       className={cn(
-        "flex items-center justify-between px-6 py-4 border-t border-border/10 bg-secondary/5",
+        "flex items-center justify-between px-6 py-4 border-t border-border/10 bg-secondary/5 rounded-(--radius)",
         className,
       )}
     >
