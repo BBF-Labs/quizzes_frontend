@@ -77,8 +77,34 @@ export default function SystemQuizDetailPage({
         )}
 
         {!isLoading && error && (
-          <div className="border border-destructive/40 bg-destructive/5 px-4 py-3 font-mono text-sm text-destructive">
-            Failed to load quiz.
+          <div className="border border-destructive/20 bg-destructive/5 px-6 py-8 rounded-(--radius) text-center">
+            <AlertCircle className="size-8 text-destructive/40 mx-auto mb-3" />
+            <p className="text-sm font-mono font-bold uppercase tracking-widest text-destructive mb-2">
+              {error instanceof Error && error.message === "UNAUTHENTICATED" 
+                ? "Sign in to take this quiz" 
+                : "Failed to load quiz"}
+            </p>
+            <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-6 max-w-[240px] mx-auto opacity-70">
+              {error instanceof Error && error.message === "UNAUTHENTICATED"
+                ? "You need an active session to participate in this assessment and track your scores."
+                : "There was a problem retrieving the quiz data. Please try again later."}
+            </p>
+            {error instanceof Error && error.message === "UNAUTHENTICATED" ? (
+              <Button 
+                onClick={() => router.push(`/login?redirectUrl=/quizzes/${id}`)}
+                className="h-9 px-8 font-mono text-[10px] uppercase tracking-[0.2em]"
+              >
+                Login to Start
+              </Button>
+            ) : (
+              <Button 
+                variant="outline"
+                onClick={() => window.location.reload()}
+                className="h-9 px-8 font-mono text-[10px] uppercase tracking-[0.2em]"
+              >
+                Refresh Page
+              </Button>
+            )}
           </div>
         )}
 

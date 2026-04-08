@@ -51,7 +51,10 @@ api.interceptors.response.use(
 
         try {
           const refreshToken = getRefreshToken();
-          if (!refreshToken) throw new Error("No refresh token");
+          if (!refreshToken) {
+            // No point in retrying if we don't even have a refresh token
+            throw new Error("UNAUTHENTICATED");
+          }
 
           const res = await axios.post<{
             user: SessionUser;
@@ -68,10 +71,16 @@ api.interceptors.response.use(
           isRefreshing = false;
           onTokenRefreshed();
           return api(originalRequest);
-        } catch (refreshError) {
+        } catch (refreshError: any) {
           isRefreshing = false;
           refreshSubscribers = [];
           clearSession();
+
+          // If the refresh call itself failed because the token was invalid, or we had none
+          if (refreshError.message === "No refresh token") {
+             refreshError.message = "UNAUTHENTICATED";
+          }
+          
           return Promise.reject(refreshError);
         }
       } else {
