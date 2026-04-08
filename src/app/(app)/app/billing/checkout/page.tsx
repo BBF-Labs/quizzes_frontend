@@ -63,35 +63,54 @@ export default function CheckoutPage() {
   const isCredits = !!bundleId && !packageId;
 
   const basePrice = selectedPackage?.priceGHS ?? selectedBundle?.priceGHS ?? 0;
-  const discountFraction = appliedPromo ? appliedPromo.discountPercent / 100 : 0;
-  // Student discount
-  const studentDiscount = billingStatus ? 0 : 0; // Already applied server-side
-  const finalPrice = basePrice * (1 - discountFraction);
+
+  // Track all applicable discounts from the validation result
+  const [discountResult, setDiscountResult] = useState<any>(null);
+
+  const finalPrice = discountResult?.finalAmountGHS ?? basePrice;
 
   const isLoading = initiatePlan.isPending || initiateCredits.isPending;
 
   async function handleApplyPromo() {
     if (!promoCode.trim() || !packageId) return;
     try {
-      const result: any = await validatePromo.mutateAsync({ code: promoCode.trim(), packageId });
+      const result: any = await validatePromo.mutateAsync({
+        code: promoCode.trim(),
+        packageId,
+      });
       const applied = result.discounts?.find((d: any) => d.type === "promo");
-      
+
       if (applied) {
-        setAppliedPromo({ code: promoCode.trim(), discountPercent: applied.percentage });
+        setAppliedPromo({
+          code: promoCode.trim(),
+          discountPercent: applied.percentage,
+        });
+        setDiscountResult(result);
         toast.success(`Promo applied: ${applied.percentage}% off`);
       } else {
         toast.error("Invalid or expired promo code");
       }
-    } catch {
-      toast.error("Failed to validate promo code");
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.message || "Failed to validate promo code";
+      toast.error(msg);
     }
+  }
+
+  function handleRemovePromo() {
+    setAppliedPromo(null);
+    setPromoCode("");
+    setDiscountResult(null);
   }
 
   async function handleCheckout() {
     try {
       let result;
       if (isCredits && bundleId) {
-        result = await initiateCredits.mutateAsync({ bundleId, email: user?.email || "" });
+        result = await initiateCredits.mutateAsync({
+          bundleId,
+          email: user?.email || "",
+        });
       } else if (packageId) {
         result = await initiatePlan.mutateAsync({
           packageId,
@@ -115,7 +134,9 @@ export default function CheckoutPage() {
     return (
       <div className="min-h-full px-4 py-8 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-sm font-mono text-muted-foreground mb-4">No plan selected.</p>
+          <p className="text-sm font-mono text-muted-foreground mb-4">
+            No plan selected.
+          </p>
           <button
             onClick={() => router.push("/app/billing")}
             className="text-xs font-mono text-primary underline underline-offset-2"
@@ -130,7 +151,6 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-full px-4 py-8">
       <div className="mx-auto max-w-5xl">
-
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -143,7 +163,9 @@ export default function CheckoutPage() {
               Checkout
             </span>
           </div>
-          <h1 className="text-2xl font-black tracking-tighter">Complete your order</h1>
+          <h1 className="text-2xl font-black tracking-tighter">
+            Complete your order
+          </h1>
         </motion.div>
 
         {/* Order summary */}
@@ -164,10 +186,14 @@ export default function CheckoutPage() {
                   {TIER_LABELS[selectedPackage.tier] ?? selectedPackage.tier}
                 </p>
                 <p className="text-xs font-mono text-muted-foreground">
-                  {DURATION_LABELS[selectedPackage.durationType] ?? selectedPackage.durationType} plan
+                  {DURATION_LABELS[selectedPackage.durationType] ??
+                    selectedPackage.durationType}{" "}
+                  plan
                 </p>
               </div>
-              <span className="text-sm font-mono">GHS {selectedPackage.priceGHS.toFixed(2)}</span>
+              <span className="text-sm font-mono">
+                GHS {selectedPackage.priceGHS.toFixed(2)}
+              </span>
             </div>
           )}
 
@@ -176,27 +202,52 @@ export default function CheckoutPage() {
               <div className="flex items-center gap-2">
                 <Zap className="size-3 text-amber-400" />
                 <div>
-                  <p className="text-sm font-semibold capitalize">{selectedBundle.name} credits</p>
-                  <p className="text-xs font-mono text-muted-foreground">{selectedBundle.credits} credits</p>
+                  <p className="text-sm font-semibold capitalize">
+                    {selectedBundle.name} credits
+                  </p>
+                  <p className="text-xs font-mono text-muted-foreground">
+                    {selectedBundle.credits} credits
+                  </p>
                 </div>
               </div>
-              <span className="text-sm font-mono">GHS {selectedBundle.priceGHS.toFixed(2)}</span>
+              <span className="text-sm font-mono">
+                GHS {selectedBundle.priceGHS.toFixed(2)}
+              </span>
             </div>
           )}
 
-          {appliedPromo && (
-            <div className="flex items-center justify-between text-primary mt-2 pt-2 border-t border-border/30">
-              <span className="text-xs font-mono">
-                Promo: {appliedPromo.code} ({appliedPromo.discountPercent}% off)
-              </span>
-              <span className="text-xs font-mono">
-                − GHS {(basePrice * discountFraction).toFixed(2)}
-              </span>
+          {discountResult?.discounts && discountResult.discounts.length > 0 && (
+            <div className="mt-2 pt-2 border-t border-border/30 space-y-1">
+              {discountResult.discounts.map((d: any, i: number) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between text-primary"
+                >
+                  <span className="text-[10px] font-mono leading-none">
+                    {d.label} ({d.percentage}%)
+                  </span>
+                  <span className="text-[10px] font-mono leading-none">
+                    − GHS {((basePrice * d.percentage) / 100).toFixed(2)}
+                  </span>
+                </div>
+              ))}
+              {discountResult.totalDiscountPercentage > 0 && (
+                <div className="flex items-center justify-between text-muted-foreground/60 pt-1">
+                  <span className="text-[9px] font-mono uppercase">
+                    Total Discount
+                  </span>
+                  <span className="text-[9px] font-mono">
+                    {discountResult.totalDiscountPercentage}%
+                  </span>
+                </div>
+              )}
             </div>
           )}
 
           <div className="mt-3 pt-3 border-t border-border/40 flex items-center justify-between">
-            <span className="text-xs font-mono text-muted-foreground">Total</span>
+            <span className="text-xs font-mono text-muted-foreground">
+              Total
+            </span>
             <span className="text-lg font-black tracking-tighter">
               GHS {finalPrice.toFixed(2)}
             </span>
@@ -224,19 +275,22 @@ export default function CheckoutPage() {
                 />
               </div>
               <button
-                onClick={handleApplyPromo}
-                disabled={!promoCode.trim() || !!appliedPromo || validatePromo.isPending}
+                onClick={appliedPromo ? handleRemovePromo : handleApplyPromo}
+                disabled={
+                  (!promoCode.trim() && !appliedPromo) ||
+                  validatePromo.isPending
+                }
                 className={cn(
                   "px-4 text-[10px] font-mono uppercase tracking-[0.15em] border transition-colors",
                   appliedPromo
-                    ? "border-primary/30 text-primary bg-primary/10 cursor-default"
+                    ? "border-destructive/30 text-destructive bg-destructive/5 hover:bg-destructive/10"
                     : "border-border hover:border-primary hover:text-primary",
                 )}
               >
                 {validatePromo.isPending ? (
                   <Loader2 className="size-3 animate-spin" />
                 ) : appliedPromo ? (
-                  "Applied"
+                  "Remove"
                 ) : (
                   "Apply"
                 )}
@@ -284,7 +338,8 @@ export default function CheckoutPage() {
           >
             <AlertCircle className="size-3 text-muted-foreground/50 mt-0.5 shrink-0" />
             <p className="text-[10px] font-mono text-muted-foreground">
-              Any applicable student, referral, or loyalty discounts are applied automatically at checkout.
+              Any applicable student, referral, or loyalty discounts are applied
+              automatically at checkout.
             </p>
           </motion.div>
         )}
@@ -318,7 +373,6 @@ export default function CheckoutPage() {
             Secured by Paystack · GHS only
           </p>
         </motion.div>
-
       </div>
     </div>
   );
