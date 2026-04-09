@@ -7,7 +7,7 @@ export interface StudyRoomParticipant {
   userId?: string;
   guestId?: string;
   displayName: string;
-  role: "owner" | "moderator" | "member" | "guest";
+  role: "host" | "moderator" | "member" | "guest";
   points: number;
   level?: number;
   xp?: number;

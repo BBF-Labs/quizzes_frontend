@@ -269,7 +269,7 @@ export default function StudyRoomDetailPage() {
       room.participants?.some(
         (p: any) =>
           String(p.userId || "") === user.id &&
-          (p.role === "owner" || p.role === "host"),
+          p.role === "host",
       )
     );
   }, [room, user?.id]);
@@ -1071,7 +1071,7 @@ export default function StudyRoomDetailPage() {
             {isRoomOwner ? (
               <div className="space-y-2 border p-2">
                 <p className="text-xs text-muted-foreground">Moderation quick actions</p>
-                {(room.participants || []).filter((p) => !p.leftAt && p.role !== "owner").slice(0, 5).map((p) => (
+                {(room.participants || []).filter((p) => !p.leftAt && p.role !== "host").slice(0, 5).map((p) => (
                   <div key={p.userId || p.guestId} className="flex items-center justify-between">
                     <span className="text-sm">{p.displayName}</span>
                     <div className="flex gap-2">
