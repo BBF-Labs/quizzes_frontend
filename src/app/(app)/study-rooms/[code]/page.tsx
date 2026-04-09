@@ -251,10 +251,10 @@ export default function StudyRoomDetailPage() {
         const myId = user?.id || (typeof window !== "undefined" ? localStorage.getItem("study_room_guest_id") : "");
         if (p?.targetUserId === myId || p?.targetGuestId === myId) {
             if (p.action === "kick") {
-                toast.error("You have been ejected from the sector.");
+                toast.error("You've been removed from the room.");
                 window.location.href = "/study-rooms";
             } else if (p.action === "mute") {
-                toast.warning("Your comms have been restricted by the host.");
+                toast.warning("The host has muted your chat.");
             }
         }
         refetch();
@@ -506,8 +506,8 @@ export default function StudyRoomDetailPage() {
 
                     <div className="mt-6 space-y-4">
                         <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-mono font-bold uppercase text-muted-foreground/80">Active Personnel</span>
-                            <span className="text-sm font-mono font-bold text-foreground">{participants.length} Dispatched</span>
+                            <span className="text-[10px] font-mono font-bold uppercase text-muted-foreground/80">Who's Here</span>
+                            <span className="text-sm font-mono font-bold text-foreground">{participants.length} Studiers</span>
                         </div>
                         <div className="flex -space-x-2">
                             {participants.slice(0, 5).map((p, i) => (
@@ -638,8 +638,8 @@ export default function StudyRoomDetailPage() {
                                     <div className="py-10 space-y-4 flex flex-col items-center">
                                         <RefreshCw className="size-12 animate-spin text-primary opacity-50" />
                                         <div className="space-y-1">
-                                            <Badge variant="secondary" className="rounded-full font-mono text-[10px] uppercase font-bold tracking-[0.2em]">Synchronizing AI Logic</Badge>
-                                            <p className="text-muted-foreground text-[10px] font-mono font-bold uppercase">Z is preparing your session...</p>
+                                            <Badge variant="secondary" className="rounded-full font-mono text-[10px] uppercase font-bold tracking-[0.2em]">Setting things up...</Badge>
+                                            <p className="text-muted-foreground text-[10px] font-mono font-bold uppercase">Z is getting your session ready</p>
                                         </div>
                                     </div>
                                 ) : room.activeGame.status === "ready" ? (
@@ -659,7 +659,7 @@ export default function StudyRoomDetailPage() {
                                                 onClick={() => startGame.mutate({ code, source: "ai", type: room.activeGame?.type || "word_guess", prompt: room.activeGame?.prompt || "" })}
                                                 disabled={startGame.isPending}
                                             >
-                                                {startGame.isPending ? <RefreshCw className="size-5 animate-spin" /> : "Broadcast to Room"}
+                                                {startGame.isPending ? <RefreshCw className="size-5 animate-spin" /> : "Start Challenge"}
                                             </Button>
                                         )}
                                     </div>
@@ -722,44 +722,44 @@ export default function StudyRoomDetailPage() {
                                 <div className="h-1 bg-primary animate-pulse w-full" />
                                 <CardContent className="p-8 text-center space-y-6">
                                     <div className="space-y-1">
-                                        <Badge variant="outline" className="rounded-full font-mono text-[10px] uppercase font-bold tracking-[0.2em] border-primary/50 text-primary">Mission Debriefing</Badge>
-                                        <h3 className="text-xl font-mono font-black italic tracking-tighter uppercase">Cycle {room.timer?.cycle} Complete</h3>
-                                        <p className="text-[10px] font-mono text-muted-foreground uppercase font-bold">Report your target completion status</p>
+                                        <Badge variant="outline" className="rounded-full font-mono text-[10px] uppercase font-bold tracking-[0.2em] border-primary/50 text-primary">Session Check-in</Badge>
+                                        <h3 className="text-xl font-mono font-black italic tracking-tighter uppercase">Cycle {room.timer?.cycle} Finished!</h3>
+                                        <p className="text-[10px] font-mono text-muted-foreground uppercase font-bold">How did that session go?</p>
                                     </div>
 
                                     <div className="grid gap-3">
-                                        <Button 
+                                         <Button 
                                             variant="secondary" 
                                             className="rounded-(--radius) h-12 justify-start font-mono text-[10px] font-bold uppercase gap-3 group"
                                             onClick={() => {
                                                 submitCheckIn.mutate({ code, status: "completed" });
-                                                toast.success("Outstanding performance confirmed");
+                                                toast.success("Great job!");
                                             }}
                                         >
                                             <div className="size-2 rounded-full bg-emerald-500 group-hover:scale-125 transition-transform" />
-                                            Target Reached
+                                            Crushed it!
                                         </Button>
                                         <Button 
                                             variant="secondary" 
                                             className="rounded-(--radius) h-12 justify-start font-mono text-[10px] font-bold uppercase gap-3 group"
                                             onClick={() => {
                                                 submitCheckIn.mutate({ code, status: "partial" });
-                                                toast.success("Partial capture recorded");
+                                                toast.success("Every bit counts!");
                                             }}
                                         >
                                             <div className="size-2 rounded-full bg-amber-500 group-hover:scale-125 transition-transform" />
-                                            Partial Progress
+                                            Got a lot done
                                         </Button>
                                         <Button 
                                             variant="secondary" 
                                             className="rounded-(--radius) h-12 justify-start font-mono text-[10px] font-bold uppercase gap-3 group"
                                             onClick={() => {
                                                 submitCheckIn.mutate({ code, status: "not_done" });
-                                                toast.error("Sector clear - zero impact");
+                                                toast.error("Better luck next time");
                                             }}
                                         >
                                             <div className="size-2 rounded-full bg-red-500 group-hover:scale-125 transition-transform" />
-                                            Zero Impact
+                                            Barely started
                                         </Button>
                                     </div>
                                 </CardContent>
@@ -774,7 +774,7 @@ export default function StudyRoomDetailPage() {
                 <div className="p-4 border-b border-border/50 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <Music className="size-4 text-primary" />
-                        <h3 className="font-mono font-bold tracking-widest text-[10px]">Broadcast Terminal</h3>
+                        <h3 className="font-mono font-bold tracking-widest text-[10px]">Media Player</h3>
                     </div>
                     {isHost && (
                         <div className="flex items-center gap-2 max-w-sm">
@@ -902,7 +902,11 @@ export default function StudyRoomDetailPage() {
             onClose={() => setIsChatOpen(false)}
             messages={messages}
             myDisplayName={user?.name || (typeof window !== "undefined" ? localStorage.getItem("study_room_guest_name") || guestName : guestName)}
-            onSendMessage={(c) => sendMessage.mutate({ code, content: c })}
+            onSendMessage={(c) => {
+                const guestId = user ? undefined : (typeof window !== "undefined" ? localStorage.getItem("study_room_guest_id") || "" : "");
+                const gName = user ? undefined : (typeof window !== "undefined" ? localStorage.getItem("study_room_guest_name") || guestName : guestName);
+                sendMessage.mutate({ code, content: c, guestId, guestName: gName });
+            }}
             onTyping={(is) => roomSocket.emitTyping(is, user?.name || guestName)}
             typingUsers={typingUsers}
         />

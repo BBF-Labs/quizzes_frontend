@@ -159,8 +159,9 @@ export const useJoinStudyRoom = () => {
   });
 };
 
-export const useSendStudyRoomMessage = () =>
-  useMutation({
+export const useSendStudyRoomMessage = () => {
+  const qc = useQueryClient();
+  return useMutation({
     mutationFn: async (payload: {
       code: string;
       content: string;
@@ -176,7 +177,11 @@ export const useSendStudyRoomMessage = () =>
       );
       return res.data.data;
     },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: [...baseKey, vars.code] });
+    },
   });
+};
 
 export const useInviteByUsername = () =>
   useMutation({
@@ -196,8 +201,9 @@ export const useInviteByEmail = () =>
     },
   });
 
-export const useUpdateStudyRoomTimer = () =>
-  useMutation({
+export const useUpdateStudyRoomTimer = () => {
+  const qc = useQueryClient();
+  return useMutation({
     mutationFn: async (payload: {
       code: string;
       action: "start" | "pause" | "reset" | "tickComplete";
@@ -206,17 +212,27 @@ export const useUpdateStudyRoomTimer = () =>
       const res = await api.patch(`/study-rooms/${payload.code}/timer`, payload);
       return res.data?.data;
     },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: [...baseKey, vars.code] });
+    },
   });
+};
 
-export const useUpdateMemberRole = () =>
-  useMutation({
+export const useUpdateMemberRole = () => {
+  const qc = useQueryClient();
+  return useMutation({
     mutationFn: async (payload: { code: string; memberUserId: string; role: "moderator" | "member" }) => {
       await api.patch(`/study-rooms/${payload.code}/members/role`, payload);
     },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: [...baseKey, vars.code] });
+    },
   });
+};
 
-export const useSubmitCycleCheckIn = () =>
-  useMutation({
+export const useSubmitCycleCheckIn = () => {
+  const qc = useQueryClient();
+  return useMutation({
     mutationFn: async (payload: { code: string; status: "completed" | "partial" | "not_done"; note?: string; guestId?: string }) => {
       await api.post(
         `/study-rooms/${payload.code}/checkins`,
@@ -224,10 +240,15 @@ export const useSubmitCycleCheckIn = () =>
         { headers: payload.guestId ? { "x-guest-id": payload.guestId } : undefined },
       );
     },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: [...baseKey, vars.code] });
+    },
   });
+};
 
-export const useUpdateStudyRoomAvatar = () =>
-  useMutation({
+export const useUpdateStudyRoomAvatar = () => {
+  const qc = useQueryClient();
+  return useMutation({
     mutationFn: async (payload: { code: string; avatarConfig: Record<string, unknown>; guestId?: string }) => {
       await api.patch(
         `/study-rooms/${payload.code}/avatar`,
@@ -235,17 +256,27 @@ export const useUpdateStudyRoomAvatar = () =>
         { headers: payload.guestId ? { "x-guest-id": payload.guestId } : undefined },
       );
     },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: [...baseKey, vars.code] });
+    },
   });
+};
 
-export const useCreateStudyRoomTask = () =>
-  useMutation({
+export const useCreateStudyRoomTask = () => {
+  const qc = useQueryClient();
+  return useMutation({
     mutationFn: async (payload: { code: string; title: string; description?: string; points: number }) => {
       await api.post(`/study-rooms/${payload.code}/tasks`, payload);
     },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: [...baseKey, vars.code] });
+    },
   });
+};
 
-export const useCompleteStudyRoomTask = () =>
-  useMutation({
+export const useCompleteStudyRoomTask = () => {
+  const qc = useQueryClient();
+  return useMutation({
     mutationFn: async (payload: { code: string; taskId: string; guestId?: string }) => {
       await api.post(
         `/study-rooms/${payload.code}/tasks/complete`,
@@ -253,17 +284,27 @@ export const useCompleteStudyRoomTask = () =>
         { headers: payload.guestId ? { "x-guest-id": payload.guestId } : undefined },
       );
     },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: [...baseKey, vars.code] });
+    },
   });
+};
 
-export const usePostStudyRoomMedia = () =>
-  useMutation({
+export const usePostStudyRoomMedia = () => {
+  const qc = useQueryClient();
+  return useMutation({
     mutationFn: async (payload: { code: string; url: string; title?: string }) => {
       await api.post(`/study-rooms/${payload.code}/media`, payload);
     },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: [...baseKey, vars.code] });
+    },
   });
+};
 
-export const useStartStudyRoomGame = () =>
-  useMutation({
+export const useStartStudyRoomGame = () => {
+  const qc = useQueryClient();
+  return useMutation({
     mutationFn: async (payload: {
       code: string;
       type: "word_guess" | "qa";
@@ -274,10 +315,15 @@ export const useStartStudyRoomGame = () =>
     }) => {
       await api.post(`/study-rooms/${payload.code}/games/start`, payload);
     },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: [...baseKey, vars.code] });
+    },
   });
+};
 
-export const useSubmitStudyRoomGameAnswer = () =>
-  useMutation({
+export const useSubmitStudyRoomGameAnswer = () => {
+  const qc = useQueryClient();
+  return useMutation({
     mutationFn: async (payload: { code: string; answer: string; guestId?: string }) => {
       await api.post(
         `/study-rooms/${payload.code}/games/answer`,
@@ -285,17 +331,27 @@ export const useSubmitStudyRoomGameAnswer = () =>
         { headers: payload.guestId ? { "x-guest-id": payload.guestId } : undefined },
       );
     },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: [...baseKey, vars.code] });
+    },
   });
+};
 
-export const useOpenGameReadyCheck = () =>
-  useMutation({
+export const useOpenGameReadyCheck = () => {
+  const qc = useQueryClient();
+  return useMutation({
     mutationFn: async (payload: { code: string; minReadyCount?: number }) => {
       await api.post(`/study-rooms/${payload.code}/games/ready/open`, payload);
     },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: [...baseKey, vars.code] });
+    },
   });
+};
 
-export const useToggleGameReady = () =>
-  useMutation({
+export const useToggleGameReady = () => {
+  const qc = useQueryClient();
+  return useMutation({
     mutationFn: async (payload: { code: string; ready: boolean; guestId?: string }) => {
       await api.post(
         `/study-rooms/${payload.code}/games/ready/toggle`,
@@ -303,17 +359,27 @@ export const useToggleGameReady = () =>
         { headers: payload.guestId ? { "x-guest-id": payload.guestId } : undefined },
       );
     },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: [...baseKey, vars.code] });
+    },
   });
+};
 
-export const useGenerateAiGame = () =>
-  useMutation({
+export const useGenerateAiGame = () => {
+  const qc = useQueryClient();
+  return useMutation({
     mutationFn: async (payload: { code: string; type: "word_guess" | "qa"; topic?: string }) => {
       await api.post(`/study-rooms/${payload.code}/games/generate`, payload);
     },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: [...baseKey, vars.code] });
+    },
   });
+};
 
-export const useUpdateMediaPreference = () =>
-  useMutation({
+export const useUpdateMediaPreference = () => {
+  const qc = useQueryClient();
+  return useMutation({
     mutationFn: async (payload: {
       code: string;
       mode: "follow_host" | "personal";
@@ -326,10 +392,15 @@ export const useUpdateMediaPreference = () =>
         { headers: payload.guestId ? { "x-guest-id": payload.guestId } : undefined },
       );
     },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: [...baseKey, vars.code] });
+    },
   });
+};
 
-export const useModerateStudyRoomMember = () =>
-  useMutation({
+export const useModerateStudyRoomMember = () => {
+  const qc = useQueryClient();
+  return useMutation({
     mutationFn: async (payload: {
       code: string;
       action: "mute" | "kick";
@@ -338,5 +409,9 @@ export const useModerateStudyRoomMember = () =>
     }) => {
       await api.post(`/study-rooms/${payload.code}/moderate`, payload);
     },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: [...baseKey, vars.code] });
+    },
   });
+};
 
