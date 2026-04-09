@@ -69,9 +69,9 @@ export function CreateRoomDialog({ children }: { children?: React.ReactNode }) {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="rounded-(--radius) sm:max-w-[500px] border-none shadow-2xl bg-gradient-to-br from-background to-muted/20">
+      <DialogContent className="rounded-(--radius) sm:max-w-[500px] border border-border/50 bg-background shadow-xl">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-black tracking-tight text-indigo-600">Start a Study Sprint</DialogTitle>
+          <DialogTitle className="text-xl font-mono font-bold uppercase tracking-tight text-primary italic">Start a Study Sprint</DialogTitle>
           <DialogDescription>
             Set up your room, invite your friends, and track your progress together.
           </DialogDescription>
@@ -79,34 +79,34 @@ export function CreateRoomDialog({ children }: { children?: React.ReactNode }) {
 
         <div className="grid gap-6 py-4">
           <div className="grid gap-2">
-            <Label htmlFor="title" className="text-xs font-bold uppercase tracking-wider text-muted-foreground/70">Room Name</Label>
+            <Label htmlFor="title" className="text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground/70">Room Name</Label>
             <Input
               id="title"
-              placeholder="e.g. Physics Final Review 🚀"
+              placeholder="e.g. Physics Final Review"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="rounded-(--radius) border-2 focus-visible:ring-indigo-500 text-lg py-6"
+              className="rounded-(--radius) border-border/50 focus-visible:ring-primary text-base h-11"
             />
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="topic" className="text-xs font-bold uppercase tracking-wider text-muted-foreground/70">Session Goal</Label>
+            <Label htmlFor="topic" className="text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground/70">Session Goal</Label>
             <Textarea
               id="topic"
-              placeholder="What are you studying today? (Optional)"
+              placeholder="Session objective..."
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
-              className="rounded-(--radius) border-2 resize-none min-h-[80px]"
+              className="rounded-(--radius) border-border/50 resize-none min-h-[60px] text-xs"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
-              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground/70 flex items-center gap-1.5">
+              <Label className="text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground/70 flex items-center gap-1.5">
                 <Globe className="size-3" /> Visibility
               </Label>
               <Select value={visibility} onValueChange={(v: "open" | "closed") => setVisibility(v)}>
-                <SelectTrigger className="rounded-(--radius) border-2">
+                <SelectTrigger className="rounded-(--radius) border-border/50">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-(--radius)">
@@ -117,11 +117,11 @@ export function CreateRoomDialog({ children }: { children?: React.ReactNode }) {
             </div>
 
             <div className="grid gap-2">
-              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground/70 flex items-center gap-1.5">
+              <Label className="text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground/70 flex items-center gap-1.5">
                 <Users className="size-3" /> Capacity
               </Label>
               <Select value={String(maxParticipants)} onValueChange={(v) => setMaxParticipants(Number(v))}>
-                <SelectTrigger className="rounded-(--radius) border-2">
+                <SelectTrigger className="rounded-(--radius) border-border/50">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-(--radius)">
@@ -134,7 +134,7 @@ export function CreateRoomDialog({ children }: { children?: React.ReactNode }) {
           </div>
 
           <div className="grid gap-3">
-            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground/70 flex items-center gap-1.5">
+            <Label className="text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground/70 flex items-center gap-1.5">
               <Clock className="size-3" /> Timer Length
             </Label>
             <div className="flex flex-wrap gap-2">
@@ -144,10 +144,10 @@ export function CreateRoomDialog({ children }: { children?: React.ReactNode }) {
                   type="button"
                   onClick={() => setTimerMinutes(t)}
                   className={cn(
-                    "px-4 py-2 rounded-(--radius) border-2 text-sm font-bold transition-all",
+                    "px-4 py-2 rounded-(--radius) border text-xs font-mono font-bold transition-all",
                     timerMinutes === t 
-                      ? "bg-indigo-600 border-indigo-600 text-white shadow-md scale-105" 
-                      : "bg-background border-muted hover:border-indigo-400"
+                      ? "bg-primary border-primary text-primary-foreground shadow-md scale-105" 
+                      : "bg-background border-border/50 hover:border-primary/50"
                   )}
                 >
                   {t}m
@@ -159,7 +159,7 @@ export function CreateRoomDialog({ children }: { children?: React.ReactNode }) {
                   placeholder="Custom"
                   value={timerMinutes}
                   onChange={(e) => setTimerMinutes(Number(e.target.value))}
-                  className="rounded-(--radius) border-2"
+                  className="rounded-(--radius) border-border/50 h-9 font-mono text-xs"
                 />
               </div>
             </div>
@@ -168,19 +168,19 @@ export function CreateRoomDialog({ children }: { children?: React.ReactNode }) {
 
         <DialogFooter className="sm:justify-between items-center gap-4">
           <div className="hidden sm:flex items-center gap-2">
-             <Badge variant="outline" className="rounded-(--radius) border-indigo-200 bg-indigo-50 text-indigo-700">
-               {maxParticipants} users
+             <Badge variant="outline" className="rounded-(--radius) border-border/50 text-[10px] font-mono uppercase">
+               {maxParticipants} capacity
              </Badge>
-             <Badge variant="outline" className="rounded-(--radius) border-indigo-200 bg-indigo-50 text-indigo-700">
-               {timerMinutes} min
+             <Badge variant="outline" className="rounded-(--radius) border-border/50 text-[10px] font-mono uppercase">
+               {timerMinutes} minutes
              </Badge>
           </div>
           <Button 
             onClick={onCreate} 
             disabled={!canSubmit || createRoom.isPending}
-            className="rounded-(--radius) bg-indigo-600 hover:bg-indigo-700 text-white px-8 font-bold shadow-[0_4px_0_rgb(67,56,202)] active:translate-y-1 active:shadow-none transition-all"
+            className="rounded-(--radius) px-6 font-bold uppercase tracking-wider transition-all active:translate-y-0.5"
           >
-            {createRoom.isPending ? "Starting..." : "Start Session!"}
+            {createRoom.isPending ? "Starting..." : "Start Sprint"}
           </Button>
         </DialogFooter>
       </DialogContent>

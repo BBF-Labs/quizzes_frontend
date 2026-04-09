@@ -12,7 +12,7 @@ import { avataaars } from "@dicebear/collection";
 import { StudyRoomMessage } from "@/hooks/study-rooms/use-study-rooms";
 import { cn } from "@/lib/utils";
 
-interface KahootChatProps {
+interface SprintChatProps {
   messages: StudyRoomMessage[];
   onSendMessage: (content: string) => void;
   onTyping: (isTyping: boolean) => void;
@@ -23,14 +23,14 @@ interface KahootChatProps {
 }
 
 const buildAvatarUri = (seed: string): string => {
-  const svg = createAvatar(avataaars, {
+  const avatar = createAvatar(avataaars, {
     seed: seed || "guest",
     backgroundColor: ["d1d4f9", "c0aede", "b6e3f4", "ffd5dc"],
-  }).toString();
-  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+  });
+  return avatar.toDataUri();
 };
 
-export function KahootChat({
+export function SprintChat({
   messages,
   onSendMessage,
   onTyping,
@@ -38,7 +38,7 @@ export function KahootChat({
   myDisplayName,
   isOpen,
   onClose,
-}: KahootChatProps) {
+}: SprintChatProps) {
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -70,18 +70,18 @@ export function KahootChat({
       initial={{ x: 300, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: 300, opacity: 0 }}
-      className="fixed inset-y-0 right-0 z-50 flex w-full flex-col border-l border-white/20 bg-indigo-900/90 shadow-2xl backdrop-blur-xl sm:w-96"
+      className="fixed inset-y-0 right-0 z-50 flex w-full flex-col border-l border-border/50 bg-background shadow-2xl backdrop-blur-xl sm:w-96"
     >
       {/* Chat Header */}
-      <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
+      <div className="flex items-center justify-between border-b border-border/50 px-6 py-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-(--radius) bg-indigo-500 shadow-lg">
-            <MessageSquare className="size-5 text-white" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-(--radius) bg-primary/10">
+            <MessageSquare className="size-4 text-primary" />
           </div>
           <div>
-            <h3 className="font-black tracking-tight text-white uppercase text-sm">Study Chat</h3>
-            <p className="text-[10px] text-indigo-300 font-bold uppercase tracking-widest leading-none">
-              {messages.length} Messages
+            <h3 className="font-mono font-bold uppercase tracking-tight text-foreground text-xs leading-none">Sprint Comms</h3>
+            <p className="text-[9px] text-muted-foreground font-mono font-bold uppercase tracking-widest leading-none mt-1">
+              Active: {messages.length}
             </p>
           </div>
         </div>
@@ -113,7 +113,7 @@ export function KahootChat({
                 )}
               >
                 {!isGrouped && (
-                  <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400 px-1">
+                  <span className="text-[9px] font-mono font-black uppercase tracking-widest text-muted-foreground px-1">
                     {m.senderName}
                   </span>
                 )}
@@ -127,10 +127,10 @@ export function KahootChat({
                    
                    <div
                     className={cn(
-                      "rounded-2xl px-4 py-2.5 text-sm shadow-lg",
+                      "rounded-lg px-4 py-2 text-sm shadow-sm border",
                       isMine
-                        ? "rounded-tr-none bg-indigo-600 text-white border-b-4 border-indigo-700 font-medium"
-                        : "rounded-tl-none bg-white text-indigo-900 border-b-4 border-slate-200 font-semibold"
+                        ? "rounded-tr-none bg-primary text-primary-foreground border-primary"
+                        : "rounded-tl-none bg-muted text-foreground border-border/50 font-medium"
                     )}
                   >
                     {m.content}
@@ -167,22 +167,22 @@ export function KahootChat({
       </ScrollArea>
 
       {/* Input Area */}
-      <div className="border-t border-white/10 p-6 bg-white/5 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.3)]">
-        <div className="flex gap-2 p-1.5 bg-white rounded-(--radius) shadow-inner border-2 border-transparent focus-within:border-indigo-500 transition-all">
+      <div className="border-t border-border/50 p-6 bg-muted/5">
+        <div className="flex gap-2 p-1 bg-background rounded-(--radius) border border-border/50 focus-within:border-primary/50 transition-all shadow-inner">
           <Input
             value={input}
             onChange={(e) => handleInputChange(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            placeholder="Level up with your chat..."
-            className="border-none bg-transparent focus-visible:ring-0 placeholder:text-slate-400 text-indigo-950 font-medium h-10"
+            placeholder="Relay message..."
+            className="border-none bg-transparent focus-visible:ring-0 placeholder:text-muted-foreground text-foreground font-medium h-10 text-xs uppercase font-mono"
           />
           <Button
             size="icon"
             onClick={handleSend}
             disabled={!input.trim()}
-            className="rounded-(--radius) bg-indigo-600 hover:bg-indigo-700 text-white shadow-md w-10 flex-shrink-0"
+            className="rounded-(--radius) w-10 flex-shrink-0"
           >
-            <Send className="size-4" />
+            <Send className="size-3" />
           </Button>
         </div>
       </div>

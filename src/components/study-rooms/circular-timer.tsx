@@ -32,7 +32,7 @@ export function CircularTimer({
           stroke="currentColor"
           strokeWidth={strokeWidth}
           fill="transparent"
-          className="text-white/10"
+          className="text-muted/30"
         />
         {/* Progress circle */}
         <motion.circle
@@ -46,12 +46,11 @@ export function CircularTimer({
           initial={{ strokeDashoffset: circumference }}
           animate={{ strokeDashoffset: offset }}
           transition={{ duration: 1, ease: "linear" }}
-          strokeLinecap="round"
-          className="drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]"
+          strokeLinecap="butt"
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-        <span className="text-6xl font-black tracking-tighter text-white tabular-nums drop-shadow-lg sm:text-7xl">
+        <span className="text-6xl font-mono font-black italic tracking-tighter text-foreground tabular-nums sm:text-7xl">
           {remainingTime}
         </span>
       </div>

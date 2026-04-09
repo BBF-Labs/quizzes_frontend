@@ -24,6 +24,31 @@ interface AvatarBuilderProps {
   onUpdate: (config: Record<string, any>) => void;
 }
 
+const PRESETS: Record<string, Record<string, any>> = {
+  male: {
+    top: "shortHairTheCaesar",
+    accessories: "blank",
+    hairColor: "2c1b18",
+    clothes: "shirtCrewNeck",
+    clothesColor: "262e33",
+    eyes: "default",
+    eyebrows: "default",
+    mouth: "smile",
+    skinColor: "ae5d29"
+  },
+  female: {
+    top: "longHairStraight",
+    accessories: "blank",
+    hairColor: "4a312c",
+    clothes: "shirtCrewNeck",
+    clothesColor: "ff488e",
+    eyes: "default",
+    eyebrows: "default",
+    mouth: "smile",
+    skinColor: "edb98a"
+  }
+};
+
 const CATEGORIES = [
   { id: "top", label: "Hair/Hat", icon: User },
   { id: "hairColor", label: "Hair Color", icon: Palette },
@@ -59,15 +84,18 @@ export function AvatarBuilder({ initialConfig, onUpdate }: AvatarBuilderProps) {
   const [previewUri, setPreviewUri] = useState("");
 
   useEffect(() => {
-    const svg = createAvatar(avataaars, {
+    const avatar = createAvatar(avataaars, {
       ...config,
       backgroundColor: ["d1d4f9", "c0aede", "b6e3f4", "ffd5dc"],
-    }).toString();
-    setPreviewUri(`data:image/svg+xml;utf8,${encodeURIComponent(svg)}`);
+    });
+    setPreviewUri(avatar.toDataUri());
   }, [config]);
 
   const updateField = (field: string, value: string) => {
-    const next = { ...config, [field]: value };
+    let next = { ...config, [field]: value };
+    if (field === "preset" && PRESETS[value]) {
+        next = { ...PRESETS[value], seed: config.seed || "avatar" };
+    }
     setConfig(next);
     onUpdate(next);
   };
@@ -85,15 +113,21 @@ export function AvatarBuilder({ initialConfig, onUpdate }: AvatarBuilderProps) {
   return (
     <div className="flex flex-col gap-6 md:flex-row h-full max-h-[80vh]">
       {/* Preview Section */}
-      <div className="flex flex-col items-center justify-center gap-4 border p-6 rounded-(--radius) bg-muted/30 md:w-1/3">
-        <div className="relative size-48 rounded-full border-4 border-primary/20 bg-background shadow-xl overflow-hidden group">
+      <div className="flex flex-col items-center justify-center gap-6 border-r p-8 md:w-1/3 bg-muted/5">
+        <div className="relative size-48 rounded-full border border-border/50 bg-background shadow-inner overflow-hidden group">
           <img src={previewUri} alt="Avatar Preview" className="size-full object-cover p-2" />
-          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-             <RefreshCw className="text-white size-8 animate-spin-slow cursor-pointer" onClick={randomize} />
+          <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
+             <RefreshCw className="text-primary size-8 animate-spin-slow cursor-pointer" onClick={randomize} />
           </div>
         </div>
-        <Button variant="outline" size="sm" onClick={randomize} className="rounded-(--radius) gap-2">
-          <RefreshCw className="size-4" /> Randomize
+        
+        <div className="grid grid-cols-2 gap-3 w-full">
+            <Button variant="outline" size="sm" onClick={() => updateField("preset", "male")} className="rounded-(--radius) font-mono text-[10px] uppercase">Male Base</Button>
+            <Button variant="outline" size="sm" onClick={() => updateField("preset", "female")} className="rounded-(--radius) font-mono text-[10px] uppercase">Female Base</Button>
+        </div>
+
+        <Button variant="ghost" size="sm" onClick={randomize} className="rounded-(--radius) gap-2 text-[10px] font-mono uppercase tracking-widest">
+          <RefreshCw className="size-3" /> Randomize DNA
         </Button>
       </div>
 
@@ -124,13 +158,11 @@ export function AvatarBuilder({ initialConfig, onUpdate }: AvatarBuilderProps) {
                       onClick={() => updateField(cat.id, opt)}
                       className={cn(
                         "relative aspect-square rounded-(--radius) border-2 transition-all p-1 group hover:border-primary/50 overflow-hidden",
-                        config[cat.id] === opt ? "border-primary bg-primary/5" : "border-transparent bg-muted/50"
+                        config[cat.id] === opt ? "border-primary bg-primary/5" : "border-border/10 bg-muted/30"
                       )}
                     >
                       <img 
-                        src={`data:image/svg+xml;utf8,${encodeURIComponent(
-                          createAvatar(avataaars, { ...config, [cat.id]: opt }).toString()
-                        )}`}
+                        src={createAvatar(avataaars, { ...config, [cat.id]: opt }).toDataUri()}
                         alt={opt}
                         className="size-full object-contain"
                       />
