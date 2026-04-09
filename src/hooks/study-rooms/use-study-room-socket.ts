@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { io, Socket } from "socket.io-client";
 import { useSocket } from "@/hooks/common/use-socket";
 
@@ -10,11 +10,13 @@ type Handlers = {
   onTimer?: (payload: any) => void;
   onLocked?: (payload: any) => void;
   onEnded?: (payload: any) => void;
+  onTyping?: (payload: any) => void;
 };
 
 export const useStudyRoomSocket = (roomCode?: string, handlers?: Handlers) => {
   const { socket, isConnected } = useSocket();
   const hasGlobalSocket = Boolean(socket && isConnected);
+  const activeSocketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
     if (!roomCode) return;
@@ -46,6 +48,7 @@ export const useStudyRoomSocket = (roomCode?: string, handlers?: Handlers) => {
       });
     }
     if (!activeSocket) return;
+    activeSocketRef.current = activeSocket;
 
     activeSocket.emit("join:study_room", code);
 
@@ -54,12 +57,14 @@ export const useStudyRoomSocket = (roomCode?: string, handlers?: Handlers) => {
     const onTimer = (payload: any) => handlers?.onTimer?.(payload);
     const onLocked = (payload: any) => handlers?.onLocked?.(payload);
     const onEnded = (payload: any) => handlers?.onEnded?.(payload);
+    const onTyping = (payload: any) => handlers?.onTyping?.(payload);
 
     activeSocket.on("study_room:presence", onPresence);
     activeSocket.on("study_room:chat:new", onMessage);
     activeSocket.on("study_room:timer:state", onTimer);
     activeSocket.on("study_room:locked", onLocked);
     activeSocket.on("study_room:ended", onEnded);
+    activeSocket.on("study_room:typing", onTyping);
 
     return () => {
       activeSocket?.emit("leave:study_room", code);
@@ -68,6 +73,8 @@ export const useStudyRoomSocket = (roomCode?: string, handlers?: Handlers) => {
       activeSocket?.off("study_room:timer:state", onTimer);
       activeSocket?.off("study_room:locked", onLocked);
       activeSocket?.off("study_room:ended", onEnded);
+      activeSocket?.off("study_room:typing", onTyping);
+      activeSocketRef.current = null;
       if (!hasGlobalSocket) {
         activeSocket?.disconnect();
       }
@@ -78,12 +85,30 @@ export const useStudyRoomSocket = (roomCode?: string, handlers?: Handlers) => {
     socket,
     isConnected,
     sendSocketMessage: (content: string, guestName?: string) => {
-      if (!socket || !roomCode) return;
-      socket.emit("study_room:chat:send", { roomCode: roomCode.toUpperCase(), content, guestName });
+      const activeSocket = activeSocketRef.current;
+      if (!activeSocket || !roomCode) return;
+      activeSocket.emit("study_room:chat:send", {
+        roomCode: roomCode.toUpperCase(),
+        content,
+        guestName,
+      });
     },
     sendTimerState: (timer: Record<string, unknown>) => {
-      if (!socket || !roomCode) return;
-      socket.emit("study_room:timer:update", { roomCode: roomCode.toUpperCase(), timer });
+      const activeSocket = activeSocketRef.current;
+      if (!activeSocket || !roomCode) return;
+      activeSocket.emit("study_room:timer:update", {
+        roomCode: roomCode.toUpperCase(),
+        timer,
+      });
+    },
+    emitTyping: (isTyping: boolean, displayName?: string) => {
+      const activeSocket = activeSocketRef.current;
+      if (!activeSocket || !roomCode) return;
+      activeSocket.emit("study_room:typing", {
+        roomCode: roomCode.toUpperCase(),
+        isTyping,
+        displayName,
+      });
     },
   };
 };
