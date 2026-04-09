@@ -136,7 +136,7 @@ function PublicExamsContent() {
   const nextExamDaysAway = nextExam
     ? Math.max(
         0,
-        Math.ceil(
+        Math.floor(
           (new Date(nextExam.scheduledAt).getTime() - nowMs) /
             (1000 * 60 * 60 * 24),
         ),
@@ -394,7 +394,7 @@ function PublicExamsContent() {
                               const itemIsOngoing = nowMs >= itemStart && nowMs <= itemEnd;
                               const itemDaysAway = Math.max(
                                 0,
-                                Math.ceil(
+                                Math.floor(
                                   (itemStart - nowMs) / (1000 * 60 * 60 * 24),
                                 ),
                               );
