@@ -46,8 +46,10 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     if (!socketRef.current) {
       socketRef.current = io(SOCKET_URL, {
         path: SOCKET_PATH,
-        transports: ["websocket", "polling"],
-        reconnectionAttempts: 5,
+        transports: ["polling", "websocket"],
+        reconnectionAttempts: 12,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 8000,
         autoConnect: false,
       });
       setSocket(socketRef.current);
@@ -80,14 +82,20 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       console.error("[Socket] Connection error:", err.message);
     }
 
+    function onReconnectAttempt(attempt: number) {
+      console.warn(`[Socket] Reconnect attempt ${attempt}`);
+    }
+
     s.on("connect", onConnect);
     s.on("disconnect", onDisconnect);
     s.on("connect_error", onConnectError);
+    s.io.on("reconnect_attempt", onReconnectAttempt);
 
     return () => {
       s.off("connect", onConnect);
       s.off("disconnect", onDisconnect);
       s.off("connect_error", onConnectError);
+      s.io.off("reconnect_attempt", onReconnectAttempt);
     };
   }, []);
 

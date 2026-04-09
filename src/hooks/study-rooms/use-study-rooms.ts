@@ -7,8 +7,12 @@ export interface StudyRoomParticipant {
   userId?: string;
   guestId?: string;
   displayName: string;
-  role: "host" | "member" | "guest";
+  role: "owner" | "moderator" | "member" | "guest";
   points: number;
+  level?: number;
+  xp?: number;
+  completedCycles?: number;
+  avatarConfig?: Record<string, unknown>;
   leftAt?: string;
 }
 
@@ -28,7 +32,24 @@ export interface StudyRoom {
     durationSeconds: number;
     remainingSeconds: number;
     cycle: number;
+    checkInOpen?: boolean;
   };
+  tasks?: Array<{
+    id: string;
+    title: string;
+    description?: string;
+    points: number;
+    completedBy: Array<{ userId?: string; guestId?: string; completedAt: string }>;
+  }>;
+  cycleCheckIns?: Array<{
+    cycle: number;
+    displayName: string;
+    status: "completed" | "partial" | "not_done";
+    submittedAt: string;
+  }>;
+  mediaPosts?: Array<{ id: string; kind: "youtube" | "spotify" | "link"; url: string; title?: string }>;
+  milestones?: Array<{ id: string; type: string; displayName: string; value: number; createdAt: string }>;
+  activeGame?: { type: "word_guess" | "qa"; prompt: string; isActive: boolean };
 }
 
 export interface StudyRoomMessage {
@@ -155,6 +176,90 @@ export const useUpdateStudyRoomTimer = () =>
     }) => {
       const res = await api.patch(`/study-rooms/${payload.code}/timer`, payload);
       return res.data?.data;
+    },
+  });
+
+export const useUpdateMemberRole = () =>
+  useMutation({
+    mutationFn: async (payload: { code: string; memberUserId: string; role: "moderator" | "member" }) => {
+      await api.patch(`/study-rooms/${payload.code}/members/role`, payload);
+    },
+  });
+
+export const useSubmitCycleCheckIn = () =>
+  useMutation({
+    mutationFn: async (payload: { code: string; status: "completed" | "partial" | "not_done"; note?: string; guestId?: string }) => {
+      await api.post(
+        `/study-rooms/${payload.code}/checkins`,
+        { status: payload.status, note: payload.note },
+        { headers: payload.guestId ? { "x-guest-id": payload.guestId } : undefined },
+      );
+    },
+  });
+
+export const useUpdateStudyRoomAvatar = () =>
+  useMutation({
+    mutationFn: async (payload: { code: string; avatarConfig: Record<string, unknown>; guestId?: string }) => {
+      await api.patch(
+        `/study-rooms/${payload.code}/avatar`,
+        { avatarConfig: payload.avatarConfig },
+        { headers: payload.guestId ? { "x-guest-id": payload.guestId } : undefined },
+      );
+    },
+  });
+
+export const useCreateStudyRoomTask = () =>
+  useMutation({
+    mutationFn: async (payload: { code: string; title: string; description?: string; points: number }) => {
+      await api.post(`/study-rooms/${payload.code}/tasks`, payload);
+    },
+  });
+
+export const useCompleteStudyRoomTask = () =>
+  useMutation({
+    mutationFn: async (payload: { code: string; taskId: string; guestId?: string }) => {
+      await api.post(
+        `/study-rooms/${payload.code}/tasks/complete`,
+        { taskId: payload.taskId },
+        { headers: payload.guestId ? { "x-guest-id": payload.guestId } : undefined },
+      );
+    },
+  });
+
+export const usePostStudyRoomMedia = () =>
+  useMutation({
+    mutationFn: async (payload: { code: string; url: string; title?: string }) => {
+      await api.post(`/study-rooms/${payload.code}/media`, payload);
+    },
+  });
+
+export const useStartStudyRoomGame = () =>
+  useMutation({
+    mutationFn: async (payload: { code: string; type: "word_guess" | "qa"; prompt: string; answer?: string }) => {
+      await api.post(`/study-rooms/${payload.code}/games/start`, payload);
+    },
+  });
+
+export const useSubmitStudyRoomGameAnswer = () =>
+  useMutation({
+    mutationFn: async (payload: { code: string; answer: string; guestId?: string }) => {
+      await api.post(
+        `/study-rooms/${payload.code}/games/answer`,
+        { answer: payload.answer },
+        { headers: payload.guestId ? { "x-guest-id": payload.guestId } : undefined },
+      );
+    },
+  });
+
+export const useModerateStudyRoomMember = () =>
+  useMutation({
+    mutationFn: async (payload: {
+      code: string;
+      action: "mute" | "kick";
+      memberUserId?: string;
+      memberGuestId?: string;
+    }) => {
+      await api.post(`/study-rooms/${payload.code}/moderate`, payload);
     },
   });
 
