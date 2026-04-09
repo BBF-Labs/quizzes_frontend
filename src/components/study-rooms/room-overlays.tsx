@@ -16,32 +16,32 @@ export function RoomOverlays({ state, message, subMessage }: RoomOverlaysProps) 
 
   const content = {
     waiting: {
-      bg: "bg-indigo-950/80",
-      icon: <Users className="size-16 text-indigo-400" />,
-      title: "Waiting for Crew",
-      description: "Once everyone is ready, we'll start the sprint.",
-      accent: "border-indigo-400/30",
+      bg: "bg-background/90",
+      icon: <Users className="size-10 text-primary" />,
+      title: "Wait for Dispatch",
+      description: "Awaiting all personnel for the sprint cycle.",
+      accent: "border-primary/20",
     },
     focus: {
-        bg: "bg-black/90",
-        icon: <Timer className="size-16 text-emerald-400 animate-pulse" />,
+        bg: "bg-background/95",
+        icon: <Timer className="size-10 text-primary animate-pulse" />,
         title: "Deep Focus Mode",
-        description: "Zero distractions. Time to level up your knowledge.",
-        accent: "border-emerald-400/30",
+        description: "Zero distractions authorized. Max performance only.",
+        accent: "border-primary/20",
     },
     ready_check: {
-        bg: "bg-indigo-900/90",
-        icon: <Play className="size-16 text-amber-400" />,
+        bg: "bg-background/90",
+        icon: <Play className="size-10 text-primary" />,
         title: "Ready Check!",
         description: "Verify your attendance to start the game.",
-        accent: "border-amber-400/30",
+        accent: "border-primary/20",
     },
     game_start: {
-        bg: "bg-fuchsia-950/90",
-        icon: <Trophy className="size-16 text-yellow-400" />,
-        title: "Game Starting",
-        description: "Get ready to compete for the top spot!",
-        accent: "border-yellow-400/30",
+        bg: "bg-background/90",
+        icon: <Trophy className="size-10 text-primary" />,
+        title: "Game Loaded",
+        description: "Prepare for competitive evaluation.",
+        accent: "border-primary/20",
     }
   }[state];
 
@@ -57,45 +57,40 @@ export function RoomOverlays({ state, message, subMessage }: RoomOverlaysProps) 
         )}
       >
         <motion.div
-            initial={{ scale: 0.8, opacity: 0, y: 20 }}
+            initial={{ scale: 0.95, opacity: 0, y: 10 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
-            transition={{ type: "spring", damping: 20 }}
+            transition={{ type: "spring", damping: 25 }}
             className={cn(
-                "relative flex w-full max-w-2xl flex-col items-center gap-8 rounded-3xl border-4 bg-white/5 p-12 text-center text-white shadow-2xl backdrop-blur-3xl",
+                "relative flex w-full max-w-xl flex-col items-center gap-8 rounded-(--radius) border border-border/50 bg-card p-12 text-center text-foreground shadow-2xl backdrop-blur-3xl",
                 content.accent
             )}
         >
-            <div className="absolute -top-10 flex size-20 items-center justify-center rounded-2xl bg-indigo-600 shadow-xl border-b-4 border-indigo-800">
+            <div className="size-20 flex items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 shadow-sm">
                 {content.icon}
             </div>
 
             <div className="mt-4 space-y-4">
-                <h2 className="text-4xl font-black uppercase tracking-tight sm:text-6xl">
+                <h2 className="text-3xl font-mono font-black uppercase italic tracking-tighter sm:text-5xl text-foreground">
                     {message || content.title}
                 </h2>
-                <p className="mx-auto max-w-md text-lg font-medium text-indigo-200">
+                <p className="mx-auto max-w-sm text-xs font-mono font-bold uppercase tracking-widest text-muted-foreground">
                     {subMessage || content.description}
                 </p>
             </div>
 
-            <div className="flex flex-col items-center gap-6">
-                <div className="flex h-1.5 w-64 overflow-hidden rounded-full bg-white/10">
+            <div className="flex flex-col items-center gap-6 w-full">
+                <div className="flex h-1 w-full max-w-xs overflow-hidden rounded-full bg-muted">
                     <motion.div 
                         initial={{ width: 0 }}
                         animate={{ width: "100%" }}
                         transition={{ duration: 3, repeat: Infinity }}
-                        className="bg-indigo-400" 
+                        className="bg-primary" 
                     />
                 </div>
                 
-                <Badge variant="outline" className="rounded-full border-white/20 px-6 py-2 text-sm font-bold uppercase tracking-widest text-indigo-300">
-                   Session in Progress
+                <Badge variant="outline" className="rounded-(--radius) border-border/50 px-6 py-2 text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                   Active Operation
                 </Badge>
-            </div>
-
-            {/* Locked Padlock Icon for visual weight */}
-            <div className="absolute -bottom-5 -right-5 rotate-12 opacity-20">
-                <Lock className="size-24" />
             </div>
         </motion.div>
       </motion.div>
