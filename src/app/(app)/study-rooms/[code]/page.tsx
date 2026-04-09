@@ -376,8 +376,8 @@ export default function StudyRoomDetailPage() {
   if (!room) {
     return (
       <main className="min-h-screen overflow-x-hidden">
-        <div className="mx-auto grid min-h-screen max-w-[96rem] gap-4 p-4 md:p-6 lg:h-screen lg:grid-cols-[22rem_minmax(0,1fr)_26rem]">
-          <aside className="grid gap-4 lg:overflow-y-auto no-scrollbar">
+        <div className="mx-auto grid min-h-screen w-full max-w-[96rem] grid-cols-1 gap-4 p-3 sm:p-4 md:p-6 lg:h-screen lg:grid-cols-[22rem_minmax(0,1fr)_26rem]">
+          <aside className="grid min-w-0 gap-4 lg:overflow-y-auto no-scrollbar">
             <Card className="rounded-(--radius)">
               <CardHeader>
                 <Skeleton className="h-6 w-40 rounded-(--radius)" />
@@ -412,7 +412,7 @@ export default function StudyRoomDetailPage() {
             </Card>
           </aside>
 
-          <section className="grid gap-4 lg:overflow-y-auto no-scrollbar">
+          <section className="grid min-w-0 gap-4 lg:overflow-y-auto no-scrollbar">
             <Card className="rounded-(--radius) border-2 border-black shadow-[0.65rem_0.65rem_0_#000] bg-card">
               <CardContent className="flex min-h-[24rem] flex-col items-center justify-center gap-6 p-4 md:min-h-[34rem] md:gap-8 md:p-10">
                 <Skeleton className="h-6 w-44 rounded-(--radius)" />
@@ -436,7 +436,7 @@ export default function StudyRoomDetailPage() {
             </Card>
           </section>
 
-          <aside className="grid gap-4 lg:overflow-y-auto no-scrollbar">
+          <aside className="grid min-w-0 gap-4 lg:overflow-y-auto no-scrollbar">
             <Card className="rounded-(--radius)">
               <CardHeader>
                 <Skeleton className="h-6 w-24 rounded-(--radius)" />
@@ -468,8 +468,8 @@ export default function StudyRoomDetailPage() {
 
   return (
     <main className="min-h-screen overflow-x-hidden">
-      <div className="mx-auto grid min-h-screen max-w-[96rem] gap-4 p-4 md:p-6 lg:h-screen lg:grid-cols-[22rem_minmax(0,1fr)_26rem]">
-      <aside className="grid gap-4 lg:overflow-y-auto no-scrollbar">
+      <div className="mx-auto grid min-h-screen w-full max-w-[96rem] grid-cols-1 gap-4 p-3 sm:p-4 md:p-6 lg:h-screen lg:grid-cols-[22rem_minmax(0,1fr)_26rem]">
+      <aside className="grid min-w-0 gap-4 lg:overflow-y-auto no-scrollbar">
         <Card className="rounded-(--radius)">
           <CardHeader>
             <CardTitle>{room.title}</CardTitle>
@@ -668,7 +668,7 @@ export default function StudyRoomDetailPage() {
         </Card>
       </aside>
 
-      <section className="grid gap-4 lg:overflow-y-auto no-scrollbar">
+      <section className="grid min-w-0 gap-4 lg:overflow-y-auto no-scrollbar">
         <Card className="rounded-(--radius) border-2 border-black shadow-[0.65rem_0.65rem_0_#000] bg-card">
           <CardContent className="flex min-h-[24rem] flex-col items-center justify-center gap-6 p-4 text-center md:min-h-[34rem] md:gap-8 md:p-10">
             <Badge variant="outline" className="rounded-(--radius) px-4 py-1 text-xs tracking-widest uppercase">
@@ -681,7 +681,7 @@ export default function StudyRoomDetailPage() {
               :
               {((room.timer?.remainingSeconds || 0) % 60).toString().padStart(2, "0")}
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex min-w-0 flex-wrap items-center justify-center gap-3">
               <div className="flex -space-x-2">
                 {activeParticipants.slice(0, 3).map((p: any, index: number) => (
                   <img
@@ -700,7 +700,7 @@ export default function StudyRoomDetailPage() {
                 {othersCount > 0 ? ` and ${othersCount} others are studying` : " is studying"}
               </p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center justify-center gap-3">
               <Button className="rounded-(--radius)" variant="outline" size="icon" onClick={() => onTimer("pause")}>
                 II
               </Button>
@@ -764,9 +764,9 @@ export default function StudyRoomDetailPage() {
                   </Button>
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row">
                 <Input
-                  className="rounded-(--radius)"
+                  className="min-w-0 rounded-(--radius)"
                   placeholder="Paste YouTube lo-fi URL"
                   value={lofiUrl}
                   onChange={(e) => setLofiUrl(e.target.value)}
@@ -835,9 +835,9 @@ export default function StudyRoomDetailPage() {
           <CardHeader><CardTitle>Tasks and XP</CardTitle></CardHeader>
           <CardContent className="grid gap-3">
             {isRoomOwner ? (
-              <div className="flex flex-wrap gap-2">
-                <Input className="rounded-(--radius)" placeholder="Task title" value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} />
-                <Input className="rounded-(--radius) w-24" type="number" min={1} max={100} value={taskPoints} onChange={(e) => setTaskPoints(Number(e.target.value || 10))} />
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Input className="min-w-0 rounded-(--radius)" placeholder="Task title" value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} />
+                <Input className="rounded-(--radius) sm:w-24" type="number" min={1} max={100} value={taskPoints} onChange={(e) => setTaskPoints(Number(e.target.value || 10))} />
                 <Button className="rounded-(--radius)" variant="outline" onClick={async () => {
                   await createTask.mutateAsync({ code, title: taskTitle, points: taskPoints });
                   setTaskTitle("");
@@ -864,7 +864,7 @@ export default function StudyRoomDetailPage() {
         </Card>
       </section>
 
-      <aside className="grid gap-4 lg:overflow-y-auto no-scrollbar">
+      <aside className="grid min-w-0 gap-4 lg:overflow-y-auto no-scrollbar">
         <Card className="rounded-(--radius)">
           <CardHeader><CardTitle>Live chat</CardTitle></CardHeader>
           <CardContent className="grid gap-3">
@@ -947,9 +947,9 @@ export default function StudyRoomDetailPage() {
                 ) : null}
               </div>
             </ScrollArea>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <Input
-                className="flex-1 rounded-(--radius)"
+                className="min-w-0 flex-1 rounded-(--radius)"
                 value={message}
                 onChange={(e) => onMessageChange(e.target.value)}
                 placeholder="Send a message"
@@ -969,7 +969,7 @@ export default function StudyRoomDetailPage() {
                   <span>Ready check</span>
                   <span>{readyCount}/{minReadyCount} ready</span>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row">
                   <Button className="rounded-(--radius)" variant="outline" onClick={async () => {
                     await openReadyCheck.mutateAsync({ code, minReadyCount: 2 });
                     refetch();
@@ -983,9 +983,9 @@ export default function StudyRoomDetailPage() {
                     AI generate ({selectedGameType})
                   </Button>
                 </div>
-                <div className="flex gap-2">
-                  <Input className="rounded-(--radius)" placeholder="Game prompt" value={gamePrompt} onChange={(e) => setGamePrompt(e.target.value)} />
-                  <Input className="rounded-(--radius)" placeholder="Answer" value={gameAnswer} onChange={(e) => setGameAnswer(e.target.value)} />
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Input className="min-w-0 rounded-(--radius)" placeholder="Game prompt" value={gamePrompt} onChange={(e) => setGamePrompt(e.target.value)} />
+                  <Input className="min-w-0 rounded-(--radius)" placeholder="Answer" value={gameAnswer} onChange={(e) => setGameAnswer(e.target.value)} />
                 </div>
                 <div className="flex gap-2">
                   <Button className="rounded-(--radius)" size="sm" variant={selectedGameType === "word_guess" ? "default" : "outline"} onClick={() => setSelectedGameType("word_guess")}>
@@ -1037,8 +1037,8 @@ export default function StudyRoomDetailPage() {
                     ))}
                   </div>
                 ) : null}
-                <div className="mt-2 flex gap-2">
-                  <Input className="rounded-(--radius)" value={gameGuess} onChange={(e) => setGameGuess(e.target.value)} placeholder="Your answer" />
+                <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                  <Input className="min-w-0 rounded-(--radius)" value={gameGuess} onChange={(e) => setGameGuess(e.target.value)} placeholder="Your answer" />
                   <Button className="rounded-(--radius)" variant="outline" onClick={async () => {
                     const guestId = user ? undefined : ensureGuestId();
                     await submitGameAnswer.mutateAsync({ code, answer: gameGuess, guestId });
@@ -1052,8 +1052,8 @@ export default function StudyRoomDetailPage() {
               </div>
             ) : null}
             {isRoomOwner ? (
-              <div className="flex gap-2">
-                <Input className="rounded-(--radius)" placeholder="YouTube/Spotify URL" value={mediaUrl} onChange={(e) => setMediaUrl(e.target.value)} />
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Input className="min-w-0 rounded-(--radius)" placeholder="YouTube/Spotify URL" value={mediaUrl} onChange={(e) => setMediaUrl(e.target.value)} />
                 <Button className="rounded-(--radius)" variant="outline" onClick={async () => {
                   await postMedia.mutateAsync({ code, url: mediaUrl });
                   setMediaUrl("");
