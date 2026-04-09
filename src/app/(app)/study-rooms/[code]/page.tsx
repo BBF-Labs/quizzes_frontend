@@ -45,12 +45,14 @@ import {
   Play,
   Pause,
   RotateCcw,
-  Check
+  Check,
+  RefreshCw
 } from "lucide-react";
 import { SprintChat } from "@/components/study-rooms/kahoot-chat";
 import { RoomOverlays } from "@/components/study-rooms/room-overlays";
 import { CircularTimer } from "@/components/study-rooms/circular-timer";
 import { AvatarBuilder } from "@/components/study-rooms/avatar-builder";
+import { useStudyRoomLayout } from "@/app/(app)/study-rooms/study-room-layout-provider";
 import { 
     Dialog, 
     DialogContent, 
@@ -60,6 +62,8 @@ import {
 } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { createAvatar } from "@dicebear/core";
 import { avataaars } from "@dicebear/collection";
 import { cn } from "@/lib/utils";
@@ -128,6 +132,7 @@ export default function StudyRoomDetailPage() {
   const inviteByEmail = useInviteByEmail();
   const updateMediaPreference = useUpdateMediaPreference();
 
+  const { isImmersive, setIsImmersive } = useStudyRoomLayout();
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [guestName, setGuestName] = useState("");
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
@@ -136,6 +141,9 @@ export default function StudyRoomDetailPage() {
   const [isReady, setIsReady] = useState(false);
   const [xpFx, setXpFx] = useState<{ delta: number; label: string } | null>(null);
   const [timerSize, setTimerSize] = useState(280);
+  const [isOverlayDismissed, setIsOverlayDismissed] = useState(false);
+  const [localRemaining, setLocalRemaining] = useState<number | null>(null);
+  const [gameInput, setGameInput] = useState("");
 
   useEffect(() => {
     const updateSize = () => {
@@ -145,6 +153,23 @@ export default function StudyRoomDetailPage() {
     window.addEventListener("resize", updateSize);
     return () => window.removeEventListener("resize", updateSize);
   }, []);
+
+  // Local Timer Ticker for smooth 1s updates
+  useEffect(() => {
+    if (room?.timer?.remainingSeconds !== undefined) {
+      setLocalRemaining(room.timer.remainingSeconds);
+    }
+  }, [room?.timer?.remainingSeconds]);
+
+  useEffect(() => {
+    if (!room?.timer?.isRunning || localRemaining === null || localRemaining <= 0) return;
+    
+    const ticker = setInterval(() => {
+      setLocalRemaining(prev => prev !== null ? Math.max(0, prev - 1) : null);
+    }, 1000);
+    
+    return () => clearInterval(ticker);
+  }, [room?.timer?.isRunning, localRemaining]);
 
   const roomSocket = useStudyRoomSocket(code, {
     onPresence: () => refetch(),
@@ -189,24 +214,28 @@ export default function StudyRoomDetailPage() {
   }, [room?.timer]);
 
   const remainingFormatted = useMemo(() => {
-    if (!room?.timer) return "00:00";
-    const m = Math.floor(room.timer.remainingSeconds / 60).toString().padStart(2, "0");
-    const s = (room.timer.remainingSeconds % 60).toString().padStart(2, "0");
+    const s_total = localRemaining ?? room?.timer?.remainingSeconds ?? 0;
+    const m = Math.floor(s_total / 60).toString().padStart(2, "0");
+    const s = (s_total % 60).toString().padStart(2, "0");
     return `${m}:${s}`;
-  }, [room?.timer]);
+  }, [room?.timer, localRemaining]);
 
   const activeOverlay = useMemo(() => {
+    if (isOverlayDismissed) return null;
     if (room?.readyState?.isOpen) return "ready_check";
     if (room?.timer?.isRunning) return "focus";
     return null;
-  }, [room?.timer?.isRunning, room?.readyState?.isOpen]);
+  }, [room?.timer?.isRunning, room?.readyState?.isOpen, isOverlayDismissed]);
 
-  if (isLoading || !room) return <div className="h-screen w-full bg-indigo-950 flex items-center justify-center"><Skeleton className="h-20 w-80 rounded-(--radius)" /></div>;
+  if (isLoading || !room) return <div className="h-screen w-full bg-background flex items-center justify-center"><Skeleton className="h-20 w-80 rounded-(--radius)" /></div>;
 
   return (
-    <main className="relative min-h-screen bg-background text-foreground">
+    <main className="relative min-h-screen bg-background text-foreground no-scrollbar">
       {/* State Overlays */}
-      <RoomOverlays state={activeOverlay as any} />
+      <RoomOverlays 
+        state={activeOverlay as any} 
+        onDismiss={() => setIsOverlayDismissed(true)} 
+      />
 
       {/* Main Layout */}
       <div className="mx-auto flex min-h-screen w-full max-w-[124rem] flex-col overflow-hidden p-6 md:flex-row gap-6">
@@ -217,7 +246,7 @@ export default function StudyRoomDetailPage() {
                 <CardContent className="p-6">
                     <div className="flex items-center justify-between gap-4 border-b border-border/50 pb-4">
                         <div className="space-y-1">
-                            <h2 className="text-lg font-mono font-bold uppercase tracking-tight text-foreground italic">{room.title}</h2>
+                            <h2 className="text-lg font-mono font-bold tracking-tight text-foreground italic">{room.title}</h2>
                             <Badge variant="outline" className="rounded-(--radius) px-2 py-0 border-border/50 text-muted-foreground font-mono text-[10px]">{room.roomCode}</Badge>
                         </div>
                         <Dialog>
@@ -228,16 +257,54 @@ export default function StudyRoomDetailPage() {
                             </DialogTrigger>
                             <DialogContent className="rounded-(--radius) border-border/50 bg-background sm:max-w-md">
                                 <DialogHeader>
-                                    <DialogTitle className="font-mono uppercase italic tracking-tighter">Room Configuration</DialogTitle>
+                                    <DialogTitle className="font-mono italic tracking-tighter">Room Configuration</DialogTitle>
                                 </DialogHeader>
-                                <div className="grid gap-4 py-4">
+                                <div className="grid gap-6 py-4">
+                                    <div className="flex items-center justify-between rounded-(--radius) border border-border/50 p-4 bg-muted/20">
+                                        <div className="space-y-0.5">
+                                            <Label className="text-sm font-mono font-bold italic tracking-tight uppercase">Immersive Mode</Label>
+                                            <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest leading-tight">Hide global navigation components.</p>
+                                        </div>
+                                        <Switch 
+                                            checked={isImmersive} 
+                                            onCheckedChange={setIsImmersive} 
+                                        />
+                                    </div>
+
                                     <div className="space-y-2">
                                         <p className="text-[10px] font-mono font-bold uppercase text-muted-foreground/80">Invite Protocol</p>
                                         <div className="flex gap-2">
                                             <Input placeholder="Search identity..." className="rounded-(--radius) border-border/50 font-mono text-xs uppercase" />
-                                            <Button variant="outline" className="rounded-(--radius) text-xs uppercase font-mono">Invite</Button>
+                                            <Button variant="outline" className="rounded-(--radius) text-xs uppercase font-mono" disabled={inviteByUsername.isPending}>Invite</Button>
                                         </div>
                                     </div>
+                                    
+                                    {isHost && (
+                                        <div className="space-y-2">
+                                            <p className="text-[10px] font-mono font-bold uppercase text-muted-foreground/80">AI Game Generation</p>
+                                            <div className="flex gap-2">
+                                                <Button 
+                                                    className="flex-1 rounded-(--radius) font-mono text-[10px] items-center gap-2"
+                                                    variant="secondary"
+                                                    disabled={generateAiGame.isPending}
+                                                    onClick={() => generateAiGame.mutate({ code, type: "word_guess" })}
+                                                >
+                                                    {generateAiGame.isPending ? <span className="size-2 bg-primary rounded-full animate-pulse" /> : null}
+                                                    Word Guess
+                                                </Button>
+                                                <Button 
+                                                    className="flex-1 rounded-(--radius) font-mono text-[10px] items-center gap-2"
+                                                    variant="secondary"
+                                                    disabled={generateAiGame.isPending}
+                                                    onClick={() => generateAiGame.mutate({ code, type: "qa" })}
+                                                >
+                                                    {generateAiGame.isPending ? <span className="size-2 bg-primary rounded-full animate-pulse" /> : null}
+                                                    Q&A Battle
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <Button className="rounded-(--radius) gap-2 w-full" variant="outline" onClick={() => {
                                         navigator.clipboard.writeText(window.location.href);
                                         toast.success("Link copied!");
@@ -295,7 +362,7 @@ export default function StudyRoomDetailPage() {
         <section className="flex flex-1 flex-col gap-6 overflow-y-auto no-scrollbar relative">
             {/* Header Mobile */}
             <div className="flex items-center justify-between lg:hidden border-b border-white/10 pb-4">
-                 <h2 className="text-xl font-black uppercase tracking-tight">{room.title}</h2>
+                 <h2 className="text-xl font-black tracking-tight">{room.title}</h2>
                  <Badge className="rounded-(--radius) bg-indigo-500">{room.roomCode}</Badge>
             </div>
 
@@ -344,14 +411,50 @@ export default function StudyRoomDetailPage() {
                     </Badge>
                 </div>
 
-                {xpFx && (
-                    <motion.div 
-                        initial={{ opacity: 0, y: 0 }}
-                        animate={{ opacity: 1, y: -100 }}
-                        className="absolute bottom-20 text-3xl font-black text-emerald-400"
-                    >
-                        {xpFx.label}
-                    </motion.div>
+                {room.activeGame?.isActive && (
+                    <div className="absolute inset-0 z-20 flex items-center justify-center p-6 backdrop-blur-sm bg-background/40">
+                        <Card className="w-full max-w-lg border-2 border-primary/50 shadow-2xl bg-card">
+                            <CardContent className="p-8 text-center space-y-6">
+                                <Badge variant="secondary" className="rounded-full font-mono text-[10px] uppercase font-bold tracking-[0.2em]">Game in Progress</Badge>
+                                <h2 className="text-2xl font-mono font-black italic tracking-tighter text-foreground">{room.activeGame.prompt}</h2>
+                                {room.activeGame.type === "word_guess" && (
+                                    <div className="flex flex-col gap-6">
+                                        <div className="flex justify-center gap-2">
+                                            {(room.activeGame.maskedWord || "").split("").map((c, i) => (
+                                                <div key={i} className="size-10 flex items-center justify-center rounded-lg border-2 border-primary/20 bg-muted font-mono text-xl font-bold uppercase">
+                                                    {c === "_" ? "" : c}
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="flex justify-center flex-wrap gap-2 max-w-sm mx-auto">
+                                            {room.activeGame.wrongLetters?.map(l => (
+                                                <Badge key={l} variant="outline" className="rounded-md border-red-500/20 text-red-500 opacity-50">{l}</Badge>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                <div className="flex gap-2">
+                                    <Input 
+                                        placeholder="Type answer..." 
+                                        className="rounded-(--radius) font-mono uppercase text-xs h-12"
+                                        value={gameInput}
+                                        onChange={(e) => setGameInput(e.target.value)}
+                                        onKeyDown={(e) => e.key === "Enter" && submitGameAnswer.mutate({ code, answer: gameInput })}
+                                    />
+                                    <Button 
+                                        className="rounded-(--radius) px-6 h-12 uppercase font-mono font-bold"
+                                        disabled={submitGameAnswer.isPending || !gameInput.trim()}
+                                        onClick={() => {
+                                            submitGameAnswer.mutate({ code, answer: gameInput });
+                                            setGameInput("");
+                                        }}
+                                    >
+                                        {submitGameAnswer.isPending ? "Submitting..." : "Submit"}
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
                 )}
             </div>
 
@@ -360,7 +463,7 @@ export default function StudyRoomDetailPage() {
                 <div className="p-4 border-b border-border/50 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <Music className="size-4 text-primary" />
-                        <h3 className="font-mono font-bold uppercase tracking-widest text-[10px]">Broadcast Terminal</h3>
+                        <h3 className="font-mono font-bold tracking-widest text-[10px]">Broadcast Terminal</h3>
                     </div>
                     {isHost && (
                         <div className="flex items-center gap-2 max-w-sm">
@@ -399,7 +502,7 @@ export default function StudyRoomDetailPage() {
                 <Card className="rounded-(--radius) border-border/50 bg-card shadow-sm">
                     <div className="p-6">
                         <div className="flex items-center justify-between mb-6">
-                            <h3 className="font-mono font-bold uppercase tracking-widest text-[10px] text-muted-foreground">Session Objectives</h3>
+                            <h3 className="font-mono font-bold tracking-widest text-[10px] text-muted-foreground">Session Objectives</h3>
                             {isHost && (
                                 <Dialog>
                                     <DialogTrigger asChild>
@@ -409,14 +512,20 @@ export default function StudyRoomDetailPage() {
                                     </DialogTrigger>
                                     <DialogContent className="bg-background rounded-(--radius) border-border/50">
                                         <DialogHeader>
-                                            <DialogTitle className="font-mono uppercase italic tracking-tighter">New Objective</DialogTitle>
+                                            <DialogTitle className="font-mono italic tracking-tighter">New Objective</DialogTitle>
                                         </DialogHeader>
                                         <div className="space-y-4 py-4">
                                             <Input placeholder="Objective description..." className="rounded-(--radius) font-mono text-xs uppercase" value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} />
-                                            <Button className="w-full rounded-(--radius) font-mono uppercase font-bold text-xs" onClick={async () => {
-                                                await createTask.mutateAsync({ code, title: taskTitle, points: 25 });
-                                                setTaskTitle("");
-                                            }}>Authorize Objective</Button>
+                                            <Button 
+                                                className="w-full rounded-(--radius) font-mono text-xs uppercase font-bold" 
+                                                disabled={!taskTitle || createTask.isPending}
+                                                onClick={() => {
+                                                    createTask.mutate({ code, title: taskTitle, points: 50 });
+                                                    setTaskTitle("");
+                                                }}
+                                            >
+                                                {createTask.isPending ? "Issuing Command..." : "Finalize Objective"}
+                                            </Button>
                                         </div>
                                     </DialogContent>
                                 </Dialog>
@@ -427,15 +536,17 @@ export default function StudyRoomDetailPage() {
                                 {room.tasks?.length ? room.tasks.map(t => (
                                     <div key={t.id} className="flex items-center justify-between p-3 rounded-(--radius) bg-muted/30 border border-border/50">
                                         <div className="space-y-1">
-                                            <p className="text-xs font-bold uppercase font-mono">{t.title}</p>
-                                            <p className="text-[9px] font-mono font-bold uppercase text-primary">Reward: {t.points} XP</p>
+                                            <p className="text-xs font-bold font-mono">{t.title}</p>
+                                            <p className="text-[9px] font-mono font-bold text-primary">Reward: {t.points} XP</p>
                                         </div>
                                         <Button 
                                             size="sm" 
-                                            className="rounded-(--radius) h-8 text-[10px] font-mono uppercase font-bold"
+                                            variant="ghost" 
+                                            className="rounded-(--radius) hover:bg-emerald-500/10 hover:text-emerald-400"
+                                            disabled={completeTask.isPending}
                                             onClick={() => completeTask.mutate({ code, taskId: t.id })}
                                         >
-                                            Verify
+                                            {completeTask.isPending ? <RefreshCw className="size-3 animate-spin" /> : <div className="size-2 rounded-full bg-emerald-500" />}
                                         </Button>
                                     </div>
                                 )) : (
@@ -451,12 +562,12 @@ export default function StudyRoomDetailPage() {
                         <Trophy className="size-8 text-primary" />
                     </div>
                     <div>
-                        <h4 className="font-mono font-bold uppercase tracking-tight text-foreground text-sm">Sprint Record</h4>
-                        <p className="text-[10px] font-mono font-bold text-muted-foreground uppercase">Rank: { (leaderboard.findIndex(p => p.displayName === (user?.name || guestName)) + 1) || "N/A" }</p>
+                        <h4 className="font-mono font-bold tracking-tight text-foreground text-sm">Sprint Record</h4>
+                        <p className="text-[10px] font-mono font-bold text-muted-foreground">Rank: { (leaderboard.findIndex(p => p.displayName === (user?.name || guestName)) + 1) || "N/A" }</p>
                     </div>
                     <div className="w-full flex justify-between items-center bg-muted/30 p-4 rounded-(--radius) border border-border/50">
                         <div className="text-left">
-                            <p className="text-[9px] font-mono font-bold uppercase text-muted-foreground">Session Score</p>
+                            <p className="text-[9px] font-mono font-bold text-muted-foreground">Session Score</p>
                             <p className="text-xl font-mono font-bold">{leaderboard.find(p => p.displayName === (user?.name || guestName))?.points || 0} <span className="text-[10px]">XP</span></p>
                         </div>
                         <Dialog>
@@ -465,7 +576,7 @@ export default function StudyRoomDetailPage() {
                             </DialogTrigger>
                             <DialogContent className="max-w-4xl rounded-(--radius) border-border/50 bg-background shadow-2xl overflow-hidden p-0">
                                 <div className="p-6 border-b border-border/50">
-                                    <h2 className="text-xl font-mono font-bold uppercase italic tracking-tighter">Avatar Protocol</h2>
+                                    <h2 className="text-xl font-mono font-bold italic tracking-tighter">Avatar Protocol</h2>
                                 </div>
                                 <div className="p-6">
                                     <AvatarBuilder 

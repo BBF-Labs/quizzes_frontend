@@ -102,7 +102,7 @@ export function CreateRoomDialog({ children }: { children?: React.ReactNode }) {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
-              <Label className="text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground/70 flex items-center gap-1.5">
+              <Label className="text-[10px] font-mono font-bold tracking-widest text-muted-foreground/70 flex items-center gap-1.5">
                 <Globe className="size-3" /> Visibility
               </Label>
               <Select value={visibility} onValueChange={(v: "open" | "closed") => setVisibility(v)}>
@@ -117,7 +117,7 @@ export function CreateRoomDialog({ children }: { children?: React.ReactNode }) {
             </div>
 
             <div className="grid gap-2">
-              <Label className="text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground/70 flex items-center gap-1.5">
+              <Label className="text-[10px] font-mono font-bold tracking-widest text-muted-foreground/70 flex items-center gap-1.5">
                 <Users className="size-3" /> Capacity
               </Label>
               <Select value={String(maxParticipants)} onValueChange={(v) => setMaxParticipants(Number(v))}>
@@ -168,17 +168,17 @@ export function CreateRoomDialog({ children }: { children?: React.ReactNode }) {
 
         <DialogFooter className="sm:justify-between items-center gap-4">
           <div className="hidden sm:flex items-center gap-2">
-             <Badge variant="outline" className="rounded-(--radius) border-border/50 text-[10px] font-mono uppercase">
+             <Badge variant="outline" className="rounded-(--radius) border-border/50 text-[10px] font-mono">
                {maxParticipants} capacity
              </Badge>
-             <Badge variant="outline" className="rounded-(--radius) border-border/50 text-[10px] font-mono uppercase">
+             <Badge variant="outline" className="rounded-(--radius) border-border/50 text-[10px] font-mono">
                {timerMinutes} minutes
              </Badge>
           </div>
           <Button 
             onClick={onCreate} 
             disabled={!canSubmit || createRoom.isPending}
-            className="rounded-(--radius) px-6 font-bold uppercase tracking-wider transition-all active:translate-y-0.5"
+            className="rounded-(--radius) px-6 font-bold tracking-wider transition-all active:translate-y-0.5"
           >
             {createRoom.isPending ? "Starting..." : "Start Sprint"}
           </Button>

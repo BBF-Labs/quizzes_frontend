@@ -70,7 +70,7 @@ export function SprintChat({
       initial={{ x: 300, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: 300, opacity: 0 }}
-      className="fixed inset-y-0 right-0 z-50 flex w-full flex-col border-l border-border/50 bg-background shadow-2xl backdrop-blur-xl sm:w-96"
+      className="fixed inset-y-0 right-0 z-[110] flex w-full flex-col border-l border-border/50 bg-background shadow-2xl backdrop-blur-xl sm:w-96"
     >
       {/* Chat Header */}
       <div className="flex items-center justify-between border-b border-border/50 px-6 py-4">
@@ -79,8 +79,8 @@ export function SprintChat({
             <MessageSquare className="size-4 text-primary" />
           </div>
           <div>
-            <h3 className="font-mono font-bold uppercase tracking-tight text-foreground text-xs leading-none">Sprint Comms</h3>
-            <p className="text-[9px] text-muted-foreground font-mono font-bold uppercase tracking-widest leading-none mt-1">
+            <h3 className="font-mono font-bold tracking-tight text-foreground text-xs leading-none">Sprint Comms</h3>
+            <p className="text-[9px] text-muted-foreground font-mono font-bold tracking-widest leading-none mt-1">
               Active: {messages.length}
             </p>
           </div>
@@ -113,7 +113,7 @@ export function SprintChat({
                 )}
               >
                 {!isGrouped && (
-                  <span className="text-[9px] font-mono font-black uppercase tracking-widest text-muted-foreground px-1">
+                  <span className="text-[9px] font-mono font-black tracking-widest text-muted-foreground px-1">
                     {m.senderName}
                   </span>
                 )}
@@ -174,7 +174,7 @@ export function SprintChat({
             onChange={(e) => handleInputChange(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
             placeholder="Relay message..."
-            className="border-none bg-transparent focus-visible:ring-0 placeholder:text-muted-foreground text-foreground font-medium h-10 text-xs uppercase font-mono"
+            className="border-none bg-transparent focus-visible:ring-0 placeholder:text-muted-foreground text-foreground font-medium h-10 text-xs font-mono"
           />
           <Button
             size="icon"
