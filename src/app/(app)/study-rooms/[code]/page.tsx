@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -74,19 +74,37 @@ export default function StudyRoomDetailPage() {
   const [emailInvite, setEmailInvite] = useState("");
   const [selectedChallengeId, setSelectedChallengeId] =
     useState<RoomChallenge["id"]>("race_50");
+  const [typingUsers, setTypingUsers] = useState<string[]>([]);
+  const typingStopTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useStudyRoomSocket(code, {
+  const roomSocket = useStudyRoomSocket(code, {
     onPresence: () => refetch(),
     onMessage: () => refetch(),
     onTimer: () => refetch(),
     onLocked: () => refetch(),
     onEnded: () => refetch(),
+    onTyping: (payload) => {
+      const senderName = String(payload?.senderName || "");
+      if (!senderName) return;
+      const myDisplayName =
+        user?.name ||
+        (typeof window !== "undefined"
+          ? localStorage.getItem("study_room_guest_name") || guestName
+          : guestName);
+      if (senderName === myDisplayName) return;
+      const isTyping = Boolean(payload?.isTyping);
+      setTypingUsers((prev) => {
+        if (isTyping) return prev.includes(senderName) ? prev : [...prev, senderName];
+        return prev.filter((name) => name !== senderName);
+      });
+    },
   });
 
   const room = data?.room;
   const messages = data?.messages || [];
   const leaderboard = data?.leaderboard || [];
   const leaderboardTop = leaderboard[0];
+  const activeParticipants = room?.participants?.filter((p: any) => !p.leftAt) || [];
   const myScore =
     leaderboard.find((p: any) => p.displayName === (user?.name || guestName))?.points || 0;
   const timerProgress =
@@ -140,6 +158,7 @@ export default function StudyRoomDetailPage() {
   const onSend = async () => {
     if (!message.trim()) return;
     try {
+      roomSocket.emitTyping(false, user?.name || guestName || "Guest");
       const guestId = user ? undefined : ensureGuestId();
       await sendMessage.mutateAsync({
         code,
@@ -152,6 +171,19 @@ export default function StudyRoomDetailPage() {
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Message failed");
     }
+  };
+
+  const onMessageChange = (value: string) => {
+    setMessage(value);
+    const displayName = user?.name || guestName || "Guest";
+    const isTyping = value.trim().length > 0;
+    roomSocket.emitTyping(isTyping, displayName);
+    if (typingStopTimeoutRef.current) {
+      clearTimeout(typingStopTimeoutRef.current);
+    }
+    typingStopTimeoutRef.current = setTimeout(() => {
+      roomSocket.emitTyping(false, displayName);
+    }, 1400);
   };
 
   const onTimer = async (action: "start" | "pause" | "reset" | "tickComplete") => {
@@ -167,79 +199,47 @@ export default function StudyRoomDetailPage() {
     return <main className="p-6">Loading room...</main>;
   }
 
+  const primaryLabel = activeParticipants[0]?.displayName || "Someone";
+  const othersCount = Math.max(0, activeParticipants.length - 1);
+
   return (
-    <main className="mx-auto grid max-w-7xl gap-4 p-6 lg:grid-cols-[2fr_1fr]">
-      <section className="grid gap-4">
-        <Card>
+    <main className="mx-auto grid max-w-[96rem] gap-4 p-4 md:p-6 lg:grid-cols-[22rem_minmax(0,1fr)_26rem]">
+      <aside className="grid gap-4">
+        <Card className="rounded-none">
           <CardHeader>
             <CardTitle>{room.title}</CardTitle>
           </CardHeader>
-          <CardContent>
-          <div className="mb-3 flex flex-wrap items-center gap-2">
-            <Badge variant="outline">{room.roomCode}</Badge>
-            <Badge variant={room.visibility === "open" ? "secondary" : "outline"}>
-              {room.visibility}
-            </Badge>
-            <Badge variant={room.isLocked ? "destructive" : "secondary"}>
-              {room.isLocked ? "Locked" : "Unlocked"}
-            </Badge>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Compete with friends, complete focus cycles, and top the room leaderboard.
-          </p>
-          {!user ? (
-            <div className="mt-3 flex gap-2">
-              <Input placeholder="Guest display name" value={guestName} onChange={(e) => setGuestName(e.target.value)} />
-              <Button variant="outline" onClick={onJoin}>Join as guest</Button>
+          <CardContent className="grid gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline">{room.roomCode}</Badge>
+              <Badge variant={room.visibility === "open" ? "secondary" : "outline"}>
+                {room.visibility}
+              </Badge>
+              <Badge variant={room.isLocked ? "destructive" : "secondary"}>
+                {room.isLocked ? "Locked" : "Unlocked"}
+              </Badge>
             </div>
-          ) : (
-            <Button variant="outline" className="mt-3" onClick={onJoin}>Join room</Button>
-          )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader><CardTitle>Timer</CardTitle></CardHeader>
-          <CardContent>
-          <p className="text-2xl font-semibold">{Math.floor((room.timer?.remainingSeconds || 0) / 60)}m {(room.timer?.remainingSeconds || 0) % 60}s</p>
-          <p className="text-sm text-muted-foreground">Cycle {room.timer?.cycle || 0}</p>
-          <div className="mt-3">
-            <Progress value={Math.max(0, Math.min(100, timerProgress))} />
-          </div>
-          {isHost ? (
-            <div className="mt-3 flex gap-2">
-              <Button variant="outline" onClick={() => onTimer("start")}>Start</Button>
-              <Button variant="outline" onClick={() => onTimer("pause")}>Pause</Button>
-              <Button variant="outline" onClick={() => onTimer("reset")}>Reset</Button>
-              <Button variant="outline" onClick={() => onTimer("tickComplete")}>Complete</Button>
-            </div>
-          ) : null}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader><CardTitle>Chat</CardTitle></CardHeader>
-          <CardContent>
-          <ScrollArea className="mb-3 h-[22rem] border p-2">
-          <div className="space-y-2">
-            {messages.map((m) => (
-              <div key={m._id} className="border p-2">
-                <p className="text-xs text-muted-foreground">{m.senderName}</p>
-                <p>{m.content}</p>
+            {!user ? (
+              <div className="grid gap-2">
+                <Input
+                  className="rounded-none"
+                  placeholder="Guest display name"
+                  value={guestName}
+                  onChange={(e) => setGuestName(e.target.value)}
+                />
+                <Button className="rounded-none" variant="outline" onClick={onJoin}>
+                  Join as guest
+                </Button>
               </div>
-            ))}
-          </div>
-          </ScrollArea>
-          <div className="flex gap-2">
-            <Input className="flex-1" value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Send a message" />
-            <Button variant="outline" onClick={onSend}>Send</Button>
-          </div>
+            ) : (
+              <Button className="rounded-none" variant="outline" onClick={onJoin}>
+                Join room
+              </Button>
+            )}
           </CardContent>
         </Card>
-      </section>
 
-      <aside className="grid gap-4">
-        <Card>
+        <Card className="rounded-none">
           <CardHeader><CardTitle>Gamify</CardTitle></CardHeader>
           <CardContent className="grid gap-3">
             <div className="flex flex-wrap gap-2">
@@ -247,6 +247,7 @@ export default function StudyRoomDetailPage() {
                 <Button
                   key={challenge.id}
                   size="sm"
+                  className="rounded-none"
                   variant={selectedChallengeId === challenge.id ? "default" : "outline"}
                   onClick={() => setSelectedChallengeId(challenge.id)}
                 >
@@ -300,7 +301,7 @@ export default function StudyRoomDetailPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="rounded-none">
           <CardHeader><CardTitle>Participants</CardTitle></CardHeader>
           <CardContent>
           <div className="space-y-2">
@@ -314,7 +315,7 @@ export default function StudyRoomDetailPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="rounded-none">
           <CardHeader><CardTitle>Leaderboard</CardTitle></CardHeader>
           <CardContent>
           <div className="space-y-2">
@@ -329,11 +330,11 @@ export default function StudyRoomDetailPage() {
         </Card>
 
         {isHost ? (
-          <Card>
+          <Card className="rounded-none">
             <CardHeader><CardTitle>Invites</CardTitle></CardHeader>
             <CardContent className="grid gap-2">
-            <Input placeholder="Username" value={usernameInvite} onChange={(e) => setUsernameInvite(e.target.value)} />
-            <Button variant="outline" onClick={async () => {
+            <Input className="rounded-none" placeholder="Username" value={usernameInvite} onChange={(e) => setUsernameInvite(e.target.value)} />
+            <Button className="rounded-none" variant="outline" onClick={async () => {
               try {
                 await inviteByUsername.mutateAsync({ code, username: usernameInvite.trim() });
                 setUsernameInvite("");
@@ -342,8 +343,8 @@ export default function StudyRoomDetailPage() {
                 toast.error(error?.response?.data?.message || "Invite failed");
               }
             }}>Invite by username</Button>
-            <Input placeholder="Email" value={emailInvite} onChange={(e) => setEmailInvite(e.target.value)} />
-            <Button variant="outline" onClick={async () => {
+            <Input className="rounded-none" placeholder="Email" value={emailInvite} onChange={(e) => setEmailInvite(e.target.value)} />
+            <Button className="rounded-none" variant="outline" onClick={async () => {
               try {
                 await inviteByEmail.mutateAsync({ code, email: emailInvite.trim() });
                 setEmailInvite("");
@@ -352,12 +353,181 @@ export default function StudyRoomDetailPage() {
                 toast.error(error?.response?.data?.message || "Invite failed");
               }
             }}>Invite by email</Button>
-            <Button variant="outline" onClick={() => navigator.clipboard.writeText(`${window.location.origin}/study-rooms/${code}`)}>
+            <Button className="rounded-none" variant="outline" onClick={() => navigator.clipboard.writeText(`${window.location.origin}/study-rooms/${code}`)}>
               Copy room link
             </Button>
             </CardContent>
           </Card>
         ) : null}
+      </aside>
+
+      <section className="grid gap-4">
+        <Card className="rounded-none border-2 border-black shadow-[0.65rem_0.65rem_0_#000] bg-card">
+          <CardContent className="flex min-h-[34rem] flex-col items-center justify-center gap-8 p-6 text-center md:p-10">
+            <Badge variant="outline" className="rounded-none px-4 py-1 text-xs tracking-widest uppercase">
+              Focus Session Active
+            </Badge>
+            <div className="text-7xl font-black tracking-tight md:text-8xl">
+              {Math.floor((room.timer?.remainingSeconds || 0) / 60)
+                .toString()
+                .padStart(2, "0")}
+              :
+              {((room.timer?.remainingSeconds || 0) % 60).toString().padStart(2, "0")}
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex -space-x-2">
+                {activeParticipants.slice(0, 3).map((p: any, index: number) => (
+                  <div
+                    key={`${p.userId || p.guestId}_${index}`}
+                    className="size-8 rounded-full border border-background bg-primary/20"
+                    aria-hidden
+                  />
+                ))}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {primaryLabel}
+                {othersCount > 0 ? ` and ${othersCount} others are studying` : " is studying"}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button className="rounded-none" variant="outline" size="icon" onClick={() => onTimer("pause")}>
+                II
+              </Button>
+              <Button className="rounded-none" variant="outline" size="icon" onClick={() => onTimer("reset")}>
+                ■
+              </Button>
+              {isHost ? (
+                <>
+                  <Button className="rounded-none" variant="outline" onClick={() => onTimer("start")}>
+                    Start
+                  </Button>
+                  <Button className="rounded-none" variant="outline" onClick={() => onTimer("tickComplete")}>
+                    Complete
+                  </Button>
+                </>
+              ) : null}
+            </div>
+            <div className="w-full max-w-xl space-y-2">
+              <Progress value={Math.max(0, Math.min(100, timerProgress))} />
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>Cycle {room.timer?.cycle || 0}</span>
+                <span>{timerProgress}% elapsed</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+
+      <aside className="grid gap-4">
+        <Card className="rounded-none">
+          <CardHeader><CardTitle>Live chat</CardTitle></CardHeader>
+          <CardContent className="grid gap-3">
+            <ScrollArea className="h-[34rem] border rounded-none p-2">
+              <div className="space-y-2">
+                {messages.map((m, i) => {
+                  const previous = i > 0 ? messages[i - 1] : null;
+                  const isGrouped = previous?.senderName === m.senderName;
+                  const myDisplayName =
+                    user?.name ||
+                    (typeof window !== "undefined"
+                      ? localStorage.getItem("study_room_guest_name") || guestName
+                      : guestName);
+                  const isMine = m.senderName === myDisplayName;
+                  return (
+                    <div
+                      key={m._id}
+                      className={`flex ${isMine ? "justify-end" : "justify-start"}`}
+                    >
+                      <div
+                        className={`max-w-[82%] rounded-none border px-3 py-2 ${
+                          isMine
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-muted/30 border-border"
+                        }`}
+                      >
+                        {!isGrouped ? (
+                          <p
+                            className={`text-[11px] ${
+                              isMine
+                                ? "text-primary-foreground/80"
+                                : "text-muted-foreground"
+                            }`}
+                          >
+                            {m.senderName}
+                          </p>
+                        ) : null}
+                        <p className="text-sm">{m.content}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+                {typingUsers.length > 0 ? (
+                  <div className="flex justify-start">
+                    <div className="max-w-[82%] rounded-none border bg-muted/40 px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        <div className="flex -space-x-2">
+                          {typingUsers.slice(0, 4).map((name, index) => {
+                            const initials = name
+                              .split(" ")
+                              .map((part) => part[0])
+                              .join("")
+                              .slice(0, 2)
+                              .toUpperCase();
+                            const colorClass =
+                              index % 4 === 0
+                                ? "bg-blue-500/90"
+                                : index % 4 === 1
+                                  ? "bg-pink-500/90"
+                                  : index % 4 === 2
+                                    ? "bg-amber-500/90"
+                                    : "bg-emerald-500/90";
+                            return (
+                              <div
+                                key={name}
+                                className={`relative z-10 flex size-6 items-center justify-center rounded-full border border-background ${colorClass} text-[10px] font-semibold text-white`}
+                                title={name}
+                              >
+                                {initials}
+                              </div>
+                            );
+                          })}
+                          {typingUsers.length > 4 ? (
+                            <div className="relative z-0 flex size-6 items-center justify-center rounded-full border border-background bg-muted text-[10px] font-semibold text-muted-foreground">
+                              +{typingUsers.length - 4}
+                            </div>
+                          ) : null}
+                        </div>
+                        <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                          <span>
+                            {typingUsers.length === 1
+                              ? `${typingUsers[0]} is typing`
+                              : `${typingUsers.length} people are typing`}
+                          </span>
+                          <span className="inline-flex items-center gap-0.5">
+                            <span className="size-1 rounded-full bg-primary animate-pulse" />
+                            <span className="size-1 rounded-full bg-primary animate-pulse [animation-delay:120ms]" />
+                            <span className="size-1 rounded-full bg-primary animate-pulse [animation-delay:240ms]" />
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </ScrollArea>
+            <div className="flex gap-2">
+              <Input
+                className="flex-1 rounded-none"
+                value={message}
+                onChange={(e) => onMessageChange(e.target.value)}
+                placeholder="Send a message"
+              />
+              <Button className="rounded-none" variant="outline" onClick={onSend}>
+                Send
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </aside>
     </main>
   );

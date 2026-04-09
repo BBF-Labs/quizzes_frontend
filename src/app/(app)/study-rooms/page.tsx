@@ -15,6 +15,10 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
 import {
   Select,
   SelectContent,
@@ -22,6 +26,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+const TIMER_PRESETS = [15, 25, 45, 60];
+const CAPACITY_PRESETS = [10, 25, 50, 100];
 
 export default function StudyRoomsPage() {
   const { data: rooms = [], isLoading } = useStudyRooms();
@@ -63,25 +70,110 @@ export default function StudyRoomsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Create a room</CardTitle>
-          <CardDescription>Start an open or closed session with a shared timer.</CardDescription>
+          <CardDescription>
+            Start a focused challenge session with smart defaults and quick presets.
+          </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-3">
-          <Input placeholder="Room title" value={title} onChange={(e) => setTitle(e.target.value)} />
-          <Input placeholder="Topic (optional)" value={topic} onChange={(e) => setTopic(e.target.value)} />
-          <div className="flex flex-wrap gap-2">
-            <Select value={visibility} onValueChange={(v) => setVisibility(v as "open" | "closed")}>
-              <SelectTrigger className="w-40">
+        <CardContent className="grid gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="study-room-title">Room title</Label>
+            <Input
+              id="study-room-title"
+              placeholder="e.g. MATH 201 Night Sprint"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="study-room-topic">Session goal / topic</Label>
+            <Textarea
+              id="study-room-topic"
+              placeholder="What are you all trying to achieve in this room?"
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+            />
+          </div>
+
+          <Separator />
+
+          <div className="grid gap-2">
+            <Label>Room visibility</Label>
+            <Select
+              value={visibility}
+              onValueChange={(v) => setVisibility(v as "open" | "closed")}
+            >
+              <SelectTrigger className="w-full sm:w-52">
                 <SelectValue placeholder="Visibility" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="open">Open</SelectItem>
-                <SelectItem value="closed">Closed</SelectItem>
+                <SelectItem value="open">Open (anyone can join)</SelectItem>
+                <SelectItem value="closed">Closed (invite only)</SelectItem>
               </SelectContent>
             </Select>
-            <Input className="w-40" type="number" min={2} max={300} value={maxParticipants} onChange={(e) => setMaxParticipants(Number(e.target.value || 25))} />
-            <Input className="w-40" type="number" min={5} max={180} value={timerMinutes} onChange={(e) => setTimerMinutes(Number(e.target.value || 25))} />
           </div>
-          <Button className="w-fit" disabled={!canSubmit || createRoom.isPending} onClick={onCreate}>
+
+          <div className="grid gap-2">
+            <Label>Timer length (minutes)</Label>
+            <div className="flex flex-wrap gap-2">
+              {TIMER_PRESETS.map((preset) => (
+                <Button
+                  key={preset}
+                  type="button"
+                  size="sm"
+                  variant={timerMinutes === preset ? "default" : "outline"}
+                  onClick={() => setTimerMinutes(preset)}
+                >
+                  {preset}m
+                </Button>
+              ))}
+              <Input
+                className="w-28"
+                type="number"
+                min={5}
+                max={180}
+                value={timerMinutes}
+                onChange={(e) => setTimerMinutes(Number(e.target.value || 25))}
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-2">
+            <Label>Max participants</Label>
+            <div className="flex flex-wrap gap-2">
+              {CAPACITY_PRESETS.map((preset) => (
+                <Button
+                  key={preset}
+                  type="button"
+                  size="sm"
+                  variant={maxParticipants === preset ? "default" : "outline"}
+                  onClick={() => setMaxParticipants(preset)}
+                >
+                  {preset}
+                </Button>
+              ))}
+              <Input
+                className="w-28"
+                type="number"
+                min={2}
+                max={300}
+                value={maxParticipants}
+                onChange={(e) => setMaxParticipants(Number(e.target.value || 25))}
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            <Badge variant="outline">{visibility === "open" ? "Open room" : "Invite only"}</Badge>
+            <Badge variant="outline">{timerMinutes}m focus cycles</Badge>
+            <Badge variant="outline">Max {maxParticipants} people</Badge>
+          </div>
+
+          <Button
+            className="w-full sm:w-fit"
+            disabled={!canSubmit || createRoom.isPending}
+            onClick={onCreate}
+          >
             {createRoom.isPending ? "Creating..." : "Create Room"}
           </Button>
         </CardContent>
@@ -89,7 +181,36 @@ export default function StudyRoomsPage() {
 
       <section className="grid gap-3">
         <h2 className="text-lg font-medium">Active rooms</h2>
-        {isLoading ? <p>Loading rooms...</p> : null}
+        {isLoading ? (
+          <div className="grid gap-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <Card key={`room-skeleton-${index}`} className="py-0">
+                <CardContent className="py-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <Skeleton className="h-4 w-44" />
+                      <Skeleton className="h-3 w-56" />
+                      <Skeleton className="h-2 w-full max-w-sm" />
+                    </div>
+                    <div className="flex gap-2">
+                      <Skeleton className="h-6 w-12" />
+                      <Skeleton className="h-6 w-20" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : null}
+        {!isLoading && rooms.length === 0 ? (
+          <Card>
+            <CardContent className="py-6">
+              <p className="text-sm text-muted-foreground">
+                No active rooms yet. Create one and invite your study crew.
+              </p>
+            </CardContent>
+          </Card>
+        ) : null}
         {rooms.map((room) => (
           <Card key={room._id} className="py-0">
             <CardContent className="flex items-center justify-between py-4">
