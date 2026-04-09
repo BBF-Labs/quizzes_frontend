@@ -185,17 +185,19 @@ export default function StudyRoomsPage() {
         {isLoading ? (
           <div className="grid gap-3">
             {Array.from({ length: 3 }).map((_, index) => (
-              <Card key={`room-skeleton-${index}`} className="py-0">
+              <Card key={`room-skeleton-${index}`} className="py-0 border border-border/40 bg-card/30">
                 <CardContent className="py-4">
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0 flex-1 space-y-2">
-                      <Skeleton className="h-4 w-44" />
-                      <Skeleton className="h-3 w-56" />
-                      <Skeleton className="h-2 w-full max-w-sm" />
+                      <Skeleton className="h-4 w-48 rounded-none" />
+                      <Skeleton className="h-3 w-40 rounded-none" />
+                      <div className="pt-1">
+                        <Skeleton className="h-2 w-full max-w-sm rounded-none" />
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Skeleton className="h-6 w-12" />
-                      <Skeleton className="h-6 w-20" />
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-6 w-12 rounded-none" />
+                      <Skeleton className="h-6 w-20 rounded-none" />
                     </div>
                   </div>
                 </CardContent>

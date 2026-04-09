@@ -263,7 +263,14 @@ export default function StudyRoomDetailPage() {
   }, [myScore, room?.timer?.cycle, messages.length]);
   const isManager = useMemo(() => {
     if (!room || !user?.id) return false;
-    return String(room.hostId) === user.id || room.participants?.some((p: any) => p.userId === user.id && (p.role === "owner" || p.role === "moderator"));
+    return (
+      String(room.hostId) === user.id ||
+      room.participants?.some(
+        (p: any) =>
+          String(p.userId || "") === user.id &&
+          (p.role === "owner" || p.role === "moderator" || p.role === "host"),
+      )
+    );
   }, [room, user?.id]);
   const latestRoomYouTube = useMemo(() => {
     const youtubePost = (room?.mediaPosts || [])
@@ -373,9 +380,9 @@ export default function StudyRoomDetailPage() {
   const othersCount = Math.max(0, activeParticipants.length - 1);
 
   return (
-    <main className="min-h-screen overflow-hidden">
-      <div className="mx-auto grid h-screen max-w-[96rem] gap-4 p-4 md:p-6 lg:grid-cols-[22rem_minmax(0,1fr)_26rem]">
-      <aside className="grid gap-4 overflow-y-auto no-scrollbar">
+    <main className="min-h-screen overflow-x-hidden">
+      <div className="mx-auto grid min-h-screen max-w-[96rem] gap-4 p-4 md:p-6 lg:h-screen lg:grid-cols-[22rem_minmax(0,1fr)_26rem]">
+      <aside className="grid gap-4 lg:overflow-y-auto no-scrollbar">
         <Card className="rounded-none">
           <CardHeader>
             <CardTitle>{room.title}</CardTitle>
@@ -574,13 +581,13 @@ export default function StudyRoomDetailPage() {
         </Card>
       </aside>
 
-      <section className="grid gap-4 overflow-y-auto no-scrollbar">
-        <Card className="rounded-none border-2 border-black shadow-[0.65rem_0.65rem_0_#000] bg-card">
-          <CardContent className="flex min-h-[34rem] flex-col items-center justify-center gap-8 p-6 text-center md:p-10">
+      <section className="grid gap-4 lg:overflow-y-auto no-scrollbar">
+        <Card className="rounded-(--radius) border-2 border-black shadow-[0.65rem_0.65rem_0_#000] bg-card">
+          <CardContent className="flex min-h-[24rem] flex-col items-center justify-center gap-6 p-4 text-center md:min-h-[34rem] md:gap-8 md:p-10">
             <Badge variant="outline" className="rounded-none px-4 py-1 text-xs tracking-widest uppercase">
               Focus Session Active
             </Badge>
-            <div className="text-7xl font-black tracking-tight md:text-8xl">
+            <div className="text-5xl font-black tracking-tight sm:text-6xl md:text-8xl">
               {Math.floor((room.timer?.remainingSeconds || 0) / 60)
                 .toString()
                 .padStart(2, "0")}
@@ -770,7 +777,7 @@ export default function StudyRoomDetailPage() {
         </Card>
       </section>
 
-      <aside className="grid gap-4 overflow-y-auto no-scrollbar">
+      <aside className="grid gap-4 lg:overflow-y-auto no-scrollbar">
         <Card className="rounded-none">
           <CardHeader><CardTitle>Live chat</CardTitle></CardHeader>
           <CardContent className="grid gap-3">
