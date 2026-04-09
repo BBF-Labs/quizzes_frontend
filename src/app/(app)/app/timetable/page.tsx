@@ -90,6 +90,13 @@ export default function TimetablePage() {
       )
     : null;
 
+  const mostRecentIsOngoing = useMemo(() => {
+    if (!mostRecentEntry) return false;
+    const start = new Date(mostRecentEntry.scheduledAt).getTime();
+    const end = start + (mostRecentEntry.durationMinutes || 120) * 60 * 1000;
+    return nowMs >= start && nowMs <= end;
+  }, [mostRecentEntry, nowMs]);
+
   useEffect(() => {
     const timer = setInterval(() => setNowMs(Date.now()), 60000);
     return () => clearInterval(timer);
@@ -186,10 +193,23 @@ export default function TimetablePage() {
                     <p className="text-muted-foreground font-mono text-xs uppercase tracking-wider mb-8">
                       {mostRecentEntry.courseName}
                     </p>
-                    <div className="text-6xl md:text-8xl font-black text-foreground font-mono tracking-tight leading-none mb-2">
-                      {mostRecentDaysRemaining === 0 ? "TODAY" : mostRecentDaysRemaining}
+                    <div
+                      className={cn(
+                        "font-black text-foreground font-mono tracking-tighter leading-none mb-2",
+                        mostRecentIsOngoing
+                          ? "text-4xl md:text-6xl text-primary animate-pulse"
+                          : mostRecentDaysRemaining === 0
+                            ? "text-5xl md:text-7xl"
+                            : "text-7xl md:text-8xl",
+                      )}
+                    >
+                      {mostRecentIsOngoing
+                        ? "ONGOING"
+                        : mostRecentDaysRemaining === 0
+                          ? "TODAY"
+                          : mostRecentDaysRemaining}
                     </div>
-                    {mostRecentDaysRemaining !== 0 && (
+                    {mostRecentDaysRemaining !== 0 && !mostRecentIsOngoing && (
                       <div className="text-xs font-mono tracking-widest text-muted-foreground uppercase">
                         Days Remaining
                       </div>
@@ -326,33 +346,48 @@ export default function TimetablePage() {
                         </div>
 
                         {(() => {
+                          const itemStart = new Date(
+                            entry.scheduledAt,
+                          ).getTime();
+                          const itemEnd =
+                            itemStart +
+                            (entry.durationMinutes || 120) * 60 * 1000;
+                          const itemIsOngoing = nowMs >= itemStart && nowMs <= itemEnd;
                           const itemDaysAway = Math.max(
                             0,
                             Math.ceil(
-                              (new Date(entry.scheduledAt).getTime() - nowMs) /
-                                (1000 * 60 * 60 * 24),
+                              (itemStart - nowMs) / (1000 * 60 * 60 * 24),
                             ),
                           );
+
                           return (
                             <div
                               className={cn(
-                                "border-l border-border/50 flex flex-col items-center justify-center px-4 py-6 text-center",
-                                itemDaysAway === 0
-                                  ? "bg-primary/10"
-                                  : "bg-background/60",
+                                "border-l border-border/50 flex flex-col items-center justify-center px-4 py-6 text-center shrink-0 min-w-28",
+                                itemIsOngoing
+                                  ? "bg-primary/10 animate-pulse"
+                                  : itemDaysAway === 0
+                                    ? "bg-primary/5"
+                                    : "bg-background/60",
                               )}
                             >
                               <div
                                 className={cn(
                                   "font-black font-mono tracking-tight leading-none",
-                                  itemDaysAway === 0
-                                    ? "text-xl text-primary"
-                                    : "text-4xl text-foreground",
+                                  itemIsOngoing
+                                    ? "text-sm text-primary"
+                                    : itemDaysAway === 0
+                                      ? "text-xl text-primary"
+                                      : "text-4xl text-foreground",
                                 )}
                               >
-                                {itemDaysAway === 0 ? "TODAY" : itemDaysAway}
+                                {itemIsOngoing
+                                  ? "ONGOING"
+                                  : itemDaysAway === 0
+                                    ? "TODAY"
+                                    : itemDaysAway}
                               </div>
-                              {itemDaysAway !== 0 && (
+                              {itemDaysAway !== 0 && !itemIsOngoing && (
                                 <div className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase mt-2">
                                   Days
                                 </div>
