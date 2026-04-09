@@ -261,14 +261,14 @@ export default function StudyRoomDetailPage() {
     if (messages.length >= 10) badges.push("Contributor");
     return badges;
   }, [myScore, room?.timer?.cycle, messages.length]);
-  const isManager = useMemo(() => {
+  const isRoomOwner = useMemo(() => {
     if (!room || !user?.id) return false;
     return (
       String(room.hostId) === user.id ||
       room.participants?.some(
         (p: any) =>
           String(p.userId || "") === user.id &&
-          (p.role === "owner" || p.role === "moderator" || p.role === "host"),
+          (p.role === "owner" || p.role === "host"),
       )
     );
   }, [room, user?.id]);
@@ -383,7 +383,7 @@ export default function StudyRoomDetailPage() {
     <main className="min-h-screen overflow-x-hidden">
       <div className="mx-auto grid min-h-screen max-w-[96rem] gap-4 p-4 md:p-6 lg:h-screen lg:grid-cols-[22rem_minmax(0,1fr)_26rem]">
       <aside className="grid gap-4 lg:overflow-y-auto no-scrollbar">
-        <Card className="rounded-none">
+        <Card className="rounded-(--radius)">
           <CardHeader>
             <CardTitle>{room.title}</CardTitle>
           </CardHeader>
@@ -397,27 +397,27 @@ export default function StudyRoomDetailPage() {
                 {room.isLocked ? "Locked" : "Unlocked"}
               </Badge>
             </div>
-            {!user ? (
+            {!myParticipant && !user ? (
               <div className="grid gap-2">
                 <Input
-                  className="rounded-none"
+                  className="rounded-(--radius)"
                   placeholder="Guest display name"
                   value={guestName}
                   onChange={(e) => setGuestName(e.target.value)}
                 />
-                <Button className="rounded-none" variant="outline" onClick={onJoin}>
+                <Button className="rounded-(--radius)" variant="outline" onClick={onJoin}>
                   Join as guest
                 </Button>
               </div>
-            ) : (
-              <Button className="rounded-none" variant="outline" onClick={onJoin}>
+            ) : !myParticipant ? (
+              <Button className="rounded-(--radius)" variant="outline" onClick={onJoin}>
                 Join room
               </Button>
-            )}
+            ) : null}
           </CardContent>
         </Card>
 
-        <Card className="rounded-none">
+        <Card className="rounded-(--radius)">
           <CardHeader><CardTitle>Gamify</CardTitle></CardHeader>
           <CardContent className="grid gap-3">
             <div className="flex flex-wrap gap-2">
@@ -425,7 +425,7 @@ export default function StudyRoomDetailPage() {
                 <Button
                   key={challenge.id}
                   size="sm"
-                  className="rounded-none"
+                  className="rounded-(--radius)"
                   variant={selectedChallengeId === challenge.id ? "default" : "outline"}
                   onClick={() => setSelectedChallengeId(challenge.id)}
                 >
@@ -470,7 +470,7 @@ export default function StudyRoomDetailPage() {
                       animate={{ rotateX: 0, opacity: 1, y: -6 }}
                       exit={{ rotateX: 90, opacity: 0, y: -14 }}
                       transition={{ duration: 0.28 }}
-                      className={`absolute -right-2 -top-7 rounded-none border px-2 py-0.5 text-[11px] font-semibold ${
+                      className={`absolute -right-2 -top-7 rounded-(--radius) border px-2 py-0.5 text-[11px] font-semibold ${
                         xpFx.delta >= 0
                           ? "border-emerald-500/60 bg-emerald-500/15 text-emerald-500"
                           : "border-rose-500/60 bg-rose-500/15 text-rose-500"
@@ -500,7 +500,7 @@ export default function StudyRoomDetailPage() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-none">
+        <Card className="rounded-(--radius)">
           <CardHeader><CardTitle>Participants</CardTitle></CardHeader>
           <CardContent>
           <div className="space-y-2">
@@ -524,7 +524,7 @@ export default function StudyRoomDetailPage() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-none">
+        <Card className="rounded-(--radius)">
           <CardHeader><CardTitle>Leaderboard</CardTitle></CardHeader>
           <CardContent>
           <div className="space-y-2">
@@ -538,12 +538,12 @@ export default function StudyRoomDetailPage() {
           </CardContent>
         </Card>
 
-        {isManager ? (
-          <Card className="rounded-none">
+        {isRoomOwner ? (
+          <Card className="rounded-(--radius)">
             <CardHeader><CardTitle>Invites</CardTitle></CardHeader>
             <CardContent className="grid gap-2">
-            <Input className="rounded-none" placeholder="Username" value={usernameInvite} onChange={(e) => setUsernameInvite(e.target.value)} />
-            <Button className="rounded-none" variant="outline" onClick={async () => {
+            <Input className="rounded-(--radius)" placeholder="Username" value={usernameInvite} onChange={(e) => setUsernameInvite(e.target.value)} />
+            <Button className="rounded-(--radius)" variant="outline" onClick={async () => {
               try {
                 await inviteByUsername.mutateAsync({ code, username: usernameInvite.trim() });
                 setUsernameInvite("");
@@ -552,8 +552,8 @@ export default function StudyRoomDetailPage() {
                 toast.error(error?.response?.data?.message || "Invite failed");
               }
             }}>Invite by username</Button>
-            <Input className="rounded-none" placeholder="Email" value={emailInvite} onChange={(e) => setEmailInvite(e.target.value)} />
-            <Button className="rounded-none" variant="outline" onClick={async () => {
+            <Input className="rounded-(--radius)" placeholder="Email" value={emailInvite} onChange={(e) => setEmailInvite(e.target.value)} />
+            <Button className="rounded-(--radius)" variant="outline" onClick={async () => {
               try {
                 await inviteByEmail.mutateAsync({ code, email: emailInvite.trim() });
                 setEmailInvite("");
@@ -562,17 +562,17 @@ export default function StudyRoomDetailPage() {
                 toast.error(error?.response?.data?.message || "Invite failed");
               }
             }}>Invite by email</Button>
-            <Button className="rounded-none" variant="outline" onClick={() => navigator.clipboard.writeText(`${window.location.origin}/study-rooms/${code}`)}>
+            <Button className="rounded-(--radius)" variant="outline" onClick={() => navigator.clipboard.writeText(`${window.location.origin}/study-rooms/${code}`)}>
               Copy room link
             </Button>
             </CardContent>
           </Card>
         ) : null}
-        <Card className="rounded-none">
+        <Card className="rounded-(--radius)">
           <CardHeader><CardTitle>Avatar</CardTitle></CardHeader>
           <CardContent className="grid gap-2">
             <Input
-              className="rounded-none"
+              className="rounded-(--radius)"
               placeholder="Avatar seed (cartoon)"
               value={avatarSeed}
               onChange={(e) => setAvatarSeed(e.target.value)}
@@ -584,7 +584,7 @@ export default function StudyRoomDetailPage() {
       <section className="grid gap-4 lg:overflow-y-auto no-scrollbar">
         <Card className="rounded-(--radius) border-2 border-black shadow-[0.65rem_0.65rem_0_#000] bg-card">
           <CardContent className="flex min-h-[24rem] flex-col items-center justify-center gap-6 p-4 text-center md:min-h-[34rem] md:gap-8 md:p-10">
-            <Badge variant="outline" className="rounded-none px-4 py-1 text-xs tracking-widest uppercase">
+            <Badge variant="outline" className="rounded-(--radius) px-4 py-1 text-xs tracking-widest uppercase">
               Focus Session Active
             </Badge>
             <div className="text-5xl font-black tracking-tight sm:text-6xl md:text-8xl">
@@ -614,18 +614,18 @@ export default function StudyRoomDetailPage() {
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <Button className="rounded-none" variant="outline" size="icon" onClick={() => onTimer("pause")}>
+              <Button className="rounded-(--radius)" variant="outline" size="icon" onClick={() => onTimer("pause")}>
                 II
               </Button>
-              <Button className="rounded-none" variant="outline" size="icon" onClick={() => onTimer("reset")}>
+              <Button className="rounded-(--radius)" variant="outline" size="icon" onClick={() => onTimer("reset")}>
                 ■
               </Button>
-              {isManager ? (
+              {isRoomOwner ? (
                 <>
-                  <Button className="rounded-none" variant="outline" onClick={() => onTimer("start")}>
+                  <Button className="rounded-(--radius)" variant="outline" onClick={() => onTimer("start")}>
                     Start
                   </Button>
-                  <Button className="rounded-none" variant="outline" onClick={() => onTimer("tickComplete")}>
+                  <Button className="rounded-(--radius)" variant="outline" onClick={() => onTimer("tickComplete")}>
                     Complete
                   </Button>
                 </>
@@ -643,7 +643,7 @@ export default function StudyRoomDetailPage() {
                 <p className="text-xs text-muted-foreground">Lo-fi player</p>
                 <div className="flex gap-2">
                   <Button
-                    className="rounded-none"
+                    className="rounded-(--radius)"
                     size="sm"
                     variant={mediaMode === "follow_host" ? "default" : "outline"}
                     onClick={async () => {
@@ -659,7 +659,7 @@ export default function StudyRoomDetailPage() {
                     Follow host
                   </Button>
                   <Button
-                    className="rounded-none"
+                    className="rounded-(--radius)"
                     size="sm"
                     variant={mediaMode === "personal" ? "default" : "outline"}
                     onClick={async () => {
@@ -679,13 +679,13 @@ export default function StudyRoomDetailPage() {
               </div>
               <div className="flex gap-2">
                 <Input
-                  className="rounded-none"
+                  className="rounded-(--radius)"
                   placeholder="Paste YouTube lo-fi URL"
                   value={lofiUrl}
                   onChange={(e) => setLofiUrl(e.target.value)}
                 />
                 <Button
-                  className="rounded-none"
+                  className="rounded-(--radius)"
                   variant="outline"
                   onClick={() => {
                     const embed = getYouTubeEmbedUrl(lofiUrl);
@@ -719,7 +719,7 @@ export default function StudyRoomDetailPage() {
                   {(["completed", "partial", "not_done"] as const).map((status) => (
                     <Button
                       key={status}
-                      className="rounded-none"
+                      className="rounded-(--radius)"
                       size="sm"
                       variant={checkInStatus === status ? "default" : "outline"}
                       onClick={() => setCheckInStatus(status)}
@@ -728,7 +728,7 @@ export default function StudyRoomDetailPage() {
                     </Button>
                   ))}
                   <Button
-                    className="rounded-none"
+                    className="rounded-(--radius)"
                     size="sm"
                     onClick={async () => {
                       const guestId = user ? undefined : ensureGuestId();
@@ -744,14 +744,14 @@ export default function StudyRoomDetailPage() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-none">
+        <Card className="rounded-(--radius)">
           <CardHeader><CardTitle>Tasks and XP</CardTitle></CardHeader>
           <CardContent className="grid gap-3">
-            {isManager ? (
+            {isRoomOwner ? (
               <div className="flex flex-wrap gap-2">
-                <Input className="rounded-none" placeholder="Task title" value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} />
-                <Input className="rounded-none w-24" type="number" min={1} max={100} value={taskPoints} onChange={(e) => setTaskPoints(Number(e.target.value || 10))} />
-                <Button className="rounded-none" variant="outline" onClick={async () => {
+                <Input className="rounded-(--radius)" placeholder="Task title" value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} />
+                <Input className="rounded-(--radius) w-24" type="number" min={1} max={100} value={taskPoints} onChange={(e) => setTaskPoints(Number(e.target.value || 10))} />
+                <Button className="rounded-(--radius)" variant="outline" onClick={async () => {
                   await createTask.mutateAsync({ code, title: taskTitle, points: taskPoints });
                   setTaskTitle("");
                   refetch();
@@ -765,7 +765,7 @@ export default function StudyRoomDetailPage() {
                     <p className="text-sm font-medium">{task.title}</p>
                     <p className="text-xs text-muted-foreground">{task.points} pts</p>
                   </div>
-                  <Button className="rounded-none" size="sm" variant="outline" onClick={async () => {
+                  <Button className="rounded-(--radius)" size="sm" variant="outline" onClick={async () => {
                     const guestId = user ? undefined : ensureGuestId();
                     await completeTask.mutateAsync({ code, taskId: task.id, guestId });
                     refetch();
@@ -778,10 +778,10 @@ export default function StudyRoomDetailPage() {
       </section>
 
       <aside className="grid gap-4 lg:overflow-y-auto no-scrollbar">
-        <Card className="rounded-none">
+        <Card className="rounded-(--radius)">
           <CardHeader><CardTitle>Live chat</CardTitle></CardHeader>
           <CardContent className="grid gap-3">
-            <ScrollArea className="h-[34rem] border rounded-none p-2">
+            <ScrollArea className="h-[34rem] border rounded-(--radius) p-2">
               <div className="space-y-2">
                 {messages.map((m, i) => {
                   const previous = i > 0 ? messages[i - 1] : null;
@@ -798,7 +798,7 @@ export default function StudyRoomDetailPage() {
                       className={`flex ${isMine ? "justify-end" : "justify-start"}`}
                     >
                       <div
-                        className={`max-w-[82%] rounded-none border px-3 py-2 ${
+                        className={`max-w-[82%] rounded-(--radius) border px-3 py-2 ${
                           isMine
                             ? "bg-primary text-primary-foreground border-primary"
                             : "bg-muted/30 border-border"
@@ -822,7 +822,7 @@ export default function StudyRoomDetailPage() {
                 })}
                 {typingUsers.length > 0 ? (
                   <div className="flex justify-start">
-                    <div className="max-w-[82%] rounded-none border bg-muted/40 px-3 py-2">
+                    <div className="max-w-[82%] rounded-(--radius) border bg-muted/40 px-3 py-2">
                       <div className="flex items-center gap-2">
                         <div className="flex -space-x-2">
                           {typingUsers.slice(0, 4).map((name, index) => {
@@ -862,34 +862,34 @@ export default function StudyRoomDetailPage() {
             </ScrollArea>
             <div className="flex gap-2">
               <Input
-                className="flex-1 rounded-none"
+                className="flex-1 rounded-(--radius)"
                 value={message}
                 onChange={(e) => onMessageChange(e.target.value)}
                 placeholder="Send a message"
               />
-              <Button className="rounded-none" variant="outline" onClick={onSend}>
+              <Button className="rounded-(--radius)" variant="outline" onClick={onSend}>
                 Send
               </Button>
             </div>
           </CardContent>
         </Card>
-        <Card className="rounded-none">
+        <Card className="rounded-(--radius)">
           <CardHeader><CardTitle>Games and Media</CardTitle></CardHeader>
           <CardContent className="grid gap-3">
-            {isManager ? (
+            {isRoomOwner ? (
               <>
                 <div className="flex items-center justify-between border p-2 text-xs">
                   <span>Ready check</span>
                   <span>{readyCount}/{minReadyCount} ready</span>
                 </div>
                 <div className="flex gap-2">
-                  <Button className="rounded-none" variant="outline" onClick={async () => {
+                  <Button className="rounded-(--radius)" variant="outline" onClick={async () => {
                     await openReadyCheck.mutateAsync({ code, minReadyCount: 2 });
                     refetch();
                   }}>
                     Open ready check
                   </Button>
-                  <Button className="rounded-none" variant="outline" onClick={async () => {
+                  <Button className="rounded-(--radius)" variant="outline" onClick={async () => {
                     await generateAiGame.mutateAsync({ code, type: selectedGameType, topic: gamePrompt || "study mix" });
                     refetch();
                   }}>
@@ -897,18 +897,18 @@ export default function StudyRoomDetailPage() {
                   </Button>
                 </div>
                 <div className="flex gap-2">
-                  <Input className="rounded-none" placeholder="Game prompt" value={gamePrompt} onChange={(e) => setGamePrompt(e.target.value)} />
-                  <Input className="rounded-none" placeholder="Answer" value={gameAnswer} onChange={(e) => setGameAnswer(e.target.value)} />
+                  <Input className="rounded-(--radius)" placeholder="Game prompt" value={gamePrompt} onChange={(e) => setGamePrompt(e.target.value)} />
+                  <Input className="rounded-(--radius)" placeholder="Answer" value={gameAnswer} onChange={(e) => setGameAnswer(e.target.value)} />
                 </div>
                 <div className="flex gap-2">
-                  <Button className="rounded-none" size="sm" variant={selectedGameType === "word_guess" ? "default" : "outline"} onClick={() => setSelectedGameType("word_guess")}>
+                  <Button className="rounded-(--radius)" size="sm" variant={selectedGameType === "word_guess" ? "default" : "outline"} onClick={() => setSelectedGameType("word_guess")}>
                     Word Guess
                   </Button>
-                  <Button className="rounded-none" size="sm" variant={selectedGameType === "qa" ? "default" : "outline"} onClick={() => setSelectedGameType("qa")}>
+                  <Button className="rounded-(--radius)" size="sm" variant={selectedGameType === "qa" ? "default" : "outline"} onClick={() => setSelectedGameType("qa")}>
                     Q&A
                   </Button>
                 </div>
-                <Button className="rounded-none" variant="outline" onClick={async () => {
+                <Button className="rounded-(--radius)" variant="outline" onClick={async () => {
                   await startGame.mutateAsync({ code, type: selectedGameType, prompt: gamePrompt, answer: gameAnswer, source: "manual" });
                   setGamePrompt("");
                   setGameAnswer("");
@@ -916,7 +916,7 @@ export default function StudyRoomDetailPage() {
                 }}>Start word guess</Button>
               </>
             ) : null}
-            <Button className="rounded-none" variant={isReadyForGame ? "default" : "outline"} onClick={async () => {
+            <Button className="rounded-(--radius)" variant={isReadyForGame ? "default" : "outline"} onClick={async () => {
               const guestId = user ? undefined : ensureGuestId();
               await toggleGameReady.mutateAsync({ code, ready: !isReadyForGame, guestId });
               setIsReadyForGame((prev) => !prev);
@@ -937,7 +937,7 @@ export default function StudyRoomDetailPage() {
                     {room.activeGame.options.map((option, index) => (
                       <Button
                         key={`${option}_${index}`}
-                        className="rounded-none justify-start"
+                        className="rounded-(--radius) justify-start"
                         variant="outline"
                         onClick={async () => {
                           const guestId = user ? undefined : ensureGuestId();
@@ -951,8 +951,8 @@ export default function StudyRoomDetailPage() {
                   </div>
                 ) : null}
                 <div className="mt-2 flex gap-2">
-                  <Input className="rounded-none" value={gameGuess} onChange={(e) => setGameGuess(e.target.value)} placeholder="Your answer" />
-                  <Button className="rounded-none" variant="outline" onClick={async () => {
+                  <Input className="rounded-(--radius)" value={gameGuess} onChange={(e) => setGameGuess(e.target.value)} placeholder="Your answer" />
+                  <Button className="rounded-(--radius)" variant="outline" onClick={async () => {
                     const guestId = user ? undefined : ensureGuestId();
                     await submitGameAnswer.mutateAsync({ code, answer: gameGuess, guestId });
                     setGameGuess("");
@@ -964,10 +964,10 @@ export default function StudyRoomDetailPage() {
                 ) : null}
               </div>
             ) : null}
-            {isManager ? (
+            {isRoomOwner ? (
               <div className="flex gap-2">
-                <Input className="rounded-none" placeholder="YouTube/Spotify URL" value={mediaUrl} onChange={(e) => setMediaUrl(e.target.value)} />
-                <Button className="rounded-none" variant="outline" onClick={async () => {
+                <Input className="rounded-(--radius)" placeholder="YouTube/Spotify URL" value={mediaUrl} onChange={(e) => setMediaUrl(e.target.value)} />
+                <Button className="rounded-(--radius)" variant="outline" onClick={async () => {
                   await postMedia.mutateAsync({ code, url: mediaUrl });
                   setMediaUrl("");
                   refetch();
@@ -981,7 +981,7 @@ export default function StudyRoomDetailPage() {
                 </a>
               ))}
             </div>
-            {isManager ? (
+            {isRoomOwner ? (
               <div className="space-y-2 border p-2">
                 <p className="text-xs text-muted-foreground">Moderation quick actions</p>
                 {(room.participants || []).filter((p) => !p.leftAt && p.role !== "owner").slice(0, 5).map((p) => (
@@ -989,11 +989,11 @@ export default function StudyRoomDetailPage() {
                     <span className="text-sm">{p.displayName}</span>
                     <div className="flex gap-2">
                       {p.userId ? (
-                        <Button className="rounded-none" size="sm" variant="outline" onClick={() => updateRole.mutate({ code, memberUserId: p.userId!, role: p.role === "moderator" ? "member" : "moderator" })}>
+                        <Button className="rounded-(--radius)" size="sm" variant="outline" onClick={() => updateRole.mutate({ code, memberUserId: p.userId!, role: p.role === "moderator" ? "member" : "moderator" })}>
                           {p.role === "moderator" ? "Remove mod" : "Make mod"}
                         </Button>
                       ) : null}
-                      <Button className="rounded-none" size="sm" variant="destructive" onClick={() => moderateMember.mutate({ code, action: "kick", memberUserId: p.userId, memberGuestId: p.guestId })}>
+                      <Button className="rounded-(--radius)" size="sm" variant="destructive" onClick={() => moderateMember.mutate({ code, action: "kick", memberUserId: p.userId, memberGuestId: p.guestId })}>
                         Kick
                       </Button>
                     </div>
