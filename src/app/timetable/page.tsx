@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect, useCallback } from "react";
+import { Suspense, useState, useEffect, useCallback, useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import {
@@ -143,6 +143,13 @@ function PublicExamsContent() {
       )
     : null;
 
+  const nextExamIsOngoing = useMemo(() => {
+    if (!nextExam) return false;
+    const start = new Date(nextExam.scheduledAt).getTime();
+    const end = start + (nextExam.durationMinutes || 120) * 60 * 1000;
+    return nowMs >= start && nowMs <= end;
+  }, [nextExam, nowMs]);
+
   return (
     <section className="py-20 md:py-28 bg-background border-b border-border/50">
       <div className="container mx-auto px-4 max-w-6xl">
@@ -236,10 +243,23 @@ function PublicExamsContent() {
                       <p className="text-muted-foreground font-mono text-xs uppercase tracking-wider mb-8">
                         {nextExam.courseName}
                       </p>
-                      <div className="text-6xl md:text-8xl font-black text-foreground font-mono tracking-tight leading-none mb-2">
-                        {nextExamDaysAway === 0 ? "TODAY" : nextExamDaysAway}
+                      <div
+                        className={cn(
+                          "font-black text-foreground font-mono tracking-tighter leading-none mb-2",
+                          nextExamIsOngoing
+                            ? "text-4xl md:text-6xl text-primary animate-pulse"
+                            : nextExamDaysAway === 0
+                              ? "text-5xl md:text-7xl"
+                              : "text-7xl md:text-8xl",
+                        )}
+                      >
+                        {nextExamIsOngoing
+                          ? "ONGOING"
+                          : nextExamDaysAway === 0
+                            ? "TODAY"
+                            : nextExamDaysAway}
                       </div>
-                      {nextExamDaysAway !== 0 && (
+                      {nextExamDaysAway !== 0 && !nextExamIsOngoing && (
                         <div className="text-xs font-mono tracking-widest text-muted-foreground uppercase">
                           Days Remaining
                         </div>
@@ -367,23 +387,35 @@ function PublicExamsContent() {
                           className={cn(
                             "border-l border-border/50 flex flex-col items-center justify-center px-8 min-w-30 text-center",
                             (() => {
+                              const itemStart = sessDate.getTime();
+                              const itemEnd =
+                                itemStart +
+                                (entry.durationMinutes || 120) * 60 * 1000;
+                              const itemIsOngoing = nowMs >= itemStart && nowMs <= itemEnd;
                               const itemDaysAway = Math.max(
                                 0,
                                 Math.ceil(
-                                  (sessDate.getTime() - nowMs) /
-                                    (1000 * 60 * 60 * 24),
+                                  (itemStart - nowMs) / (1000 * 60 * 60 * 24),
                                 ),
                               );
-                              return itemDaysAway === 0;
-                            })() && "bg-primary/5",
+                              return itemIsOngoing
+                                ? "bg-primary/10 animate-pulse border-primary/20"
+                                : itemDaysAway === 0
+                                  ? "bg-primary/5"
+                                  : "";
+                            })(),
                           )}
                         >
                           {(() => {
+                            const itemStart = sessDate.getTime();
+                            const itemEnd =
+                              itemStart +
+                              (entry.durationMinutes || 120) * 60 * 1000;
+                            const itemIsOngoing = nowMs >= itemStart && nowMs <= itemEnd;
                             const itemDaysAway = Math.max(
                               0,
                               Math.ceil(
-                                (sessDate.getTime() - nowMs) /
-                                  (1000 * 60 * 60 * 24),
+                                (itemStart - nowMs) / (1000 * 60 * 60 * 24),
                               ),
                             );
                             return (
@@ -391,14 +423,20 @@ function PublicExamsContent() {
                                 <div
                                   className={cn(
                                     "font-black font-mono tracking-tight leading-none text-foreground",
-                                    itemDaysAway === 0
-                                      ? "text-3xl text-primary"
-                                      : "text-5xl md:text-6xl",
+                                    itemIsOngoing
+                                      ? "text-lg text-primary"
+                                      : itemDaysAway === 0
+                                        ? "text-3xl text-primary"
+                                        : "text-5xl md:text-6xl",
                                   )}
                                 >
-                                  {itemDaysAway === 0 ? "TODAY" : itemDaysAway}
+                                  {itemIsOngoing
+                                    ? "ONGOING"
+                                    : itemDaysAway === 0
+                                      ? "TODAY"
+                                      : itemDaysAway}
                                 </div>
-                                {itemDaysAway !== 0 && (
+                                {itemDaysAway !== 0 && !itemIsOngoing && (
                                   <div className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase mt-2">
                                     days
                                   </div>
