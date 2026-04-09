@@ -53,7 +53,8 @@ import {
   Shield,
   MicOff,
   UserMinus,
-  Star
+  Star,
+  ExternalLink
 } from "lucide-react";
 import { SprintChat } from "@/components/study-rooms/kahoot-chat";
 import { RoomOverlays } from "@/components/study-rooms/room-overlays";
@@ -345,6 +346,7 @@ export default function StudyRoomDetailPage() {
                     const iframe = event.target.getIframe();
                     if (iframe) {
                         iframe.setAttribute("allow", "autoplay; encrypted-media; picture-in-picture");
+                        iframe.setAttribute("allowfullscreen", "true");
                     }
                 },
                 onStateChange: (event: any) => {
@@ -437,12 +439,17 @@ export default function StudyRoomDetailPage() {
                                                 disabled={inviteByUsername.isPending || inviteByEmail.isPending}
                                                 onClick={() => {
                                                     if (inviteValue.includes("@")) {
-                                                        inviteByEmail.mutate({ code, email: inviteValue });
+                                                        inviteByEmail.mutate({ code, email: inviteValue }, {
+                                                            onSuccess: () => toast.success(`Invite sent to ${inviteValue}`),
+                                                            onError: () => toast.error("Failed to send email invite")
+                                                        });
                                                     } else {
-                                                        inviteByUsername.mutate({ code, username: inviteValue });
+                                                        inviteByUsername.mutate({ code, username: inviteValue }, {
+                                                            onSuccess: () => toast.success(`Invite sent to @${inviteValue}`),
+                                                            onError: () => toast.error("User not found or invite failed")
+                                                        });
                                                     }
                                                     setInviteValue("");
-                                                    toast.success("Engagement request dispatched");
                                                 }}
                                             >
                                                 Invite
@@ -458,7 +465,10 @@ export default function StudyRoomDetailPage() {
                                                     className="flex-1 rounded-(--radius) font-mono text-[10px] items-center gap-2"
                                                     variant="secondary"
                                                     disabled={generateAiGame.isPending}
-                                                    onClick={() => generateAiGame.mutate({ code, type: "word_guess" })}
+                                                    onClick={() => generateAiGame.mutate({ code, type: "word_guess" }, {
+                                                        onSuccess: () => toast.success("Z is drafting a word challenge..."),
+                                                        onError: () => toast.error("AI failed to generate challenge")
+                                                    })}
                                                 >
                                                     {generateAiGame.isPending ? <span className="size-2 bg-primary rounded-full animate-pulse" /> : null}
                                                     Word Guess
@@ -467,7 +477,10 @@ export default function StudyRoomDetailPage() {
                                                     className="flex-1 rounded-(--radius) font-mono text-[10px] items-center gap-2"
                                                     variant="secondary"
                                                     disabled={generateAiGame.isPending}
-                                                    onClick={() => generateAiGame.mutate({ code, type: "qa" })}
+                                                    onClick={() => generateAiGame.mutate({ code, type: "qa" }, {
+                                                        onSuccess: () => toast.success("Z is preparing a Q&battle..."),
+                                                        onError: () => toast.error("AI failed to generate challenge")
+                                                    })}
                                                 >
                                                     {generateAiGame.isPending ? <span className="size-2 bg-primary rounded-full animate-pulse" /> : null}
                                                     Q&A Battle
@@ -545,7 +558,7 @@ export default function StudyRoomDetailPage() {
                                 <div className="flex items-center gap-2">
                                     <Badge variant="secondary" className="rounded-(--radius) font-mono text-[10px]">{p.points || 0} XP</Badge>
                                     
-                                    {isHost && p.userId !== user?.id && (
+                                     {isHost && p.userId !== user?.id ? (
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
                                                 <Button size="icon" variant="ghost" className="size-7 rounded-md text-muted-foreground">
@@ -556,19 +569,27 @@ export default function StudyRoomDetailPage() {
                                                 <DropdownMenuLabel>Moderation Suite</DropdownMenuLabel>
                                                 <DropdownMenuSeparator />
                                                 {p.role !== "moderator" && (
-                                                    <DropdownMenuItem onClick={() => updateRole.mutate({ code, memberUserId: p.userId!, role: "moderator" })}>
+                                                    <DropdownMenuItem onClick={() => updateRole.mutate({ code, memberUserId: p.userId!, role: "moderator" }, {
+                                                        onSuccess: () => toast.success(`${p.displayName} promoted to Moderator`)
+                                                    })}>
                                                         <Shield className="mr-2 size-3 text-blue-400" /> Promote to Mod
                                                     </DropdownMenuItem>
                                                 )}
-                                                <DropdownMenuItem onClick={() => moderateMember.mutate({ code, memberUserId: p.userId, memberGuestId: p.guestId, action: "mute" })}>
+                                                <DropdownMenuItem onClick={() => moderateMember.mutate({ code, memberUserId: p.userId, memberGuestId: p.guestId, action: "mute" }, {
+                                                    onSuccess: () => toast.success(`${p.displayName} has been muted`)
+                                                })}>
                                                     <MicOff className="mr-2 size-3 text-amber-500" /> Mute Member
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => moderateMember.mutate({ code, memberUserId: p.userId, memberGuestId: p.guestId, action: "kick" })} className="text-red-500 hover:text-red-500">
+                                                <DropdownMenuItem onClick={() => moderateMember.mutate({ code, memberUserId: p.userId, memberGuestId: p.guestId, action: "kick" }, {
+                                                    onSuccess: () => toast.success(`${p.displayName} has been removed`)
+                                                })} className="text-red-500 hover:text-red-500">
                                                     <UserMinus className="mr-2 size-3" /> Eject from Room
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
-                                    )}
+                                    ) : p.userId === user?.id && p.role === "host" ? (
+                                        <Badge variant="outline" className="rounded-full border-amber-500/30 text-amber-500 bg-amber-500/5 font-mono text-[8px] uppercase font-bold">You (Host)</Badge>
+                                    ) : null}
                                 </div>
                             </div>
                         ))}
@@ -656,7 +677,9 @@ export default function StudyRoomDetailPage() {
                                          {isHost && (
                                             <Button 
                                                 className="w-full rounded-(--radius) h-14 uppercase font-mono font-bold text-lg shadow-lg shadow-primary/20"
-                                                onClick={() => startGame.mutate({ code, source: "ai", type: room.activeGame?.type || "word_guess", prompt: room.activeGame?.prompt || "" })}
+                                                onClick={() => startGame.mutate({ code, source: "ai", type: room.activeGame?.type || "word_guess", prompt: room.activeGame?.prompt || "" }, {
+                                                    onSuccess: () => toast.success("Challenge deployed to the room!")
+                                                })}
                                                 disabled={startGame.isPending}
                                             >
                                                 {startGame.isPending ? <RefreshCw className="size-5 animate-spin" /> : "Start Challenge"}
@@ -770,26 +793,44 @@ export default function StudyRoomDetailPage() {
             </div>
 
             {/* Video Player Card */}
-            <Card className="rounded-(--radius) border-border/50 bg-card overflow-hidden shadow-sm relative">
+            <Card className="w-full max-w-2xl mx-auto rounded-(--radius) border-border/50 bg-card overflow-hidden shadow-sm relative">
                 <div className="p-4 border-b border-border/50 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <Music className="size-4 text-primary" />
                         <h3 className="font-mono font-bold tracking-widest text-[10px]">Media Player</h3>
                     </div>
-                    {isHost && (
-                        <div className="flex items-center gap-2 max-w-sm">
-                            <Input 
-                                placeholder="Media URL..." 
-                                className="h-8 rounded-(--radius) border-border/50 bg-background text-[10px] font-mono uppercase" 
-                                value={mediaUrl}
-                                onChange={(e) => setMediaUrl(e.target.value)}
-                            />
-                            <Button size="sm" variant="secondary" className="h-8 rounded-(--radius) text-[10px] font-mono uppercase" onClick={async () => {
-                                await postMedia.mutateAsync({ code, url: mediaUrl });
-                                setMediaUrl("");
-                            }}>Cast</Button>
-                        </div>
-                    )}
+                     <div className="flex items-center gap-2">
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="size-8 rounded-(--radius) text-muted-foreground hover:text-primary"
+                            disabled={!videoId}
+                            onClick={() => {
+                                if (!videoId) return;
+                                window.open(
+                                    `https://www.youtube.com/embed/${videoId}?autoplay=1`, 
+                                    "StudyRoomPiP", 
+                                    "width=640,height=360,menubar=no,toolbar=no,location=no,status=no,resizable=yes"
+                                );
+                            }}
+                        >
+                            <ExternalLink className="size-3.5" />
+                        </Button>
+                        {isHost && (
+                            <div className="flex items-center gap-2 max-w-sm">
+                                <Input 
+                                    placeholder="Media URL..." 
+                                    className="h-8 rounded-(--radius) border-border/50 bg-background text-[10px] font-mono uppercase" 
+                                    value={mediaUrl}
+                                    onChange={(e) => setMediaUrl(e.target.value)}
+                                />
+                                <Button size="sm" variant="secondary" className="h-8 rounded-(--radius) text-[10px] font-mono uppercase" onClick={async () => {
+                                    await postMedia.mutateAsync({ code, url: mediaUrl });
+                                    setMediaUrl("");
+                                }}>Cast</Button>
+                            </div>
+                        )}
+                    </div>
                 </div>
                 <div className="aspect-video bg-black/40 relative">
                     <div id="youtube-player" className="absolute inset-0 size-full" />
