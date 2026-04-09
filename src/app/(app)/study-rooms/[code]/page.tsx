@@ -523,12 +523,28 @@ export default function StudyRoomDetailPage() {
                             <span className="text-sm font-mono font-bold text-foreground">{participants.length} Studiers</span>
                         </div>
                         <div className="flex -space-x-2">
-                            {participants.slice(0, 5).map((p, i) => (
-                                <img key={i} src={buildAvatarUri(p.displayName, p.avatarConfig)} className="size-8 rounded-full border-2 border-background bg-muted" alt="" />
-                            ))}
-                            {participants.length > 5 && (
-                                <div className="flex size-8 items-center justify-center rounded-full border-2 border-background bg-primary text-[10px] font-bold text-primary-foreground">+{(participants.length - 5)}</div>
-                            )}
+                            <AnimatePresence>
+                                {participants.slice(0, 5).map((p, i) => (
+                                    <motion.img 
+                                        key={p.userId || p.guestId || p.displayName} 
+                                        initial={{ scale: 0, opacity: 0 }}
+                                        animate={{ scale: 1, opacity: 1 }}
+                                        exit={{ scale: 0, opacity: 0 }}
+                                        src={buildAvatarUri(p.displayName, p.avatarConfig)} 
+                                        className="size-8 rounded-full border-2 border-background bg-muted" 
+                                        alt="" 
+                                    />
+                                ))}
+                                {participants.length > 5 && (
+                                    <motion.div 
+                                        initial={{ scale: 0 }}
+                                        animate={{ scale: 1 }}
+                                        className="flex size-8 items-center justify-center rounded-full border-2 border-background bg-primary text-[10px] font-bold text-primary-foreground"
+                                    >
+                                        +{(participants.length - 5)}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
                     </div>
                 </CardContent>
@@ -541,8 +557,17 @@ export default function StudyRoomDetailPage() {
                  </div>
                  <ScrollArea className="flex-1">
                     <div className="divide-y divide-white/5">
-                         {leaderboard.map((p, i) => (
-                            <div key={i} className="flex items-center justify-between p-4 transition-colors hover:bg-muted/50">
+                        <AnimatePresence mode="popLayout">
+                        {leaderboard.map((p, i) => (
+                            <motion.div 
+                                key={p.userId || p.guestId || p.displayName} 
+                                layout
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: 20 }}
+                                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                className="flex items-center justify-between p-4 transition-colors hover:bg-muted/50"
+                            >
                                 <div className="flex items-center gap-3 min-w-0">
                                     <span className={cn("text-base font-bold italic", i === 0 ? "text-primary" : "text-muted-foreground")}>#{i + 1}</span>
                                     <img src={buildAvatarUri(p.displayName, p.avatarConfig)} className="size-9 rounded-full bg-background border border-border/50" alt="" />
@@ -591,8 +616,9 @@ export default function StudyRoomDetailPage() {
                                         <Badge variant="outline" className="rounded-full border-amber-500/30 text-amber-500 bg-amber-500/5 font-mono text-[8px] uppercase font-bold">You (Host)</Badge>
                                     ) : null}
                                 </div>
-                            </div>
+                            </motion.div>
                         ))}
+                        </AnimatePresence>
                     </div>
                  </ScrollArea>
             </Card>
@@ -879,8 +905,16 @@ export default function StudyRoomDetailPage() {
                         </div>
                         <ScrollArea className="h-48">
                             <div className="space-y-3">
+                                <AnimatePresence mode="popLayout">
                                 {room.tasks?.length ? room.tasks.map(t => (
-                                    <div key={t.id} className="flex items-center justify-between p-3 rounded-(--radius) bg-muted/30 border border-border/50">
+                                    <motion.div 
+                                        key={t.id}
+                                        layout
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.95 }}
+                                        className="flex items-center justify-between p-3 rounded-(--radius) bg-muted/30 border border-border/50"
+                                    >
                                         <div className="space-y-1">
                                             <p className="text-xs font-bold font-mono">{t.title}</p>
                                             <p className="text-[9px] font-mono font-bold text-primary">Reward: {t.points} XP</p>
@@ -894,10 +928,17 @@ export default function StudyRoomDetailPage() {
                                         >
                                             {completeTask.isPending ? <RefreshCw className="size-3 animate-spin" /> : <div className="size-2 rounded-full bg-emerald-500" />}
                                         </Button>
-                                    </div>
+                                    </motion.div>
                                 )) : (
-                                    <div className="flex flex-col items-center justify-center h-32 text-white/20 italic text-sm">No active tasks.</div>
+                                    <motion.div 
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        className="flex flex-col items-center justify-center h-32 text-white/20 italic text-sm"
+                                    >
+                                        No active tasks.
+                                    </motion.div>
                                 )}
+                                </AnimatePresence>
                             </div>
                         </ScrollArea>
                     </div>
@@ -944,9 +985,8 @@ export default function StudyRoomDetailPage() {
             messages={messages}
             myDisplayName={user?.name || (typeof window !== "undefined" ? localStorage.getItem("study_room_guest_name") || guestName : guestName)}
             onSendMessage={(c) => {
-                const guestId = user ? undefined : (typeof window !== "undefined" ? localStorage.getItem("study_room_guest_id") || "" : "");
                 const gName = user ? undefined : (typeof window !== "undefined" ? localStorage.getItem("study_room_guest_name") || guestName : guestName);
-                sendMessage.mutate({ code, content: c, guestId, guestName: gName });
+                roomSocket.sendSocketMessage(c, gName);
             }}
             onTyping={(is) => roomSocket.emitTyping(is, user?.name || guestName)}
             typingUsers={typingUsers}
