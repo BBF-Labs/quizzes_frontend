@@ -36,6 +36,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const ensureGuestId = (): string => {
   const key = "study_room_guest_id";
@@ -373,7 +374,93 @@ export default function StudyRoomDetailPage() {
   };
 
   if (!room) {
-    return <main className="p-6">Loading room...</main>;
+    return (
+      <main className="min-h-screen overflow-x-hidden">
+        <div className="mx-auto grid min-h-screen max-w-[96rem] gap-4 p-4 md:p-6 lg:h-screen lg:grid-cols-[22rem_minmax(0,1fr)_26rem]">
+          <aside className="grid gap-4 lg:overflow-y-auto no-scrollbar">
+            <Card className="rounded-(--radius)">
+              <CardHeader>
+                <Skeleton className="h-6 w-40 rounded-(--radius)" />
+              </CardHeader>
+              <CardContent className="grid gap-3">
+                <div className="flex gap-2">
+                  <Skeleton className="h-6 w-20 rounded-(--radius)" />
+                  <Skeleton className="h-6 w-16 rounded-(--radius)" />
+                  <Skeleton className="h-6 w-20 rounded-(--radius)" />
+                </div>
+                <Skeleton className="h-10 w-full rounded-(--radius)" />
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-(--radius)">
+              <CardHeader>
+                <Skeleton className="h-6 w-28 rounded-(--radius)" />
+              </CardHeader>
+              <CardContent className="grid gap-2">
+                <Skeleton className="h-16 w-full rounded-(--radius)" />
+                <Skeleton className="h-16 w-full rounded-(--radius)" />
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-(--radius)">
+              <CardHeader>
+                <Skeleton className="h-6 w-24 rounded-(--radius)" />
+              </CardHeader>
+              <CardContent className="grid gap-2">
+                <Skeleton className="h-10 w-full rounded-(--radius)" />
+              </CardContent>
+            </Card>
+          </aside>
+
+          <section className="grid gap-4 lg:overflow-y-auto no-scrollbar">
+            <Card className="rounded-(--radius) border-2 border-black shadow-[0.65rem_0.65rem_0_#000] bg-card">
+              <CardContent className="flex min-h-[24rem] flex-col items-center justify-center gap-6 p-4 md:min-h-[34rem] md:gap-8 md:p-10">
+                <Skeleton className="h-6 w-44 rounded-(--radius)" />
+                <Skeleton className="h-20 w-56 rounded-(--radius)" />
+                <Skeleton className="h-10 w-52 rounded-(--radius)" />
+                <div className="w-full max-w-xl space-y-2">
+                  <Skeleton className="h-2 w-full rounded-(--radius)" />
+                  <Skeleton className="h-4 w-40 rounded-(--radius)" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-(--radius)">
+              <CardHeader>
+                <Skeleton className="h-6 w-32 rounded-(--radius)" />
+              </CardHeader>
+              <CardContent className="grid gap-2">
+                <Skeleton className="h-12 w-full rounded-(--radius)" />
+                <Skeleton className="h-12 w-full rounded-(--radius)" />
+              </CardContent>
+            </Card>
+          </section>
+
+          <aside className="grid gap-4 lg:overflow-y-auto no-scrollbar">
+            <Card className="rounded-(--radius)">
+              <CardHeader>
+                <Skeleton className="h-6 w-24 rounded-(--radius)" />
+              </CardHeader>
+              <CardContent className="grid gap-3">
+                <Skeleton className="h-[22rem] w-full rounded-(--radius)" />
+                <Skeleton className="h-10 w-full rounded-(--radius)" />
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-(--radius)">
+              <CardHeader>
+                <Skeleton className="h-6 w-36 rounded-(--radius)" />
+              </CardHeader>
+              <CardContent className="grid gap-2">
+                <Skeleton className="h-10 w-full rounded-(--radius)" />
+                <Skeleton className="h-10 w-full rounded-(--radius)" />
+                <Skeleton className="h-10 w-full rounded-(--radius)" />
+              </CardContent>
+            </Card>
+          </aside>
+        </div>
+      </main>
+    );
   }
 
   const primaryLabel = activeParticipants[0]?.displayName || "Someone";
