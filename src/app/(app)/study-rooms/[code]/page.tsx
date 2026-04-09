@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Progress } from "@/components/ui/progress";
 
 const ensureGuestId = (): string => {
   const key = "study_room_guest_id";
@@ -55,6 +56,17 @@ export default function StudyRoomDetailPage() {
   const room = data?.room;
   const messages = data?.messages || [];
   const leaderboard = data?.leaderboard || [];
+  const leaderboardTop = leaderboard[0];
+  const myScore =
+    leaderboard.find((p: any) => p.displayName === (user?.name || guestName))?.points || 0;
+  const timerProgress =
+    room && room.timer?.durationSeconds
+      ? Math.round(
+          ((room.timer.durationSeconds - room.timer.remainingSeconds) /
+            room.timer.durationSeconds) *
+            100,
+        )
+      : 0;
   const isHost = useMemo(() => {
     if (!room || !user?.id) return false;
     return String(room.hostId) === user.id || room.participants?.some((p: any) => p.userId === user.id && p.role === "host");
@@ -112,8 +124,17 @@ export default function StudyRoomDetailPage() {
             <CardTitle>{room.title}</CardTitle>
           </CardHeader>
           <CardContent>
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <Badge variant="outline">{room.roomCode}</Badge>
+            <Badge variant={room.visibility === "open" ? "secondary" : "outline"}>
+              {room.visibility}
+            </Badge>
+            <Badge variant={room.isLocked ? "destructive" : "secondary"}>
+              {room.isLocked ? "Locked" : "Unlocked"}
+            </Badge>
+          </div>
           <p className="text-sm text-muted-foreground">
-            Code: {room.roomCode} · {room.visibility} · {room.isLocked ? "Locked" : "Unlocked"}
+            Compete with friends, complete focus cycles, and top the room leaderboard.
           </p>
           {!user ? (
             <div className="mt-3 flex gap-2">
@@ -131,6 +152,9 @@ export default function StudyRoomDetailPage() {
           <CardContent>
           <p className="text-2xl font-semibold">{Math.floor((room.timer?.remainingSeconds || 0) / 60)}m {(room.timer?.remainingSeconds || 0) % 60}s</p>
           <p className="text-sm text-muted-foreground">Cycle {room.timer?.cycle || 0}</p>
+          <div className="mt-3">
+            <Progress value={Math.max(0, Math.min(100, timerProgress))} />
+          </div>
           {isHost ? (
             <div className="mt-3 flex gap-2">
               <Button variant="outline" onClick={() => onTimer("start")}>Start</Button>
@@ -164,6 +188,24 @@ export default function StudyRoomDetailPage() {
       </section>
 
       <aside className="grid gap-4">
+        <Card>
+          <CardHeader><CardTitle>Gamify</CardTitle></CardHeader>
+          <CardContent className="grid gap-3">
+            <div className="flex items-center justify-between border p-2">
+              <span className="text-sm text-muted-foreground">Top player</span>
+              <Badge>{leaderboardTop?.displayName || "—"}</Badge>
+            </div>
+            <div className="flex items-center justify-between border p-2">
+              <span className="text-sm text-muted-foreground">Top points</span>
+              <Badge variant="secondary">{leaderboardTop?.points || 0}</Badge>
+            </div>
+            <div className="flex items-center justify-between border p-2">
+              <span className="text-sm text-muted-foreground">Your points</span>
+              <Badge variant="outline">{myScore}</Badge>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader><CardTitle>Participants</CardTitle></CardHeader>
           <CardContent>
