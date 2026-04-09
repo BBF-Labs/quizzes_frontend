@@ -236,12 +236,14 @@ function PublicExamsContent() {
                       <p className="text-muted-foreground font-mono text-xs uppercase tracking-wider mb-8">
                         {nextExam.courseName}
                       </p>
-                      <div className="text-7xl md:text-8xl font-black text-foreground font-mono tracking-tight leading-none mb-2">
-                        {nextExamDaysAway}
+                      <div className="text-6xl md:text-8xl font-black text-foreground font-mono tracking-tight leading-none mb-2">
+                        {nextExamDaysAway === 0 ? "TODAY" : nextExamDaysAway}
                       </div>
-                      <div className="text-xs font-mono tracking-widest text-muted-foreground uppercase">
-                        Days Remaining
-                      </div>
+                      {nextExamDaysAway !== 0 && (
+                        <div className="text-xs font-mono tracking-widest text-muted-foreground uppercase">
+                          Days Remaining
+                        </div>
+                      )}
                     </>
                   ) : (
                     <div className="text-xs font-mono uppercase tracking-widest text-muted-foreground">
@@ -361,19 +363,49 @@ function PublicExamsContent() {
                           </div>
                         </div>
 
-                        <div className="border-l border-border/50 flex flex-col items-center justify-center px-8 min-w-30 text-center">
-                          <div className="text-5xl md:text-6xl font-black font-mono tracking-tight leading-none text-foreground">
-                            {Math.max(
+                        <div
+                          className={cn(
+                            "border-l border-border/50 flex flex-col items-center justify-center px-8 min-w-30 text-center",
+                            (() => {
+                              const itemDaysAway = Math.max(
+                                0,
+                                Math.ceil(
+                                  (sessDate.getTime() - nowMs) /
+                                    (1000 * 60 * 60 * 24),
+                                ),
+                              );
+                              return itemDaysAway === 0;
+                            })() && "bg-primary/5",
+                          )}
+                        >
+                          {(() => {
+                            const itemDaysAway = Math.max(
                               0,
                               Math.ceil(
                                 (sessDate.getTime() - nowMs) /
                                   (1000 * 60 * 60 * 24),
                               ),
-                            )}
-                          </div>
-                          <div className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase mt-2">
-                            days
-                          </div>
+                            );
+                            return (
+                              <>
+                                <div
+                                  className={cn(
+                                    "font-black font-mono tracking-tight leading-none text-foreground",
+                                    itemDaysAway === 0
+                                      ? "text-3xl text-primary"
+                                      : "text-5xl md:text-6xl",
+                                  )}
+                                >
+                                  {itemDaysAway === 0 ? "TODAY" : itemDaysAway}
+                                </div>
+                                {itemDaysAway !== 0 && (
+                                  <div className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase mt-2">
+                                    days
+                                  </div>
+                                )}
+                              </>
+                            );
+                          })()}
                         </div>
                       </motion.div>
                     );

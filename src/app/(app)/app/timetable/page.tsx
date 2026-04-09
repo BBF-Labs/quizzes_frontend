@@ -186,12 +186,14 @@ export default function TimetablePage() {
                     <p className="text-muted-foreground font-mono text-xs uppercase tracking-wider mb-8">
                       {mostRecentEntry.courseName}
                     </p>
-                    <div className="text-7xl md:text-8xl font-black text-foreground font-mono tracking-tight leading-none mb-2">
-                      {mostRecentDaysRemaining}
+                    <div className="text-6xl md:text-8xl font-black text-foreground font-mono tracking-tight leading-none mb-2">
+                      {mostRecentDaysRemaining === 0 ? "TODAY" : mostRecentDaysRemaining}
                     </div>
-                    <div className="text-xs font-mono tracking-widest text-muted-foreground uppercase">
-                      Days Remaining
-                    </div>
+                    {mostRecentDaysRemaining !== 0 && (
+                      <div className="text-xs font-mono tracking-widest text-muted-foreground uppercase">
+                        Days Remaining
+                      </div>
+                    )}
                   </>
                 ) : (
                   <div className="text-xs font-mono uppercase tracking-widest text-muted-foreground">
@@ -323,21 +325,41 @@ export default function TimetablePage() {
                           </div>
                         </div>
 
-                        <div className="border-l border-border/50 flex flex-col items-center justify-center px-4 py-6 text-center bg-background/60">
-                          <div className="text-4xl font-black font-mono tracking-tight leading-none text-foreground">
-                            {Math.max(
-                              0,
-                              Math.ceil(
-                                (new Date(entry.scheduledAt).getTime() -
-                                  nowMs) /
-                                  (1000 * 60 * 60 * 24),
-                              ),
-                            )}
-                          </div>
-                          <div className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase mt-2">
-                            Days
-                          </div>
-                        </div>
+                        {(() => {
+                          const itemDaysAway = Math.max(
+                            0,
+                            Math.ceil(
+                              (new Date(entry.scheduledAt).getTime() - nowMs) /
+                                (1000 * 60 * 60 * 24),
+                            ),
+                          );
+                          return (
+                            <div
+                              className={cn(
+                                "border-l border-border/50 flex flex-col items-center justify-center px-4 py-6 text-center",
+                                itemDaysAway === 0
+                                  ? "bg-primary/10"
+                                  : "bg-background/60",
+                              )}
+                            >
+                              <div
+                                className={cn(
+                                  "font-black font-mono tracking-tight leading-none",
+                                  itemDaysAway === 0
+                                    ? "text-xl text-primary"
+                                    : "text-4xl text-foreground",
+                                )}
+                              >
+                                {itemDaysAway === 0 ? "TODAY" : itemDaysAway}
+                              </div>
+                              {itemDaysAway !== 0 && (
+                                <div className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase mt-2">
+                                  Days
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </motion.div>
                     );
                   })
