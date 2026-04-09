@@ -29,6 +29,34 @@ const ensureGuestId = (): string => {
   return next;
 };
 
+type RoomChallenge = {
+  id: "race_50" | "cycles_5" | "messages_20";
+  name: string;
+  description: string;
+  target: number;
+};
+
+const CHALLENGES: RoomChallenge[] = [
+  {
+    id: "race_50",
+    name: "Race to 50",
+    description: "First player to hit 50 points wins.",
+    target: 50,
+  },
+  {
+    id: "cycles_5",
+    name: "Focus Five",
+    description: "Complete 5 timer cycles as a room.",
+    target: 5,
+  },
+  {
+    id: "messages_20",
+    name: "Discussion Sprint",
+    description: "Send 20 messages in this room.",
+    target: 20,
+  },
+];
+
 export default function StudyRoomDetailPage() {
   const params = useParams<{ code: string }>();
   const code = String(params?.code || "").toUpperCase();
@@ -44,6 +72,8 @@ export default function StudyRoomDetailPage() {
   const [message, setMessage] = useState("");
   const [usernameInvite, setUsernameInvite] = useState("");
   const [emailInvite, setEmailInvite] = useState("");
+  const [selectedChallengeId, setSelectedChallengeId] =
+    useState<RoomChallenge["id"]>("race_50");
 
   useStudyRoomSocket(code, {
     onPresence: () => refetch(),
@@ -67,6 +97,27 @@ export default function StudyRoomDetailPage() {
             100,
         )
       : 0;
+  const selectedChallenge = CHALLENGES.find((c) => c.id === selectedChallengeId)!;
+  const challengeValue = useMemo(() => {
+    if (selectedChallengeId === "race_50") return leaderboardTop?.points || 0;
+    if (selectedChallengeId === "cycles_5") return room?.timer?.cycle || 0;
+    return messages.length;
+  }, [selectedChallengeId, leaderboardTop?.points, room?.timer?.cycle, messages.length]);
+  const challengeProgress = Math.max(
+    0,
+    Math.min(100, Math.round((challengeValue / selectedChallenge.target) * 100)),
+  );
+  const challengeComplete = challengeValue >= selectedChallenge.target;
+
+  const earnedBadges = useMemo(() => {
+    const badges: string[] = [];
+    if (myScore >= 10) badges.push("Rookie");
+    if (myScore >= 25) badges.push("Focused");
+    if (myScore >= 50) badges.push("Challenger");
+    if ((room?.timer?.cycle || 0) >= 3) badges.push("Pomodoro Pro");
+    if (messages.length >= 10) badges.push("Contributor");
+    return badges;
+  }, [myScore, room?.timer?.cycle, messages.length]);
   const isHost = useMemo(() => {
     if (!room || !user?.id) return false;
     return String(room.hostId) === user.id || room.participants?.some((p: any) => p.userId === user.id && p.role === "host");
@@ -191,6 +242,35 @@ export default function StudyRoomDetailPage() {
         <Card>
           <CardHeader><CardTitle>Gamify</CardTitle></CardHeader>
           <CardContent className="grid gap-3">
+            <div className="flex flex-wrap gap-2">
+              {CHALLENGES.map((challenge) => (
+                <Button
+                  key={challenge.id}
+                  size="sm"
+                  variant={selectedChallengeId === challenge.id ? "default" : "outline"}
+                  onClick={() => setSelectedChallengeId(challenge.id)}
+                >
+                  {challenge.name}
+                </Button>
+              ))}
+            </div>
+            <div className="border p-3">
+              <p className="font-medium">{selectedChallenge.name}</p>
+              <p className="text-xs text-muted-foreground">
+                {selectedChallenge.description}
+              </p>
+              <div className="mt-2 space-y-2">
+                <Progress value={challengeProgress} />
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">
+                    {challengeValue}/{selectedChallenge.target}
+                  </span>
+                  <Badge variant={challengeComplete ? "secondary" : "outline"}>
+                    {challengeComplete ? "Completed" : "In Progress"}
+                  </Badge>
+                </div>
+              </div>
+            </div>
             <div className="flex items-center justify-between border p-2">
               <span className="text-sm text-muted-foreground">Top player</span>
               <Badge>{leaderboardTop?.displayName || "—"}</Badge>
@@ -202,6 +282,20 @@ export default function StudyRoomDetailPage() {
             <div className="flex items-center justify-between border p-2">
               <span className="text-sm text-muted-foreground">Your points</span>
               <Badge variant="outline">{myScore}</Badge>
+            </div>
+            <div className="border p-2">
+              <p className="mb-2 text-sm text-muted-foreground">Earned badges</p>
+              <div className="flex flex-wrap gap-2">
+                {earnedBadges.length === 0 ? (
+                  <Badge variant="outline">No badges yet</Badge>
+                ) : (
+                  earnedBadges.map((badge) => (
+                    <Badge key={badge} variant="secondary">
+                      {badge}
+                    </Badge>
+                  ))
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
