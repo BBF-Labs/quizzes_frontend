@@ -35,6 +35,7 @@ export interface StudyRoom {
     remainingSeconds: number;
     cycle: number;
     checkInOpen?: boolean;
+    startedAt?: string;
   };
   tasks?: Array<{
     id: string;
@@ -59,14 +60,18 @@ export interface StudyRoom {
   };
   sharedMedia?: {
     currentUrl?: string;
+    kind?: "youtube" | "spotify" | "link";
+    status?: "playing" | "paused";
+    currentTime?: number;
     updatedByName?: string;
+    updatedAt?: string;
   };
   activeGame?: {
     type: "word_guess" | "qa";
     prompt: string;
     isActive: boolean;
     source?: "manual" | "ai";
-    status?: "waiting" | "running" | "reveal" | "ended";
+    status?: "generating" | "ready" | "waiting" | "running" | "reveal" | "ended";
     maskedWord?: string;
     wrongLetters?: string[];
     options?: string[];

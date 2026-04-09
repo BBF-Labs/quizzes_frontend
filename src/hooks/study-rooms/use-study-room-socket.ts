@@ -21,6 +21,7 @@ type Handlers = {
   onReady?: (payload: any) => void;
   onSharedMedia?: (payload: any) => void;
   onGameState?: (payload: any) => void;
+  onMediaSync?: (payload: any) => void;
 };
 
 export const useStudyRoomSocket = (roomCode?: string, handlers?: Handlers) => {
@@ -81,6 +82,7 @@ export const useStudyRoomSocket = (roomCode?: string, handlers?: Handlers) => {
     const onReady = (payload: any) => handlers?.onReady?.(payload);
     const onSharedMedia = (payload: any) => handlers?.onSharedMedia?.(payload);
     const onGameState = (payload: any) => handlers?.onGameState?.(payload);
+    const onMediaSync = (payload: any) => handlers?.onMediaSync?.(payload);
 
     activeSocket.on("study_room:presence", onPresence);
     activeSocket.on("study_room:chat:new", onMessage);
@@ -103,6 +105,7 @@ export const useStudyRoomSocket = (roomCode?: string, handlers?: Handlers) => {
     activeSocket.on("study_room:media:shared_updated", onSharedMedia);
     activeSocket.on("study_room:game:state_updated", onGameState);
     activeSocket.on("study_room:game:reveal", onGameState);
+    activeSocket.on("study_room:media:sync", onMediaSync);
 
     return () => {
       activeSocket?.emit("leave:study_room", code);
@@ -127,6 +130,7 @@ export const useStudyRoomSocket = (roomCode?: string, handlers?: Handlers) => {
       activeSocket?.off("study_room:media:shared_updated", onSharedMedia);
       activeSocket?.off("study_room:game:state_updated", onGameState);
       activeSocket?.off("study_room:game:reveal", onGameState);
+      activeSocket?.off("study_room:media:sync", onMediaSync);
       activeSocketRef.current = null;
       if (!hasGlobalSocket) {
         activeSocket?.disconnect();
