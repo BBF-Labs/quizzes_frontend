@@ -11,6 +11,12 @@ type Handlers = {
   onLocked?: (payload: any) => void;
   onEnded?: (payload: any) => void;
   onTyping?: (payload: any) => void;
+  onTask?: (payload: any) => void;
+  onCheckIn?: (payload: any) => void;
+  onMilestone?: (payload: any) => void;
+  onMedia?: (payload: any) => void;
+  onGame?: (payload: any) => void;
+  onModeration?: (payload: any) => void;
 };
 
 export const useStudyRoomSocket = (roomCode?: string, handlers?: Handlers) => {
@@ -43,7 +49,10 @@ export const useStudyRoomSocket = (roomCode?: string, handlers?: Handlers) => {
     if (!hasGlobalSocket && guestId && guestName) {
       activeSocket = io(apiUrl, {
         path,
-        transports: ["websocket", "polling"],
+        transports: ["polling", "websocket"],
+        reconnectionAttempts: 8,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 6000,
         auth: { guestId, guestName },
       });
     }
@@ -58,6 +67,12 @@ export const useStudyRoomSocket = (roomCode?: string, handlers?: Handlers) => {
     const onLocked = (payload: any) => handlers?.onLocked?.(payload);
     const onEnded = (payload: any) => handlers?.onEnded?.(payload);
     const onTyping = (payload: any) => handlers?.onTyping?.(payload);
+    const onTask = (payload: any) => handlers?.onTask?.(payload);
+    const onCheckIn = (payload: any) => handlers?.onCheckIn?.(payload);
+    const onMilestone = (payload: any) => handlers?.onMilestone?.(payload);
+    const onMedia = (payload: any) => handlers?.onMedia?.(payload);
+    const onGame = (payload: any) => handlers?.onGame?.(payload);
+    const onModeration = (payload: any) => handlers?.onModeration?.(payload);
 
     activeSocket.on("study_room:presence", onPresence);
     activeSocket.on("study_room:chat:new", onMessage);
@@ -65,6 +80,14 @@ export const useStudyRoomSocket = (roomCode?: string, handlers?: Handlers) => {
     activeSocket.on("study_room:locked", onLocked);
     activeSocket.on("study_room:ended", onEnded);
     activeSocket.on("study_room:typing", onTyping);
+    activeSocket.on("study_room:task:new", onTask);
+    activeSocket.on("study_room:task:completed", onTask);
+    activeSocket.on("study_room:checkin:new", onCheckIn);
+    activeSocket.on("study_room:milestone", onMilestone);
+    activeSocket.on("study_room:media:new", onMedia);
+    activeSocket.on("study_room:game:started", onGame);
+    activeSocket.on("study_room:game:winner", onGame);
+    activeSocket.on("study_room:moderation", onModeration);
 
     return () => {
       activeSocket?.emit("leave:study_room", code);
@@ -74,6 +97,14 @@ export const useStudyRoomSocket = (roomCode?: string, handlers?: Handlers) => {
       activeSocket?.off("study_room:locked", onLocked);
       activeSocket?.off("study_room:ended", onEnded);
       activeSocket?.off("study_room:typing", onTyping);
+      activeSocket?.off("study_room:task:new", onTask);
+      activeSocket?.off("study_room:task:completed", onTask);
+      activeSocket?.off("study_room:checkin:new", onCheckIn);
+      activeSocket?.off("study_room:milestone", onMilestone);
+      activeSocket?.off("study_room:media:new", onMedia);
+      activeSocket?.off("study_room:game:started", onGame);
+      activeSocket?.off("study_room:game:winner", onGame);
+      activeSocket?.off("study_room:moderation", onModeration);
       activeSocketRef.current = null;
       if (!hasGlobalSocket) {
         activeSocket?.disconnect();

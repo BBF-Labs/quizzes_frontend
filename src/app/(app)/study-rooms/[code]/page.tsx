@@ -1,14 +1,26 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
+import confetti from "canvas-confetti";
+import { createAvatar } from "@dicebear/core";
+import { avataaars } from "@dicebear/collection";
 import {
+  useCompleteStudyRoomTask,
+  useCreateStudyRoomTask,
   useInviteByEmail,
   useInviteByUsername,
   useJoinStudyRoom,
+  useModerateStudyRoomMember,
+  usePostStudyRoomMedia,
   useSendStudyRoomMessage,
+  useStartStudyRoomGame,
   useStudyRoom,
+  useSubmitCycleCheckIn,
+  useSubmitStudyRoomGameAnswer,
+  useUpdateMemberRole,
+  useUpdateStudyRoomAvatar,
   useUpdateStudyRoomTimer,
 } from "@/hooks/study-rooms/use-study-rooms";
 import { useStudyRoomSocket } from "@/hooks/study-rooms/use-study-room-socket";
@@ -57,6 +69,50 @@ const CHALLENGES: RoomChallenge[] = [
   },
 ];
 
+const buildAvatarUri = (
+  seed: string,
+  avatarConfig?: Record<string, unknown>,
+): string => {
+  const safeSeed = seed.trim() || "study-room-user";
+  const svg = createAvatar(avataaars, {
+    seed: safeSeed,
+    backgroundColor: ["d1d4f9", "c0aede", "b6e3f4", "ffd5dc"],
+    ...(avatarConfig || {}),
+  }).toString();
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+};
+
+const getYouTubeEmbedUrl = (rawUrl: string): string | null => {
+  try {
+    const parsed = new URL(rawUrl.trim());
+    const host = parsed.hostname.toLowerCase();
+    if (!["https:", "http:"].includes(parsed.protocol)) return null;
+    const isYouTubeHost =
+      host === "youtu.be" ||
+      host === "www.youtu.be" ||
+      host === "youtube.com" ||
+      host === "www.youtube.com" ||
+      host.endsWith(".youtube.com");
+    if (!isYouTubeHost) return null;
+    if (host.includes("youtu.be")) {
+      const id = parsed.pathname.replace("/", "").trim();
+      if (!id) return null;
+      return `https://www.youtube.com/embed/${id}?autoplay=0&rel=0`;
+    }
+    if (host.includes("youtube.com")) {
+      if (parsed.pathname.startsWith("/embed/")) {
+        return `${parsed.origin}${parsed.pathname}?autoplay=0&rel=0`;
+      }
+      const id = parsed.searchParams.get("v");
+      if (!id) return null;
+      return `https://www.youtube.com/embed/${id}?autoplay=0&rel=0`;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+};
+
 export default function StudyRoomDetailPage() {
   const params = useParams<{ code: string }>();
   const code = String(params?.code || "").toUpperCase();
@@ -66,6 +122,15 @@ export default function StudyRoomDetailPage() {
   const inviteByUsername = useInviteByUsername();
   const inviteByEmail = useInviteByEmail();
   const updateTimer = useUpdateStudyRoomTimer();
+  const updateRole = useUpdateMemberRole();
+  const submitCheckIn = useSubmitCycleCheckIn();
+  const updateAvatar = useUpdateStudyRoomAvatar();
+  const createTask = useCreateStudyRoomTask();
+  const completeTask = useCompleteStudyRoomTask();
+  const postMedia = usePostStudyRoomMedia();
+  const startGame = useStartStudyRoomGame();
+  const submitGameAnswer = useSubmitStudyRoomGameAnswer();
+  const moderateMember = useModerateStudyRoomMember();
   const { data, refetch } = useStudyRoom(code);
 
   const [guestName, setGuestName] = useState("");
@@ -75,6 +140,18 @@ export default function StudyRoomDetailPage() {
   const [selectedChallengeId, setSelectedChallengeId] =
     useState<RoomChallenge["id"]>("race_50");
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
+  const [checkInStatus, setCheckInStatus] = useState<"completed" | "partial" | "not_done">(
+    "completed",
+  );
+  const [taskTitle, setTaskTitle] = useState("");
+  const [taskPoints, setTaskPoints] = useState(10);
+  const [mediaUrl, setMediaUrl] = useState("");
+  const [gamePrompt, setGamePrompt] = useState("");
+  const [gameAnswer, setGameAnswer] = useState("");
+  const [gameGuess, setGameGuess] = useState("");
+  const [avatarSeed, setAvatarSeed] = useState("");
+  const [lofiUrl, setLofiUrl] = useState("");
+  const [activeLofiEmbedUrl, setActiveLofiEmbedUrl] = useState<string | null>(null);
   const typingStopTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const roomSocket = useStudyRoomSocket(code, {
@@ -97,6 +174,17 @@ export default function StudyRoomDetailPage() {
         if (isTyping) return prev.includes(senderName) ? prev : [...prev, senderName];
         return prev.filter((name) => name !== senderName);
       });
+    },
+    onTask: () => refetch(),
+    onCheckIn: () => refetch(),
+    onMedia: () => refetch(),
+    onGame: () => refetch(),
+    onModeration: () => refetch(),
+    onMilestone: () => {
+      refetch();
+      if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        confetti({ particleCount: 90, spread: 70, origin: { y: 0.7 } });
+      }
     },
   });
 
@@ -136,10 +224,29 @@ export default function StudyRoomDetailPage() {
     if (messages.length >= 10) badges.push("Contributor");
     return badges;
   }, [myScore, room?.timer?.cycle, messages.length]);
-  const isHost = useMemo(() => {
+  const isManager = useMemo(() => {
     if (!room || !user?.id) return false;
-    return String(room.hostId) === user.id || room.participants?.some((p: any) => p.userId === user.id && p.role === "host");
+    return String(room.hostId) === user.id || room.participants?.some((p: any) => p.userId === user.id && (p.role === "owner" || p.role === "moderator"));
   }, [room, user?.id]);
+  const latestRoomYouTube = useMemo(() => {
+    const youtubePost = (room?.mediaPosts || [])
+      .filter((post) => post.kind === "youtube")
+      .at(-1);
+    return youtubePost?.url || "";
+  }, [room?.mediaPosts]);
+
+  useEffect(() => {
+    if (!user || !avatarSeed || !code) return;
+    updateAvatar.mutate({ code, avatarConfig: { seed: avatarSeed, style: "avataaars" } });
+  }, [avatarSeed, code, updateAvatar, user]);
+
+  useEffect(() => {
+    if (!latestRoomYouTube || activeLofiEmbedUrl) return;
+    const derived = getYouTubeEmbedUrl(latestRoomYouTube);
+    if (derived) {
+      setActiveLofiEmbedUrl(derived);
+    }
+  }, [latestRoomYouTube, activeLofiEmbedUrl]);
 
   const onJoin = async () => {
     try {
@@ -203,8 +310,9 @@ export default function StudyRoomDetailPage() {
   const othersCount = Math.max(0, activeParticipants.length - 1);
 
   return (
-    <main className="mx-auto grid max-w-[96rem] gap-4 p-4 md:p-6 lg:grid-cols-[22rem_minmax(0,1fr)_26rem]">
-      <aside className="grid gap-4">
+    <main className="min-h-screen overflow-hidden">
+      <div className="mx-auto grid h-screen max-w-[96rem] gap-4 p-4 md:p-6 lg:grid-cols-[22rem_minmax(0,1fr)_26rem]">
+      <aside className="grid gap-4 overflow-y-auto no-scrollbar">
         <Card className="rounded-none">
           <CardHeader>
             <CardTitle>{room.title}</CardTitle>
@@ -307,7 +415,17 @@ export default function StudyRoomDetailPage() {
           <div className="space-y-2">
             {room.participants?.filter((p) => !p.leftAt).map((p: any) => (
               <div key={`${p.userId || p.guestId}`} className="flex justify-between border p-2">
-                <span>{p.displayName}</span>
+                <div className="flex items-center gap-2">
+                  <img
+                    src={buildAvatarUri(
+                      String(p.avatarConfig?.seed || p.displayName || p.userId || p.guestId),
+                      p.avatarConfig,
+                    )}
+                    alt={`${p.displayName} avatar`}
+                    className="size-6 rounded-full border border-border"
+                  />
+                  <span>{p.displayName}</span>
+                </div>
                 <Badge variant="outline">{p.role}</Badge>
               </div>
             ))}
@@ -329,7 +447,7 @@ export default function StudyRoomDetailPage() {
           </CardContent>
         </Card>
 
-        {isHost ? (
+        {isManager ? (
           <Card className="rounded-none">
             <CardHeader><CardTitle>Invites</CardTitle></CardHeader>
             <CardContent className="grid gap-2">
@@ -359,9 +477,20 @@ export default function StudyRoomDetailPage() {
             </CardContent>
           </Card>
         ) : null}
+        <Card className="rounded-none">
+          <CardHeader><CardTitle>Avatar</CardTitle></CardHeader>
+          <CardContent className="grid gap-2">
+            <Input
+              className="rounded-none"
+              placeholder="Avatar seed (cartoon)"
+              value={avatarSeed}
+              onChange={(e) => setAvatarSeed(e.target.value)}
+            />
+          </CardContent>
+        </Card>
       </aside>
 
-      <section className="grid gap-4">
+      <section className="grid gap-4 overflow-y-auto no-scrollbar">
         <Card className="rounded-none border-2 border-black shadow-[0.65rem_0.65rem_0_#000] bg-card">
           <CardContent className="flex min-h-[34rem] flex-col items-center justify-center gap-8 p-6 text-center md:p-10">
             <Badge variant="outline" className="rounded-none px-4 py-1 text-xs tracking-widest uppercase">
@@ -377,10 +506,14 @@ export default function StudyRoomDetailPage() {
             <div className="flex items-center gap-3">
               <div className="flex -space-x-2">
                 {activeParticipants.slice(0, 3).map((p: any, index: number) => (
-                  <div
+                  <img
                     key={`${p.userId || p.guestId}_${index}`}
+                    src={buildAvatarUri(
+                      String(p.avatarConfig?.seed || p.displayName || p.userId || p.guestId),
+                      p.avatarConfig,
+                    )}
+                    alt={`${p.displayName} avatar`}
                     className="size-8 rounded-full border border-background bg-primary/20"
-                    aria-hidden
                   />
                 ))}
               </div>
@@ -396,7 +529,7 @@ export default function StudyRoomDetailPage() {
               <Button className="rounded-none" variant="outline" size="icon" onClick={() => onTimer("reset")}>
                 ■
               </Button>
-              {isHost ? (
+              {isManager ? (
                 <>
                   <Button className="rounded-none" variant="outline" onClick={() => onTimer("start")}>
                     Start
@@ -414,11 +547,121 @@ export default function StudyRoomDetailPage() {
                 <span>{timerProgress}% elapsed</span>
               </div>
             </div>
+            <div className="w-full max-w-xl border p-3 text-left">
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">Lo-fi player</p>
+                {activeLofiEmbedUrl ? (
+                  <Button
+                    className="rounded-none"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setActiveLofiEmbedUrl(null)}
+                  >
+                    Stop
+                  </Button>
+                ) : null}
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  className="rounded-none"
+                  placeholder="Paste YouTube lo-fi URL"
+                  value={lofiUrl}
+                  onChange={(e) => setLofiUrl(e.target.value)}
+                />
+                <Button
+                  className="rounded-none"
+                  variant="outline"
+                  onClick={() => {
+                    const embed = getYouTubeEmbedUrl(lofiUrl);
+                    if (!embed) {
+                      toast.error("Please enter a valid YouTube URL");
+                      return;
+                    }
+                    setActiveLofiEmbedUrl(embed);
+                  }}
+                >
+                  Play
+                </Button>
+              </div>
+              {activeLofiEmbedUrl ? (
+                <div className="mt-3 aspect-video w-full border">
+                  <iframe
+                    title="Study room lo-fi player"
+                    src={activeLofiEmbedUrl}
+                    className="h-full w-full"
+                    allow="autoplay; encrypted-media; picture-in-picture"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    allowFullScreen
+                  />
+                </div>
+              ) : null}
+            </div>
+            {room.timer?.checkInOpen ? (
+              <div className="w-full max-w-xl border p-3 text-left">
+                <p className="mb-2 text-xs text-muted-foreground">Cycle check-in</p>
+                <div className="flex flex-wrap gap-2">
+                  {(["completed", "partial", "not_done"] as const).map((status) => (
+                    <Button
+                      key={status}
+                      className="rounded-none"
+                      size="sm"
+                      variant={checkInStatus === status ? "default" : "outline"}
+                      onClick={() => setCheckInStatus(status)}
+                    >
+                      {status}
+                    </Button>
+                  ))}
+                  <Button
+                    className="rounded-none"
+                    size="sm"
+                    onClick={async () => {
+                      const guestId = user ? undefined : ensureGuestId();
+                      await submitCheckIn.mutateAsync({ code, status: checkInStatus, guestId });
+                      refetch();
+                    }}
+                  >
+                    Submit check-in
+                  </Button>
+                </div>
+              </div>
+            ) : null}
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-none">
+          <CardHeader><CardTitle>Tasks and XP</CardTitle></CardHeader>
+          <CardContent className="grid gap-3">
+            {isManager ? (
+              <div className="flex flex-wrap gap-2">
+                <Input className="rounded-none" placeholder="Task title" value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} />
+                <Input className="rounded-none w-24" type="number" min={1} max={100} value={taskPoints} onChange={(e) => setTaskPoints(Number(e.target.value || 10))} />
+                <Button className="rounded-none" variant="outline" onClick={async () => {
+                  await createTask.mutateAsync({ code, title: taskTitle, points: taskPoints });
+                  setTaskTitle("");
+                  refetch();
+                }}>Create</Button>
+              </div>
+            ) : null}
+            <div className="space-y-2">
+              {(room.tasks || []).map((task) => (
+                <div key={task.id} className="flex items-center justify-between border p-2">
+                  <div>
+                    <p className="text-sm font-medium">{task.title}</p>
+                    <p className="text-xs text-muted-foreground">{task.points} pts</p>
+                  </div>
+                  <Button className="rounded-none" size="sm" variant="outline" onClick={async () => {
+                    const guestId = user ? undefined : ensureGuestId();
+                    await completeTask.mutateAsync({ code, taskId: task.id, guestId });
+                    refetch();
+                  }}>Complete</Button>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       </section>
 
-      <aside className="grid gap-4">
+      <aside className="grid gap-4 overflow-y-auto no-scrollbar">
         <Card className="rounded-none">
           <CardHeader><CardTitle>Live chat</CardTitle></CardHeader>
           <CardContent className="grid gap-3">
@@ -467,28 +710,14 @@ export default function StudyRoomDetailPage() {
                       <div className="flex items-center gap-2">
                         <div className="flex -space-x-2">
                           {typingUsers.slice(0, 4).map((name, index) => {
-                            const initials = name
-                              .split(" ")
-                              .map((part) => part[0])
-                              .join("")
-                              .slice(0, 2)
-                              .toUpperCase();
-                            const colorClass =
-                              index % 4 === 0
-                                ? "bg-blue-500/90"
-                                : index % 4 === 1
-                                  ? "bg-pink-500/90"
-                                  : index % 4 === 2
-                                    ? "bg-amber-500/90"
-                                    : "bg-emerald-500/90";
                             return (
-                              <div
+                              <img
                                 key={name}
-                                className={`relative z-10 flex size-6 items-center justify-center rounded-full border border-background ${colorClass} text-[10px] font-semibold text-white`}
+                                src={buildAvatarUri(name)}
+                                alt={`${name} avatar`}
+                                className={`relative z-10 size-6 rounded-full border border-background`}
                                 title={name}
-                              >
-                                {initials}
-                              </div>
+                              />
                             );
                           })}
                           {typingUsers.length > 4 ? (
@@ -528,7 +757,78 @@ export default function StudyRoomDetailPage() {
             </div>
           </CardContent>
         </Card>
+        <Card className="rounded-none">
+          <CardHeader><CardTitle>Games and Media</CardTitle></CardHeader>
+          <CardContent className="grid gap-3">
+            {isManager ? (
+              <>
+                <div className="flex gap-2">
+                  <Input className="rounded-none" placeholder="Game prompt" value={gamePrompt} onChange={(e) => setGamePrompt(e.target.value)} />
+                  <Input className="rounded-none" placeholder="Answer" value={gameAnswer} onChange={(e) => setGameAnswer(e.target.value)} />
+                </div>
+                <Button className="rounded-none" variant="outline" onClick={async () => {
+                  await startGame.mutateAsync({ code, type: "word_guess", prompt: gamePrompt, answer: gameAnswer });
+                  setGamePrompt("");
+                  setGameAnswer("");
+                  refetch();
+                }}>Start word guess</Button>
+              </>
+            ) : null}
+            {room.activeGame?.isActive ? (
+              <div className="border p-2">
+                <p className="text-sm">{room.activeGame.prompt}</p>
+                <div className="mt-2 flex gap-2">
+                  <Input className="rounded-none" value={gameGuess} onChange={(e) => setGameGuess(e.target.value)} placeholder="Your answer" />
+                  <Button className="rounded-none" variant="outline" onClick={async () => {
+                    const guestId = user ? undefined : ensureGuestId();
+                    await submitGameAnswer.mutateAsync({ code, answer: gameGuess, guestId });
+                    setGameGuess("");
+                    refetch();
+                  }}>Submit</Button>
+                </div>
+              </div>
+            ) : null}
+            {isManager ? (
+              <div className="flex gap-2">
+                <Input className="rounded-none" placeholder="YouTube/Spotify URL" value={mediaUrl} onChange={(e) => setMediaUrl(e.target.value)} />
+                <Button className="rounded-none" variant="outline" onClick={async () => {
+                  await postMedia.mutateAsync({ code, url: mediaUrl });
+                  setMediaUrl("");
+                  refetch();
+                }}>Send URL</Button>
+              </div>
+            ) : null}
+            <div className="space-y-2">
+              {(room.mediaPosts || []).map((post) => (
+                <a key={post.id} href={post.url} target="_blank" rel="noreferrer" className="block border p-2 text-xs hover:bg-muted/30">
+                  {post.kind.toUpperCase()} - {post.title || post.url}
+                </a>
+              ))}
+            </div>
+            {isManager ? (
+              <div className="space-y-2 border p-2">
+                <p className="text-xs text-muted-foreground">Moderation quick actions</p>
+                {(room.participants || []).filter((p) => !p.leftAt && p.role !== "owner").slice(0, 5).map((p) => (
+                  <div key={p.userId || p.guestId} className="flex items-center justify-between">
+                    <span className="text-sm">{p.displayName}</span>
+                    <div className="flex gap-2">
+                      {p.userId ? (
+                        <Button className="rounded-none" size="sm" variant="outline" onClick={() => updateRole.mutate({ code, memberUserId: p.userId!, role: p.role === "moderator" ? "member" : "moderator" })}>
+                          {p.role === "moderator" ? "Remove mod" : "Make mod"}
+                        </Button>
+                      ) : null}
+                      <Button className="rounded-none" size="sm" variant="destructive" onClick={() => moderateMember.mutate({ code, action: "kick", memberUserId: p.userId, memberGuestId: p.guestId })}>
+                        Kick
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </CardContent>
+        </Card>
       </aside>
+      </div>
     </main>
   );
 }

@@ -59,7 +59,8 @@ export default function StudyRoomsPage() {
   };
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-6">
+    <main className="mx-auto min-h-screen w-full max-w-6xl overflow-y-auto no-scrollbar p-6">
+      <div className="flex flex-col gap-6">
       <div className="grid gap-2">
         <h1 className="text-3xl font-semibold tracking-tight">Study Rooms</h1>
         <p className="text-sm text-muted-foreground">
@@ -239,6 +240,7 @@ export default function StudyRoomsPage() {
           </Card>
         ))}
       </section>
+      </div>
     </main>
   );
 }
