@@ -10,6 +10,34 @@ export const api = axios.create({
   },
 });
 
+export const studyRoomsApi = {
+  list: () => api.get("/study-rooms"),
+  create: (payload: Record<string, unknown>) => api.post("/study-rooms", payload),
+  get: (code: string) => api.get(`/study-rooms/${code}`),
+  join: (code: string, payload: Record<string, unknown>, guestId?: string) =>
+    api.post(`/study-rooms/${code}/join`, payload, {
+      headers: guestId ? { "x-guest-id": guestId } : undefined,
+    }),
+  inviteByUsername: (code: string, username: string) =>
+    api.post(`/study-rooms/${code}/invites/username`, { username }),
+  inviteByEmail: (code: string, email: string) =>
+    api.post(`/study-rooms/${code}/invites/email`, { email }),
+  sendMessage: (code: string, content: string, guestName?: string, guestId?: string) =>
+    api.post(
+      `/study-rooms/${code}/messages`,
+      { content, guestName },
+      { headers: guestId ? { "x-guest-id": guestId } : undefined },
+    ),
+  timer: (
+    code: string,
+    payload: { action: "start" | "pause" | "reset" | "tickComplete"; durationSeconds?: number },
+  ) => api.patch(`/study-rooms/${code}/timer`, payload),
+  lock: (code: string, isLocked: boolean) => api.patch(`/study-rooms/${code}/lock`, { isLocked }),
+  end: (code: string) => api.post(`/study-rooms/${code}/end`),
+  revokeInvite: (code: string, inviteId: string) =>
+    api.delete(`/study-rooms/${code}/invites/${inviteId}`),
+};
+
 // Attach the access token as a Bearer header on every outgoing request.
 api.interceptors.request.use((config) => {
   const token = getAccessToken();
