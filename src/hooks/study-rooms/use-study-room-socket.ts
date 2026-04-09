@@ -17,6 +17,7 @@ type Handlers = {
   onMedia?: (payload: any) => void;
   onGame?: (payload: any) => void;
   onModeration?: (payload: any) => void;
+  onXp?: (payload: any) => void;
 };
 
 export const useStudyRoomSocket = (roomCode?: string, handlers?: Handlers) => {
@@ -73,6 +74,7 @@ export const useStudyRoomSocket = (roomCode?: string, handlers?: Handlers) => {
     const onMedia = (payload: any) => handlers?.onMedia?.(payload);
     const onGame = (payload: any) => handlers?.onGame?.(payload);
     const onModeration = (payload: any) => handlers?.onModeration?.(payload);
+    const onXp = (payload: any) => handlers?.onXp?.(payload);
 
     activeSocket.on("study_room:presence", onPresence);
     activeSocket.on("study_room:chat:new", onMessage);
@@ -88,6 +90,7 @@ export const useStudyRoomSocket = (roomCode?: string, handlers?: Handlers) => {
     activeSocket.on("study_room:game:started", onGame);
     activeSocket.on("study_room:game:winner", onGame);
     activeSocket.on("study_room:moderation", onModeration);
+    activeSocket.on("study_room:xp:changed", onXp);
 
     return () => {
       activeSocket?.emit("leave:study_room", code);
@@ -105,6 +108,7 @@ export const useStudyRoomSocket = (roomCode?: string, handlers?: Handlers) => {
       activeSocket?.off("study_room:game:started", onGame);
       activeSocket?.off("study_room:game:winner", onGame);
       activeSocket?.off("study_room:moderation", onModeration);
+      activeSocket?.off("study_room:xp:changed", onXp);
       activeSocketRef.current = null;
       if (!hasGlobalSocket) {
         activeSocket?.disconnect();

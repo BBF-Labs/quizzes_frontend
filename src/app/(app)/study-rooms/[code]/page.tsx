@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
+import { AnimatePresence, motion } from "framer-motion";
 import { createAvatar } from "@dicebear/core";
 import { avataaars } from "@dicebear/collection";
 import {
@@ -152,6 +153,11 @@ export default function StudyRoomDetailPage() {
   const [avatarSeed, setAvatarSeed] = useState("");
   const [lofiUrl, setLofiUrl] = useState("");
   const [activeLofiEmbedUrl, setActiveLofiEmbedUrl] = useState<string | null>(null);
+  const [xpFx, setXpFx] = useState<{
+    delta: number;
+    label: string;
+    levelShift: 0 | 1 | -1;
+  } | null>(null);
   const typingStopTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const roomSocket = useStudyRoomSocket(code, {
@@ -180,6 +186,23 @@ export default function StudyRoomDetailPage() {
     onMedia: () => refetch(),
     onGame: () => refetch(),
     onModeration: () => refetch(),
+    onXp: (payload) => {
+      const actorId = String(payload?.actorId || "");
+      const myId = String(user?.id || (typeof window !== "undefined" ? localStorage.getItem("study_room_guest_id") || "" : ""));
+      if (!actorId || actorId !== myId) return;
+      const delta = Number(payload?.delta || 0);
+      const previousLevel = Number(payload?.previousLevel || 1);
+      const level = Number(payload?.level || previousLevel);
+      const levelShift = level > previousLevel ? 1 : level < previousLevel ? -1 : 0;
+      if (delta === 0 && levelShift === 0) return;
+      setXpFx({
+        delta,
+        label: delta > 0 ? `+${delta} XP` : `${delta} XP`,
+        levelShift: levelShift as 1 | -1 | 0,
+      });
+      setTimeout(() => setXpFx(null), 1400);
+      refetch();
+    },
     onMilestone: () => {
       refetch();
       if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -390,7 +413,28 @@ export default function StudyRoomDetailPage() {
             </div>
             <div className="flex items-center justify-between border p-2">
               <span className="text-sm text-muted-foreground">Your points</span>
-              <Badge variant="outline">{myScore}</Badge>
+              <div className="relative">
+                <Badge variant="outline">{myScore}</Badge>
+                <AnimatePresence>
+                  {xpFx ? (
+                    <motion.div
+                      key={`${xpFx.label}_${xpFx.levelShift}`}
+                      initial={{ rotateX: -90, opacity: 0, y: 8 }}
+                      animate={{ rotateX: 0, opacity: 1, y: -6 }}
+                      exit={{ rotateX: 90, opacity: 0, y: -14 }}
+                      transition={{ duration: 0.28 }}
+                      className={`absolute -right-2 -top-7 rounded-none border px-2 py-0.5 text-[11px] font-semibold ${
+                        xpFx.delta >= 0
+                          ? "border-emerald-500/60 bg-emerald-500/15 text-emerald-500"
+                          : "border-rose-500/60 bg-rose-500/15 text-rose-500"
+                      }`}
+                    >
+                      {xpFx.label}
+                      {xpFx.levelShift === 1 ? " · Level up" : xpFx.levelShift === -1 ? " · Level down" : ""}
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
+              </div>
             </div>
             <div className="border p-2">
               <p className="mb-2 text-sm text-muted-foreground">Earned badges</p>
