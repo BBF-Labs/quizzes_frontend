@@ -60,6 +60,22 @@ const formatDate = (dateStr: string) => {
   };
 };
 
+const getCalendarDaysAway = (targetMs: number, nowMs: number) => {
+  const targetDate = new Date(targetMs);
+  const nowDate = new Date(nowMs);
+  const targetStart = new Date(
+    targetDate.getFullYear(),
+    targetDate.getMonth(),
+    targetDate.getDate(),
+  ).getTime();
+  const nowStart = new Date(
+    nowDate.getFullYear(),
+    nowDate.getMonth(),
+    nowDate.getDate(),
+  ).getTime();
+  return Math.round((targetStart - nowStart) / (1000 * 60 * 60 * 24));
+};
+
 export default function TimetablePage() {
   const [selectedSemester, setSelectedSemester] = useState("Semester 1");
   const [selectedYear, setSelectedYear] = useState("2025-2026");
@@ -77,16 +93,35 @@ export default function TimetablePage() {
     );
   }, [timetables]);
 
-  const mostRecentEntry = allEntries[0] ?? null;
-  const otherEntries = allEntries.slice(1);
+  const mostRecentEntry = useMemo(() => {
+    const ongoing = allEntries.find((entry) => {
+      const start = new Date(entry.scheduledAt).getTime();
+      const end = start + (entry.durationMinutes || 120) * 60 * 1000;
+      return nowMs >= start && nowMs <= end;
+    });
+    if (ongoing) return ongoing;
+
+    const upcoming = allEntries.find(
+      (entry) => new Date(entry.scheduledAt).getTime() >= nowMs,
+    );
+    return upcoming ?? allEntries[0] ?? null;
+  }, [allEntries, nowMs]);
+
+  const otherEntries = useMemo(
+    () =>
+      allEntries.filter(
+        (entry) =>
+          !mostRecentEntry ||
+          `${entry._id}:${entry.sessionId || ""}` !==
+            `${mostRecentEntry._id}:${mostRecentEntry.sessionId || ""}`,
+      ),
+    [allEntries, mostRecentEntry],
+  );
 
   const mostRecentDaysRemaining = mostRecentEntry
     ? Math.max(
         0,
-        Math.floor(
-          (new Date(mostRecentEntry.scheduledAt).getTime() - nowMs) /
-            (1000 * 60 * 60 * 24),
-        ),
+        getCalendarDaysAway(new Date(mostRecentEntry.scheduledAt).getTime(), nowMs),
       )
     : null;
 
@@ -355,9 +390,7 @@ export default function TimetablePage() {
                           const itemIsOngoing = nowMs >= itemStart && nowMs <= itemEnd;
                           const itemDaysAway = Math.max(
                             0,
-                            Math.floor(
-                              (itemStart - nowMs) / (1000 * 60 * 60 * 24),
-                            ),
+                            getCalendarDaysAway(itemStart, nowMs),
                           );
 
                           return (
