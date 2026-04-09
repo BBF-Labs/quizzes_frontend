@@ -15,6 +15,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { formatNextAttemptTime, formatNextAttemptWindow } from "@/lib/attempt-window";
 import { Button } from "@/components/ui/button";
 import { useSystemQuiz, useStartSystemQuiz, useConfirmSystemQuizAttempt } from "@/hooks/app/use-quizzes";
 import { useGradeQuizAnswers } from "@/hooks/app/use-app-library";
@@ -223,14 +224,10 @@ export default function SystemQuizTakePage({
         const nextAttemptAt: string | null = err.response?.data?.errors?.nextAttemptAt ?? null;
         let description = "Upgrade to premium for unlimited attempts and advanced Z grading.";
         if (nextAttemptAt) {
-          const nextDate = new Date(nextAttemptAt);
-          const now = Date.now();
-          const diffMs = nextDate.getTime() - now;
-          if (diffMs > 0) {
-            const h = Math.floor(diffMs / 3_600_000);
-            const m = Math.floor((diffMs % 3_600_000) / 60_000);
-            const timeStr = h > 0 ? `${h}h ${m}m` : `${m}m`;
-            description = `Next attempt available in ${timeStr} (${nextDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}).`;
+          const timeWindow = formatNextAttemptWindow(nextAttemptAt);
+          const atTime = formatNextAttemptTime(nextAttemptAt);
+          if (timeWindow && atTime) {
+            description = `Next attempt available in ${timeWindow} (${atTime}).`;
           }
         }
         toast.error("Daily limit reached.", {

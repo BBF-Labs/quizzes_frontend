@@ -17,6 +17,7 @@ export interface PublicExamEntry {
   scheduledAt: string;
   venues: PublicVenue[];
   assignedVenue?: string | null;
+  timingStatus?: "ongoing" | "today" | "upcoming";
   durationMinutes: number;
   semester?: string;
   academicYear?: string;

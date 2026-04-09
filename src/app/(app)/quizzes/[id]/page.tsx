@@ -27,6 +27,7 @@ import {
   LectureSection,
   QuizStatsBar,
 } from "@/components/app/quizzes/quiz-content";
+import { formatNextAttemptTime, formatNextAttemptWindow } from "@/lib/attempt-window";
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -133,12 +134,12 @@ export default function SystemQuizDetailPage({
                   </AlertTitle>
                   <AlertDescription className="text-[11px] font-mono mt-1">
                     {quiz.nextAttemptAt ? (() => {
-                      const next = new Date(quiz.nextAttemptAt!);
-                      const diffMs = next.getTime() - Date.now();
-                      const h = Math.floor(diffMs / 3_600_000);
-                      const m = Math.floor((diffMs % 3_600_000) / 60_000);
-                      const timeStr = h > 0 ? `${h}h ${m}m` : `${m}m`;
-                      return <>Next attempt available in <strong>{timeStr}</strong> ({next.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}).</>;
+                      const timeWindow = formatNextAttemptWindow(quiz.nextAttemptAt!);
+                      const atTime = formatNextAttemptTime(quiz.nextAttemptAt!);
+                      if (!timeWindow || !atTime) {
+                        return <>You've reached your free attempt limit for this 12-hour window.</>;
+                      }
+                      return <>Next attempt available in <strong>{timeWindow}</strong> ({atTime}).</>;
                     })() : <>You've reached your free attempt limit for this 12-hour window.</>}
                     {" "}Get <strong>unlimited attempts</strong> with a premium plan.
                     <div className="mt-3">
