@@ -19,6 +19,7 @@ import {
   Sparkles,
   Timer,
   Calendar,
+  Users,
 } from "lucide-react";
 import { useSessions } from "@/hooks";
 import { useAuth } from "@/contexts/auth-context";
@@ -252,6 +253,31 @@ export function AppSidebar() {
                     <GraduationCap className="size-4" />
                     <span className="font-mono text-[11px] uppercase tracking-widest">
                       Qz Quizzes
+                    </span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={
+                    pathname === "/study-rooms" ||
+                    pathname.startsWith("/study-rooms/")
+                  }
+                  tooltip="Study Rooms"
+                  className={cn(
+                    "h-9 px-4 rounded-(--radius) transition-all duration-200",
+                    pathname === "/study-rooms" ||
+                      pathname.startsWith("/study-rooms/")
+                      ? "bg-primary/5 text-primary border-r-2 border-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
+                  )}
+                >
+                  <Link href="/study-rooms">
+                    <Users className="size-4" />
+                    <span className="font-mono text-[11px] uppercase tracking-widest">
+                      Study Rooms
                     </span>
                   </Link>
                 </SidebarMenuButton>
