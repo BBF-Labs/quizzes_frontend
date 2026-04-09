@@ -13,6 +13,8 @@ export interface StudyRoomParticipant {
   xp?: number;
   completedCycles?: number;
   avatarConfig?: Record<string, unknown>;
+  mediaMode?: "follow_host" | "personal";
+  personalMediaUrl?: string;
   leftAt?: string;
 }
 
@@ -49,7 +51,29 @@ export interface StudyRoom {
   }>;
   mediaPosts?: Array<{ id: string; kind: "youtube" | "spotify" | "link"; url: string; title?: string }>;
   milestones?: Array<{ id: string; type: string; displayName: string; value: number; createdAt: string }>;
-  activeGame?: { type: "word_guess" | "qa"; prompt: string; isActive: boolean };
+  readyState?: {
+    isOpen: boolean;
+    minReadyCount: number;
+    readyParticipants: Array<{ userId?: string; guestId?: string; displayName: string; readyAt: string }>;
+    expiresAt?: string;
+  };
+  sharedMedia?: {
+    currentUrl?: string;
+    updatedByName?: string;
+  };
+  activeGame?: {
+    type: "word_guess" | "qa";
+    prompt: string;
+    isActive: boolean;
+    source?: "manual" | "ai";
+    status?: "waiting" | "running" | "reveal" | "ended";
+    maskedWord?: string;
+    wrongLetters?: string[];
+    options?: string[];
+    correctOption?: number;
+    revealEndsAt?: string;
+    nextRoundStartsAt?: string;
+  };
 }
 
 export interface StudyRoomMessage {
@@ -235,7 +259,14 @@ export const usePostStudyRoomMedia = () =>
 
 export const useStartStudyRoomGame = () =>
   useMutation({
-    mutationFn: async (payload: { code: string; type: "word_guess" | "qa"; prompt: string; answer?: string }) => {
+    mutationFn: async (payload: {
+      code: string;
+      type: "word_guess" | "qa";
+      prompt: string;
+      answer?: string;
+      source?: "manual" | "ai";
+      topic?: string;
+    }) => {
       await api.post(`/study-rooms/${payload.code}/games/start`, payload);
     },
   });
@@ -246,6 +277,47 @@ export const useSubmitStudyRoomGameAnswer = () =>
       await api.post(
         `/study-rooms/${payload.code}/games/answer`,
         { answer: payload.answer },
+        { headers: payload.guestId ? { "x-guest-id": payload.guestId } : undefined },
+      );
+    },
+  });
+
+export const useOpenGameReadyCheck = () =>
+  useMutation({
+    mutationFn: async (payload: { code: string; minReadyCount?: number }) => {
+      await api.post(`/study-rooms/${payload.code}/games/ready/open`, payload);
+    },
+  });
+
+export const useToggleGameReady = () =>
+  useMutation({
+    mutationFn: async (payload: { code: string; ready: boolean; guestId?: string }) => {
+      await api.post(
+        `/study-rooms/${payload.code}/games/ready/toggle`,
+        { ready: payload.ready },
+        { headers: payload.guestId ? { "x-guest-id": payload.guestId } : undefined },
+      );
+    },
+  });
+
+export const useGenerateAiGame = () =>
+  useMutation({
+    mutationFn: async (payload: { code: string; type: "word_guess" | "qa"; topic?: string }) => {
+      await api.post(`/study-rooms/${payload.code}/games/generate`, payload);
+    },
+  });
+
+export const useUpdateMediaPreference = () =>
+  useMutation({
+    mutationFn: async (payload: {
+      code: string;
+      mode: "follow_host" | "personal";
+      personalMediaUrl?: string;
+      guestId?: string;
+    }) => {
+      await api.patch(
+        `/study-rooms/${payload.code}/media/preference`,
+        { mode: payload.mode, personalMediaUrl: payload.personalMediaUrl },
         { headers: payload.guestId ? { "x-guest-id": payload.guestId } : undefined },
       );
     },

@@ -18,6 +18,9 @@ type Handlers = {
   onGame?: (payload: any) => void;
   onModeration?: (payload: any) => void;
   onXp?: (payload: any) => void;
+  onReady?: (payload: any) => void;
+  onSharedMedia?: (payload: any) => void;
+  onGameState?: (payload: any) => void;
 };
 
 export const useStudyRoomSocket = (roomCode?: string, handlers?: Handlers) => {
@@ -75,6 +78,9 @@ export const useStudyRoomSocket = (roomCode?: string, handlers?: Handlers) => {
     const onGame = (payload: any) => handlers?.onGame?.(payload);
     const onModeration = (payload: any) => handlers?.onModeration?.(payload);
     const onXp = (payload: any) => handlers?.onXp?.(payload);
+    const onReady = (payload: any) => handlers?.onReady?.(payload);
+    const onSharedMedia = (payload: any) => handlers?.onSharedMedia?.(payload);
+    const onGameState = (payload: any) => handlers?.onGameState?.(payload);
 
     activeSocket.on("study_room:presence", onPresence);
     activeSocket.on("study_room:chat:new", onMessage);
@@ -91,6 +97,12 @@ export const useStudyRoomSocket = (roomCode?: string, handlers?: Handlers) => {
     activeSocket.on("study_room:game:winner", onGame);
     activeSocket.on("study_room:moderation", onModeration);
     activeSocket.on("study_room:xp:changed", onXp);
+    activeSocket.on("study_room:game:ready_opened", onReady);
+    activeSocket.on("study_room:game:ready_updated", onReady);
+    activeSocket.on("study_room:game:ready_closed", onReady);
+    activeSocket.on("study_room:media:shared_updated", onSharedMedia);
+    activeSocket.on("study_room:game:state_updated", onGameState);
+    activeSocket.on("study_room:game:reveal", onGameState);
 
     return () => {
       activeSocket?.emit("leave:study_room", code);
@@ -109,6 +121,12 @@ export const useStudyRoomSocket = (roomCode?: string, handlers?: Handlers) => {
       activeSocket?.off("study_room:game:winner", onGame);
       activeSocket?.off("study_room:moderation", onModeration);
       activeSocket?.off("study_room:xp:changed", onXp);
+      activeSocket?.off("study_room:game:ready_opened", onReady);
+      activeSocket?.off("study_room:game:ready_updated", onReady);
+      activeSocket?.off("study_room:game:ready_closed", onReady);
+      activeSocket?.off("study_room:media:shared_updated", onSharedMedia);
+      activeSocket?.off("study_room:game:state_updated", onGameState);
+      activeSocket?.off("study_room:game:reveal", onGameState);
       activeSocketRef.current = null;
       if (!hasGlobalSocket) {
         activeSocket?.disconnect();

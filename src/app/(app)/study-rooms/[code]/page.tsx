@@ -15,11 +15,15 @@ import {
   useJoinStudyRoom,
   useModerateStudyRoomMember,
   usePostStudyRoomMedia,
+  useOpenGameReadyCheck,
+  useGenerateAiGame,
   useSendStudyRoomMessage,
   useStartStudyRoomGame,
   useStudyRoom,
   useSubmitCycleCheckIn,
   useSubmitStudyRoomGameAnswer,
+  useToggleGameReady,
+  useUpdateMediaPreference,
   useUpdateMemberRole,
   useUpdateStudyRoomAvatar,
   useUpdateStudyRoomTimer,
@@ -129,9 +133,13 @@ export default function StudyRoomDetailPage() {
   const createTask = useCreateStudyRoomTask();
   const completeTask = useCompleteStudyRoomTask();
   const postMedia = usePostStudyRoomMedia();
+  const openReadyCheck = useOpenGameReadyCheck();
+  const toggleGameReady = useToggleGameReady();
+  const generateAiGame = useGenerateAiGame();
   const startGame = useStartStudyRoomGame();
   const submitGameAnswer = useSubmitStudyRoomGameAnswer();
   const moderateMember = useModerateStudyRoomMember();
+  const updateMediaPreference = useUpdateMediaPreference();
   const { data, refetch } = useStudyRoom(code);
 
   const [guestName, setGuestName] = useState("");
@@ -150,9 +158,12 @@ export default function StudyRoomDetailPage() {
   const [gamePrompt, setGamePrompt] = useState("");
   const [gameAnswer, setGameAnswer] = useState("");
   const [gameGuess, setGameGuess] = useState("");
+  const [selectedGameType, setSelectedGameType] = useState<"word_guess" | "qa">("word_guess");
+  const [isReadyForGame, setIsReadyForGame] = useState(false);
   const [avatarSeed, setAvatarSeed] = useState("");
   const [lofiUrl, setLofiUrl] = useState("");
   const [activeLofiEmbedUrl, setActiveLofiEmbedUrl] = useState<string | null>(null);
+  const [mediaMode, setMediaMode] = useState<"follow_host" | "personal">("follow_host");
   const [xpFx, setXpFx] = useState<{
     delta: number;
     label: string;
@@ -186,6 +197,9 @@ export default function StudyRoomDetailPage() {
     onMedia: () => refetch(),
     onGame: () => refetch(),
     onModeration: () => refetch(),
+    onReady: () => refetch(),
+    onSharedMedia: () => refetch(),
+    onGameState: () => refetch(),
     onXp: (payload) => {
       const actorId = String(payload?.actorId || "");
       const myId = String(user?.id || (typeof window !== "undefined" ? localStorage.getItem("study_room_guest_id") || "" : ""));
@@ -257,6 +271,27 @@ export default function StudyRoomDetailPage() {
       .at(-1);
     return youtubePost?.url || "";
   }, [room?.mediaPosts]);
+  const myParticipant = useMemo(() => {
+    const myId = user?.id;
+    const guestId =
+      typeof window !== "undefined" ? localStorage.getItem("study_room_guest_id") || undefined : undefined;
+    return (room?.participants || []).find(
+      (p) => (myId && p.userId === myId) || (guestId && p.guestId === guestId),
+    );
+  }, [room?.participants, user?.id]);
+  const effectiveEmbedUrl = useMemo(() => {
+    if (mediaMode === "follow_host") {
+      return getYouTubeEmbedUrl(room?.sharedMedia?.currentUrl || latestRoomYouTube || "");
+    }
+    return activeLofiEmbedUrl;
+  }, [mediaMode, room?.sharedMedia?.currentUrl, latestRoomYouTube, activeLofiEmbedUrl]);
+  const readyCount = room?.readyState?.readyParticipants?.length || 0;
+  const minReadyCount = room?.readyState?.minReadyCount || 2;
+  const currentGameCountdown = useMemo(() => {
+    const next = room?.activeGame?.nextRoundStartsAt || room?.activeGame?.revealEndsAt;
+    if (!next) return null;
+    return Math.max(0, Math.ceil((new Date(next).getTime() - Date.now()) / 1000));
+  }, [room?.activeGame?.nextRoundStartsAt, room?.activeGame?.revealEndsAt, room?.activeGame?.status]);
 
   useEffect(() => {
     if (!user || !avatarSeed || !code) return;
@@ -270,6 +305,11 @@ export default function StudyRoomDetailPage() {
       setActiveLofiEmbedUrl(derived);
     }
   }, [latestRoomYouTube, activeLofiEmbedUrl]);
+
+  useEffect(() => {
+    if (!myParticipant?.mediaMode) return;
+    setMediaMode(myParticipant.mediaMode);
+  }, [myParticipant?.mediaMode]);
 
   const onJoin = async () => {
     try {
@@ -594,16 +634,41 @@ export default function StudyRoomDetailPage() {
             <div className="w-full max-w-xl border p-3 text-left">
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-xs text-muted-foreground">Lo-fi player</p>
-                {activeLofiEmbedUrl ? (
+                <div className="flex gap-2">
                   <Button
                     className="rounded-none"
                     size="sm"
-                    variant="outline"
-                    onClick={() => setActiveLofiEmbedUrl(null)}
+                    variant={mediaMode === "follow_host" ? "default" : "outline"}
+                    onClick={async () => {
+                      const guestId = user ? undefined : ensureGuestId();
+                      await updateMediaPreference.mutateAsync({
+                        code,
+                        mode: "follow_host",
+                        guestId,
+                      });
+                      setMediaMode("follow_host");
+                    }}
                   >
-                    Stop
+                    Follow host
                   </Button>
-                ) : null}
+                  <Button
+                    className="rounded-none"
+                    size="sm"
+                    variant={mediaMode === "personal" ? "default" : "outline"}
+                    onClick={async () => {
+                      const guestId = user ? undefined : ensureGuestId();
+                      await updateMediaPreference.mutateAsync({
+                        code,
+                        mode: "personal",
+                        personalMediaUrl: lofiUrl || undefined,
+                        guestId,
+                      });
+                      setMediaMode("personal");
+                    }}
+                  >
+                    Personal
+                  </Button>
+                </div>
               </div>
               <div className="flex gap-2">
                 <Input
@@ -627,11 +692,11 @@ export default function StudyRoomDetailPage() {
                   Play
                 </Button>
               </div>
-              {activeLofiEmbedUrl ? (
+              {effectiveEmbedUrl ? (
                 <div className="mt-3 aspect-video w-full border">
                   <iframe
                     title="Study room lo-fi player"
-                    src={activeLofiEmbedUrl}
+                    src={effectiveEmbedUrl}
                     className="h-full w-full"
                     allow="autoplay; encrypted-media; picture-in-picture"
                     referrerPolicy="strict-origin-when-cross-origin"
@@ -806,21 +871,78 @@ export default function StudyRoomDetailPage() {
           <CardContent className="grid gap-3">
             {isManager ? (
               <>
+                <div className="flex items-center justify-between border p-2 text-xs">
+                  <span>Ready check</span>
+                  <span>{readyCount}/{minReadyCount} ready</span>
+                </div>
+                <div className="flex gap-2">
+                  <Button className="rounded-none" variant="outline" onClick={async () => {
+                    await openReadyCheck.mutateAsync({ code, minReadyCount: 2 });
+                    refetch();
+                  }}>
+                    Open ready check
+                  </Button>
+                  <Button className="rounded-none" variant="outline" onClick={async () => {
+                    await generateAiGame.mutateAsync({ code, type: selectedGameType, topic: gamePrompt || "study mix" });
+                    refetch();
+                  }}>
+                    AI generate ({selectedGameType})
+                  </Button>
+                </div>
                 <div className="flex gap-2">
                   <Input className="rounded-none" placeholder="Game prompt" value={gamePrompt} onChange={(e) => setGamePrompt(e.target.value)} />
                   <Input className="rounded-none" placeholder="Answer" value={gameAnswer} onChange={(e) => setGameAnswer(e.target.value)} />
                 </div>
+                <div className="flex gap-2">
+                  <Button className="rounded-none" size="sm" variant={selectedGameType === "word_guess" ? "default" : "outline"} onClick={() => setSelectedGameType("word_guess")}>
+                    Word Guess
+                  </Button>
+                  <Button className="rounded-none" size="sm" variant={selectedGameType === "qa" ? "default" : "outline"} onClick={() => setSelectedGameType("qa")}>
+                    Q&A
+                  </Button>
+                </div>
                 <Button className="rounded-none" variant="outline" onClick={async () => {
-                  await startGame.mutateAsync({ code, type: "word_guess", prompt: gamePrompt, answer: gameAnswer });
+                  await startGame.mutateAsync({ code, type: selectedGameType, prompt: gamePrompt, answer: gameAnswer, source: "manual" });
                   setGamePrompt("");
                   setGameAnswer("");
                   refetch();
                 }}>Start word guess</Button>
               </>
             ) : null}
+            <Button className="rounded-none" variant={isReadyForGame ? "default" : "outline"} onClick={async () => {
+              const guestId = user ? undefined : ensureGuestId();
+              await toggleGameReady.mutateAsync({ code, ready: !isReadyForGame, guestId });
+              setIsReadyForGame((prev) => !prev);
+              refetch();
+            }}>
+              {isReadyForGame ? "Unready" : "Ready"}
+            </Button>
             {room.activeGame?.isActive ? (
               <div className="border p-2">
                 <p className="text-sm">{room.activeGame.prompt}</p>
+                {room.activeGame.type === "word_guess" ? (
+                  <p className="my-2 text-xl font-bold tracking-[0.3em]">
+                    {room.activeGame.maskedWord || "_ _ _ _"}
+                  </p>
+                ) : null}
+                {room.activeGame.type === "qa" && room.activeGame.options?.length ? (
+                  <div className="my-2 grid gap-2">
+                    {room.activeGame.options.map((option, index) => (
+                      <Button
+                        key={`${option}_${index}`}
+                        className="rounded-none justify-start"
+                        variant="outline"
+                        onClick={async () => {
+                          const guestId = user ? undefined : ensureGuestId();
+                          await submitGameAnswer.mutateAsync({ code, answer: String(index), guestId });
+                          refetch();
+                        }}
+                      >
+                        {option}
+                      </Button>
+                    ))}
+                  </div>
+                ) : null}
                 <div className="mt-2 flex gap-2">
                   <Input className="rounded-none" value={gameGuess} onChange={(e) => setGameGuess(e.target.value)} placeholder="Your answer" />
                   <Button className="rounded-none" variant="outline" onClick={async () => {
@@ -830,6 +952,9 @@ export default function StudyRoomDetailPage() {
                     refetch();
                   }}>Submit</Button>
                 </div>
+                {currentGameCountdown !== null ? (
+                  <p className="mt-2 text-xs text-muted-foreground">Next round in {currentGameCountdown}s</p>
+                ) : null}
               </div>
             ) : null}
             {isManager ? (
