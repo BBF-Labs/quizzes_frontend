@@ -122,11 +122,11 @@ export function AvatarBuilder({ initialConfig, onUpdate }: AvatarBuilderProps) {
         </div>
         
         <div className="grid grid-cols-2 gap-3 w-full">
-            <Button variant="outline" size="sm" onClick={() => updateField("preset", "male")} className="rounded-(--radius) font-mono text-[10px] uppercase">Male Base</Button>
-            <Button variant="outline" size="sm" onClick={() => updateField("preset", "female")} className="rounded-(--radius) font-mono text-[10px] uppercase">Female Base</Button>
+            <Button variant="outline" size="sm" onClick={() => updateField("preset", "male")} className="rounded-(--radius) font-mono text-[10px]">Male Base</Button>
+            <Button variant="outline" size="sm" onClick={() => updateField("preset", "female")} className="rounded-(--radius) font-mono text-[10px]">Female Base</Button>
         </div>
 
-        <Button variant="ghost" size="sm" onClick={randomize} className="rounded-(--radius) gap-2 text-[10px] font-mono uppercase tracking-widest">
+        <Button variant="ghost" size="sm" onClick={randomize} className="rounded-(--radius) gap-2 text-[10px] font-mono tracking-widest">
           <RefreshCw className="size-3" /> Randomize DNA
         </Button>
       </div>

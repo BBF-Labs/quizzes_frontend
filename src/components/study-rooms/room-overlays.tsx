@@ -1,17 +1,19 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Lock, Timer, Users, Trophy, Play } from "lucide-react";
+import { Timer, Users, Trophy, Play, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface RoomOverlaysProps {
   state: "waiting" | "focus" | "ready_check" | "game_start" | null;
   message?: string;
   subMessage?: string;
+  onDismiss?: () => void;
 }
 
-export function RoomOverlays({ state, message, subMessage }: RoomOverlaysProps) {
+export function RoomOverlays({ state, message, subMessage, onDismiss }: RoomOverlaysProps) {
   if (!state) return null;
 
   const content = {
@@ -65,15 +67,24 @@ export function RoomOverlays({ state, message, subMessage }: RoomOverlaysProps) 
                 content.accent
             )}
         >
+            <Button 
+                variant="ghost" 
+                size="icon" 
+                className="absolute right-4 top-4 rounded-full text-muted-foreground hover:bg-white/10"
+                onClick={onDismiss}
+            >
+                <X className="size-5" />
+            </Button>
+
             <div className="size-20 flex items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 shadow-sm">
                 {content.icon}
             </div>
 
             <div className="mt-4 space-y-4">
-                <h2 className="text-3xl font-mono font-black uppercase italic tracking-tighter sm:text-5xl text-foreground">
+                <h2 className="text-3xl font-mono font-black italic tracking-tighter sm:text-5xl text-foreground">
                     {message || content.title}
                 </h2>
-                <p className="mx-auto max-w-sm text-xs font-mono font-bold uppercase tracking-widest text-muted-foreground">
+                <p className="mx-auto max-w-sm text-xs font-mono font-bold tracking-widest text-muted-foreground">
                     {subMessage || content.description}
                 </p>
             </div>
@@ -88,7 +99,7 @@ export function RoomOverlays({ state, message, subMessage }: RoomOverlaysProps) 
                     />
                 </div>
                 
-                <Badge variant="outline" className="rounded-(--radius) border-border/50 px-6 py-2 text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                <Badge variant="outline" className="rounded-(--radius) border-border/50 px-6 py-2 text-[10px] font-mono font-bold tracking-[0.2em] text-muted-foreground">
                    Active Operation
                 </Badge>
             </div>
