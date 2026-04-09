@@ -35,6 +35,7 @@ const EXPLORE_LINKS = [
   { href: "/quizzes", label: "Quizzes" },
   { href: "/library", label: "Library" },
   { href: "/timetable", label: "Timetable" },
+  { href: "/study-rooms", label: "Study Rooms" },
 ];
 
 function MobileExploreSection() {
@@ -184,21 +185,16 @@ export function Navbar() {
                   <ChevronDown className="size-3 opacity-60" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="font-mono min-w-[140px]">
-                  <DropdownMenuItem asChild>
-                    <Link href="/quizzes" className="text-[11px] tracking-widest uppercase cursor-pointer">
-                      Quizzes
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/library" className="text-[11px] tracking-widest uppercase cursor-pointer">
-                      Library
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/timetable" className="text-[11px] tracking-widest uppercase cursor-pointer">
-                      Timetable
-                    </Link>
-                  </DropdownMenuItem>
+                  {EXPLORE_LINKS.map(({ href, label }) => (
+                    <DropdownMenuItem key={href} asChild>
+                      <Link
+                        href={href}
+                        className="text-[11px] tracking-widest uppercase cursor-pointer"
+                      >
+                        {label}
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
                 </DropdownMenuContent>
               </DropdownMenu>
               <Link

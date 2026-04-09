@@ -14,6 +14,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
@@ -52,7 +53,12 @@ export default function StudyRoomsPage() {
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-6">
-      <h1 className="text-2xl font-semibold">Study Rooms</h1>
+      <div className="grid gap-2">
+        <h1 className="text-3xl font-semibold tracking-tight">Study Rooms</h1>
+        <p className="text-sm text-muted-foreground">
+          Sprint together, chat live, and climb the session leaderboard.
+        </p>
+      </div>
 
       <Card>
         <CardHeader>
@@ -92,8 +98,22 @@ export default function StudyRoomsPage() {
                 <p className="text-sm text-muted-foreground">
                   {room.visibility} · {room.participants?.length || 0}/{room.maxParticipants}
                 </p>
+                <div className="mt-2 max-w-sm">
+                  <Progress
+                    value={Math.min(
+                      100,
+                      Math.round(
+                        ((room.participants?.length || 0) / Math.max(room.maxParticipants, 1)) *
+                          100,
+                      ),
+                    )}
+                  />
+                </div>
               </Link>
-              <Badge variant="outline">{room.roomCode}</Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">Live</Badge>
+                <Badge variant="outline">{room.roomCode}</Badge>
+              </div>
             </CardContent>
           </Card>
         ))}
