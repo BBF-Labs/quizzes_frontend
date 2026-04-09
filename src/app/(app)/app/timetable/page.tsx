@@ -76,6 +76,12 @@ const getCalendarDaysAway = (targetMs: number, nowMs: number) => {
   return Math.round((targetStart - nowStart) / (1000 * 60 * 60 * 24));
 };
 
+const getEntryStatus = (
+  entry: IExamSessionEntry,
+): "ongoing" | "today" | "upcoming" => {
+  return entry.timingStatus ?? "upcoming";
+};
+
 export default function TimetablePage() {
   const [selectedSemester, setSelectedSemester] = useState("Semester 1");
   const [selectedYear, setSelectedYear] = useState("2025-2026");
@@ -118,19 +124,15 @@ export default function TimetablePage() {
     [allEntries, mostRecentEntry],
   );
 
+  const mostRecentStatus = mostRecentEntry
+    ? getEntryStatus(mostRecentEntry)
+    : null;
   const mostRecentDaysRemaining = mostRecentEntry
     ? Math.max(
         0,
         getCalendarDaysAway(new Date(mostRecentEntry.scheduledAt).getTime(), nowMs),
       )
     : null;
-
-  const mostRecentIsOngoing = useMemo(() => {
-    if (!mostRecentEntry) return false;
-    const start = new Date(mostRecentEntry.scheduledAt).getTime();
-    const end = start + (mostRecentEntry.durationMinutes || 120) * 60 * 1000;
-    return nowMs >= start && nowMs <= end;
-  }, [mostRecentEntry, nowMs]);
 
   useEffect(() => {
     const timer = setInterval(() => setNowMs(Date.now()), 60000);
@@ -231,20 +233,20 @@ export default function TimetablePage() {
                     <div
                       className={cn(
                         "font-black text-foreground font-mono tracking-tighter leading-none mb-2",
-                        mostRecentIsOngoing
+                        mostRecentStatus === "ongoing"
                           ? "text-4xl md:text-6xl text-primary animate-pulse"
-                          : mostRecentDaysRemaining === 0
+                          : mostRecentStatus === "today"
                             ? "text-5xl md:text-7xl"
                             : "text-7xl md:text-8xl",
                       )}
                     >
-                      {mostRecentIsOngoing
+                      {mostRecentStatus === "ongoing"
                         ? "ONGOING"
-                        : mostRecentDaysRemaining === 0
+                        : mostRecentStatus === "today"
                           ? "TODAY"
                           : mostRecentDaysRemaining}
                     </div>
-                    {mostRecentDaysRemaining !== 0 && !mostRecentIsOngoing && (
+                    {mostRecentStatus === "upcoming" && (
                       <div className="text-xs font-mono tracking-widest text-muted-foreground uppercase">
                         Days Remaining
                       </div>
@@ -299,8 +301,7 @@ export default function TimetablePage() {
                 {otherEntries.length > 0 ? (
                   otherEntries.map((entry) => {
                     const dateInfo = formatDate(entry.scheduledAt);
-                    const isPast =
-                      new Date(entry.scheduledAt).getTime() < nowMs;
+                    const status = getEntryStatus(entry);
                     const displayLabel =
                       entry.label &&
                       entry.label.trim() !== entry.courseName.trim()
@@ -313,17 +314,13 @@ export default function TimetablePage() {
                         variants={itemVariants}
                         className={cn(
                           "grid grid-cols-1 md:grid-cols-[100px_minmax(0,1fr)_120px] border-b border-border/50 last:border-b-0 transition-all hover:border-primary/40 group overflow-hidden",
-                          isPast
-                            ? "opacity-60 grayscale"
-                            : "bg-card/5 hover:bg-card/10",
+                          "bg-card/5 hover:bg-card/10",
                         )}
                       >
                         <div
                           className={cn(
                             "flex flex-row md:flex-col items-center justify-center p-4 gap-2 md:gap-0 border-r border-b md:border-b-0 border-border/40",
-                            isPast
-                              ? "bg-muted/10"
-                              : "bg-primary/5 group-hover:bg-primary/10 transition-colors",
+                            "bg-primary/5 group-hover:bg-primary/10 transition-colors",
                           )}
                         >
                           <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/60">
@@ -381,13 +378,7 @@ export default function TimetablePage() {
                         </div>
 
                         {(() => {
-                          const itemStart = new Date(
-                            entry.scheduledAt,
-                          ).getTime();
-                          const itemEnd =
-                            itemStart +
-                            (entry.durationMinutes || 120) * 60 * 1000;
-                          const itemIsOngoing = nowMs >= itemStart && nowMs <= itemEnd;
+                          const itemStart = new Date(entry.scheduledAt).getTime();
                           const itemDaysAway = Math.max(
                             0,
                             getCalendarDaysAway(itemStart, nowMs),
@@ -397,9 +388,9 @@ export default function TimetablePage() {
                             <div
                               className={cn(
                                 "border-l border-border/50 flex flex-col items-center justify-center px-4 py-6 text-center shrink-0 min-w-28",
-                                itemIsOngoing
+                                status === "ongoing"
                                   ? "bg-primary/10 animate-pulse"
-                                  : itemDaysAway === 0
+                                  : status === "today"
                                     ? "bg-primary/5"
                                     : "bg-background/60",
                               )}
@@ -407,20 +398,20 @@ export default function TimetablePage() {
                               <div
                                 className={cn(
                                   "font-black font-mono tracking-tight leading-none",
-                                  itemIsOngoing
+                                  status === "ongoing"
                                     ? "text-sm text-primary"
-                                    : itemDaysAway === 0
+                                    : status === "today"
                                       ? "text-xl text-primary"
                                       : "text-4xl text-foreground",
                                 )}
                               >
-                                {itemIsOngoing
+                                {status === "ongoing"
                                   ? "ONGOING"
-                                  : itemDaysAway === 0
+                                  : status === "today"
                                     ? "TODAY"
                                     : itemDaysAway}
                               </div>
-                              {itemDaysAway !== 0 && !itemIsOngoing && (
+                              {status === "upcoming" && (
                                 <div className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase mt-2">
                                   Days
                                 </div>

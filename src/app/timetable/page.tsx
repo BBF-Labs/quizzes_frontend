@@ -13,6 +13,7 @@ import {
 import { format } from "date-fns";
 import {
   usePublicTimetables,
+  type PublicExamEntry,
   type PublicVenue,
 } from "@/hooks/use-public-exams";
 import { Input } from "@/components/ui/input";
@@ -47,6 +48,21 @@ const formatDuration = (minutes: number) => {
   }
 
   return `${hours}h ${remainingMinutes}m`;
+};
+
+const getEntryStatus = (entry: PublicExamEntry): "ongoing" | "today" | "upcoming" => {
+  return entry.timingStatus ?? "upcoming";
+};
+
+const getStatusValue = (entry: PublicExamEntry, nowMs: number): string | number => {
+  const status = getEntryStatus(entry);
+  if (status === "ongoing") return "ONGOING";
+  if (status === "today") return "TODAY";
+
+  return Math.max(
+    0,
+    Math.ceil((new Date(entry.scheduledAt).getTime() - nowMs) / (1000 * 60 * 60 * 24)),
+  );
 };
 
 function PublicExamsContent() {
@@ -133,22 +149,8 @@ function PublicExamsContent() {
   const hasActiveFilters = Boolean(search || studentId);
 
   const nextExam = allEntries[0] ?? null;
-  const nextExamDaysAway = nextExam
-    ? Math.max(
-        0,
-        Math.floor(
-          (new Date(nextExam.scheduledAt).getTime() - nowMs) /
-            (1000 * 60 * 60 * 24),
-        ),
-      )
-    : null;
-
-  const nextExamIsOngoing = useMemo(() => {
-    if (!nextExam) return false;
-    const start = new Date(nextExam.scheduledAt).getTime();
-    const end = start + (nextExam.durationMinutes || 120) * 60 * 1000;
-    return nowMs >= start && nowMs <= end;
-  }, [nextExam, nowMs]);
+  const nextExamStatus = nextExam ? getEntryStatus(nextExam) : null;
+  const nextExamValue = nextExam ? getStatusValue(nextExam, nowMs) : null;
 
   return (
     <section className="py-20 md:py-28 bg-background border-b border-border/50">
@@ -246,20 +248,16 @@ function PublicExamsContent() {
                       <div
                         className={cn(
                           "font-black text-foreground font-mono tracking-tighter leading-none mb-2",
-                          nextExamIsOngoing
+                          nextExamStatus === "ongoing"
                             ? "text-4xl md:text-6xl text-primary animate-pulse"
-                            : nextExamDaysAway === 0
+                            : nextExamStatus === "today"
                               ? "text-5xl md:text-7xl"
                               : "text-7xl md:text-8xl",
                         )}
                       >
-                        {nextExamIsOngoing
-                          ? "ONGOING"
-                          : nextExamDaysAway === 0
-                            ? "TODAY"
-                            : nextExamDaysAway}
+                        {nextExamValue}
                       </div>
-                      {nextExamDaysAway !== 0 && !nextExamIsOngoing && (
+                      {nextExamStatus === "upcoming" && (
                         <div className="text-xs font-mono tracking-widest text-muted-foreground uppercase">
                           Days Remaining
                         </div>
@@ -387,56 +385,33 @@ function PublicExamsContent() {
                           className={cn(
                             "border-l border-border/50 flex flex-col items-center justify-center px-8 min-w-30 text-center",
                             (() => {
-                              const itemStart = sessDate.getTime();
-                              const itemEnd =
-                                itemStart +
-                                (entry.durationMinutes || 120) * 60 * 1000;
-                              const itemIsOngoing = nowMs >= itemStart && nowMs <= itemEnd;
-                              const itemDaysAway = Math.max(
-                                0,
-                                Math.floor(
-                                  (itemStart - nowMs) / (1000 * 60 * 60 * 24),
-                                ),
-                              );
-                              return itemIsOngoing
+                              const entryStatus = getEntryStatus(entry);
+                              return entryStatus === "ongoing"
                                 ? "bg-primary/10 animate-pulse border-primary/20"
-                                : itemDaysAway === 0
+                                : entryStatus === "today"
                                   ? "bg-primary/5"
                                   : "";
                             })(),
                           )}
                         >
                           {(() => {
-                            const itemStart = sessDate.getTime();
-                            const itemEnd =
-                              itemStart +
-                              (entry.durationMinutes || 120) * 60 * 1000;
-                            const itemIsOngoing = nowMs >= itemStart && nowMs <= itemEnd;
-                            const itemDaysAway = Math.max(
-                              0,
-                              Math.ceil(
-                                (itemStart - nowMs) / (1000 * 60 * 60 * 24),
-                              ),
-                            );
+                            const entryStatus = getEntryStatus(entry);
+                            const value = getStatusValue(entry, nowMs);
                             return (
                               <>
                                 <div
                                   className={cn(
                                     "font-black font-mono tracking-tight leading-none text-foreground",
-                                    itemIsOngoing
+                                    entryStatus === "ongoing"
                                       ? "text-lg text-primary"
-                                      : itemDaysAway === 0
+                                      : entryStatus === "today"
                                         ? "text-3xl text-primary"
                                         : "text-5xl md:text-6xl",
                                   )}
                                 >
-                                  {itemIsOngoing
-                                    ? "ONGOING"
-                                    : itemDaysAway === 0
-                                      ? "TODAY"
-                                      : itemDaysAway}
+                                  {value}
                                 </div>
-                                {itemDaysAway !== 0 && !itemIsOngoing && (
+                                {entryStatus === "upcoming" && (
                                   <div className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase mt-2">
                                     days
                                   </div>

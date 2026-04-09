@@ -14,6 +14,7 @@ export interface IExamSessionEntry {
   scheduledAt: string; // ISO Date String
   venue: string;
   assignedVenue?: string | null;
+  timingStatus?: "ongoing" | "today" | "upcoming";
   durationMinutes: number;
   semester: string;
   academicYear: string;
