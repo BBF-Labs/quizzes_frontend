@@ -83,7 +83,7 @@ export default function TimetablePage() {
   const mostRecentDaysRemaining = mostRecentEntry
     ? Math.max(
         0,
-        Math.ceil(
+        Math.floor(
           (new Date(mostRecentEntry.scheduledAt).getTime() - nowMs) /
             (1000 * 60 * 60 * 24),
         ),
@@ -355,7 +355,7 @@ export default function TimetablePage() {
                           const itemIsOngoing = nowMs >= itemStart && nowMs <= itemEnd;
                           const itemDaysAway = Math.max(
                             0,
-                            Math.ceil(
+                            Math.floor(
                               (itemStart - nowMs) / (1000 * 60 * 60 * 24),
                             ),
                           );
