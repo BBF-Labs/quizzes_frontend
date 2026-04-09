@@ -95,7 +95,7 @@ interface LectureSectionProps {
 
 export function LectureSection({ lecture, index }: LectureSectionProps) {
   const totalQuestions = (lecture.topics || []).reduce(
-    (acc, t) => acc + (t.questions?.length ?? 0),
+    (acc, t) => acc + (t.questionCount ?? t.questions?.length ?? 0),
     0
   );
 

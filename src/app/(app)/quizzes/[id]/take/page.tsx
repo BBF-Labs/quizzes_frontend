@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   ChevronLeft,
   ChevronRight,
@@ -29,20 +29,25 @@ import type {
   QuizQuestion,
   QuizConfig,
   ZGradeResultItem,
+  SystemQuizDetail,
 } from "@/types/session";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function flattenQuestions(
-  lectures: NonNullable<ReturnType<typeof useSystemQuiz>["data"]>["lectures"],
+function buildQuestions(
+  quiz: SystemQuizDetail,
+  config: QuizConfig,
 ): QuizQuestion[] {
-  return (lectures || []).flatMap((l) =>
-    (l.topics || []).flatMap((t) => {
+  const selected = new Set(config.selectedKeys);
+  const picked = (quiz.lectures || []).flatMap((l, li) =>
+    (l.topics || []).flatMap((t, ti) => {
+      if (!selected.has(`${li}:${ti}`)) return [];
       return (t.questions || []).filter(
         (q) => q && typeof q !== "string",
       ) as QuizQuestion[];
     }),
   );
+  return config.shuffle ? shuffle(picked) : picked;
 }
 
 function shuffle<T>(arr: T[]): T[] {
@@ -161,6 +166,8 @@ export default function SystemQuizTakePage({
 }) {
   const { id } = use(params);
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { data: quiz, isLoading, error } = useSystemQuiz(id);
   const { isAuthenticated } = useAuth();
   const gradeQuiz = useGradeQuizAnswers();
@@ -183,14 +190,26 @@ export default function SystemQuizTakePage({
     {},
   );
   const [config, setConfig] = useState<QuizConfig | null>(null);
+  const currentParam = searchParams.get("q");
 
   const handleStart = async (newConfig: QuizConfig) => {
     try {
       const fullQuiz = await startQuiz.mutateAsync(id);
       if (!fullQuiz) return;
       setConfig(newConfig);
-      const flat = flattenQuestions(fullQuiz.lectures);
-      setQuestions(newConfig.shuffle ? shuffle(flat) : flat);
+      const selectedQuestions = buildQuestions(fullQuiz, newConfig);
+      setQuestions(selectedQuestions);
+      const qFromUrl = Number(currentParam || "1");
+      const nextCurrent = Number.isFinite(qFromUrl)
+        ? Math.max(
+            0,
+            Math.min(
+              Math.floor(qFromUrl) - 1,
+              Math.max(selectedQuestions.length - 1, 0),
+            ),
+          )
+        : 0;
+      setCurrent(nextCurrent);
 
       if (newConfig.timerMode === "total" && newConfig.timerSeconds > 0) {
         setTimeLeft(newConfig.timerSeconds);
@@ -227,6 +246,13 @@ export default function SystemQuizTakePage({
     }
   };
 
+  useEffect(() => {
+    if (!started || done) return;
+    const next = new URLSearchParams(searchParams.toString());
+    next.set("q", String(current + 1));
+    router.replace(`${pathname}?${next.toString()}`, { scroll: false });
+  }, [started, done, current, router, pathname, searchParams]);
+
   // Countdown timer
   useEffect(() => {
     if (timeLeft === null || done) return;
@@ -257,7 +283,13 @@ export default function SystemQuizTakePage({
   );
 
   const handleNext = async () => {
-    if (current < questions.length - 1) setCurrent((c) => c + 1);
+    if (current < questions.length - 1) {
+      if (!config?.allowSkip) {
+        const answer = answers[questions[current]?.id];
+        if (!answer) return;
+      }
+      setCurrent((c) => c + 1);
+    }
     else {
       try {
         await confirmQuiz.mutateAsync(id);
@@ -268,7 +300,10 @@ export default function SystemQuizTakePage({
 
   const handlePrev = () => setCurrent((c) => Math.max(0, c - 1));
 
-  const handleSkip = () => handleNext();
+  const handleSkip = () => {
+    if (!config?.allowSkip) return;
+    if (current < questions.length - 1) setCurrent((c) => c + 1);
+  };
 
   const handleRetake = () => {
     setAnswers({});
@@ -504,6 +539,7 @@ export default function SystemQuizTakePage({
             size="sm"
             className="h-8 text-[10px] font-mono gap-1 text-muted-foreground/50"
             onClick={handleSkip}
+            disabled={!config?.allowSkip || current >= questions.length - 1}
           >
             <SkipForward className="size-3" />
             Skip
@@ -512,7 +548,7 @@ export default function SystemQuizTakePage({
             size="sm"
             className="h-8 text-[10px] font-mono gap-1"
             onClick={handleNext}
-            disabled={!isAnswered && q.options && q.options.length > 0}
+            disabled={!isAnswered && !config?.allowSkip}
           >
             {current === questions.length - 1 ? "Finish" : "Next"}
             <ChevronRight className="size-3" />

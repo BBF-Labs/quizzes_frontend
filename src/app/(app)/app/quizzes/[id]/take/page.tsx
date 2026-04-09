@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef, use, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   ChevronLeft,
   ChevronRight,
@@ -109,6 +109,16 @@ function fmtSeconds(s: number): string {
   const m = Math.floor(s / 60);
   const sec = s % 60;
   return `${m}:${sec.toString().padStart(2, "0")}`;
+}
+
+function isFreeResponseType(type: QuizQuestion["type"]): boolean {
+  return (
+    type === "free_text" ||
+    type === "short_answer" ||
+    type === "essay" ||
+    type === "fill_in_blank" ||
+    type === "fill_in"
+  );
 }
 
 // ─── Resume prompt ─────────────────────────────────────────────────────────────
@@ -600,10 +610,10 @@ function ReviewItem({
   onSelfMark?: (v: boolean) => void;
 }) {
   const autoGrade =
-    q.type === "mcq" && q.correctAnswer
+    (q.type === "mcq" || q.type === "true_false") && q.correctAnswer
       ? given.trim() === q.correctAnswer.trim()
       : null;
-  const zGraded = q.type === "free_text" && zResult != null;
+  const zGraded = isFreeResponseType(q.type) && zResult != null;
   const isCorrect =
     q.type === "mcq" ? autoGrade : zGraded ? zResult!.isCorrect : selfMark;
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -639,7 +649,7 @@ function ReviewItem({
         <QuestionMarkdown content={q.question} className="text-[11px]" />
       </div>
 
-      {q.type === "mcq" && q.options && (
+      {(q.type === "mcq" || q.type === "true_false") && q.options && (
         <div className="flex flex-col gap-1 mb-1">
           {q.options.map((opt, i) => {
             const isSelected = given === opt;
@@ -673,7 +683,7 @@ function ReviewItem({
         </div>
       )}
 
-      {(q.type === "free_text" || q.type === "short_answer" || q.type === "essay" || q.type === "fill_in_blank" || q.type === "fill_in") && (
+      {isFreeResponseType(q.type) && (
         <div className="space-y-2">
           <div>
             <p className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40 mb-0.5">
@@ -761,7 +771,7 @@ function ResultsScreen({
   config: QuizConfig;
 }) {
   const graded = questions.map((q) => {
-    if (q.type === "mcq") {
+    if (q.type === "mcq" || q.type === "true_false") {
       const ans = answers[q.id] ?? "";
       if (!ans) return null;
       const correct = q.correctAnswer;
@@ -781,7 +791,7 @@ function ResultsScreen({
 
   const unansweredFreeText = questions.filter(
     (q) =>
-      q.type === "free_text" &&
+      isFreeResponseType(q.type) &&
       answers[q.id] &&
       !zResults[q.id] &&
       selfMarks[q.id] === undefined,
@@ -893,9 +903,9 @@ function ResultsScreen({
             given={answers[q.id] ?? ""}
             index={i}
             zResult={zResults[q.id]}
-            selfMark={q.type === "free_text" ? (selfMarks[q.id] ?? null) : null}
+            selfMark={isFreeResponseType(q.type) ? (selfMarks[q.id] ?? null) : null}
             onSelfMark={
-              q.type === "free_text" && !zResults[q.id]
+              isFreeResponseType(q.type) && !zResults[q.id]
                 ? (v) => onSelfMark(q.id, v)
                 : undefined
             }
@@ -915,6 +925,8 @@ export default function QuizTakePage({
 }) {
   const { id } = use(params);
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const gradeQuiz = useGradeQuizAnswers();
 
   const [quiz, setQuiz] = useState<QuizDetail | null>(null);
@@ -947,6 +959,7 @@ export default function QuizTakePage({
 
   const [timerRemaining, setTimerRemaining] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const currentParam = searchParams.get("q");
 
   const stopTimer = useCallback(() => {
     if (timerRef.current) {
@@ -960,8 +973,7 @@ export default function QuizTakePage({
     clearProgress(id);
     const marks: Record<string, boolean | null> = {};
     questions.forEach((q) => {
-      if (q.type === "free_text")
-        marks[q.id] = null;
+      if (isFreeResponseType(q.type)) marks[q.id] = null;
     });
     setSelfMarks(marks);
     setScreen("results");
@@ -1021,7 +1033,7 @@ export default function QuizTakePage({
           if (!locked) handleAnswer(q.options[idx]);
         }
       }
-      if (e.key === "ArrowRight" || (e.key === " " && q.type !== "free_text")) {
+      if (e.key === "ArrowRight" || (e.key === " " && !isFreeResponseType(q.type))) {
         e.preventDefault();
         if (current < questions.length - 1) setCurrent((c) => c + 1);
       }
@@ -1036,6 +1048,13 @@ export default function QuizTakePage({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
+
+  useEffect(() => {
+    if (screen !== "quiz") return;
+    const next = new URLSearchParams(searchParams.toString());
+    next.set("q", String(current + 1));
+    router.replace(`${pathname}?${next.toString()}`, { scroll: false });
+  }, [screen, current, router, pathname, searchParams]);
 
   useEffect(() => {
     api
@@ -1121,7 +1140,12 @@ export default function QuizTakePage({
           .map((qid) => allQs.find((q) => q.id === qid))
           .filter(Boolean) as QuizQuestion[];
         setQuestions(ordered);
-        setCurrent(resumeData.current);
+        setCurrent(
+          Math.max(
+            0,
+            Math.min(resumeData.current, Math.max(ordered.length - 1, 0)),
+          ),
+        );
         setAnswers(resumeData.answers);
         setImmediateResults(resumeData.immediateResults);
         setStreak(resumeData.streak);
@@ -1129,7 +1153,14 @@ export default function QuizTakePage({
       } else {
         const qs = buildQuestions(quizWithQuestions, cfg);
         setQuestions(qs);
-        setCurrent(0);
+        const qFromUrl = Number(currentParam || "1");
+        const nextCurrent = Number.isFinite(qFromUrl)
+          ? Math.max(
+              0,
+              Math.min(Math.floor(qFromUrl) - 1, Math.max(qs.length - 1, 0)),
+            )
+          : 0;
+        setCurrent(nextCurrent);
         setAnswers({});
         setImmediateResults({});
         setStreak(0);
@@ -1139,7 +1170,7 @@ export default function QuizTakePage({
       setTimerRemaining(cfg.timerSeconds);
       setScreen("quiz");
     },
-    [quiz],
+    [quiz, currentParam],
   );
 
   const handleRetake = useCallback(() => {
@@ -1157,7 +1188,7 @@ export default function QuizTakePage({
   const handleGradeWithZ = useCallback(async () => {
     if (!quiz || !config) return;
     const freeTextAnswered = questions.filter(
-      (q) => q.type === "free_text" && answers[q.id] && !zResults[q.id],
+      (q) => isFreeResponseType(q.type) && answers[q.id] && !zResults[q.id],
     );
     if (freeTextAnswered.length === 0) return;
 
@@ -1399,6 +1430,12 @@ export default function QuizTakePage({
                     size="sm"
                     className="h-8 gap-1 text-[10px] font-mono"
                     onClick={() => setCurrent((c) => c + 1)}
+                    disabled={
+                      !config.allowSkip &&
+                      !answers[currentQ.id] &&
+                      currentQ.type !== "mcq" &&
+                      currentQ.type !== "true_false"
+                    }
                   >
                     Next
                     <ChevronRight className="size-3.5" />
