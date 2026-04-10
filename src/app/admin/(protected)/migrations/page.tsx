@@ -139,6 +139,25 @@ function MigrationsContent() {
     }
   };
 
+  const handleRunPendingSingleMigration = async (migrationId: string) => {
+    try {
+      const response = await runMutation.mutateAsync({
+        rerun: false,
+        migrationIds: [migrationId],
+      });
+      toast.success(
+        response.message || `Run queued for pending migration ${migrationId}.`,
+      );
+      refetch();
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : `Failed to run pending migration ${migrationId}.`;
+      toast.error(errorMessage);
+    }
+  };
+
   const history = status?.history || [];
   const pending = status?.pending || [];
   const totalPages = status?.pagination?.totalPages || 1;
@@ -481,6 +500,17 @@ function MigrationsContent() {
                       <span className="text-[11px] font-mono text-foreground truncate flex-1">
                         {file}
                       </span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="rounded-(--radius) font-mono text-[9px] tracking-widest uppercase h-7 px-2"
+                        disabled={runMutation.isPending}
+                        onClick={() => handleRunPendingSingleMigration(file)}
+                      >
+                        <Play className="size-3 mr-1" />
+                        Run
+                      </Button>
                     </div>
                   ))}
                 </div>
