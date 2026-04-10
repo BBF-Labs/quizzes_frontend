@@ -12,17 +12,19 @@ import {
   History,
   Search,
   Clock,
+  RefreshCcw,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PaginationController } from "@/components/common";
 import { useMigrations, useRunMigrations } from "@/hooks";
+import { useSocket } from "@/hooks/common/use-socket";
 import { cn } from "@/lib/utils";
 import { format, formatDistance } from "date-fns";
 import { toast } from "sonner";
 
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 
 function MigrationsContent() {
   const router = useRouter();
@@ -58,10 +60,54 @@ function MigrationsContent() {
   });
 
   const runMutation = useRunMigrations();
+  const { socket, isConnected } = useSocket();
 
-  const handleRunMigrations = async () => {
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleMigrationStarted = (event: {
+      metadata?: { rerun?: boolean };
+    }) => {
+      toast.info(
+        event?.metadata?.rerun
+          ? "Migration rerun started."
+          : "Migration run started.",
+      );
+      refetch();
+    };
+
+    const handleMigrationComplete = (event: {
+      body?: string;
+      metadata?: { executed?: string[]; rerun?: boolean };
+    }) => {
+      const executedCount = event?.metadata?.executed?.length ?? 0;
+      const mode = event?.metadata?.rerun ? "rerun" : "run";
+      toast.success(
+        event?.body ||
+          `Migration ${mode} complete. Executed ${executedCount} script(s).`,
+      );
+      refetch();
+    };
+
+    const handleMigrationFailed = (event: { body?: string }) => {
+      toast.error(event?.body || "Migration run failed.");
+      refetch();
+    };
+
+    socket.on("migration_started", handleMigrationStarted);
+    socket.on("migration_complete", handleMigrationComplete);
+    socket.on("migration_failed", handleMigrationFailed);
+
+    return () => {
+      socket.off("migration_started", handleMigrationStarted);
+      socket.off("migration_complete", handleMigrationComplete);
+      socket.off("migration_failed", handleMigrationFailed);
+    };
+  }, [socket, refetch]);
+
+  const handleRunMigrations = async (rerun = false) => {
     try {
-      const response = await runMutation.mutateAsync();
+      const response = await runMutation.mutateAsync({ rerun });
       toast.success(response.message || "Migration job enqueued successfully.");
       refetch();
     } catch (error: unknown) {
@@ -103,6 +149,16 @@ function MigrationsContent() {
             Infrastructure
           </span>
         </div>
+        <div className="mb-3">
+          <span
+            className={cn(
+              "text-[10px] font-mono tracking-widest uppercase",
+              isConnected ? "text-green-500" : "text-yellow-500",
+            )}
+          >
+            {isConnected ? "Live updates connected" : "Live updates reconnecting"}
+          </span>
+        </div>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-3xl font-mono font-bold tracking-[0.2em] uppercase text-foreground">
@@ -123,7 +179,7 @@ function MigrationsContent() {
               <RotateCw className={cn("size-4", isLoading && "animate-spin")} />
             </Button>
             <Button
-              onClick={handleRunMigrations}
+              onClick={() => handleRunMigrations(false)}
               disabled={runMutation.isPending || pending.length === 0}
               className="rounded-(--radius) font-mono text-[10px] tracking-widest uppercase gap-2 h-9 px-4"
             >
@@ -133,6 +189,19 @@ function MigrationsContent() {
                 <Play className="size-3.5" />
               )}
               Apply Pending ({pending.length})
+            </Button>
+            <Button
+              onClick={() => handleRunMigrations(true)}
+              disabled={runMutation.isPending}
+              variant="destructive"
+              className="rounded-(--radius) font-mono text-[10px] tracking-widest uppercase gap-2 h-9 px-4"
+            >
+              {runMutation.isPending ? (
+                <RotateCw className="size-3.5 animate-spin" />
+              ) : (
+                <RefreshCcw className="size-3.5" />
+              )}
+              Rerun All
             </Button>
           </div>
         </div>
