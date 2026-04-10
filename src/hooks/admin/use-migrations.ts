@@ -43,9 +43,10 @@ export const useRunMigrations = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async () => {
+    mutationFn: async (options?: { rerun?: boolean }) => {
       const { data } = await api.post<{ message: string }>(
         "/admin/system/migrations",
+        { rerun: options?.rerun === true },
       );
       return data;
     },
