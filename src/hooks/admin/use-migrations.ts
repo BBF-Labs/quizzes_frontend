@@ -4,6 +4,7 @@ import { api } from "@/lib/api";
 export interface IMigration {
   _id: string;
   name: string;
+  migrationId?: string;
   status: "pending" | "success" | "error";
   errorMessage?: string;
   startTime: string;
@@ -43,10 +44,13 @@ export const useRunMigrations = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (options?: { rerun?: boolean }) => {
+    mutationFn: async (options?: { rerun?: boolean; migrationIds?: string[] }) => {
       const { data } = await api.post<{ message: string }>(
         "/admin/system/migrations",
-        { rerun: options?.rerun === true },
+        {
+          rerun: options?.rerun === true,
+          migrationIds: options?.migrationIds ?? [],
+        },
       );
       return data;
     },

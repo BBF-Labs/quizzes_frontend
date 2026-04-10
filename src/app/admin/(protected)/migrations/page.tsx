@@ -13,6 +13,7 @@ import {
   Search,
   Clock,
   RefreshCcw,
+  Redo2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -115,6 +116,25 @@ function MigrationsContent() {
         error instanceof Error
           ? error.message
           : "Failed to enqueue migration job.";
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleRerunSingleMigration = async (migrationId: string) => {
+    try {
+      const response = await runMutation.mutateAsync({
+        rerun: true,
+        migrationIds: [migrationId],
+      });
+      toast.success(
+        response.message || `Rerun queued for migration ${migrationId}.`,
+      );
+      refetch();
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : `Failed to rerun migration ${migrationId}.`;
       toast.error(errorMessage);
     }
   };
@@ -308,6 +328,9 @@ function MigrationsContent() {
                       Timing
                     </th>
                     <th className="px-6 py-4 font-bold text-muted-foreground text-right">
+                      Action
+                    </th>
+                    <th className="px-6 py-4 font-bold text-muted-foreground text-right">
                       Status
                     </th>
                   </tr>
@@ -316,7 +339,7 @@ function MigrationsContent() {
                   {isLoading ? (
                     <tr>
                       <td
-                        colSpan={3}
+                        colSpan={4}
                         className="px-6 py-12 text-center text-muted-foreground animate-pulse"
                       >
                         Retrieving migration records…
@@ -325,7 +348,7 @@ function MigrationsContent() {
                   ) : history.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={3}
+                        colSpan={4}
                         className="px-6 py-12 text-center text-muted-foreground"
                       >
                         No migration history found.
@@ -386,6 +409,19 @@ function MigrationsContent() {
                               }
                             })()}
                           </div>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="rounded-(--radius) font-mono text-[9px] tracking-widest uppercase h-7 px-2"
+                            disabled={runMutation.isPending}
+                            onClick={() => handleRerunSingleMigration(m.name)}
+                          >
+                            <Redo2 className="size-3 mr-1" />
+                            Rerun
+                          </Button>
                         </td>
                         <td className="px-6 py-4 text-right">
                           <span
