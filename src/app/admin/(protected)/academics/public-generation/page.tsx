@@ -53,7 +53,7 @@ export default function PublicGenerationPage() {
     mutate: triggerGeneration,
     isPending,
     progress,
-    lectureUpdates,
+    materialUpdates,
   } = useTriggerPublicQuizGeneration();
 
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
@@ -109,8 +109,8 @@ export default function PublicGenerationPage() {
           Public Quiz Generation
         </h1>
         <p className="text-xs font-mono text-muted-foreground mt-1 tracking-widest uppercase">
-          Trigger on-demand public quiz generation for courses with 35-45
-          questions per lecture
+          Trigger on-demand comprehensive quiz generation for courses using AI
+          synthesis across all materials
         </p>
       </motion.div>
 
@@ -264,24 +264,24 @@ export default function PublicGenerationPage() {
                 />
               </div>
               <p className="text-[10px] font-mono text-muted-foreground">
-                Completed {progress.completedLectures} of{" "}
-                {progress.totalLectures} lectures
+                Completed {progress.completedMaterials} of{" "}
+                {progress.totalMaterials} materials
               </p>
             </div>
 
-            {/* Lecture-by-lecture status */}
-            {Object.entries(lectureUpdates).length > 0 && (
+            {/* Material-by-material status */}
+            {Object.entries(materialUpdates).length > 0 && (
               <div className="space-y-2">
                 <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground">
-                  Lecture Status
+                  Material Status
                 </p>
                 <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {Object.entries(lectureUpdates).map(
-                    ([lectureName, status]) => {
+                  {Object.entries(materialUpdates).map(
+                    ([materialName, status]) => {
                       const typedStatus = status as LectureStatus;
                       return (
                         <div
-                          key={lectureName}
+                          key={materialName}
                           className="flex items-center gap-2 border border-border/30 bg-card/40 p-2"
                         >
                           {typedStatus.status === "processing" && (
@@ -298,7 +298,7 @@ export default function PublicGenerationPage() {
                           )}
                           <div className="flex-1 min-w-0">
                             <p className="text-[10px] font-mono text-muted-foreground truncate">
-                              {lectureName}
+                              {materialName}
                             </p>
                             {typedStatus.questionsGenerated && (
                               <p className="text-[9px] font-mono text-muted-foreground/60">
@@ -373,18 +373,30 @@ export default function PublicGenerationPage() {
               <ul className="space-y-1 text-muted-foreground/80 list-disc list-inside">
                 <li>Finds upcoming exams for the selected course</li>
                 <li>Matches published library materials by course code/name</li>
-                <li>Extracts lectures and sections from matched materials</li>
                 <li>
-                  Enqueues quiz generation jobs with your specified question
-                  count
-                </li>
-                <li>Real-time progress updates as each lecture is processed</li>
-                <li>
-                  Each lecture gets {questionCount} questions (MCQ, True/False,
-                  Fill-in)
+                  Creates autonomous AI session for each material using rich
+                  synthesis
                 </li>
                 <li>
-                  Quizzes are tagged as &quot;public_manual_generated&quot;
+                  AI reads and analyzes the entire material comprehensively
+                </li>
+                <li>
+                  Generates diverse question types (MCQ, True/False, Short
+                  Answer, Fill-in, Essay)
+                </li>
+                <li>
+                  Covers all major topics and lectures within the material
+                </li>
+                <li>
+                  Total questions distributed across {questionCount} suggested
+                  questions
+                </li>
+                <li>
+                  Real-time progress tracking as each material is processed
+                </li>
+                <li>
+                  Quizzes are tagged as &quot;public_auto_generated&quot; for
+                  tracking
                 </li>
               </ul>
             </div>

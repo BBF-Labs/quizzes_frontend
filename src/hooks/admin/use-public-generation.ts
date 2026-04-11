@@ -18,50 +18,52 @@ export interface TriggerPublicQuizGenerationResult {
   generationId: string;
   details?: Array<{
     materialId: string;
-    lectureTitle: string;
-    jobId: string;
+    materialTitle: string;
+    sessionId: string;
   }>;
 }
 
 export interface PublicQuizGenerationProgress {
   generationId: string;
   courseId: string;
-  completedLectures: number;
-  totalLectures: number;
-  currentLecture?: string;
+  completedMaterials: number;
+  totalMaterials: number;
+  currentMaterial?: string;
   percentComplete: number;
-  lectureUpdates: Array<{
-    lectureName: string;
-    status: "pending" | "processing" | "completed" | "failed";
-    questionsGenerated?: number;
-    error?: string;
-  }>;
+  materialUpdates: Record<
+    string,
+    {
+      status: "pending" | "processing" | "completed" | "failed";
+      questionsGenerated?: number;
+      quizId?: string;
+      error?: string;
+    }
+  >;
 }
 
-type LectureStartedEvent = {
-  lectureTitle: string;
+type MaterialStartedEvent = {
+  generationId: string;
+  courseId: string;
+  materialId: string;
+  materialTitle: string;
+  status: string;
 };
 
-type LectureCompletedEvent = {
+type MaterialCompletedEvent = {
+  generationId: string;
+  courseId: string;
+  materialId: string;
   lectureTitle: string;
-  questionsGenerated?: number;
-  completedLectures: number;
-  percentComplete: number;
+  questionsGenerated: number;
+  quizId?: string;
+  status: string;
 };
 
-type LectureFailedEvent = {
+type MaterialFailedEvent = {
+  generationId: string;
+  courseId: string;
   lectureTitle: string;
   error?: string;
-};
-
-type ProgressEvent = {
-  completedLectures: number;
-  percentComplete: number;
-  currentLecture?: string;
-};
-
-type CompletedEvent = {
-  totalLectures: number;
 };
 
 export const useTriggerPublicQuizGeneration = () => {
@@ -69,125 +71,98 @@ export const useTriggerPublicQuizGeneration = () => {
   const [progress, setProgress] = useState<PublicQuizGenerationProgress | null>(
     null,
   );
-  const [lectureUpdates, setLectureUpdates] = useState<
+  const [materialUpdates, setMaterialUpdates] = useState<
     Record<
       string,
       {
         status: "pending" | "processing" | "completed" | "failed";
         questionsGenerated?: number;
+        quizId?: string;
         error?: string;
       }
     >
   >({});
 
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || !progress) return;
 
-    // Listen for lecture started
+    // Listen for material processing started
     socket.on(
       EVENT_NAMES.PUBLIC_QUIZ_GENERATION_LECTURE_STARTED ||
         "public_quiz:generation:lecture:started",
-      (data: LectureStartedEvent) => {
-        setLectureUpdates((prev) => ({
+      (data: MaterialStartedEvent) => {
+        if (data.generationId !== progress.generationId) return;
+
+        setMaterialUpdates((prev) => ({
           ...prev,
-          [data.lectureTitle]: { status: "processing" },
+          [data.materialTitle]: { status: "processing" },
         }));
       },
     );
 
-    // Listen for lecture completed
+    // Listen for material completed
     socket.on(
       EVENT_NAMES.PUBLIC_QUIZ_GENERATION_LECTURE_COMPLETED ||
         "public_quiz:generation:lecture:completed",
-      (data: LectureCompletedEvent) => {
-        setLectureUpdates((prev) => ({
+      (data: MaterialCompletedEvent) => {
+        if (data.generationId !== progress.generationId) return;
+
+        const materialTitle = data.lectureTitle;
+        setMaterialUpdates((prev) => ({
           ...prev,
-          [data.lectureTitle]: {
+          [materialTitle]: {
             status: "completed",
             questionsGenerated: data.questionsGenerated,
+            quizId: data.quizId,
           },
         }));
-        setProgress((prev) =>
-          prev
-            ? {
-                ...prev,
-                completedLectures: data.completedLectures,
-                percentComplete: data.percentComplete,
-              }
-            : null,
-        );
+
+        // Update overall progress
+        setProgress((prev) => {
+          if (!prev) return null;
+          const completedCount = Object.values({
+            ...prev.materialUpdates,
+            [materialTitle]: { status: "completed" } as const,
+          }).filter(
+            (m): m is { status: "completed" } =>
+              (m as { status: string }).status === "completed",
+          ).length;
+
+          const newPercent = Math.round(
+            (completedCount / prev.totalMaterials) * 100,
+          );
+
+          return {
+            ...prev,
+            completedMaterials: completedCount,
+            percentComplete: newPercent,
+            currentMaterial: undefined,
+          };
+        });
       },
     );
 
-    // Listen for lecture failed
+    // Listen for material failed
     socket.on(
       EVENT_NAMES.PUBLIC_QUIZ_GENERATION_LECTURE_FAILED ||
         "public_quiz:generation:lecture:failed",
-      (data: LectureFailedEvent) => {
-        setLectureUpdates((prev) => ({
+      (data: MaterialFailedEvent) => {
+        if (data.generationId !== progress.generationId) return;
+
+        const materialTitle = data.lectureTitle;
+        setMaterialUpdates((prev) => ({
           ...prev,
-          [data.lectureTitle]: { status: "failed", error: data.error },
+          [materialTitle]: { status: "failed", error: data.error },
         }));
-      },
-    );
-
-    // Listen for overall progress
-    socket.on(
-      EVENT_NAMES.PUBLIC_QUIZ_GENERATION_PROGRESS ||
-        "public_quiz:generation:progress",
-      (data: ProgressEvent) => {
-        setProgress((prev) =>
-          prev
-            ? {
-                ...prev,
-                completedLectures: data.completedLectures,
-                percentComplete: data.percentComplete,
-                currentLecture: data.currentLecture,
-              }
-            : null,
-        );
-      },
-    );
-
-    // Listen for completion
-    socket.on(
-      EVENT_NAMES.PUBLIC_QUIZ_GENERATION_COMPLETED ||
-        "public_quiz:generation:completed",
-      (data: CompletedEvent) => {
-        setProgress((prev) =>
-          prev
-            ? {
-                ...prev,
-                percentComplete: 100,
-                completedLectures: data.totalLectures,
-              }
-            : null,
-        );
       },
     );
 
     return () => {
-      socket.off(
-        EVENT_NAMES.PUBLIC_QUIZ_GENERATION_LECTURE_STARTED ||
-          "public_quiz:generation:lecture:started",
-      );
-      socket.off(
-        EVENT_NAMES.PUBLIC_QUIZ_GENERATION_LECTURE_COMPLETED ||
-          "public_quiz:generation:lecture:completed",
-      );
-      socket.off(
-        EVENT_NAMES.PUBLIC_QUIZ_GENERATION_LECTURE_FAILED ||
-          "public_quiz:generation:lecture:failed",
-      );
-      socket.off(
-        EVENT_NAMES.PUBLIC_QUIZ_GENERATION_PROGRESS ||
-          "public_quiz:generation:progress",
-      );
-      socket.off(
-        EVENT_NAMES.PUBLIC_QUIZ_GENERATION_COMPLETED ||
-          "public_quiz:generation:completed",
-      );
+      socket.off(EVENT_NAMES.PUBLIC_QUIZ_GENERATION_LECTURE_STARTED);
+      socket.off(EVENT_NAMES.PUBLIC_QUIZ_GENERATION_LECTURE_COMPLETED);
+      socket.off(EVENT_NAMES.PUBLIC_QUIZ_GENERATION_LECTURE_FAILED);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket]);
 
   const mutation = useMutation({
@@ -200,31 +175,34 @@ export const useTriggerPublicQuizGeneration = () => {
     },
     onSuccess: (data) => {
       if (data?.generationId) {
-        // Initialize progress tracking
+        // Initialize progress tracking with materials (not lectures)
+        const totalMaterials = data.jobsQueued;
+
         setProgress({
           generationId: data.generationId,
           courseId: data.details?.[0]?.materialId || "",
-          completedLectures: 0,
-          totalLectures: data.jobsQueued,
+          completedMaterials: 0,
+          totalMaterials,
           percentComplete: 0,
-          lectureUpdates: [],
+          materialUpdates: {},
         });
 
-        // Pre-populate lectureUpdates with all lectures as pending
-        const initialLectures: Record<
+        // Pre-populate materialUpdates with all materials as pending
+        const initialMaterials: Record<
           string,
           {
             status: "pending" | "processing" | "completed" | "failed";
             questionsGenerated?: number;
+            quizId?: string;
             error?: string;
           }
         > = {};
         if (data.details) {
           data.details.forEach((detail) => {
-            initialLectures[detail.lectureTitle] = { status: "pending" };
+            initialMaterials[detail.materialTitle] = { status: "pending" };
           });
         }
-        setLectureUpdates(initialLectures);
+        setMaterialUpdates(initialMaterials);
       }
     },
   });
@@ -232,6 +210,6 @@ export const useTriggerPublicQuizGeneration = () => {
   return {
     ...mutation,
     progress,
-    lectureUpdates,
+    materialUpdates,
   };
 };
