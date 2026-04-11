@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useSocket } from "@/hooks/common/use-socket";
 import { EVENT_NAMES } from "@/types/socket-events";
@@ -47,6 +47,18 @@ type MaterialStartedEvent = {
   materialId: string;
   materialTitle: string;
   status: string;
+  stage?: string;
+  message?: string;
+};
+
+type LectureStartedEvent = {
+  generationId: string;
+  courseId: string;
+  lectureTitle: string;
+  lectureIndex: number;
+  totalLectures: number;
+  stage?: string;
+  message?: string;
 };
 
 type MaterialCompletedEvent = {
@@ -57,6 +69,8 @@ type MaterialCompletedEvent = {
   questionsGenerated: number;
   quizId?: string;
   status: string;
+  stage?: string;
+  message?: string;
 };
 
 type MaterialFailedEvent = {
@@ -64,13 +78,26 @@ type MaterialFailedEvent = {
   courseId: string;
   lectureTitle: string;
   error?: string;
+  stage?: string;
+  message?: string;
+};
+
+export type PublicQuizExecutionStep = {
+  id: string;
+  label: string;
+  detail?: string;
+  status: "pending" | "processing" | "completed" | "failed";
 };
 
 export const useTriggerPublicQuizGeneration = () => {
   const { socket } = useSocket();
+  const currentCourseIdRef = useRef<string>("");
   const [progress, setProgress] = useState<PublicQuizGenerationProgress | null>(
     null,
   );
+  const [executionSteps, setExecutionSteps] = useState<
+    PublicQuizExecutionStep[]
+  >([]);
   const [materialUpdates, setMaterialUpdates] = useState<
     Record<
       string,
@@ -84,18 +111,164 @@ export const useTriggerPublicQuizGeneration = () => {
   >({});
 
   useEffect(() => {
-    if (!socket || !progress) return;
+    if (!socket || !progress?.generationId) return;
+
+    const setStep = (
+      id: string,
+      update: Partial<PublicQuizExecutionStep> & { label?: string },
+    ) => {
+      setExecutionSteps((prev) => {
+        const next = [...prev];
+        const index = next.findIndex((step) => step.id === id);
+        const current =
+          index >= 0
+            ? next[index]
+            : {
+                id,
+                label: update.label || id,
+                status: "pending" as const,
+              };
+
+        const merged = { ...current, ...update } as PublicQuizExecutionStep;
+        if (index >= 0) next[index] = merged;
+        else next.push(merged);
+        return next.slice(-12);
+      });
+    };
+
+    const appendStep = (step: PublicQuizExecutionStep) => {
+      setExecutionSteps((prev) => [...prev, step].slice(-12));
+    };
+
+    setStep("outline", {
+      label: "Outline Discovery",
+      status: "processing",
+      detail: "Waiting for the material outline to be extracted.",
+    });
+    setStep("parallel", {
+      label: "Parallel Topic Agents",
+      status: "pending",
+      detail: "Topic-level workers will start after the outline is ready.",
+    });
+    setStep("persist", {
+      label: "Persist Quiz",
+      status: "pending",
+      detail: "Saving the finished public quiz and question bank.",
+    });
 
     // Listen for material processing started
     socket.on(
-      EVENT_NAMES.PUBLIC_QUIZ_GENERATION_LECTURE_STARTED ||
-        "public_quiz:generation:lecture:started",
-      (data: MaterialStartedEvent) => {
+      EVENT_NAMES.PUBLIC_QUIZ_GENERATION_STARTED,
+      (data: {
+        generationId: string;
+        courseId: string;
+        totalLectures: number;
+        questionsPerLecture: number;
+        stage?: string;
+        message?: string;
+      }) => {
         if (data.generationId !== progress.generationId) return;
+
+        setStep("outline", {
+          status: "completed",
+          detail: data.message || "Outline extracted.",
+        });
+        setStep("parallel", {
+          status: "processing",
+          detail: `${data.totalLectures} lecture sections mapped. Parallel topic agents are starting.`,
+        });
+        appendStep({
+          id: `started-${data.generationId}`,
+          label: "Outline discovered",
+          detail: `${data.totalLectures} lecture sections identified.`,
+          status: "completed",
+        });
+      },
+    );
+
+    socket.on(
+      EVENT_NAMES.PUBLIC_QUIZ_GENERATION_PROGRESS,
+      (data: {
+        generationId: string;
+        courseId: string;
+        currentLecture?: string;
+        currentTopic?: string;
+        completedTopics?: number;
+        totalTopics?: number;
+        percentComplete: number;
+        stage?: string;
+        message?: string;
+      }) => {
+        if (data.generationId !== progress.generationId) return;
+
+        if (data.stage === "topic_generation_started" && data.currentLecture) {
+          appendStep({
+            id: `topic-start:${data.currentLecture}:${data.currentTopic || ""}:${data.completedTopics || 0}`,
+            label: "Parallel topic agent started",
+            detail:
+              data.message ||
+              `${data.currentLecture}${data.currentTopic ? ` → ${data.currentTopic}` : ""}`,
+            status: "processing",
+          });
+          setStep("parallel", {
+            status: "processing",
+            detail:
+              data.message ||
+              `${data.completedTopics || 0}/${data.totalTopics || 0} topic agents running.`,
+          });
+        }
+
+        if (
+          data.stage === "topic_generation_completed" &&
+          data.currentLecture
+        ) {
+          appendStep({
+            id: `topic-done:${data.currentLecture}:${data.currentTopic || ""}:${data.completedTopics || 0}`,
+            label: "Parallel topic agent completed",
+            detail:
+              data.message ||
+              `${data.currentLecture}${data.currentTopic ? ` → ${data.currentTopic}` : ""}`,
+            status: "completed",
+          });
+        }
+
+        if (data.stage === "lectures_assembled") {
+          setStep("parallel", {
+            status: "completed",
+            detail: data.message || "Parallel topic agents finished.",
+          });
+          setStep("persist", {
+            status: "processing",
+            detail: data.message || "Persisting the final public quiz.",
+          });
+          appendStep({
+            id: `assembled-${data.generationId}`,
+            label: "Lecture structure assembled",
+            detail:
+              data.message ||
+              "Lecture structure assembled from parallel agents.",
+            status: "completed",
+          });
+        }
+      },
+    );
+
+    // Listen for lecture processing started
+    socket.on(
+      EVENT_NAMES.PUBLIC_QUIZ_GENERATION_LECTURE_STARTED,
+      (data: LectureStartedEvent) => {
+        if (data.generationId !== progress.generationId) return;
+
+        appendStep({
+          id: `lecture-start:${data.lectureIndex}`,
+          label: "Lecture discovered",
+          detail: data.message || `${data.lectureTitle} queued for generation.`,
+          status: "processing",
+        });
 
         setMaterialUpdates((prev) => ({
           ...prev,
-          [data.materialTitle]: { status: "processing" },
+          [data.lectureTitle]: { status: "processing" },
         }));
       },
     );
@@ -108,6 +281,15 @@ export const useTriggerPublicQuizGeneration = () => {
         if (data.generationId !== progress.generationId) return;
 
         const materialTitle = data.lectureTitle;
+        appendStep({
+          id: `lecture-done:${data.lectureTitle}`,
+          label: "Lecture generated",
+          detail:
+            data.message ||
+            `${materialTitle} completed with ${data.questionsGenerated} questions.`,
+          status: "completed",
+        });
+
         setMaterialUpdates((prev) => ({
           ...prev,
           [materialTitle]: {
@@ -150,6 +332,12 @@ export const useTriggerPublicQuizGeneration = () => {
         if (data.generationId !== progress.generationId) return;
 
         const materialTitle = data.lectureTitle;
+        appendStep({
+          id: `lecture-failed:${materialTitle}`,
+          label: "Lecture failed",
+          detail: data.error || data.message || "Generation failed.",
+          status: "failed",
+        });
         setMaterialUpdates((prev) => ({
           ...prev,
           [materialTitle]: { status: "failed", error: data.error },
@@ -158,14 +346,19 @@ export const useTriggerPublicQuizGeneration = () => {
     );
 
     return () => {
+      socket.off(EVENT_NAMES.PUBLIC_QUIZ_GENERATION_STARTED);
+      socket.off(EVENT_NAMES.PUBLIC_QUIZ_GENERATION_PROGRESS);
       socket.off(EVENT_NAMES.PUBLIC_QUIZ_GENERATION_LECTURE_STARTED);
       socket.off(EVENT_NAMES.PUBLIC_QUIZ_GENERATION_LECTURE_COMPLETED);
       socket.off(EVENT_NAMES.PUBLIC_QUIZ_GENERATION_LECTURE_FAILED);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [socket]);
+  }, [socket, progress?.generationId]);
 
   const mutation = useMutation({
+    onMutate: (payload) => {
+      currentCourseIdRef.current = payload.courseId;
+    },
     mutationFn: async (payload: TriggerPublicQuizGenerationPayload) => {
       const res = await api.post<ApiData<TriggerPublicQuizGenerationResult>>(
         "/admin/learning/public-quizzes/trigger-generation",
@@ -180,12 +373,39 @@ export const useTriggerPublicQuizGeneration = () => {
 
         setProgress({
           generationId: data.generationId,
-          courseId: data.details?.[0]?.materialId || "",
+          courseId: currentCourseIdRef.current,
           completedMaterials: 0,
           totalMaterials,
           percentComplete: 0,
           materialUpdates: {},
         });
+
+        setExecutionSteps([
+          {
+            id: "queued",
+            label: "Generation queued",
+            detail: `${totalMaterials} material job${totalMaterials === 1 ? "" : "s"} accepted.`,
+            status: "completed",
+          },
+          {
+            id: "outline",
+            label: "Outline discovery",
+            detail: "Waiting for the AI to extract lecture structure.",
+            status: "processing",
+          },
+          {
+            id: "parallel",
+            label: "Parallel topic agents",
+            detail: "Each lecture will fan out into parallel topic workers.",
+            status: "pending",
+          },
+          {
+            id: "persist",
+            label: "Persist quiz",
+            detail: "Questions, hints, explanations, and tags will be saved.",
+            status: "pending",
+          },
+        ]);
 
         // Pre-populate materialUpdates with all materials as pending
         const initialMaterials: Record<
@@ -211,5 +431,6 @@ export const useTriggerPublicQuizGeneration = () => {
     ...mutation,
     progress,
     materialUpdates,
+    executionSteps,
   };
 };
