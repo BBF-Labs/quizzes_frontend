@@ -132,7 +132,7 @@ function CoursePicker({
     >
       <ComboboxInput
         placeholder="Search course…"
-        className="w-full border border-border/50 bg-background/40 px-3 py-2 text-[12px] font-mono focus:outline-none focus:border-primary/50 transition-colors h-[34px] uppercase tracking-widest"
+        className="w-full border border-border/50 bg-background/40 px-3 py-2 text-[12px] font-mono focus:outline-none focus:border-primary/50 transition-colors h-8.5 uppercase tracking-widest"
         value={courseSearch}
         onChange={(e) => onSearchChange(e.target.value)}
         required
