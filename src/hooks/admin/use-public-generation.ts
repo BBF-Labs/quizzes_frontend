@@ -5,6 +5,11 @@ import { useSocket } from "@/hooks/common/use-socket";
 import { EVENT_NAMES } from "@/types/socket-events";
 
 type ApiData<T> = { data: T };
+type ApiResponseEnvelope<T> = {
+  success: boolean;
+  message: string;
+  data?: T;
+};
 
 export interface TriggerPublicQuizGenerationPayload {
   courseId: string;
@@ -360,11 +365,22 @@ export const useTriggerPublicQuizGeneration = () => {
       currentCourseIdRef.current = payload.courseId;
     },
     mutationFn: async (payload: TriggerPublicQuizGenerationPayload) => {
-      const res = await api.post<ApiData<TriggerPublicQuizGenerationResult>>(
+      const res = await api.post<
+        ApiResponseEnvelope<
+          Omit<TriggerPublicQuizGenerationResult, "success" | "message">
+        >
+      >(
         "/admin/learning/public-quizzes/trigger-generation",
         payload,
       );
-      return res.data?.data || res.data;
+      return {
+        success: res.data?.success ?? true,
+        message:
+          res.data?.message || "Public quiz generation queued successfully",
+        jobsQueued: res.data?.data?.jobsQueued ?? 0,
+        generationId: res.data?.data?.generationId || "",
+        details: res.data?.data?.details || [],
+      } as TriggerPublicQuizGenerationResult;
     },
     onSuccess: (data) => {
       if (data?.generationId) {

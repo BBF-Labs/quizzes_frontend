@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Zap,
   ScrollText,
@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   Loader2,
   Play,
+  Check,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -21,6 +22,7 @@ import {
 } from "@/components/ui/combobox";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { SquareLoader } from "@/components/ui/square-loader";
 import { useAdminCourses, AdminCourse } from "@/hooks/admin/use-academics";
 import {
   useTriggerPublicQuizGeneration,
@@ -274,33 +276,87 @@ export default function PublicGenerationPage() {
               <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground">
                 Deterministic Execution
               </p>
-              <div className="space-y-2 border border-border/30 bg-card/30 p-3 max-h-72 overflow-y-auto">
-                {executionSteps.map((step: PublicQuizExecutionStep) => (
-                  <div key={step.id} className="flex items-start gap-3">
-                    {step.status === "processing" && (
-                      <Loader2 className="size-3 text-primary animate-spin shrink-0 mt-0.5" />
-                    )}
-                    {step.status === "completed" && (
-                      <CheckCircle2 className="size-3 text-green-500 shrink-0 mt-0.5" />
-                    )}
-                    {step.status === "failed" && (
-                      <AlertCircle className="size-3 text-destructive shrink-0 mt-0.5" />
-                    )}
-                    {step.status === "pending" && (
-                      <div className="size-3 border border-muted-foreground/30 shrink-0 mt-0.5" />
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[10px] font-mono uppercase tracking-widest text-foreground truncate">
-                        {step.label}
-                      </p>
-                      {step.detail && (
-                        <p className="text-[9px] font-mono text-muted-foreground/70 leading-relaxed">
-                          {step.detail}
-                        </p>
-                      )}
+              <div className="border border-border/50 bg-card/40 overflow-hidden font-mono text-xs">
+                <div className="p-4 border-b border-border/50 bg-background/80 flex flex-row items-center gap-4">
+                  <div className="w-6 h-6 border border-primary/40 bg-primary/20 flex items-center justify-center text-primary font-bold shadow-sm shrink-0">
+                    Z
+                  </div>
+                  <div className="font-bold text-foreground uppercase tracking-widest flex items-center gap-3">
+                    <span className="w-1.5 h-1.5 bg-primary block animate-pulse" />
+                    Task: Public quiz generation
+                  </div>
+                </div>
+
+                <div className="p-4 md:p-6 space-y-5 max-h-72 overflow-y-auto">
+                  <div className="space-y-3 min-h-28">
+                    <AnimatePresence>
+                      {executionSteps.map((step: PublicQuizExecutionStep) => (
+                        <motion.div
+                          key={step.id}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          className="flex items-center gap-3"
+                        >
+                          {step.status === "completed" && (
+                            <div className="w-4 h-4 border border-primary bg-primary/20 flex items-center justify-center shrink-0">
+                              <Check className="w-2.5 h-2.5 text-primary" />
+                            </div>
+                          )}
+                          {step.status === "processing" && (
+                            <SquareLoader size={16} strokeWidth={1.5} />
+                          )}
+                          {step.status === "pending" && (
+                            <div className="w-4 h-4 border border-muted-foreground/30 shrink-0" />
+                          )}
+                          {step.status === "failed" && (
+                            <div className="w-4 h-4 border border-destructive/60 bg-destructive/20 flex items-center justify-center shrink-0">
+                              <AlertCircle className="w-2.5 h-2.5 text-destructive" />
+                            </div>
+                          )}
+
+                          <div className="min-w-0 flex-1">
+                            <p
+                              className={cn(
+                                "text-[10px] uppercase tracking-wider truncate",
+                                step.status === "pending"
+                                  ? "text-muted-foreground/50"
+                                  : step.status === "processing"
+                                    ? "text-primary font-bold"
+                                    : step.status === "failed"
+                                      ? "text-destructive font-bold"
+                                      : "text-foreground font-medium",
+                              )}
+                            >
+                              {step.label}
+                            </p>
+                            {step.detail && (
+                              <p className="text-[9px] text-muted-foreground/70 leading-relaxed truncate">
+                                {step.detail}
+                              </p>
+                            )}
+                          </div>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                  </div>
+
+                  <div className="pt-4 border-t border-border/50">
+                    <div className="flex justify-between text-[10px] text-muted-foreground mb-2 font-bold uppercase tracking-widest">
+                      <span>System Progress</span>
+                      <span className="text-primary">
+                        {progress.percentComplete.toFixed(0)}% COMPLETE
+                      </span>
+                    </div>
+                    <div className="h-1 bg-border/50 overflow-hidden">
+                      <motion.div
+                        className="h-full bg-primary"
+                        initial={{ width: "0%" }}
+                        animate={{ width: `${progress.percentComplete}%` }}
+                        transition={{ duration: 0.6, ease: "easeOut" }}
+                      />
                     </div>
                   </div>
-                ))}
+                </div>
               </div>
             </div>
 
