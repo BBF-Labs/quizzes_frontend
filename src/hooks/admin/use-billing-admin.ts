@@ -3,6 +3,23 @@ import { api } from "@/lib/api";
 
 type ApiData<T> = { data: T };
 
+export interface PromoEligibility {
+  newUsersOnly?: boolean;
+  firstPurchaseOnly?: boolean;
+  includeCourseIds?: string[];
+  requireAllCourseIds?: boolean;
+  includeTiers?: Array<"cooked" | "cruising" | "locked_in">;
+  includeDurations?: Array<"daily" | "weekly" | "semester">;
+  minOrderAmountGHS?: number | null;
+  maxOrderAmountGHS?: number | null;
+  minStreakDays?: number;
+  hasPendingReferralReward?: boolean;
+  hasCompletedOnboarding?: boolean;
+  inactiveForDays?: number | null;
+  firstNDaysAfterSignup?: number | null;
+  maxUsesPerUser?: number | null;
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface AdminPromoCode {
@@ -14,6 +31,7 @@ export interface AdminPromoCode {
   maxUses: number | null;
   usedCount: number;
   isActive: boolean;
+  eligibility?: PromoEligibility;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -25,6 +43,7 @@ export interface CreatePromoCodePayload {
   value: number;
   expiresAt?: string | null;
   maxUses?: number | null;
+  eligibility?: PromoEligibility;
 }
 
 export interface AdminPayment {
@@ -35,7 +54,15 @@ export interface AdminPayment {
   date: string;
   isValid: boolean;
   method: string;
-  status: "abandoned" | "failed" | "ongoing" | "pending" | "processing" | "queued" | "success" | "reversed";
+  status:
+    | "abandoned"
+    | "failed"
+    | "ongoing"
+    | "pending"
+    | "processing"
+    | "queued"
+    | "success"
+    | "reversed";
   type: "course" | "quiz" | "duration" | "credits" | "default" | "plan";
   package?: string;
   creditsAdded: number;
@@ -89,21 +116,29 @@ export function useAdminCreatePromoCode() {
       );
       return res.data?.data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "promo-codes"] }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["admin", "promo-codes"] }),
   });
 }
 
 export function useAdminUpdatePromoCode() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<CreatePromoCodePayload> & { isActive?: boolean } }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<CreatePromoCodePayload> & { isActive?: boolean };
+    }) => {
       const res = await api.patch<ApiData<AdminPromoCode>>(
         `/admin/subscriptions/promo-codes/${id}`,
         data,
       );
       return res.data?.data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "promo-codes"] }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["admin", "promo-codes"] }),
   });
 }
 
@@ -116,7 +151,8 @@ export function useAdminDeactivatePromoCode() {
       );
       return res.data?.data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "promo-codes"] }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["admin", "promo-codes"] }),
   });
 }
 
@@ -129,7 +165,14 @@ export interface PaymentPagination {
   totalPages: number;
 }
 
-export function useAdminPayments(params: { status?: string; type?: string; page?: number; limit?: number } = {}) {
+export function useAdminPayments(
+  params: {
+    status?: string;
+    type?: string;
+    page?: number;
+    limit?: number;
+  } = {},
+) {
   return useQuery({
     queryKey: ["admin", "payments", params],
     queryFn: async () => {
@@ -138,12 +181,18 @@ export function useAdminPayments(params: { status?: string; type?: string; page?
       if (params.type) query.set("type", params.type);
       if (params.page) query.set("page", String(params.page));
       if (params.limit) query.set("limit", String(params.limit));
-      const res = await api.get<{ data: AdminPayment[]; meta: PaymentPagination }>(
-        `/admin/subscriptions/payments?${query}`,
-      );
+      const res = await api.get<{
+        data: AdminPayment[];
+        meta: PaymentPagination;
+      }>(`/admin/subscriptions/payments?${query}`);
       return {
         data: res.data?.data ?? [],
-        pagination: res.data?.meta ?? { total: 0, page: 1, limit: 20, totalPages: 1 },
+        pagination: res.data?.meta ?? {
+          total: 0,
+          page: 1,
+          limit: 20,
+          totalPages: 1,
+        },
       };
     },
     staleTime: 1000 * 30,

@@ -48,7 +48,9 @@ function MobileExploreSection() {
         className="w-full flex items-center justify-between px-4 py-2 rounded-(--radius) font-mono tracking-widest uppercase text-sm text-foreground hover:bg-accent transition-colors"
       >
         Explore
-        <ChevronDown className={`size-3.5 opacity-60 transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown
+          className={`size-3.5 opacity-60 transition-transform ${open ? "rotate-180" : ""}`}
+        />
       </button>
       {open && (
         <div className="ml-4 mt-1 flex flex-col gap-0.5 border-l border-border/40 pl-3">
@@ -184,7 +186,10 @@ export function Navbar() {
                   Explore
                   <ChevronDown className="size-3 opacity-60" />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="font-mono min-w-[140px]">
+                <DropdownMenuContent
+                  align="start"
+                  className="font-mono min-w-35"
+                >
                   {EXPLORE_LINKS.map(({ href, label }) => (
                     <DropdownMenuItem key={href} asChild>
                       <Link

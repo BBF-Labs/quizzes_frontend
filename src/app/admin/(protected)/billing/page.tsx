@@ -3,7 +3,17 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Plus, X, Tag, CreditCard, Package2, ToggleLeft, ToggleRight, Trash2, Settings2 } from "lucide-react";
+import {
+  Plus,
+  X,
+  Tag,
+  CreditCard,
+  Package2,
+  ToggleLeft,
+  ToggleRight,
+  Trash2,
+  Settings2,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   useAdminPromoCodes,
@@ -14,9 +24,13 @@ import {
   useAdminPackages,
   type CreatePromoCodePayload,
   type AdminPackage,
+  type PromoEligibility,
 } from "@/hooks/admin/use-billing-admin";
 import { PlanCard, PLAN_DURATION_LABELS } from "@/components/common";
-import { type BillingPackage, type PlanDuration } from "@/hooks/common/use-billing";
+import {
+  type BillingPackage,
+  type PlanDuration,
+} from "@/hooks/common/use-billing";
 import {
   Select,
   SelectContent,
@@ -40,14 +54,14 @@ const TABS = [
 type Tab = (typeof TABS)[number]["key"];
 
 const PAYMENT_STATUS_COLORS: Record<string, string> = {
-  success:    "text-green-400 border-green-400/30 bg-green-400/10",
-  failed:     "text-red-400 border-red-400/30 bg-red-400/10",
-  pending:    "text-yellow-400 border-yellow-400/30 bg-yellow-400/10",
+  success: "text-green-400 border-green-400/30 bg-green-400/10",
+  failed: "text-red-400 border-red-400/30 bg-red-400/10",
+  pending: "text-yellow-400 border-yellow-400/30 bg-yellow-400/10",
   processing: "text-blue-400 border-blue-400/30 bg-blue-400/10",
-  abandoned:  "text-muted-foreground border-border/30 bg-card/30",
-  reversed:   "text-orange-400 border-orange-400/30 bg-orange-400/10",
-  ongoing:    "text-cyan-400 border-cyan-400/30 bg-cyan-400/10",
-  queued:     "text-purple-400 border-purple-400/30 bg-purple-400/10",
+  abandoned: "text-muted-foreground border-border/30 bg-card/30",
+  reversed: "text-orange-400 border-orange-400/30 bg-orange-400/10",
+  ongoing: "text-cyan-400 border-cyan-400/30 bg-cyan-400/10",
+  queued: "text-purple-400 border-purple-400/30 bg-purple-400/10",
 };
 
 // ─── Promo Code Section ───────────────────────────────────────────────────────
@@ -62,7 +76,10 @@ function PromoCodeCard({
 
   const toggle = async () => {
     try {
-      await update.mutateAsync({ id: code._id, data: { isActive: !code.isActive } });
+      await update.mutateAsync({
+        id: code._id,
+        data: { isActive: !code.isActive },
+      });
       toast.success(code.isActive ? "Code deactivated" : "Code activated");
     } catch {
       toast.error("Failed to update code");
@@ -79,13 +96,40 @@ function PromoCodeCard({
     }
   };
 
-  const isExpired = code.expiresAt ? new Date(code.expiresAt) < new Date() : false;
+  const isExpired = code.expiresAt
+    ? new Date(code.expiresAt) < new Date()
+    : false;
+  const eligibility = code.eligibility;
+  const eligibilityBadges: string[] = [];
+  if (eligibility?.newUsersOnly) eligibilityBadges.push("new users only");
+  if (eligibility?.firstPurchaseOnly) eligibilityBadges.push("first purchase");
+  if (eligibility?.includeCourseIds?.length) {
+    eligibilityBadges.push(
+      `${eligibility.requireAllCourseIds ? "all" : "any"} of ${eligibility.includeCourseIds.length} course(s)`,
+    );
+  }
+  if (eligibility?.includeTiers?.length) {
+    eligibilityBadges.push(`tiers: ${eligibility.includeTiers.join(", ")}`);
+  }
+  if (eligibility?.includeDurations?.length) {
+    eligibilityBadges.push(
+      `durations: ${eligibility.includeDurations.join(", ")}`,
+    );
+  }
+  if (eligibility?.maxUsesPerUser) {
+    eligibilityBadges.push(`max ${eligibility.maxUsesPerUser}/user`);
+  }
 
   return (
     <div className="flex flex-col border border-border/30 bg-card/10 p-5 hover:border-border/60 transition-all group relative overflow-hidden">
       {/* Accent bar */}
-      <div className={cn("absolute top-0 left-0 w-full h-1", code.isActive && !isExpired ? "bg-primary" : "bg-muted-foreground/30")} />
-      
+      <div
+        className={cn(
+          "absolute top-0 left-0 w-full h-1",
+          code.isActive && !isExpired ? "bg-primary" : "bg-muted-foreground/30",
+        )}
+      />
+
       <div className="flex items-start justify-between mb-4">
         <div>
           <h3 className="font-mono font-bold text-lg tracking-widest text-primary flex items-center gap-2">
@@ -93,34 +137,70 @@ function PromoCodeCard({
             {code.code}
           </h3>
           <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/60 mt-1">
-            {code.type === "percentage" ? `${code.value}% Discount` : `GHS ${code.value} Flat`}
+            {code.type === "percentage"
+              ? `${code.value}% Discount`
+              : `GHS ${code.value} Flat`}
           </p>
         </div>
-        <span className={cn(
-          "text-[9px] font-mono uppercase tracking-widest px-2 py-1 border",
-          code.isActive && !isExpired
-            ? "text-green-400 border-green-400/30 bg-green-400/10"
-            : "text-muted-foreground border-border/30 bg-card/30",
-        )}>
+        <span
+          className={cn(
+            "text-[9px] font-mono uppercase tracking-widest px-2 py-1 border",
+            code.isActive && !isExpired
+              ? "text-green-400 border-green-400/30 bg-green-400/10"
+              : "text-muted-foreground border-border/30 bg-card/30",
+          )}
+        >
           {code.isActive ? (isExpired ? "Expired" : "Active") : "Inactive"}
         </span>
       </div>
 
       <div className="space-y-2 mb-6 flex-1">
         <div className="flex items-center justify-between text-[11px] font-mono border-b border-border/10 pb-2">
-          <span className="text-muted-foreground/50 uppercase">Redemptions</span>
-          <span className="font-bold text-foreground/80">{code.usedCount} / {code.maxUses ?? "∞"}</span>
+          <span className="text-muted-foreground/50 uppercase">
+            Redemptions
+          </span>
+          <span className="font-bold text-foreground/80">
+            {code.usedCount} / {code.maxUses ?? "∞"}
+          </span>
         </div>
         <div className="flex items-center justify-between text-[11px] font-mono border-b border-border/10 pb-2">
-          <span className="text-muted-foreground/50 uppercase">Expiry Date</span>
-          <span className={cn("font-bold text-foreground/80", isExpired && "text-destructive")}>
-            {code.expiresAt ? new Date(code.expiresAt).toLocaleDateString() : "Never"}
+          <span className="text-muted-foreground/50 uppercase">
+            Expiry Date
+          </span>
+          <span
+            className={cn(
+              "font-bold text-foreground/80",
+              isExpired && "text-destructive",
+            )}
+          >
+            {code.expiresAt
+              ? new Date(code.expiresAt).toLocaleDateString()
+              : "Never"}
           </span>
         </div>
         <div className="flex items-center justify-between text-[11px] font-mono">
           <span className="text-muted-foreground/50 uppercase">Created By</span>
-          <span className="font-bold text-foreground/80 truncate max-w-[120px]">{code.createdBy || "System"}</span>
+          <span className="font-bold text-foreground/80 truncate max-w-30">
+            {code.createdBy || "System"}
+          </span>
         </div>
+        {eligibilityBadges.length > 0 && (
+          <div className="pt-2 border-t border-border/10">
+            <p className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 mb-1.5">
+              Eligibility
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {eligibilityBadges.map((badge) => (
+                <span
+                  key={badge}
+                  className="text-[9px] font-mono uppercase tracking-widest px-1.5 py-0.5 border border-primary/20 text-primary/80 bg-primary/5"
+                >
+                  {badge}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Actions */}
@@ -131,9 +211,13 @@ function PromoCodeCard({
           className="flex-1 flex items-center justify-center gap-1.5 py-2 text-[10px] font-mono uppercase tracking-widest border border-border/40 hover:bg-secondary/20 transition-colors disabled:opacity-50"
         >
           {code.isActive ? (
-            <><ToggleRight className="size-3.5 text-primary/60" /> Disable</>
+            <>
+              <ToggleRight className="size-3.5 text-primary/60" /> Disable
+            </>
           ) : (
-            <><ToggleLeft className="size-3.5 text-muted-foreground" /> Enable</>
+            <>
+              <ToggleLeft className="size-3.5 text-muted-foreground" /> Enable
+            </>
           )}
         </button>
 
@@ -158,28 +242,67 @@ function CreatePromoCodeForm({ onClose }: { onClose: () => void }) {
     value: 10,
     expiresAt: null,
     maxUses: null,
+    eligibility: {},
   });
+  const [courseIdsInput, setCourseIdsInput] = useState("");
 
   const [hasExpiry, setHasExpiry] = useState(false);
   const [hasMaxUses, setHasMaxUses] = useState(false);
 
+  const toggleEligibilityListValue = (
+    key: "includeTiers" | "includeDurations",
+    value: string,
+  ) => {
+    setForm((prev) => {
+      const current = (prev.eligibility?.[key] as string[] | undefined) || [];
+      const next = current.includes(value)
+        ? current.filter((v) => v !== value)
+        : [...current, value];
+      return {
+        ...prev,
+        eligibility: {
+          ...(prev.eligibility || {}),
+          [key]: next,
+        },
+      };
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const parsedCourseIds = courseIdsInput
+        .split(",")
+        .map((id) => id.trim())
+        .filter(Boolean);
+
+      const eligibility: PromoEligibility = {
+        ...(form.eligibility || {}),
+        includeCourseIds: parsedCourseIds.length ? parsedCourseIds : undefined,
+      };
+
       await create.mutateAsync({
         ...form,
         code: form.code.toUpperCase(),
-        expiresAt: hasExpiry && form.expiresAt ? new Date(form.expiresAt).toISOString() : null,
-        maxUses: hasMaxUses && form.maxUses && form.maxUses > 0 ? form.maxUses : null,
+        expiresAt:
+          hasExpiry && form.expiresAt
+            ? new Date(form.expiresAt).toISOString()
+            : null,
+        maxUses:
+          hasMaxUses && form.maxUses && form.maxUses > 0 ? form.maxUses : null,
+        eligibility,
       });
       toast.success("Promo code created");
       onClose();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message ?? "Failed to create promo code");
+      toast.error(
+        err?.response?.data?.message ?? "Failed to create promo code",
+      );
     }
   };
 
-  const fieldCls = "w-full border border-border/50 bg-background/40 px-3 py-2 text-[12px] font-mono focus:outline-none focus:border-primary/50 transition-colors";
+  const fieldCls =
+    "w-full border border-border/50 bg-background/40 px-3 py-2 text-[12px] font-mono focus:outline-none focus:border-primary/50 transition-colors";
 
   return (
     <motion.div
@@ -188,36 +311,59 @@ function CreatePromoCodeForm({ onClose }: { onClose: () => void }) {
       className="border border-primary/30 bg-primary/5 p-4 mb-4"
     >
       <div className="flex items-center justify-between mb-4">
-        <p className="text-[11px] font-mono uppercase tracking-widest font-bold">New Promo Code</p>
-        <button onClick={onClose} className="text-muted-foreground/40 hover:text-muted-foreground">
+        <p className="text-[11px] font-mono uppercase tracking-widest font-bold">
+          New Promo Code
+        </p>
+        <button
+          onClick={onClose}
+          className="text-muted-foreground/40 hover:text-muted-foreground"
+        >
           <X className="size-3.5" />
         </button>
       </div>
 
       <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">Code *</label>
+          <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">
+            Code *
+          </label>
           <input
             required
             value={form.code}
-            onChange={(e) => setForm((f) => ({ ...f, code: e.target.value.toUpperCase() }))}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, code: e.target.value.toUpperCase() }))
+            }
             placeholder="SUMMER20"
             className={fieldCls}
           />
         </div>
 
         <div>
-          <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">Type *</label>
+          <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">
+            Type *
+          </label>
           <Select
             value={form.type}
-            onValueChange={(v) => setForm((f) => ({ ...f, type: v as "percentage" | "flat" }))}
+            onValueChange={(v) =>
+              setForm((f) => ({ ...f, type: v as "percentage" | "flat" }))
+            }
           >
             <SelectTrigger className="w-full rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
-              <SelectItem value="percentage" className="rounded-(--radius) font-mono text-xs uppercase">Percentage (%)</SelectItem>
-              <SelectItem value="flat" className="rounded-(--radius) font-mono text-xs uppercase">Flat (GHS)</SelectItem>
+              <SelectItem
+                value="percentage"
+                className="rounded-(--radius) font-mono text-xs uppercase"
+              >
+                Percentage (%)
+              </SelectItem>
+              <SelectItem
+                value="flat"
+                className="rounded-(--radius) font-mono text-xs uppercase"
+              >
+                Flat (GHS)
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -251,7 +397,9 @@ function CreatePromoCodeForm({ onClose }: { onClose: () => void }) {
               min={1}
               disabled={!hasMaxUses}
               value={form.maxUses ?? ""}
-              onChange={(e) => setForm((f) => ({ ...f, maxUses: +e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, maxUses: +e.target.value }))
+              }
               placeholder="Unlimited"
               className={cn(fieldCls, "flex-1", !hasMaxUses && "opacity-40")}
             />
@@ -267,18 +415,316 @@ function CreatePromoCodeForm({ onClose }: { onClose: () => void }) {
               checked={hasExpiry}
               onCheckedChange={(v) => setHasExpiry(!!v)}
             />
-          <div className={cn("flex flex-1 items-center gap-2", !hasExpiry && "opacity-40 pointer-events-none")}>
-            <DateTimePicker
-              date={form.expiresAt ? new Date(form.expiresAt) : undefined}
-              setDate={(d) => setForm((f) => ({ ...f, expiresAt: d.toISOString() }))}
-              className="w-full"
-            />
+            <div
+              className={cn(
+                "flex flex-1 items-center gap-2",
+                !hasExpiry && "opacity-40 pointer-events-none",
+              )}
+            >
+              <DateTimePicker
+                date={form.expiresAt ? new Date(form.expiresAt) : undefined}
+                setDate={(d) =>
+                  setForm((f) => ({ ...f, expiresAt: d.toISOString() }))
+                }
+                className="w-full"
+              />
+            </div>
           </div>
+        </div>
+
+        <div className="col-span-2 border border-border/30 bg-card/20 p-3 space-y-3">
+          <p className="text-[10px] font-mono uppercase tracking-widest font-bold text-primary/90">
+            Eligibility Rules
+          </p>
+
+          <div className="grid grid-cols-2 gap-3">
+            <label className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground/80">
+              <Checkbox
+                checked={!!form.eligibility?.newUsersOnly}
+                onCheckedChange={(v) =>
+                  setForm((f) => ({
+                    ...f,
+                    eligibility: {
+                      ...(f.eligibility || {}),
+                      newUsersOnly: !!v,
+                    },
+                  }))
+                }
+              />
+              New users only
+            </label>
+
+            <label className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground/80">
+              <Checkbox
+                checked={!!form.eligibility?.firstPurchaseOnly}
+                onCheckedChange={(v) =>
+                  setForm((f) => ({
+                    ...f,
+                    eligibility: {
+                      ...(f.eligibility || {}),
+                      firstPurchaseOnly: !!v,
+                    },
+                  }))
+                }
+              />
+              First purchase only
+            </label>
+
+            <label className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground/80">
+              <Checkbox
+                checked={!!form.eligibility?.hasCompletedOnboarding}
+                onCheckedChange={(v) =>
+                  setForm((f) => ({
+                    ...f,
+                    eligibility: {
+                      ...(f.eligibility || {}),
+                      hasCompletedOnboarding: !!v,
+                    },
+                  }))
+                }
+              />
+              Onboarding completed
+            </label>
+
+            <label className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground/80">
+              <Checkbox
+                checked={!!form.eligibility?.hasPendingReferralReward}
+                onCheckedChange={(v) =>
+                  setForm((f) => ({
+                    ...f,
+                    eligibility: {
+                      ...(f.eligibility || {}),
+                      hasPendingReferralReward: !!v,
+                    },
+                  }))
+                }
+              />
+              Pending referral reward
+            </label>
+          </div>
+
+          <div>
+            <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">
+              Eligible Course IDs (comma separated)
+            </label>
+            <input
+              value={courseIdsInput}
+              onChange={(e) => setCourseIdsInput(e.target.value)}
+              placeholder="66f0...a01, 66f0...a02"
+              className={fieldCls}
+            />
+            <label className="mt-2 flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground/80">
+              <Checkbox
+                checked={!!form.eligibility?.requireAllCourseIds}
+                onCheckedChange={(v) =>
+                  setForm((f) => ({
+                    ...f,
+                    eligibility: {
+                      ...(f.eligibility || {}),
+                      requireAllCourseIds: !!v,
+                    },
+                  }))
+                }
+              />
+              Require all listed courses
+            </label>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <p className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 mb-1">
+                Allowed Tiers
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {(["cooked", "cruising", "locked_in"] as const).map((tier) => (
+                  <label
+                    key={tier}
+                    className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest text-muted-foreground/80"
+                  >
+                    <Checkbox
+                      checked={!!form.eligibility?.includeTiers?.includes(tier)}
+                      onCheckedChange={() =>
+                        toggleEligibilityListValue("includeTiers", tier)
+                      }
+                    />
+                    {tier}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 mb-1">
+                Allowed Durations
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {(["daily", "weekly", "semester"] as const).map((duration) => (
+                  <label
+                    key={duration}
+                    className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest text-muted-foreground/80"
+                  >
+                    <Checkbox
+                      checked={
+                        !!form.eligibility?.includeDurations?.includes(duration)
+                      }
+                      onCheckedChange={() =>
+                        toggleEligibilityListValue("includeDurations", duration)
+                      }
+                    />
+                    {duration}
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">
+                Min Order (GHS)
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={form.eligibility?.minOrderAmountGHS ?? ""}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    eligibility: {
+                      ...(f.eligibility || {}),
+                      minOrderAmountGHS: e.target.value
+                        ? Number(e.target.value)
+                        : null,
+                    },
+                  }))
+                }
+                className={fieldCls}
+              />
+            </div>
+
+            <div>
+              <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">
+                Max Order (GHS)
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={form.eligibility?.maxOrderAmountGHS ?? ""}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    eligibility: {
+                      ...(f.eligibility || {}),
+                      maxOrderAmountGHS: e.target.value
+                        ? Number(e.target.value)
+                        : null,
+                    },
+                  }))
+                }
+                className={fieldCls}
+              />
+            </div>
+
+            <div>
+              <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">
+                Max Uses / User
+              </label>
+              <input
+                type="number"
+                min={1}
+                value={form.eligibility?.maxUsesPerUser ?? ""}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    eligibility: {
+                      ...(f.eligibility || {}),
+                      maxUsesPerUser: e.target.value
+                        ? Number(e.target.value)
+                        : null,
+                    },
+                  }))
+                }
+                className={fieldCls}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">
+                Min Streak Days
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={form.eligibility?.minStreakDays ?? ""}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    eligibility: {
+                      ...(f.eligibility || {}),
+                      minStreakDays: e.target.value
+                        ? Number(e.target.value)
+                        : 0,
+                    },
+                  }))
+                }
+                className={fieldCls}
+              />
+            </div>
+            <div>
+              <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">
+                Inactive For (Days)
+              </label>
+              <input
+                type="number"
+                min={1}
+                value={form.eligibility?.inactiveForDays ?? ""}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    eligibility: {
+                      ...(f.eligibility || {}),
+                      inactiveForDays: e.target.value
+                        ? Number(e.target.value)
+                        : null,
+                    },
+                  }))
+                }
+                className={fieldCls}
+              />
+            </div>
+            <div>
+              <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">
+                First N Days Signup
+              </label>
+              <input
+                type="number"
+                min={1}
+                value={form.eligibility?.firstNDaysAfterSignup ?? ""}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    eligibility: {
+                      ...(f.eligibility || {}),
+                      firstNDaysAfterSignup: e.target.value
+                        ? Number(e.target.value)
+                        : null,
+                    },
+                  }))
+                }
+                className={fieldCls}
+              />
+            </div>
           </div>
         </div>
 
         <div className="col-span-2 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="px-4 py-2 text-[10px] font-mono uppercase tracking-widest border border-border/40 hover:bg-secondary/20 transition-colors">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 text-[10px] font-mono uppercase tracking-widest border border-border/40 hover:bg-secondary/20 transition-colors"
+          >
             Cancel
           </button>
           <button
@@ -313,12 +759,17 @@ function PromoCodesTab() {
         </button>
       </div>
 
-      {showCreate && <CreatePromoCodeForm onClose={() => setShowCreate(false)} />}
+      {showCreate && (
+        <CreatePromoCodeForm onClose={() => setShowCreate(false)} />
+      )}
 
       {isLoading && (
         <div className="space-y-2">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-12 animate-pulse bg-card/40 border border-border/30" />
+            <div
+              key={i}
+              className="h-12 animate-pulse bg-card/40 border border-border/30"
+            />
           ))}
         </div>
       )}
@@ -373,30 +824,96 @@ function PaymentsTab() {
     <div className="space-y-4">
       {/* Filters */}
       <div className="flex items-center gap-3">
-        <Select value={statusFilter || "all"} onValueChange={(v) => handleFilterChange("status", v)}>
-          <SelectTrigger className="w-auto min-w-[140px] rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+        <Select
+          value={statusFilter || "all"}
+          onValueChange={(v) => handleFilterChange("status", v)}
+        >
+          <SelectTrigger className="w-auto min-w-35 rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
             <SelectValue placeholder="All Statuses" />
           </SelectTrigger>
           <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
-            <SelectItem value="all" className="rounded-(--radius) font-mono text-xs uppercase">All Statuses</SelectItem>
-            <SelectItem value="success" className="rounded-(--radius) font-mono text-xs uppercase">Success</SelectItem>
-            <SelectItem value="failed" className="rounded-(--radius) font-mono text-xs uppercase">Failed</SelectItem>
-            <SelectItem value="pending" className="rounded-(--radius) font-mono text-xs uppercase">Pending</SelectItem>
-            <SelectItem value="processing" className="rounded-(--radius) font-mono text-xs uppercase">Processing</SelectItem>
-            <SelectItem value="abandoned" className="rounded-(--radius) font-mono text-xs uppercase">Abandoned</SelectItem>
-            <SelectItem value="reversed" className="rounded-(--radius) font-mono text-xs uppercase">Reversed</SelectItem>
+            <SelectItem
+              value="all"
+              className="rounded-(--radius) font-mono text-xs uppercase"
+            >
+              All Statuses
+            </SelectItem>
+            <SelectItem
+              value="success"
+              className="rounded-(--radius) font-mono text-xs uppercase"
+            >
+              Success
+            </SelectItem>
+            <SelectItem
+              value="failed"
+              className="rounded-(--radius) font-mono text-xs uppercase"
+            >
+              Failed
+            </SelectItem>
+            <SelectItem
+              value="pending"
+              className="rounded-(--radius) font-mono text-xs uppercase"
+            >
+              Pending
+            </SelectItem>
+            <SelectItem
+              value="processing"
+              className="rounded-(--radius) font-mono text-xs uppercase"
+            >
+              Processing
+            </SelectItem>
+            <SelectItem
+              value="abandoned"
+              className="rounded-(--radius) font-mono text-xs uppercase"
+            >
+              Abandoned
+            </SelectItem>
+            <SelectItem
+              value="reversed"
+              className="rounded-(--radius) font-mono text-xs uppercase"
+            >
+              Reversed
+            </SelectItem>
           </SelectContent>
         </Select>
-        <Select value={typeFilter || "all"} onValueChange={(v) => handleFilterChange("type", v)}>
-          <SelectTrigger className="w-auto min-w-[120px] rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+        <Select
+          value={typeFilter || "all"}
+          onValueChange={(v) => handleFilterChange("type", v)}
+        >
+          <SelectTrigger className="w-auto min-w-30 rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
             <SelectValue placeholder="All Types" />
           </SelectTrigger>
           <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
-            <SelectItem value="all" className="rounded-(--radius) font-mono text-xs uppercase">All Types</SelectItem>
-            <SelectItem value="plan" className="rounded-(--radius) font-mono text-xs uppercase">Plan</SelectItem>
-            <SelectItem value="credits" className="rounded-(--radius) font-mono text-xs uppercase">Credits</SelectItem>
-            <SelectItem value="course" className="rounded-(--radius) font-mono text-xs uppercase">Course</SelectItem>
-            <SelectItem value="quiz" className="rounded-(--radius) font-mono text-xs uppercase">Quiz</SelectItem>
+            <SelectItem
+              value="all"
+              className="rounded-(--radius) font-mono text-xs uppercase"
+            >
+              All Types
+            </SelectItem>
+            <SelectItem
+              value="plan"
+              className="rounded-(--radius) font-mono text-xs uppercase"
+            >
+              Plan
+            </SelectItem>
+            <SelectItem
+              value="credits"
+              className="rounded-(--radius) font-mono text-xs uppercase"
+            >
+              Credits
+            </SelectItem>
+            <SelectItem
+              value="course"
+              className="rounded-(--radius) font-mono text-xs uppercase"
+            >
+              Course
+            </SelectItem>
+            <SelectItem
+              value="quiz"
+              className="rounded-(--radius) font-mono text-xs uppercase"
+            >
+              Quiz
+            </SelectItem>
           </SelectContent>
         </Select>
         <p className="text-[10px] font-mono text-muted-foreground/40 ml-auto">
@@ -407,7 +924,10 @@ function PaymentsTab() {
       {isLoading && (
         <div className="space-y-2">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-11 animate-pulse bg-card/40 border border-border/30" />
+            <div
+              key={i}
+              className="h-11 animate-pulse bg-card/40 border border-border/30"
+            />
           ))}
         </div>
       )}
@@ -425,11 +945,21 @@ function PaymentsTab() {
         <div className="border border-border/30">
           {/* Header */}
           <div className="flex items-center gap-4 px-4 py-1 border-b border-border/20">
-            <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40 flex-1">Reference</span>
-            <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40 w-20 text-right">Amount</span>
-            <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40 w-16">Type</span>
-            <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40 w-24">Date</span>
-            <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40 w-24">Status</span>
+            <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40 flex-1">
+              Reference
+            </span>
+            <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40 w-20 text-right">
+              Amount
+            </span>
+            <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40 w-16">
+              Type
+            </span>
+            <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40 w-24">
+              Date
+            </span>
+            <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40 w-24">
+              Status
+            </span>
           </div>
           <div className="divide-y divide-border/20">
             {payments.map((p) => (
@@ -449,10 +979,13 @@ function PaymentsTab() {
                 <span className="text-[10px] font-mono text-muted-foreground/50 w-24">
                   {new Date(p.createdAt).toLocaleDateString()}
                 </span>
-                <span className={cn(
-                  "text-[9px] font-mono uppercase tracking-widest px-1.5 py-0.5 border rounded-(--radius) w-24 text-center",
-                  PAYMENT_STATUS_COLORS[p.status] ?? "text-muted-foreground border-border/30",
-                )}>
+                <span
+                  className={cn(
+                    "text-[9px] font-mono uppercase tracking-widest px-1.5 py-0.5 border rounded-(--radius) w-24 text-center",
+                    PAYMENT_STATUS_COLORS[p.status] ??
+                      "text-muted-foreground border-border/30",
+                  )}
+                >
                   {p.status}
                 </span>
               </div>
@@ -472,7 +1005,11 @@ function PaymentsTab() {
 // ─── Packages Section ─────────────────────────────────────────────────────────
 
 const DURATIONS: PlanDuration[] = ["daily", "weekly", "semester"];
-const TIER_ORDER: Record<string, number> = { cooked: 0, cruising: 1, locked_in: 2 };
+const TIER_ORDER: Record<string, number> = {
+  cooked: 0,
+  cruising: 1,
+  locked_in: 2,
+};
 
 function toCardPackage(pkg: AdminPackage): BillingPackage {
   return {
@@ -513,7 +1050,8 @@ function PackagesTab() {
   return (
     <div className="space-y-3">
       <p className="text-[10px] font-mono text-muted-foreground/40 uppercase tracking-widest">
-        {subPackages.length} package{subPackages.length !== 1 ? "s" : ""} · read-only
+        {subPackages.length} package{subPackages.length !== 1 ? "s" : ""} ·
+        read-only
       </p>
 
       {isLoading && (
@@ -523,7 +1061,10 @@ function PackagesTab() {
               <div className="h-3 w-16 animate-pulse bg-card/40" />
               <div className="grid grid-cols-3 gap-3">
                 {[...Array(3)].map((_, i) => (
-                  <div key={i} className="h-64 animate-pulse bg-card/40 border border-border/30" />
+                  <div
+                    key={i}
+                    className="h-64 animate-pulse bg-card/40 border border-border/30"
+                  />
                 ))}
               </div>
             </div>
@@ -559,7 +1100,7 @@ function PackagesTab() {
                   ))}
                 </div>
               </div>
-            )
+            ),
           )}
         </div>
       )}
@@ -575,7 +1116,10 @@ export default function AdminBillingPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
         <div className="inline-block border border-primary/60 px-2 py-1 mb-2 bg-primary/5">
           <span className="text-[10px] font-mono tracking-widest uppercase text-primary">
             Billing

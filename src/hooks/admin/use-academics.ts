@@ -226,12 +226,46 @@ export const useAdminPublishQuiz = () => {
   });
 };
 
+export const useAdminUnpublishQuiz = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await api.patch<ApiData<AdminQuizDetail>>(
+        `/admin/learning/quizzes/${id}`,
+        { isAvailable: false, status: "draft" },
+      );
+      return res.data?.data;
+    },
+    onSuccess: (_data, id) => {
+      qc.invalidateQueries({ queryKey: ["admin", "quizzes"] });
+      qc.invalidateQueries({ queryKey: ["admin", "quizzes", id] });
+    },
+  });
+};
+
 export const useAdminArchiveQuiz = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
       const res = await api.patch<ApiData<AdminQuizDetail>>(
         `/admin/learning/quizzes/${id}/archive`,
+      );
+      return res.data?.data;
+    },
+    onSuccess: (_data, id) => {
+      qc.invalidateQueries({ queryKey: ["admin", "quizzes"] });
+      qc.invalidateQueries({ queryKey: ["admin", "quizzes", id] });
+    },
+  });
+};
+
+export const useAdminRestoreQuiz = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await api.patch<ApiData<AdminQuizDetail>>(
+        `/admin/learning/quizzes/${id}`,
+        { status: "draft" },
       );
       return res.data?.data;
     },
@@ -319,10 +353,9 @@ export const useAdminBatchUploadQuizQuestions = (quizId: string) => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data: BatchUploadQuestionsPayload) => {
-      const res = await api.post<ApiData<{ inserted: number; questions: AdminQuestion[] }>>(
-        `/admin/learning/quizzes/${quizId}/questions/batch`,
-        data,
-      );
+      const res = await api.post<
+        ApiData<{ inserted: number; questions: AdminQuestion[] }>
+      >(`/admin/learning/quizzes/${quizId}/questions/batch`, data);
       return res.data?.data;
     },
     onSuccess: () =>
@@ -540,7 +573,7 @@ export const useAdminSyncTimetable = () => {
       semester?: string;
       academicYear?: string;
     }) => {
-      const res = await api.post<ApiData<any>>(
+      const res = await api.post<ApiData<unknown>>(
         "/admin/learning/timetables/sync",
         data,
       );

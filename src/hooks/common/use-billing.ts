@@ -66,6 +66,23 @@ export interface StreakStatus {
   isActive: boolean;
 }
 
+interface StreakApiResponse {
+  streak?: {
+    currentCount?: number;
+    longestStreak?: number;
+    lastStudyDate?: string | null;
+    freezesAvailable?: number;
+    milestoneReached?: number | null;
+    pausedForBreak?: boolean;
+  } | null;
+  current?: number;
+  longest?: number;
+  lastStudyDate?: string | null;
+  freezesAvailable?: number;
+  milestoneReached?: number | null;
+  isActive?: boolean;
+}
+
 export interface StudentVerifyStatus {
   status: "unverified" | "pending" | "verified" | "expired" | "rejected";
   studentEmail: string | null;
@@ -135,8 +152,18 @@ export function useStreakStatus() {
   return useQuery({
     queryKey: queryKeys.billing.streak(),
     queryFn: async () => {
-      const res = await api.get<{ data: StreakStatus }>("/subscriptions/streak/status");
-      return res.data.data;
+      const res = await api.get<{ data: StreakApiResponse }>("/subscriptions/streak/status");
+      const payload = res.data.data;
+      const nested = payload?.streak;
+
+      return {
+        current: nested?.currentCount ?? payload?.current ?? 0,
+        longest: nested?.longestStreak ?? payload?.longest ?? 0,
+        lastStudyDate: nested?.lastStudyDate ?? payload?.lastStudyDate ?? null,
+        freezesAvailable: nested?.freezesAvailable ?? payload?.freezesAvailable ?? 0,
+        milestoneReached: nested?.milestoneReached ?? payload?.milestoneReached ?? null,
+        isActive: payload?.isActive ?? (nested?.pausedForBreak ? false : true),
+      } satisfies StreakStatus;
     },
     enabled: !!user,
     staleTime: 1000 * 60 * 5,
