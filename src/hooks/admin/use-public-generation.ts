@@ -4,7 +4,6 @@ import { api } from "@/lib/api";
 import { useSocket } from "@/hooks/common/use-socket";
 import { EVENT_NAMES } from "@/types/socket-events";
 
-type ApiData<T> = { data: T };
 type ApiResponseEnvelope<T> = {
   success: boolean;
   message: string;
@@ -45,16 +44,6 @@ export interface PublicQuizGenerationProgress {
     }
   >;
 }
-
-type MaterialStartedEvent = {
-  generationId: string;
-  courseId: string;
-  materialId: string;
-  materialTitle: string;
-  status: string;
-  stage?: string;
-  message?: string;
-};
 
 type LectureStartedEvent = {
   generationId: string;
@@ -357,7 +346,6 @@ export const useTriggerPublicQuizGeneration = () => {
       socket.off(EVENT_NAMES.PUBLIC_QUIZ_GENERATION_LECTURE_COMPLETED);
       socket.off(EVENT_NAMES.PUBLIC_QUIZ_GENERATION_LECTURE_FAILED);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket, progress?.generationId]);
 
   const mutation = useMutation({

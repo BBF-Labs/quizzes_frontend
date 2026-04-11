@@ -8,6 +8,7 @@ import {
   BookOpen,
   Clock3,
   FileText,
+  Flame,
   MessageSquare,
   Network,
   Plus,
@@ -21,6 +22,7 @@ import {
   useCreateSession,
   useCourseSearch,
   useDebounce,
+  useStreakStatus,
 } from "@/hooks";
 import { cn } from "@/lib/utils";
 
@@ -85,6 +87,7 @@ export default function AppHomePage() {
   const router = useRouter();
   const { user } = useAuth();
   const { data: sessions = [], isLoading: sessionsLoading } = useSessions();
+  const { data: streak } = useStreakStatus();
   const createSession = useCreateSession();
 
   // ── Composer state ──────────────────────────────────────────────────────────
@@ -197,6 +200,18 @@ export default function AppHomePage() {
           <p className="text-sm text-muted-foreground font-mono">
             Start typing below to begin a new study session.
           </p>
+
+          {streak && (streak.current > 0 || streak.longest > 0) && (
+            <div className="mt-4 inline-flex items-center gap-2 border border-amber-400/30 bg-amber-400/5 px-3 py-1.5">
+              <Flame className="size-3.5 text-amber-400" />
+              <span className="text-[10px] font-mono uppercase tracking-wider text-amber-400">
+                {streak.current} day streak
+              </span>
+              <span className="text-[10px] font-mono text-amber-400/70">
+                · best {streak.longest}
+              </span>
+            </div>
+          )}
 
           <motion.div
             initial={{ opacity: 0 }}
