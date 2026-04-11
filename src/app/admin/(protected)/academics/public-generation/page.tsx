@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Zap,
@@ -12,12 +12,13 @@ import {
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Combobox,
+  ComboboxInput,
+  ComboboxContent,
+  ComboboxList,
+  ComboboxItem,
+  ComboboxEmpty,
+} from "@/components/ui/combobox";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useAdminCourses, AdminCourse } from "@/hooks/admin/use-academics";
@@ -37,7 +38,17 @@ type LectureStatus = {
 };
 
 export default function PublicGenerationPage() {
-  const { data: coursesResponse } = useAdminCourses();
+  const [courseSearch, setCourseSearch] = useState("");
+  const [debouncedCourseSearch, setDebouncedCourseSearch] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedCourseSearch(courseSearch), 300);
+    return () => clearTimeout(t);
+  }, [courseSearch]);
+
+  const { data: coursesResponse } = useAdminCourses({
+    limit: 50,
+    search: debouncedCourseSearch,
+  });
   const {
     mutate: triggerGeneration,
     isPending,
@@ -115,35 +126,45 @@ export default function PublicGenerationPage() {
             <label className="text-xs font-mono font-bold tracking-widest uppercase">
               Select Course
             </label>
-            <Select
+            <Combobox
               value={selectedCourseId}
-              onValueChange={setSelectedCourseId}
-              disabled={isPending || progress !== null}
+              onValueChange={(value) => {
+                const id = String(value || "");
+                setSelectedCourseId(id);
+                const selected = courses.find((course) => course._id === id);
+                setCourseSearch(
+                  selected ? `${selected.code} - ${selected.title || ""}` : "",
+                );
+              }}
             >
-              <SelectTrigger className="border-border/50 bg-background/50 h-9 text-xs">
-                <SelectValue placeholder="Select a course..." />
-              </SelectTrigger>
-              <SelectContent>
-                {courses.length === 0 ? (
-                  <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                    No courses found
-                  </div>
-                ) : (
-                  courses.map((course) => (
-                    <SelectItem key={course._id} value={course._id}>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold">
-                          {course.code}
-                        </span>
-                        <span className="text-muted-foreground">
-                          {course.title}
-                        </span>
-                      </div>
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
+              <ComboboxInput
+                placeholder="Search course..."
+                className="w-full border border-border/50 bg-background/40 px-3 py-2 text-[12px] font-mono focus:outline-none focus:border-primary/50 transition-colors h-8.5 uppercase tracking-widest"
+                value={courseSearch}
+                onChange={(e) => setCourseSearch(e.target.value)}
+                disabled={isPending || progress !== null}
+              />
+              <ComboboxContent className="font-mono border-border/40">
+                <ComboboxEmpty className="font-mono text-[10px] uppercase p-2">
+                  No courses found
+                </ComboboxEmpty>
+                <ComboboxList className="max-h-60 no-scrollbar">
+                  {courses.map((course) => (
+                    <ComboboxItem
+                      key={course._id}
+                      value={course._id}
+                      className="text-[10px] uppercase tracking-tighter"
+                      disabled={isPending || progress !== null}
+                    >
+                      <span className="font-bold text-primary mr-2">
+                        {course.code}
+                      </span>
+                      <span className="truncate">{course.title}</span>
+                    </ComboboxItem>
+                  ))}
+                </ComboboxList>
+              </ComboboxContent>
+            </Combobox>
           </div>
 
           {selectedCourse && (
