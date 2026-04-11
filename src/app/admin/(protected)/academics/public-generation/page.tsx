@@ -25,6 +25,7 @@ import { useAdminCourses, AdminCourse } from "@/hooks/admin/use-academics";
 import {
   useTriggerPublicQuizGeneration,
   TriggerPublicQuizGenerationResult,
+  type PublicQuizExecutionStep,
 } from "@/hooks/admin";
 
 type GenerationMutationError = {
@@ -40,6 +41,7 @@ type LectureStatus = {
 export default function PublicGenerationPage() {
   const [courseSearch, setCourseSearch] = useState("");
   const [debouncedCourseSearch, setDebouncedCourseSearch] = useState("");
+
   useEffect(() => {
     const t = setTimeout(() => setDebouncedCourseSearch(courseSearch), 300);
     return () => clearTimeout(t);
@@ -49,11 +51,13 @@ export default function PublicGenerationPage() {
     limit: 50,
     search: debouncedCourseSearch,
   });
+
   const {
     mutate: triggerGeneration,
     isPending,
     progress,
     materialUpdates,
+    executionSteps,
   } = useTriggerPublicQuizGeneration();
 
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
@@ -95,7 +99,6 @@ export default function PublicGenerationPage() {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -120,7 +123,6 @@ export default function PublicGenerationPage() {
         transition={{ delay: 0.1 }}
         className="space-y-6"
       >
-        {/* Generation Form */}
         <div className="border border-border/50 bg-card/40 p-6 space-y-5">
           <div className="space-y-2">
             <label className="text-xs font-mono font-bold tracking-widest uppercase">
@@ -238,13 +240,12 @@ export default function PublicGenerationPage() {
           </motion.button>
         </div>
 
-        {/* Real-time Progress Tracking */}
         {progress && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="border border-primary/30 bg-primary/5 p-5 space-y-4"
+            className="border border-primary/30 bg-primary/5 p-5 space-y-5"
           >
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -269,7 +270,40 @@ export default function PublicGenerationPage() {
               </p>
             </div>
 
-            {/* Material-by-material status */}
+            <div className="space-y-2">
+              <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground">
+                Deterministic Execution
+              </p>
+              <div className="space-y-2 border border-border/30 bg-card/30 p-3 max-h-72 overflow-y-auto">
+                {executionSteps.map((step: PublicQuizExecutionStep) => (
+                  <div key={step.id} className="flex items-start gap-3">
+                    {step.status === "processing" && (
+                      <Loader2 className="size-3 text-primary animate-spin shrink-0 mt-0.5" />
+                    )}
+                    {step.status === "completed" && (
+                      <CheckCircle2 className="size-3 text-green-500 shrink-0 mt-0.5" />
+                    )}
+                    {step.status === "failed" && (
+                      <AlertCircle className="size-3 text-destructive shrink-0 mt-0.5" />
+                    )}
+                    {step.status === "pending" && (
+                      <div className="size-3 border border-muted-foreground/30 shrink-0 mt-0.5" />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] font-mono uppercase tracking-widest text-foreground truncate">
+                        {step.label}
+                      </p>
+                      {step.detail && (
+                        <p className="text-[9px] font-mono text-muted-foreground/70 leading-relaxed">
+                          {step.detail}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {Object.entries(materialUpdates).length > 0 && (
               <div className="space-y-2">
                 <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground">
@@ -321,7 +355,6 @@ export default function PublicGenerationPage() {
           </motion.div>
         )}
 
-        {/* Results */}
         {jobResult && !progress && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
@@ -362,7 +395,6 @@ export default function PublicGenerationPage() {
           </motion.div>
         )}
 
-        {/* Info Section */}
         <div className="border border-border/50 bg-card/20 p-5 space-y-3">
           <div className="flex items-start gap-3">
             <ScrollText className="size-4 text-muted-foreground shrink-0 mt-0.5" />
@@ -373,30 +405,18 @@ export default function PublicGenerationPage() {
               <ul className="space-y-1 text-muted-foreground/80 list-disc list-inside">
                 <li>Finds upcoming exams for the selected course</li>
                 <li>Matches published library materials by course code/name</li>
+                <li>Extracts lecture/topic outline before generation starts</li>
+                <li>Starts parallel topic agents per lecture section</li>
                 <li>
-                  Creates autonomous AI session for each material using rich
-                  synthesis
+                  Streams deterministic execution and progress in real time
                 </li>
                 <li>
-                  AI reads and analyzes the entire material comprehensively
+                  Generates objective-heavy questions with hints and
+                  explanations
                 </li>
                 <li>
-                  Generates diverse question types (MCQ, True/False, Short
-                  Answer, Fill-in, Essay)
-                </li>
-                <li>
-                  Covers all major topics and lectures within the material
-                </li>
-                <li>
-                  Total questions distributed across {questionCount} suggested
-                  questions
-                </li>
-                <li>
-                  Real-time progress tracking as each material is processed
-                </li>
-                <li>
-                  Quizzes are tagged as &quot;public_auto_generated&quot; for
-                  tracking
+                  Persists questions, lectures, tags, and publishes the public
+                  quiz
                 </li>
               </ul>
             </div>
