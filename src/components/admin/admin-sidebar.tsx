@@ -16,6 +16,7 @@ import {
   Database,
   CreditCard,
   Library,
+  Zap,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import {
@@ -104,6 +105,11 @@ const navigation = [
         title: "Quizzes",
         url: "/admin/academics/quizzes",
         icon: GraduationCap,
+      },
+      {
+        title: "Public Generation",
+        url: "/admin/academics/public-generation",
+        icon: Zap,
       },
       {
         title: "Timetables",
