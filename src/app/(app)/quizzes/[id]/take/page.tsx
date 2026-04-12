@@ -31,6 +31,7 @@ import {
 import { QuizConfigScreen } from "@/components/app/quizzes/quiz-config-screen";
 import { QuizContent } from "@/components/app/quizzes/quiz-content";
 import { QuizReviewResults } from "@/components/app/quizzes/quiz-review-results";
+import { answersMatch } from "@/lib/quiz-answer";
 import type {
   QuizDetail,
   QuizQuestion,
@@ -250,7 +251,7 @@ export default function SystemQuizTakePage({
       const isChoiceType = q.type === "mcq" || q.type === "true_false";
       setAnswers((prev) => ({ ...prev, [q.id]: opt }));
       if (isChoiceType && config?.feedbackMode === "immediate") {
-        const isCorrect = opt === q.correctAnswer;
+        const isCorrect = answersMatch(q.type, opt, q.correctAnswer);
         setImmediateResults((prev) => ({
           ...prev,
           [q.id]: isCorrect ? "correct" : "wrong",
@@ -345,7 +346,7 @@ export default function SystemQuizTakePage({
       if (!q) return false;
       // For MCQ/T-F: exact match
       if (q.options && q.options.length > 0) {
-        return answers[q.id] === q.correctAnswer;
+        return answersMatch(q.type, answers[q.id], q.correctAnswer);
       }
       // For free-text: use Z grade if available
       if (zResults[q.id]) return zResults[q.id].isCorrect;

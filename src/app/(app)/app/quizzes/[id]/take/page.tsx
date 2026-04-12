@@ -32,6 +32,7 @@ import { toast } from "sonner";
 import { useGradeQuizAnswers } from "@/hooks/app/use-app-library";
 import { useBreadcrumbStore } from "@/store/breadcrumb";
 import { QuizConfigScreen } from "@/components/app/quizzes/quiz-config-screen";
+import { answersMatch } from "@/lib/quiz-answer";
 import type {
   QuizDetail,
   QuizQuestion,
@@ -672,7 +673,7 @@ export default function QuizTakePage({
       ) {
         const correct = q.correctAnswer;
         const isCorrect = correct
-          ? val.trim() === String(correct).trim()
+          ? answersMatch(q.type, val, String(correct))
           : null;
         const result: FeedbackState =
           isCorrect === true ? "correct" : isCorrect === false ? "wrong" : null;
