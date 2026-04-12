@@ -206,7 +206,7 @@ export default function StudyRoomDetailPage() {
         const iAmHost =
           room?.hostId === myId || myParticipantRole === "host" || myParticipantRole === "moderator";
         if (iAmHost) {
-          updateTimer.mutate({ roomCode: code, action: "tickComplete" });
+                    updateTimer.mutate({ code, action: "tickComplete" });
         }
       }
     };

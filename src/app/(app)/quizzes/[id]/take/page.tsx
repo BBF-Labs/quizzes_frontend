@@ -6,18 +6,22 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   ChevronLeft,
   ChevronRight,
-  RotateCcw,
-  Trophy,
+  Flame,
   SkipForward,
   Clock,
   AlertCircle,
-  Sparkles,
-  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
-import { formatNextAttemptTime, formatNextAttemptWindow } from "@/lib/attempt-window";
+import {
+  formatNextAttemptTime,
+  formatNextAttemptWindow,
+} from "@/lib/attempt-window";
 import { Button } from "@/components/ui/button";
-import { useSystemQuiz, useStartSystemQuiz, useConfirmSystemQuizAttempt } from "@/hooks/app/use-quizzes";
+import {
+  useSystemQuiz,
+  useStartSystemQuiz,
+  useConfirmSystemQuizAttempt,
+} from "@/hooks/app/use-quizzes";
 import { useGradeQuizAnswers } from "@/hooks/app/use-app-library";
 import { useAuth } from "@/contexts/auth-context";
 import {
@@ -26,6 +30,7 @@ import {
 } from "@/components/app/quizzes/question-renderer";
 import { QuizConfigScreen } from "@/components/app/quizzes/quiz-config-screen";
 import { QuizContent } from "@/components/app/quizzes/quiz-content";
+import { QuizReviewResults } from "@/components/app/quizzes/quiz-review-results";
 import type {
   QuizDetail,
   QuizQuestion,
@@ -61,101 +66,13 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-// ─── Results screen ───────────────────────────────────────────────────────────
-
-function ResultsScreen({
-  score,
-  total,
-  passed,
-  passingScore,
-  hasFreeText,
-  isAuthenticated,
-  isGrading,
-  onRetake,
-  onBack,
-  onGradeWithZ,
-}: {
-  score: number;
-  total: number;
-  passed: boolean;
-  passingScore: number;
-  hasFreeText: boolean;
-  isAuthenticated: boolean;
-  isGrading: boolean;
-  onRetake: () => void;
-  onBack: () => void;
-  onGradeWithZ: () => void;
-}) {
-  const pct = Math.round((score / total) * 100);
+function isFreeResponseType(type: QuizQuestion["type"]): boolean {
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.96 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="flex flex-col items-center gap-6 py-16 text-center"
-    >
-      <div
-        className={`flex size-20 items-center justify-center border-2 ${
-          passed
-            ? "border-green-500/40 bg-green-500/10"
-            : "border-destructive/40 bg-destructive/10"
-        }`}
-      >
-        <Trophy
-          className={`size-8 ${passed ? "text-green-500" : "text-destructive"}`}
-        />
-      </div>
-      <div>
-        <p className="text-4xl font-black font-mono tracking-tight">{pct}%</p>
-        <p className="mt-1 text-sm font-mono text-muted-foreground/60">
-          {score} / {total} correct
-        </p>
-        <p
-          className={`mt-2 text-[11px] font-mono uppercase tracking-widest font-bold ${
-            passed ? "text-green-500" : "text-destructive"
-          }`}
-        >
-          {passed ? "Passed" : `Failed — passing score is ${passingScore}%`}
-        </p>
-      </div>
-
-      {/* Grade with Z — authenticated only, when free-text answers exist */}
-      {isAuthenticated && hasFreeText && (
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-8 text-[11px] font-mono gap-1.5 border-primary/40 text-primary hover:bg-primary/10"
-          onClick={onGradeWithZ}
-          disabled={isGrading}
-        >
-          {isGrading ? (
-            <Loader2 className="size-3 animate-spin" />
-          ) : (
-            <Sparkles className="size-3" />
-          )}
-          {isGrading ? "Grading…" : "Grade with Z"}
-        </Button>
-      )}
-
-      <div className="flex gap-3">
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 text-[11px] font-mono gap-1"
-          onClick={onBack}
-        >
-          <ChevronLeft className="size-3" />
-          Back
-        </Button>
-        <Button
-          size="sm"
-          className="h-8 text-[11px] font-mono gap-1"
-          onClick={onRetake}
-        >
-          <RotateCcw className="size-3" />
-          Retake
-        </Button>
-      </div>
-    </motion.div>
+    type === "short_answer" ||
+    type === "essay" ||
+    type === "free_text" ||
+    type === "fill_in_blank" ||
+    type === "fill_in"
   );
 }
 
@@ -215,6 +132,11 @@ export default function SystemQuizTakePage({
   const [zResults, setZResults] = useState<Record<string, ZGradeResultItem>>(
     {},
   );
+  const [selfMarks, setSelfMarks] = useState<Record<string, boolean | null>>(
+    {},
+  );
+  const [streak, setStreak] = useState(0);
+  const [maxStreak, setMaxStreak] = useState(0);
   const [done, setDone] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [started, setStarted] = useState(false);
@@ -233,6 +155,9 @@ export default function SystemQuizTakePage({
       setConfig(newConfig);
       const selectedQuestions = buildQuestions(fullQuiz, newConfig);
       setQuestions(selectedQuestions);
+      setSelfMarks({});
+      setStreak(0);
+      setMaxStreak(0);
       const qFromUrl = Number(currentParam || "1");
       const nextCurrent = Number.isFinite(qFromUrl)
         ? Math.max(
@@ -252,10 +177,19 @@ export default function SystemQuizTakePage({
       }
 
       setStarted(true);
-    } catch (err: any) {
-      if (err.response?.status === 403) {
-        const nextAttemptAt: string | null = err.response?.data?.errors?.nextAttemptAt ?? null;
-        let description = "Upgrade to premium for unlimited attempts and advanced Z grading.";
+    } catch (err: unknown) {
+      const maybeError = err as {
+        response?: {
+          status?: number;
+          data?: { errors?: { nextAttemptAt?: string } };
+        };
+        message?: string;
+      };
+      if (maybeError.response?.status === 403) {
+        const nextAttemptAt: string | null =
+          maybeError.response?.data?.errors?.nextAttemptAt ?? null;
+        let description =
+          "Upgrade to premium for unlimited attempts and advanced Z grading.";
         if (nextAttemptAt) {
           const timeWindow = formatNextAttemptWindow(nextAttemptAt);
           const atTime = formatNextAttemptTime(nextAttemptAt);
@@ -271,7 +205,7 @@ export default function SystemQuizTakePage({
           },
         });
       } else {
-        toast.error(err.message || "Failed to start quiz");
+        toast.error(maybeError.message || "Failed to start quiz");
       }
     }
   };
@@ -279,12 +213,15 @@ export default function SystemQuizTakePage({
   // Auto-start in view mode
   useEffect(() => {
     if (!isViewMode || !quiz || started) return;
-    startQuiz.mutateAsync(id).then((fullQuiz) => {
-      if (!fullQuiz) return;
-      setViewQuiz(fullQuiz);
-      setStarted(true);
-    }).catch(() => {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    startQuiz
+      .mutateAsync(id)
+      .then((fullQuiz) => {
+        if (!fullQuiz) return;
+        setViewQuiz(fullQuiz);
+        setStarted(true);
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isViewMode, quiz]);
 
   useEffect(() => {
@@ -318,9 +255,18 @@ export default function SystemQuizTakePage({
           ...prev,
           [q.id]: isCorrect ? "correct" : "wrong",
         }));
+        if (isCorrect) {
+          setStreak((currentStreak) => {
+            const next = currentStreak + 1;
+            setMaxStreak((best) => Math.max(best, next));
+            return next;
+          });
+        } else {
+          setStreak(0);
+        }
       }
     },
-    [q, immediateResults, config?.feedbackMode],
+    [q, config?.feedbackMode],
   );
 
   const handleNext = async () => {
@@ -330,8 +276,7 @@ export default function SystemQuizTakePage({
         if (!answer) return;
       }
       setCurrent((c) => c + 1);
-    }
-    else {
+    } else {
       try {
         await confirmQuiz.mutateAsync(id);
       } catch {}
@@ -350,6 +295,9 @@ export default function SystemQuizTakePage({
     setAnswers({});
     setImmediateResults({});
     setZResults({});
+    setSelfMarks({});
+    setStreak(0);
+    setMaxStreak(0);
     setHintsRevealed({});
     setCurrent(0);
     setDone(false);
@@ -359,12 +307,7 @@ export default function SystemQuizTakePage({
   const handleGradeWithZ = useCallback(async () => {
     if (!quiz || !config) return;
     const freeTextAnswered = questions.filter((q) => {
-      const isFreeType =
-        q.type === "short_answer" ||
-        q.type === "essay" ||
-        q.type === "free_text" ||
-        q.type === "fill_in_blank" ||
-        q.type === "fill_in";
+      const isFreeType = isFreeResponseType(q.type);
       return isFreeType && answers[q.id] && !zResults[q.id];
     });
     if (freeTextAnswered.length === 0) return;
@@ -384,8 +327,9 @@ export default function SystemQuizTakePage({
         byId[r.questionId] = r;
       });
       setZResults((prev) => ({ ...prev, ...byId }));
-    } catch (err: any) {
-      if (err?.response?.status === 403) {
+    } catch (err: unknown) {
+      const maybeError = err as { response?: { status?: number } };
+      if (maybeError?.response?.status === 403) {
         toast.error("Upgrade required.", {
           description: "AI grading with Z is available on paid plans.",
           action: { label: "Upgrade", onClick: () => router.push("/pricing") },
@@ -409,27 +353,9 @@ export default function SystemQuizTakePage({
     }).length;
   }, [questions, answers, zResults]);
 
-  const pct = questions.length
-    ? Math.round((score / questions.length) * 100)
-    : 0;
-  const passed = pct >= (quiz?.passingScore ?? 70);
-
-  const hasFreeText = useMemo(
-    () =>
-      questions.some(
-        (q) =>
-          q.type === "short_answer" ||
-          q.type === "essay" ||
-          q.type === "free_text" ||
-          q.type === "fill_in_blank" ||
-          q.type === "fill_in",
-      ),
-    [questions],
-  );
-
   if (isLoading || !quiz) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-100">
         <div className="size-6 border-2 border-primary border-t-transparent animate-spin rounded-full" />
       </div>
     );
@@ -437,7 +363,7 @@ export default function SystemQuizTakePage({
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] text-center px-4">
+      <div className="flex flex-col items-center justify-center min-h-100 text-center px-4">
         <AlertCircle className="size-10 text-destructive/40 mb-4" />
         <h2 className="text-sm font-mono font-bold uppercase tracking-tight text-foreground">
           Failed to load quiz
@@ -460,14 +386,12 @@ export default function SystemQuizTakePage({
   if (isViewMode) {
     if (startQuiz.isPending || !started) {
       return (
-        <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex items-center justify-center min-h-100">
           <div className="size-6 border-2 border-primary border-t-transparent animate-spin rounded-full" />
         </div>
       );
     }
-    return (
-      <ViewAnswersScreen quiz={viewQuiz!} onBack={() => router.back()} />
-    );
+    return <ViewAnswersScreen quiz={viewQuiz!} onBack={() => router.back()} />;
   }
 
   if (!started) {
@@ -495,17 +419,36 @@ export default function SystemQuizTakePage({
 
   if (done) {
     return (
-      <ResultsScreen
-        score={score}
-        total={questions.length}
-        passed={passed}
-        passingScore={quiz.passingScore ?? 70}
-        hasFreeText={hasFreeText}
-        isAuthenticated={isAuthenticated}
+      <QuizReviewResults
+        questions={questions}
+        answers={answers}
+        selfMarks={selfMarks}
+        onSelfMark={(id, v) =>
+          setSelfMarks((previous) => ({ ...previous, [id]: v }))
+        }
+        zResults={zResults}
+        onGradeWithZ={handleGradeWithZ}
         isGrading={gradeQuiz.isPending}
         onRetake={handleRetake}
+        quizTitle={quiz.title}
+        passingScore={quiz.passingScore ?? 70}
+        maxStreak={maxStreak}
+        config={
+          config ?? {
+            selectedKeys: [],
+            feedbackMode: "deferred",
+            timerMode: "none",
+            timerSeconds: 0,
+            autoNext: false,
+            allowSkip: true,
+            shuffle: false,
+            passingScore: quiz.passingScore ?? 70,
+            useZGrading: true,
+            showHints: false,
+          }
+        }
+        canUseZGrading={isAuthenticated}
         onBack={() => router.back()}
-        onGradeWithZ={handleGradeWithZ}
       />
     );
   }
@@ -529,6 +472,14 @@ export default function SystemQuizTakePage({
             {current + 1} / {questions.length}
           </span>
           <div className="flex items-center gap-3">
+            {streak >= 2 && (
+              <div className="rounded-(--radius) flex items-center gap-1 border border-amber-500/30 bg-amber-500/10 px-2 py-0.5">
+                <Flame className="size-3 text-amber-500" />
+                <span className="text-[9px] font-mono text-amber-500 font-semibold">
+                  {streak}
+                </span>
+              </div>
+            )}
             {timeLeft !== null && (
               <span
                 className={`text-[10px] font-mono flex items-center gap-1 ${
