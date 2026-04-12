@@ -25,6 +25,7 @@ import {
   type FeedbackState,
 } from "@/components/app/quizzes/question-renderer";
 import { QuizConfigScreen } from "@/components/app/quizzes/quiz-config-screen";
+import { QuizContent } from "@/components/app/quizzes/quiz-content";
 import type {
   QuizDetail,
   QuizQuestion,
@@ -158,6 +159,36 @@ function ResultsScreen({
   );
 }
 
+// ─── View Answers Screen ──────────────────────────────────────────────────────
+
+function ViewAnswersScreen({
+  quiz,
+  onBack,
+}: {
+  quiz: SystemQuizDetail;
+  onBack: () => void;
+}) {
+  return (
+    <div className="mx-auto max-w-3xl px-4 py-6">
+      <div className="flex items-center justify-between mb-6">
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 text-[11px] font-mono gap-1"
+          onClick={onBack}
+        >
+          <ChevronLeft className="size-3" />
+          Back
+        </Button>
+        <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/40">
+          {quiz.title}
+        </span>
+      </div>
+      <QuizContent lectures={quiz.lectures} />
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SystemQuizTakePage({
@@ -191,7 +222,9 @@ export default function SystemQuizTakePage({
     {},
   );
   const [config, setConfig] = useState<QuizConfig | null>(null);
+  const [viewQuiz, setViewQuiz] = useState<SystemQuizDetail | null>(null);
   const currentParam = searchParams.get("q");
+  const isViewMode = searchParams.get("mode") === "view";
 
   const handleStart = async (newConfig: QuizConfig) => {
     try {
@@ -243,12 +276,23 @@ export default function SystemQuizTakePage({
     }
   };
 
+  // Auto-start in view mode
   useEffect(() => {
-    if (!started || done) return;
+    if (!isViewMode || !quiz || started) return;
+    startQuiz.mutateAsync(id).then((fullQuiz) => {
+      if (!fullQuiz) return;
+      setViewQuiz(fullQuiz);
+      setStarted(true);
+    }).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isViewMode, quiz]);
+
+  useEffect(() => {
+    if (!started || done || isViewMode) return;
     const next = new URLSearchParams(searchParams.toString());
     next.set("q", String(current + 1));
     router.replace(`${pathname}?${next.toString()}`, { scroll: false });
-  }, [started, done, current, router, pathname, searchParams]);
+  }, [started, done, isViewMode, current, router, pathname, searchParams]);
 
   // Countdown timer
   useEffect(() => {
@@ -266,9 +310,9 @@ export default function SystemQuizTakePage({
   const handleSelect = useCallback(
     (opt: string) => {
       if (!q) return;
-      if (immediateResults[q.id]) return;
+      const isChoiceType = q.type === "mcq" || q.type === "true_false";
       setAnswers((prev) => ({ ...prev, [q.id]: opt }));
-      if (config?.feedbackMode === "immediate") {
+      if (isChoiceType && config?.feedbackMode === "immediate") {
         const isCorrect = opt === q.correctAnswer;
         setImmediateResults((prev) => ({
           ...prev,
@@ -340,8 +384,17 @@ export default function SystemQuizTakePage({
         byId[r.questionId] = r;
       });
       setZResults((prev) => ({ ...prev, ...byId }));
-    } catch {}
-  }, [quiz, config, questions, answers, zResults, id, gradeQuiz]);
+    } catch (err: any) {
+      if (err?.response?.status === 403) {
+        toast.error("Upgrade required.", {
+          description: "AI grading with Z is available on paid plans.",
+          action: { label: "Upgrade", onClick: () => router.push("/pricing") },
+        });
+      } else {
+        toast.error("Grading failed. Please try again.");
+      }
+    }
+  }, [quiz, config, questions, answers, zResults, id, gradeQuiz, router]);
 
   const score = useMemo(() => {
     return questions.filter((q) => {
@@ -401,6 +454,19 @@ export default function SystemQuizTakePage({
           Go Back
         </Button>
       </div>
+    );
+  }
+
+  if (isViewMode) {
+    if (startQuiz.isPending || !started) {
+      return (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="size-6 border-2 border-primary border-t-transparent animate-spin rounded-full" />
+        </div>
+      );
+    }
+    return (
+      <ViewAnswersScreen quiz={viewQuiz!} onBack={() => router.back()} />
     );
   }
 
