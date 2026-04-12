@@ -170,10 +170,10 @@ export default function SystemQuizDetailPage({
                     variant="outline"
                     size="sm"
                     className="flex-1 sm:flex-none h-8 gap-1.5 text-[10px] font-mono"
-                    onClick={() => router.push("/app")}
+                    onClick={() => router.push(`/quizzes/${id}/take?mode=view`)}
                   >
                     <BookOpen className="size-3.5" />
-                    Study
+                    View Answers
                   </Button>
                   <Button
                     size="sm"

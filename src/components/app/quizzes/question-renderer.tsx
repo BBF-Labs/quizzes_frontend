@@ -254,7 +254,7 @@ export function QuizQuestionCard({
                 selected={answer === opt}
                 feedbackState={mode === "immediate" ? feedbackState : null}
                 isCorrectOption={opt === q.correctAnswer}
-                disabled={disabled || (mode === "immediate" && !!feedbackState)}
+                disabled={disabled}
                 onClick={() => onAnswer(opt)}
               />
             ))}
@@ -272,7 +272,7 @@ export function QuizQuestionCard({
                 selected={answer === val}
                 feedbackState={mode === "immediate" ? feedbackState : null}
                 isCorrectOption={val === q.correctAnswer}
-                disabled={disabled || (mode === "immediate" && !!feedbackState)}
+                disabled={disabled}
                 onClick={() => onAnswer(val)}
               />
             ))}

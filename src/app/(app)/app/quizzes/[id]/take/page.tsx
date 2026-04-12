@@ -32,6 +32,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { api } from "@/lib/api";
+import { toast } from "sonner";
 import { useGradeQuizAnswers } from "@/hooks/app/use-app-library";
 import { useBreadcrumbStore } from "@/store/breadcrumb";
 import { QuizConfigScreen } from "@/components/app/quizzes/quiz-config-screen";
@@ -988,7 +989,7 @@ export default function QuizTakePage({
 
       setAnswers((prev) => ({ ...prev, [q.id]: val }));
 
-      if (config?.feedbackMode === "immediate" && q.type === "mcq") {
+      if (config?.feedbackMode === "immediate" && (q.type === "mcq" || q.type === "true_false")) {
         const correct = q.correctAnswer;
         const isCorrect = correct
           ? val.trim() === String(correct).trim()
@@ -1030,9 +1031,7 @@ export default function QuizTakePage({
       if (q.type === "mcq" && q.options) {
         const idx = parseInt(e.key) - 1;
         if (idx >= 0 && idx < q.options.length) {
-          const locked =
-            config.feedbackMode === "immediate" && !!immediateResults[q.id];
-          if (!locked) handleAnswer(q.options[idx]);
+          handleAnswer(q.options[idx]);
         }
       }
       if (e.key === "ArrowRight" || (e.key === " " && !isFreeResponseType(q.type))) {
@@ -1209,8 +1208,17 @@ export default function QuizTakePage({
         byId[r.questionId] = r;
       });
       setZResults((prev) => ({ ...prev, ...byId }));
-    } catch {}
-  }, [quiz, config, questions, answers, zResults, id, gradeQuiz]);
+    } catch (err: any) {
+      if (err?.response?.status === 403) {
+        toast.error("Upgrade required.", {
+          description: "AI grading with Z is available on paid plans.",
+          action: { label: "Upgrade", onClick: () => router.push("/pricing") },
+        });
+      } else {
+        toast.error("Grading failed. Please try again.");
+      }
+    }
+  }, [quiz, config, questions, answers, zResults, id, gradeQuiz, router]);
 
   if (isLoading) {
     return (
