@@ -5,7 +5,7 @@ import { DonationWidget } from "./donation-widget";
 
 export function Donations() {
   return (
-    <section className="py-24 relative overflow-hidden bg-background border-t border-border/50">
+    <section id="donate" className="py-24 relative overflow-hidden bg-background border-t border-border/50 scroll-mt-24">
       {/* Background grid */}
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px]" />
 

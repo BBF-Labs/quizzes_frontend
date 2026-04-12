@@ -154,6 +154,15 @@ export function Navbar() {
     setIsOpen(false);
   };
 
+  const scrollToDonate = () => {
+    if (pathname === "/" || pathname === "/pricing") {
+      document.getElementById("donate")?.scrollIntoView({ behavior: "smooth" });
+    } else {
+      router.push("/#donate");
+    }
+    setIsOpen(false);
+  };
+
   return (
     <>
       <DonationBanner />
@@ -208,6 +217,12 @@ export function Navbar() {
               >
                 Pricing
               </Link>
+              <span
+                onClick={scrollToDonate}
+                className="text-xs font-mono font-medium tracking-[0.15em] text-muted-foreground hover:text-foreground cursor-pointer transition-colors uppercase"
+              >
+                Donate
+              </span>
             </nav>
             <div className="flex items-center space-x-4">
               <ThemeToggle />
@@ -293,6 +308,13 @@ export function Navbar() {
                   Pricing
                 </Button>
               </Link>
+              <Button
+                variant="ghost"
+                className="w-full justify-start rounded-(--radius) font-mono tracking-widest uppercase"
+                onClick={scrollToDonate}
+              >
+                Donate
+              </Button>
               <Button
                 variant="outline"
                 className="w-full rounded-(--radius) border-primary/40 bg-primary/5 text-primary font-mono tracking-widest uppercase hover:bg-primary hover:text-primary-foreground transition-all duration-300"
