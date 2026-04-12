@@ -418,6 +418,7 @@ export default function SystemQuizTakePage({
               ? "immediate"
               : "deferred",
           }}
+          showZGrading
           onStart={handleStart}
           isLoading={startQuiz.isPending}
           error={startQuiz.error as Error | null}
