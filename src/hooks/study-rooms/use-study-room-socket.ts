@@ -29,6 +29,13 @@ export const useStudyRoomSocket = (roomCode?: string, handlers?: Handlers) => {
   const hasGlobalSocket = Boolean(socket && isConnected);
   const activeSocketRef = useRef<Socket | null>(null);
 
+  // Keep handlers in a ref so the socket effect never needs to re-subscribe
+  // when only the callback implementations change between renders.
+  const handlersRef = useRef<Handlers | undefined>(handlers);
+  useEffect(() => {
+    handlersRef.current = handlers;
+  });
+
   useEffect(() => {
     if (!roomCode) return;
     const code = roomCode.toUpperCase();
@@ -66,77 +73,81 @@ export const useStudyRoomSocket = (roomCode?: string, handlers?: Handlers) => {
 
     activeSocket.emit("join:study_room", code);
 
-    const onPresence = (payload: any) => handlers?.onPresence?.(payload);
-    const onMessage = (payload: any) => handlers?.onMessage?.(payload);
-    const onTimer = (payload: any) => handlers?.onTimer?.(payload);
-    const onLocked = (payload: any) => handlers?.onLocked?.(payload);
-    const onEnded = (payload: any) => handlers?.onEnded?.(payload);
-    const onTyping = (payload: any) => handlers?.onTyping?.(payload);
-    const onTask = (payload: any) => handlers?.onTask?.(payload);
-    const onCheckIn = (payload: any) => handlers?.onCheckIn?.(payload);
-    const onMilestone = (payload: any) => handlers?.onMilestone?.(payload);
-    const onMedia = (payload: any) => handlers?.onMedia?.(payload);
-    const onGame = (payload: any) => handlers?.onGame?.(payload);
-    const onModeration = (payload: any) => handlers?.onModeration?.(payload);
-    const onXp = (payload: any) => handlers?.onXp?.(payload);
-    const onReady = (payload: any) => handlers?.onReady?.(payload);
-    const onSharedMedia = (payload: any) => handlers?.onSharedMedia?.(payload);
-    const onGameState = (payload: any) => handlers?.onGameState?.(payload);
-    const onMediaSync = (payload: any) => handlers?.onMediaSync?.(payload);
+    // Stable wrapper functions — each delegates to the current handlersRef so
+    // the socket never needs to re-register listeners when handlers change.
+    const onPresence    = (p: any) => handlersRef.current?.onPresence?.(p);
+    const onMessage     = (p: any) => handlersRef.current?.onMessage?.(p);
+    const onTimer       = (p: any) => handlersRef.current?.onTimer?.(p);
+    const onLocked      = (p: any) => handlersRef.current?.onLocked?.(p);
+    const onEnded       = (p: any) => handlersRef.current?.onEnded?.(p);
+    const onTyping      = (p: any) => handlersRef.current?.onTyping?.(p);
+    const onTask        = (p: any) => handlersRef.current?.onTask?.(p);
+    const onCheckIn     = (p: any) => handlersRef.current?.onCheckIn?.(p);
+    const onMilestone   = (p: any) => handlersRef.current?.onMilestone?.(p);
+    const onMedia       = (p: any) => handlersRef.current?.onMedia?.(p);
+    const onGame        = (p: any) => handlersRef.current?.onGame?.(p);
+    const onModeration  = (p: any) => handlersRef.current?.onModeration?.(p);
+    const onXp          = (p: any) => handlersRef.current?.onXp?.(p);
+    const onReady       = (p: any) => handlersRef.current?.onReady?.(p);
+    const onSharedMedia = (p: any) => handlersRef.current?.onSharedMedia?.(p);
+    const onGameState   = (p: any) => handlersRef.current?.onGameState?.(p);
+    const onMediaSync   = (p: any) => handlersRef.current?.onMediaSync?.(p);
 
-    activeSocket.on("study_room:presence", onPresence);
-    activeSocket.on("study_room:chat:new", onMessage);
-    activeSocket.on("study_room:timer:state", onTimer);
-    activeSocket.on("study_room:locked", onLocked);
-    activeSocket.on("study_room:ended", onEnded);
-    activeSocket.on("study_room:typing", onTyping);
-    activeSocket.on("study_room:task:new", onTask);
-    activeSocket.on("study_room:task:completed", onTask);
-    activeSocket.on("study_room:checkin:new", onCheckIn);
-    activeSocket.on("study_room:milestone", onMilestone);
-    activeSocket.on("study_room:media:new", onMedia);
-    activeSocket.on("study_room:game:started", onGame);
-    activeSocket.on("study_room:game:winner", onGame);
-    activeSocket.on("study_room:moderation", onModeration);
-    activeSocket.on("study_room:xp:changed", onXp);
-    activeSocket.on("study_room:game:ready_opened", onReady);
+    activeSocket.on("study_room:presence",          onPresence);
+    activeSocket.on("study_room:chat:new",           onMessage);
+    activeSocket.on("study_room:timer:state",        onTimer);
+    activeSocket.on("study_room:locked",             onLocked);
+    activeSocket.on("study_room:ended",              onEnded);
+    activeSocket.on("study_room:typing",             onTyping);
+    activeSocket.on("study_room:task:new",           onTask);
+    activeSocket.on("study_room:task:completed",     onTask);
+    activeSocket.on("study_room:checkin:new",        onCheckIn);
+    activeSocket.on("study_room:milestone",          onMilestone);
+    activeSocket.on("study_room:media:new",          onMedia);
+    activeSocket.on("study_room:game:started",       onGame);
+    activeSocket.on("study_room:game:winner",        onGame);
+    activeSocket.on("study_room:moderation",         onModeration);
+    activeSocket.on("study_room:xp:changed",         onXp);
+    activeSocket.on("study_room:game:ready_opened",  onReady);
     activeSocket.on("study_room:game:ready_updated", onReady);
-    activeSocket.on("study_room:game:ready_closed", onReady);
+    activeSocket.on("study_room:game:ready_closed",  onReady);
     activeSocket.on("study_room:media:shared_updated", onSharedMedia);
     activeSocket.on("study_room:game:state_updated", onGameState);
-    activeSocket.on("study_room:game:reveal", onGameState);
-    activeSocket.on("study_room:media:sync", onMediaSync);
+    activeSocket.on("study_room:game:reveal",        onGameState);
+    activeSocket.on("study_room:media:sync",         onMediaSync);
 
     return () => {
       activeSocket?.emit("leave:study_room", code);
-      activeSocket?.off("study_room:presence", onPresence);
-      activeSocket?.off("study_room:chat:new", onMessage);
-      activeSocket?.off("study_room:timer:state", onTimer);
-      activeSocket?.off("study_room:locked", onLocked);
-      activeSocket?.off("study_room:ended", onEnded);
-      activeSocket?.off("study_room:typing", onTyping);
-      activeSocket?.off("study_room:task:new", onTask);
-      activeSocket?.off("study_room:task:completed", onTask);
-      activeSocket?.off("study_room:checkin:new", onCheckIn);
-      activeSocket?.off("study_room:milestone", onMilestone);
-      activeSocket?.off("study_room:media:new", onMedia);
-      activeSocket?.off("study_room:game:started", onGame);
-      activeSocket?.off("study_room:game:winner", onGame);
-      activeSocket?.off("study_room:moderation", onModeration);
-      activeSocket?.off("study_room:xp:changed", onXp);
-      activeSocket?.off("study_room:game:ready_opened", onReady);
+      activeSocket?.off("study_room:presence",          onPresence);
+      activeSocket?.off("study_room:chat:new",           onMessage);
+      activeSocket?.off("study_room:timer:state",        onTimer);
+      activeSocket?.off("study_room:locked",             onLocked);
+      activeSocket?.off("study_room:ended",              onEnded);
+      activeSocket?.off("study_room:typing",             onTyping);
+      activeSocket?.off("study_room:task:new",           onTask);
+      activeSocket?.off("study_room:task:completed",     onTask);
+      activeSocket?.off("study_room:checkin:new",        onCheckIn);
+      activeSocket?.off("study_room:milestone",          onMilestone);
+      activeSocket?.off("study_room:media:new",          onMedia);
+      activeSocket?.off("study_room:game:started",       onGame);
+      activeSocket?.off("study_room:game:winner",        onGame);
+      activeSocket?.off("study_room:moderation",         onModeration);
+      activeSocket?.off("study_room:xp:changed",         onXp);
+      activeSocket?.off("study_room:game:ready_opened",  onReady);
       activeSocket?.off("study_room:game:ready_updated", onReady);
-      activeSocket?.off("study_room:game:ready_closed", onReady);
+      activeSocket?.off("study_room:game:ready_closed",  onReady);
       activeSocket?.off("study_room:media:shared_updated", onSharedMedia);
       activeSocket?.off("study_room:game:state_updated", onGameState);
-      activeSocket?.off("study_room:game:reveal", onGameState);
-      activeSocket?.off("study_room:media:sync", onMediaSync);
+      activeSocket?.off("study_room:game:reveal",        onGameState);
+      activeSocket?.off("study_room:media:sync",         onMediaSync);
       activeSocketRef.current = null;
       if (!hasGlobalSocket) {
         activeSocket?.disconnect();
       }
     };
-  }, [socket, hasGlobalSocket, roomCode, handlers]);
+  // Intentionally excludes `handlers` — handler updates go through handlersRef.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [socket, hasGlobalSocket, roomCode]);
 
   return {
     socket,
@@ -169,4 +180,3 @@ export const useStudyRoomSocket = (roomCode?: string, handlers?: Handlers) => {
     },
   };
 };
-
