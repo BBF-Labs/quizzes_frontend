@@ -246,7 +246,9 @@ function ConfigScreen({
   };
 
   const hasFreeTxt = quiz.lectures.some((l) =>
-    l.topics.some((t) => (t.questions ?? []).some((q) => q.type === "free_text")),
+    l.topics.some((t) =>
+      (t.questions ?? []).some((q) => isFreeResponseType(q.type)),
+    ),
   );
 
   return (
@@ -794,7 +796,7 @@ function ResultsScreen({
       isFreeResponseType(q.type) &&
       answers[q.id] &&
       !zResults[q.id] &&
-      selfMarks[q.id] === undefined,
+      selfMarks[q.id] == null,
   );
   const hasUngradedFreeText = unansweredFreeText.length > 0;
   const isPctFinal =

@@ -25,6 +25,7 @@ interface Props {
   onStart: (config: QuizConfig) => void | Promise<void>;
   initialConfig?: Partial<QuizConfig>;
   showTopicSelection?: boolean;
+  showZGrading?: boolean;
   isLoading?: boolean;
   error?: Error | null;
 }
@@ -54,6 +55,7 @@ export function QuizConfigScreen({
   onStart,
   initialConfig,
   showTopicSelection = true,
+  showZGrading = false,
   isLoading = false,
   error = null,
 }: Props) {
@@ -105,7 +107,15 @@ export function QuizConfigScreen({
 
   const hasFreeTxt = useMemo(() => {
     return quiz.lectures.some((l) =>
-      l.topics.some((t) => (t.questions ?? []).some((q) => q.type === "free_text"))
+      l.topics.some((t) =>
+        (t.questions ?? []).some((q) =>
+          q.type === "free_text" ||
+          q.type === "short_answer" ||
+          q.type === "essay" ||
+          q.type === "fill_in_blank" ||
+          q.type === "fill_in"
+        )
+      )
     );
   }, [quiz]);
 
@@ -437,7 +447,7 @@ export function QuizConfigScreen({
         </section>
 
         {/* Z-grading */}
-        {hasFreeTxt && (
+        {(hasFreeTxt || showZGrading) && (
           <section className="rounded-(--radius) border border-primary/20 bg-primary/5 px-4 py-4">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-3">
