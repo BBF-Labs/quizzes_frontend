@@ -419,37 +419,39 @@ export default function SystemQuizTakePage({
 
   if (done) {
     return (
-      <QuizReviewResults
-        questions={questions}
-        answers={answers}
-        selfMarks={selfMarks}
-        onSelfMark={(id, v) =>
-          setSelfMarks((previous) => ({ ...previous, [id]: v }))
-        }
-        zResults={zResults}
-        onGradeWithZ={handleGradeWithZ}
-        isGrading={gradeQuiz.isPending}
-        onRetake={handleRetake}
-        quizTitle={quiz.title}
-        passingScore={quiz.passingScore ?? 70}
-        maxStreak={maxStreak}
-        config={
-          config ?? {
-            selectedKeys: [],
-            feedbackMode: "deferred",
-            timerMode: "none",
-            timerSeconds: 0,
-            autoNext: false,
-            allowSkip: true,
-            shuffle: false,
-            passingScore: quiz.passingScore ?? 70,
-            useZGrading: true,
-            showHints: false,
+      <div className="mx-auto max-w-2xl px-4 py-6">
+        <QuizReviewResults
+          questions={questions}
+          answers={answers}
+          selfMarks={selfMarks}
+          onSelfMark={(id, v) =>
+            setSelfMarks((previous) => ({ ...previous, [id]: v }))
           }
-        }
-        canUseZGrading={isAuthenticated}
-        onBack={() => router.back()}
-      />
+          zResults={zResults}
+          onGradeWithZ={handleGradeWithZ}
+          isGrading={gradeQuiz.isPending}
+          onRetake={handleRetake}
+          quizTitle={quiz.title}
+          passingScore={quiz.passingScore ?? 70}
+          maxStreak={maxStreak}
+          config={
+            config ?? {
+              selectedKeys: [],
+              feedbackMode: "deferred",
+              timerMode: "none",
+              timerSeconds: 0,
+              autoNext: false,
+              allowSkip: true,
+              shuffle: false,
+              passingScore: quiz.passingScore ?? 70,
+              useZGrading: true,
+              showHints: false,
+            }
+          }
+          canUseZGrading={isAuthenticated}
+          onBack={() => router.back()}
+        />
+      </div>
     );
   }
 
