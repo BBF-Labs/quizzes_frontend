@@ -66,6 +66,7 @@ import {
   Play,
   Pause,
   RotateCcw,
+  Square,
   Check,
   RefreshCw,
   MoreVertical,
@@ -77,10 +78,10 @@ import {
   Target,
   Lock,
   Unlock,
+  Timer,
 } from "lucide-react";
 import { SprintChat } from "@/components/study-rooms/kahoot-chat";
 import { RoomOverlays } from "@/components/study-rooms/room-overlays";
-import { CircularTimer } from "@/components/study-rooms/circular-timer";
 import { AvatarBuilder } from "@/components/study-rooms/avatar-builder";
 import { toDiceBearOptions } from "@/components/study-rooms/avatar-builder";
 import { useStudyRoomLayout } from "@/app/(app)/study-rooms/study-room-layout-provider";
@@ -156,20 +157,13 @@ export default function StudyRoomDetailPage() {
   const [taskTitle, setTaskTitle] = useState("");
   const [mediaUrl, setMediaUrl] = useState("");
   const [xpFx, setXpFx] = useState<{ delta: number } | null>(null);
-  const [timerSize, setTimerSize] = useState(280);
   const [isOverlayDismissed, setIsOverlayDismissed] = useState(false);
   const [localRemaining, setLocalRemaining] = useState<number | null>(null);
+  const [selectedDuration, setSelectedDuration] = useState<number>(1500);
   const [gameInput, setGameInput] = useState("");
   const [inviteValue, setInviteValue] = useState("");
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
 
-  // responsive timer size
-  useEffect(() => {
-    const update = () => setTimerSize(window.innerWidth < 640 ? 200 : 300);
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
 
   // ── derived state ──────────────────────────────────────────────────────────
 
@@ -227,6 +221,13 @@ export default function StudyRoomDetailPage() {
 
   // ── timer ticker ───────────────────────────────────────────────────────────
 
+  // Sync selectedDuration from server when room loads or duration changes
+  useEffect(() => {
+    if (room?.timer?.durationSeconds) {
+      setSelectedDuration(room.timer.durationSeconds);
+    }
+  }, [room?.timer?.durationSeconds]);
+
   const hasAutoTickedRef = useRef(false);
   useEffect(() => {
     if (!room?.timer) return;
@@ -259,7 +260,21 @@ export default function StudyRoomDetailPage() {
   const roomSocket = useStudyRoomSocket(code, {
     onPresence: () => refetch(),
     onMessage: () => refetch(),
-    onTimer: () => refetch(),
+    onTimer: (p) => {
+      // Immediately sync local time from socket payload — don't wait for refetch
+      if (p?.timer) {
+        const t = p.timer;
+        const base = t.remainingSeconds ?? 0;
+        const startedAt = t.startedAt ? new Date(t.startedAt).getTime() : null;
+        if (!t.isRunning || !startedAt) {
+          setLocalRemaining(base);
+        } else {
+          const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+          setLocalRemaining(Math.max(0, base - elapsed));
+        }
+      }
+      refetch();
+    },
     onTyping: (p) => {
       const sender = String(p?.senderName || "");
       if (!sender || sender === myDisplayName) return;
@@ -620,7 +635,7 @@ export default function StudyRoomDetailPage() {
                 <AnimatePresence mode="popLayout">
                   {leaderboard.map((p, i) => {
                     const isSelf = (user?.id && p.userId === user.id) || (myGuestId && p.guestId === myGuestId);
-                    const canModerate = isHost && !isSelf;
+                    const canModerate = isHost && !isSelf && p.role !== "host";
                     return (
                       <motion.div
                         key={p.userId || p.guestId || p.displayName}
@@ -714,41 +729,125 @@ export default function StudyRoomDetailPage() {
         <section className="flex flex-1 flex-col gap-5 overflow-y-auto no-scrollbar">
 
           {/* Timer card */}
-          <Card className="rounded-(--radius) border-border/50 shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex flex-col items-center gap-6">
-                <CircularTimer
-                  percentage={progress}
-                  remainingTime={remainingFormatted}
-                  size={timerSize}
-                  color="#10b981"
-                />
+          <Card className="rounded-(--radius) border-border/50 shadow-sm overflow-hidden">
+            {/* Amber accent strip — pulses when running */}
+            <div className={cn(
+              "h-1 w-full bg-amber-500",
+              room.timer?.isRunning && "animate-pulse",
+            )} />
 
-                <div className="flex flex-wrap items-center justify-center gap-3">
+            <CardContent className="p-6">
+              <div className="flex flex-col items-center gap-5">
+
+                {/* Status badge */}
+                <div className="flex items-center gap-2">
+                  {room.timer?.isRunning ? (
+                    <Badge className="rounded-(--radius) bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 font-mono text-[9px] font-bold uppercase tracking-widest px-3 py-1 flex items-center gap-1.5">
+                      <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />
+                      Focus Session Active
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="rounded-(--radius) border-border/40 text-muted-foreground font-mono text-[9px] font-bold uppercase tracking-widest px-3 py-1 flex items-center gap-1.5">
+                      <Timer className="size-3" />
+                      {localRemaining === 0 ? "Cycle Complete" : "Session Paused"}
+                    </Badge>
+                  )}
+                  <Badge variant="outline" className="rounded-(--radius) border-amber-500/30 text-amber-500 font-mono text-[9px] font-bold uppercase tracking-widest px-3 py-1">
+                    Sprint {room.timer?.cycle ?? 0}
+                  </Badge>
+                </div>
+
+                {/* Big time display */}
+                <p className={cn(
+                  "font-mono font-black tracking-tighter leading-none select-none",
+                  "text-7xl sm:text-8xl",
+                  room.timer?.isRunning ? "text-foreground" : "text-muted-foreground",
+                )}>
+                  {remainingFormatted}
+                </p>
+
+                {/* Participant avatar stack */}
+                {participants.length > 0 && (
+                  <div className="flex flex-col items-center gap-1.5">
+                    <div className="flex -space-x-2">
+                      {participants.slice(0, 5).map((p) => (
+                        <img
+                          key={p.userId ?? p.guestId}
+                          src={buildAvatarUri(p.displayName, p.avatarConfig)}
+                          alt={p.displayName}
+                          className="size-7 rounded-full border-2 border-background bg-muted"
+                          title={p.displayName}
+                        />
+                      ))}
+                      {participants.length > 5 && (
+                        <div className="size-7 rounded-full border-2 border-background bg-muted flex items-center justify-center font-mono text-[9px] font-bold text-muted-foreground">
+                          +{participants.length - 5}
+                        </div>
+                      )}
+                    </div>
+                    <p className="font-mono text-[9px] text-muted-foreground uppercase tracking-widest">
+                      {participants.length === 1
+                        ? `${participants[0].displayName} is studying`
+                        : participants.length <= 3
+                        ? `${participants.slice(0, -1).map((p) => p.displayName).join(", ")} and ${participants[participants.length - 1].displayName} are studying`
+                        : `${participants[0].displayName} and ${participants.length - 1} others are studying`}
+                    </p>
+                  </div>
+                )}
+
+                {/* Duration picker (host/mod, idle only) */}
+                {isHost && !room.timer?.isRunning && (
+                  <div className="flex items-center gap-1.5">
+                    <p className="font-mono text-[9px] text-muted-foreground uppercase tracking-widest mr-1">Duration</p>
+                    {[15, 25, 45, 60].map((mins) => {
+                      const secs = mins * 60;
+                      const active = selectedDuration === secs;
+                      return (
+                        <button
+                          key={mins}
+                          onClick={() => setSelectedDuration(secs)}
+                          className={cn(
+                            "font-mono text-[9px] font-bold uppercase px-2.5 py-1 border transition-all",
+                            active
+                              ? "border-amber-500 text-amber-500 bg-amber-500/10"
+                              : "border-border/40 text-muted-foreground hover:border-amber-500/50 hover:text-amber-500",
+                          )}
+                        >
+                          {mins}m
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Controls */}
+                <div className="flex items-center gap-3">
                   {isHost && (
                     <>
-                      <Button
-                        size="icon"
-                        className="size-11 rounded-(--radius)"
-                        onClick={() => updateTimer.mutate({ code, action: room.timer?.isRunning ? "pause" : "start" })}
+                      {/* Play / Pause — circular amber filled */}
+                      <button
+                        onClick={() => {
+                          const isRunning = room.timer?.isRunning;
+                          updateTimer.mutate({
+                            code,
+                            action: isRunning ? "pause" : "start",
+                            durationSeconds: isRunning ? undefined : selectedDuration,
+                          });
+                        }}
+                        className="size-14 rounded-full bg-amber-500 hover:bg-amber-400 transition-colors flex items-center justify-center shadow-md shadow-amber-500/20 active:scale-95"
                       >
-                        {room.timer?.isRunning ? <Pause className="size-5 fill-current" /> : <Play className="size-5 fill-current ml-0.5" />}
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="size-11 rounded-(--radius) border-border/50"
+                        {room.timer?.isRunning
+                          ? <Pause className="size-5 fill-white text-white" />
+                          : <Play className="size-5 fill-white text-white ml-0.5" />}
+                      </button>
+
+                      {/* Stop — circular outlined */}
+                      <button
                         onClick={() => updateTimer.mutate({ code, action: "reset" })}
+                        className="size-14 rounded-full border-2 border-border/60 hover:border-destructive/60 hover:text-destructive text-muted-foreground transition-colors flex items-center justify-center active:scale-95"
                       >
-                        <RotateCcw className="size-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="rounded-(--radius) h-11 px-6 text-[10px] font-mono font-bold uppercase tracking-widest border-border/50"
-                        onClick={() => updateTimer.mutate({ code, action: "tickComplete" })}
-                      >
-                        <CheckCircle2 className="size-4 mr-2" /> Complete Cycle
-                      </Button>
+                        <Square className="size-4 fill-current" />
+                      </button>
                     </>
                   )}
                   {!myParticipant && (
@@ -761,9 +860,6 @@ export default function StudyRoomDetailPage() {
                   )}
                 </div>
 
-                <Badge variant="outline" className="rounded-(--radius) border-primary/20 bg-primary/5 text-primary px-4 py-1 font-mono text-[9px] font-bold uppercase tracking-widest">
-                  Sprint Cycle {room.timer?.cycle ?? 0}
-                </Badge>
               </div>
             </CardContent>
           </Card>
@@ -1177,7 +1273,7 @@ export default function StudyRoomDetailPage() {
                       Edit Avatar
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-4xl rounded-(--radius) border-border/50 bg-background shadow-2xl overflow-hidden p-0">
+                  <DialogContent className="max-w-4xl rounded-(--radius) border-border/50 bg-background shadow-2xl p-0">
                     <div className="border-b border-border/50 p-5">
                       <h2 className="font-mono text-base font-bold italic tracking-tighter">Avatar Builder</h2>
                     </div>
