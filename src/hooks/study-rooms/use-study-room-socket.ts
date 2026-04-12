@@ -152,13 +152,14 @@ export const useStudyRoomSocket = (roomCode?: string, handlers?: Handlers) => {
   return {
     socket,
     isConnected,
-    sendSocketMessage: (content: string, guestName?: string) => {
+    // Relay a message that has already been persisted via HTTP POST.
+    // The backend socket handler re-broadcasts it to all room members.
+    relayMessage: (message: Record<string, unknown>) => {
       const activeSocket = activeSocketRef.current;
       if (!activeSocket || !roomCode) return;
-      activeSocket.emit("study_room:chat:send", {
+      activeSocket.emit("study_room:chat:relay", {
         roomCode: roomCode.toUpperCase(),
-        content,
-        guestName,
+        message,
       });
     },
     sendTimerState: (timer: Record<string, unknown>) => {

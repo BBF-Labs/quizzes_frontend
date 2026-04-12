@@ -74,6 +74,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { createAvatar } from "@dicebear/core";
 import { avataaars } from "@dicebear/collection";
+import { toDiceBearOptions } from "@/components/study-rooms/avatar-builder";
 import { cn } from "@/lib/utils";
 import { 
     DropdownMenu, 
@@ -95,12 +96,10 @@ const ensureGuestId = (): string => {
 
 const buildAvatarUri = (seed: string, avatarConfig?: Record<string, unknown>): string => {
   const safeSeed = seed || "study-user";
-  const avatar = createAvatar(avataaars, {
-    seed: safeSeed,
-    backgroundColor: ["d1d4f9", "c0aede", "b6e3f4", "ffd5dc"],
-    ...(avatarConfig || {}),
-  });
-  return avatar.toDataUri();
+  const diceBearOpts = avatarConfig && Object.keys(avatarConfig).length > 0
+    ? toDiceBearOptions(avatarConfig as Record<string, string>)
+    : { seed: safeSeed, backgroundColor: ["d1d4f9", "c0aede", "b6e3f4", "ffd5dc"] };
+  return createAvatar(avataaars, diceBearOpts).toDataUri();
 };
 
 const getYouTubeEmbedUrl = (rawUrl: string): string | null => {
@@ -983,9 +982,9 @@ export default function StudyRoomDetailPage() {
                                     <h2 className="text-xl font-mono font-bold italic tracking-tighter">Avatar Protocol</h2>
                                 </div>
                                 <div className="p-6">
-                                    <AvatarBuilder 
-                                        initialConfig={myParticipant?.avatarConfig} 
-                                        onUpdate={(c) => updateAvatar.mutate({ code, avatarConfig: c })} 
+                                    <AvatarBuilder
+                                        initialConfig={myParticipant?.avatarConfig as Record<string, string> | undefined}
+                                        onUpdate={(c) => updateAvatar.mutate({ code, avatarConfig: c })}
                                     />
                                 </div>
                             </DialogContent>
@@ -1003,7 +1002,11 @@ export default function StudyRoomDetailPage() {
             myDisplayName={user?.name || (typeof window !== "undefined" ? localStorage.getItem("study_room_guest_name") || guestName : guestName)}
             onSendMessage={(c) => {
                 const gName = user ? undefined : (typeof window !== "undefined" ? localStorage.getItem("study_room_guest_name") || guestName : guestName);
-                roomSocket.sendSocketMessage(c, gName);
+                const gId = user ? undefined : ensureGuestId();
+                sendMessage.mutate(
+                    { code, content: c, guestName: gName, guestId: gId },
+                    { onSuccess: (saved) => roomSocket.relayMessage(saved as unknown as Record<string, unknown>) },
+                );
             }}
             onTyping={(is) => roomSocket.emitTyping(is, user?.name || guestName)}
             typingUsers={typingUsers}
