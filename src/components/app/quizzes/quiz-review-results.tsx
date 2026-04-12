@@ -15,6 +15,7 @@ import {
   QuestionMarkdown,
   QuestionTypeBadge,
 } from "@/components/app/quizzes/question-renderer";
+import { answersMatch } from "@/lib/quiz-answer";
 import type {
   QuizConfig,
   QuizQuestion,
@@ -48,7 +49,7 @@ function ReviewItem({
 }) {
   const autoGrade =
     (q.type === "mcq" || q.type === "true_false") && q.correctAnswer
-      ? given.trim() === q.correctAnswer.trim()
+      ? answersMatch(q.type, given, q.correctAnswer)
       : null;
   const zGraded = isFreeResponseType(q.type) && zResult != null;
   const isCorrect =
@@ -93,8 +94,14 @@ function ReviewItem({
       {(q.type === "mcq" || q.type === "true_false") && q.options && (
         <div className="flex flex-col gap-1 mb-1">
           {q.options.map((opt, i) => {
-            const isSelected = given === opt;
-            const isRight = opt === q.correctAnswer;
+            const isSelected =
+              q.type === "true_false"
+                ? answersMatch("true_false", given, opt)
+                : given === opt;
+            const isRight =
+              q.type === "true_false"
+                ? answersMatch("true_false", opt, q.correctAnswer)
+                : opt === q.correctAnswer;
             return (
               <div
                 key={i}
@@ -224,7 +231,7 @@ export function QuizReviewResults({
       const ans = answers[q.id] ?? "";
       if (!ans) return null;
       const correct = q.correctAnswer;
-      return correct ? ans.trim() === String(correct).trim() : null;
+      return correct ? answersMatch(q.type, ans, String(correct)) : null;
     }
     const z = zResults[q.id];
     if (z) return z.isCorrect;
@@ -248,6 +255,7 @@ export function QuizReviewResults({
   const hasUngradedFreeText = unansweredFreeText.length > 0;
   const isPctFinal =
     gradedCount === questions.filter((q) => !!answers[q.id]).length;
+  const allowManualSelfMark = !config.useZGrading || !canUseZGrading;
 
   return (
     <div>
@@ -367,7 +375,9 @@ export function QuizReviewResults({
               isFreeResponseType(q.type) ? (selfMarks[q.id] ?? null) : null
             }
             onSelfMark={
-              isFreeResponseType(q.type) && !zResults[q.id]
+              allowManualSelfMark &&
+              isFreeResponseType(q.type) &&
+              !zResults[q.id]
                 ? (v) => onSelfMark(q.id, v)
                 : undefined
             }
