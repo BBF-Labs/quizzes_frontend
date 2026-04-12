@@ -5,7 +5,6 @@ import { createAvatar } from "@dicebear/core";
 import { avataaars } from "@dicebear/collection";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   User,
   Palette,
@@ -46,22 +45,20 @@ export function toDiceBearOptions(config: Record<string, string>) {
   return opts;
 }
 
-// Categories that render colour swatches instead of avatar thumbnails
 const COLOR_CATEGORIES = new Set(["hairColor", "clothesColor", "skinColor"]);
 
 const CATEGORIES = [
-  { id: "top",          label: "Hair / Hat",    icon: User },
-  { id: "hairColor",    label: "Hair Colour",   icon: Palette },
+  { id: "top",          label: "Hair",          icon: User },
+  { id: "hairColor",    label: "Hair Color",    icon: Palette },
   { id: "eyes",         label: "Eyes",          icon: Eye },
   { id: "eyebrows",     label: "Eyebrows",      icon: Sparkles },
   { id: "mouth",        label: "Mouth",         icon: Smile },
   { id: "clothing",     label: "Clothes",       icon: Shirt },
-  { id: "clothesColor", label: "Clothes Colour",icon: Palette },
+  { id: "clothesColor", label: "Clothes Color", icon: Palette },
   { id: "accessories",  label: "Accessories",   icon: Glasses },
   { id: "skinColor",    label: "Skin",          icon: Palette },
 ];
 
-// Exact values from @dicebear/collection avataaars schema
 const OPTIONS: Record<string, string[]> = {
   top: [
     "bigHair", "bob", "bun", "curly", "curvy", "dreads", "frida", "fro", "froBand",
@@ -74,13 +71,13 @@ const OPTIONS: Record<string, string[]> = {
   accessories: [
     "none", "kurt", "prescription01", "prescription02", "round", "sunglasses", "wayfarers", "eyepatch",
   ],
-  hairColor:   ["2c1b18", "4a312c", "724133", "a55728", "b58143", "d6b370", "e8e1e1", "f59797", "ecdcbf", "c93305"],
-  clothing:    ["blazerAndShirt", "blazerAndSweater", "collarAndSweater", "graphicShirt", "hoodie", "overall", "shirtCrewNeck", "shirtScoopNeck", "shirtVNeck"],
-  clothesColor:["262e33", "65c9ff", "5199e4", "25557c", "e6e6e6", "929598", "3c4f5c", "b1e2ff", "a7ffc4", "ffafb9", "ff488e", "ff5c5c", "ffffff"],
-  eyes:        ["closed", "cry", "default", "eyeRoll", "happy", "hearts", "side", "squint", "surprised", "wink", "winkWacky", "xDizzy"],
-  eyebrows:    ["angry", "angryNatural", "default", "defaultNatural", "flatNatural", "raisedExcited", "raisedExcitedNatural", "sadConcerned", "sadConcernedNatural", "unibrowNatural", "upDown", "upDownNatural"],
-  mouth:       ["concerned", "default", "disbelief", "eating", "grimace", "sad", "screamOpen", "serious", "smile", "tongue", "twinkle", "vomit"],
-  skinColor:   ["614335", "ae5d29", "d08b5b", "edb98a", "ffd9c0", "f8d25c", "fd9841"],
+  hairColor:    ["2c1b18", "4a312c", "724133", "a55728", "b58143", "d6b370", "e8e1e1", "f59797", "ecdcbf", "c93305"],
+  clothing:     ["blazerAndShirt", "blazerAndSweater", "collarAndSweater", "graphicShirt", "hoodie", "overall", "shirtCrewNeck", "shirtScoopNeck", "shirtVNeck"],
+  clothesColor: ["262e33", "65c9ff", "5199e4", "25557c", "e6e6e6", "929598", "3c4f5c", "b1e2ff", "a7ffc4", "ffafb9", "ff488e", "ff5c5c", "ffffff"],
+  eyes:         ["closed", "cry", "default", "eyeRoll", "happy", "hearts", "side", "squint", "surprised", "wink", "winkWacky", "xDizzy"],
+  eyebrows:     ["angry", "angryNatural", "default", "defaultNatural", "flatNatural", "raisedExcited", "raisedExcitedNatural", "sadConcerned", "sadConcernedNatural", "unibrowNatural", "upDown", "upDownNatural"],
+  mouth:        ["concerned", "default", "disbelief", "eating", "grimace", "sad", "screamOpen", "serious", "smile", "tongue", "twinkle", "vomit"],
+  skinColor:    ["614335", "ae5d29", "d08b5b", "edb98a", "ffd9c0", "f8d25c", "fd9841"],
 };
 
 const DEFAULT_CONFIG: Record<string, string> = {
@@ -145,11 +142,11 @@ const AvatarThumb = memo(function AvatarThumb({
       <button
         onClick={onClick}
         className={cn(
-          "group relative aspect-square overflow-hidden rounded-(--radius) border-2 flex items-center justify-center transition-all hover:border-primary/60",
-          selected ? "border-primary bg-primary/5 shadow-md" : "border-border/20 bg-muted/30",
+          "aspect-square rounded-(--radius) border-2 flex items-center justify-center transition-all hover:border-primary/60 text-[9px] font-mono font-bold uppercase tracking-wider text-muted-foreground",
+          selected ? "border-primary bg-primary/5 shadow-sm text-primary" : "border-border/30 bg-muted/20",
         )}
       >
-        <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-muted-foreground">None</span>
+        None
       </button>
     );
   }
@@ -158,12 +155,12 @@ const AvatarThumb = memo(function AvatarThumb({
     <button
       onClick={onClick}
       className={cn(
-        "group relative aspect-square overflow-hidden rounded-(--radius) border-2 p-1 transition-all hover:border-primary/60",
-        selected ? "border-primary bg-primary/5 shadow-md" : "border-border/20 bg-muted/30",
+        "group relative aspect-square overflow-hidden rounded-(--radius) border-2 p-0.5 transition-all hover:border-primary/60",
+        selected ? "border-primary bg-primary/5 shadow-sm" : "border-border/30 bg-muted/20",
       )}
     >
       <img src={uri} alt={opt} className="size-full object-contain" />
-      <div className="absolute inset-x-0 bottom-0 bg-black/60 py-0.5 text-center text-[7px] text-white opacity-0 transition-opacity group-hover:opacity-100 truncate px-1">
+      <div className="absolute inset-x-0 bottom-0 bg-black/70 py-0.5 text-center text-[6px] font-mono text-white opacity-0 transition-opacity group-hover:opacity-100 truncate px-0.5 uppercase">
         {opt.replace(/([A-Z])/g, " $1").trim()}
       </div>
     </button>
@@ -174,11 +171,12 @@ export function AvatarBuilder({ initialConfig, onUpdate }: AvatarBuilderProps) {
   const [config, setConfig] = useState<Record<string, string>>(
     initialConfig && Object.keys(initialConfig).length > 0 ? initialConfig : DEFAULT_CONFIG,
   );
-  const [activeTab, setActiveTab] = useState(CATEGORIES[0].id);
+  const [activeCat, setActiveCat] = useState(CATEGORIES[0].id);
 
-  const previewUri = useMemo(() => {
-    return createAvatar(avataaars, toDiceBearOptions(config)).toDataUri();
-  }, [config]);
+  const previewUri = useMemo(
+    () => createAvatar(avataaars, toDiceBearOptions(config)).toDataUri(),
+    [config],
+  );
 
   const updateField = (field: string, value: string) => {
     const next = { ...config, [field]: value };
@@ -186,8 +184,8 @@ export function AvatarBuilder({ initialConfig, onUpdate }: AvatarBuilderProps) {
     onUpdate(next);
   };
 
-  const applyPreset = (presetKey: string) => {
-    const next = { ...PRESETS[presetKey] };
+  const applyPreset = (key: string) => {
+    const next = { ...PRESETS[key] };
     setConfig(next);
     onUpdate(next);
   };
@@ -196,121 +194,132 @@ export function AvatarBuilder({ initialConfig, onUpdate }: AvatarBuilderProps) {
     const next: Record<string, string> = {};
     for (const key of Object.keys(OPTIONS)) {
       const opts = OPTIONS[key];
-      // For accessories, bias toward "none" so random avatars don't always have glasses
-      if (key === "accessories") {
-        next[key] = Math.random() < 0.6 ? "none" : opts.filter(o => o !== "none")[Math.floor(Math.random() * (opts.length - 1))];
-      } else {
-        next[key] = opts[Math.floor(Math.random() * opts.length)];
-      }
+      next[key] = key === "accessories" && Math.random() < 0.6
+        ? "none"
+        : opts.filter((o) => o !== "none")[Math.floor(Math.random() * (opts.filter((o) => o !== "none").length))];
     }
     setConfig(next);
     onUpdate(next);
   };
 
+  const currentCat = CATEGORIES.find((c) => c.id === activeCat)!;
+  const isColor = COLOR_CATEGORIES.has(activeCat);
+
   return (
-    <div className="flex flex-col md:flex-row h-full max-h-[80vh] gap-0">
-      {/* Preview panel */}
-      <div className="flex flex-col items-center justify-center gap-5 border-b md:border-b-0 md:border-r border-border/50 p-8 md:w-56 shrink-0 bg-muted/20">
+    <div className="flex flex-col gap-0">
+
+      {/* ── TOP: preview + quick actions ── */}
+      <div className="flex items-center gap-6 border-b border-border/50 bg-muted/10 px-5 py-5">
+        {/* Avatar preview */}
         <div
-          className="relative size-40 overflow-hidden rounded-full border-2 border-border/50 bg-background shadow-inner cursor-pointer group"
+          className="relative size-24 shrink-0 cursor-pointer overflow-hidden rounded-full border-2 border-border/50 bg-background shadow-inner group"
           onClick={randomize}
           title="Click to randomize"
         >
-          <img src={previewUri} alt="Avatar preview" className="size-full object-cover" />
-          <div className="absolute inset-0 flex items-center justify-center bg-background/70 opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
-            <RefreshCw className="size-7 text-primary animate-spin" />
+          <img src={previewUri} alt="Preview" className="size-full object-cover" />
+          <div className="absolute inset-0 flex items-center justify-center bg-background/70 opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm rounded-full">
+            <RefreshCw className="size-5 text-primary animate-spin" />
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 w-full">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => applyPreset("styleA")}
-            className="rounded-(--radius) font-mono text-[9px] uppercase tracking-wider h-8"
-          >
-            Style A
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => applyPreset("styleB")}
-            className="rounded-(--radius) font-mono text-[9px] uppercase tracking-wider h-8"
-          >
-            Style B
-          </Button>
+        {/* Actions */}
+        <div className="flex flex-1 flex-col gap-2">
+          <p className="font-mono text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Quick styles</p>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => applyPreset("styleA")}
+              className="rounded-(--radius) font-mono text-[9px] uppercase h-8 px-4"
+            >
+              Style A
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => applyPreset("styleB")}
+              className="rounded-(--radius) font-mono text-[9px] uppercase h-8 px-4"
+            >
+              Style B
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={randomize}
+              className="rounded-(--radius) font-mono text-[9px] uppercase h-8 px-4 gap-1.5 text-muted-foreground"
+            >
+              <RefreshCw className="size-3" /> Random
+            </Button>
+          </div>
         </div>
-
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={randomize}
-          className="w-full rounded-(--radius) gap-2 text-[9px] font-mono uppercase tracking-wider text-muted-foreground"
-        >
-          <RefreshCw className="size-3" /> Randomize
-        </Button>
       </div>
 
-      {/* Editor panel */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
-          {/* Tab strip */}
-          <div className="border-b border-border/50 px-2 overflow-x-auto no-scrollbar bg-muted/10">
-            <TabsList className="h-12 gap-1 bg-transparent">
-              {CATEGORIES.map((cat) => (
-                <TabsTrigger
-                  key={cat.id}
-                  value={cat.id}
-                  className="rounded-(--radius) gap-1.5 px-3 text-[9px] font-mono uppercase tracking-wider data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                >
-                  <cat.icon className="size-3 shrink-0" />
-                  <span className="hidden sm:inline">{cat.label}</span>
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </div>
+      {/* ── MIDDLE: category tab strip (horizontal scroll) ── */}
+      <div className="flex gap-1 overflow-x-auto border-b border-border/50 bg-muted/5 px-3 py-2 no-scrollbar">
+        {CATEGORIES.map((cat) => {
+          const active = activeCat === cat.id;
+          return (
+            <button
+              key={cat.id}
+              onClick={() => setActiveCat(cat.id)}
+              className={cn(
+                "flex shrink-0 items-center gap-1.5 rounded-(--radius) px-3 py-1.5 font-mono text-[9px] font-bold uppercase tracking-wider transition-all",
+                active
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              )}
+            >
+              <cat.icon className="size-3 shrink-0" />
+              {cat.label}
+            </button>
+          );
+        })}
+      </div>
 
-          {/* Tab content */}
-          <ScrollArea className="flex-1">
-            {CATEGORIES.map((cat) => (
-              <TabsContent key={cat.id} value={cat.id} className="mt-0 p-4 outline-none">
-                {activeTab === cat.id && (
-                  COLOR_CATEGORIES.has(cat.id) ? (
-                    <div className="flex flex-wrap gap-3 p-1">
-                      {OPTIONS[cat.id]?.map((hex) => (
-                        <button
-                          key={hex}
-                          onClick={() => updateField(cat.id, hex)}
-                          title={`#${hex}`}
-                          className={cn(
-                            "size-10 rounded-full border-2 transition-all shadow-sm hover:scale-110",
-                            config[cat.id] === hex
-                              ? "border-primary scale-110 ring-2 ring-primary/30"
-                              : "border-border/40",
-                          )}
-                          style={{ backgroundColor: `#${hex}` }}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                      {OPTIONS[cat.id]?.map((opt) => (
-                        <AvatarThumb
-                          key={opt}
-                          field={cat.id}
-                          opt={opt}
-                          config={config}
-                          selected={config[cat.id] === opt}
-                          onClick={() => updateField(cat.id, opt)}
-                        />
-                      ))}
-                    </div>
-                  )
-                )}
-              </TabsContent>
-            ))}
-          </ScrollArea>
-        </Tabs>
+      {/* ── BOTTOM: options grid ── */}
+      <ScrollArea className="h-64">
+        <div className="p-4">
+          {isColor ? (
+            /* Colour swatches */
+            <div className="flex flex-wrap gap-3">
+              {OPTIONS[activeCat]?.map((hex) => (
+                <button
+                  key={hex}
+                  onClick={() => updateField(activeCat, hex)}
+                  title={`#${hex}`}
+                  className={cn(
+                    "size-9 rounded-full border-2 transition-all hover:scale-110",
+                    config[activeCat] === hex
+                      ? "border-primary scale-110 ring-2 ring-primary/30 shadow-sm"
+                      : "border-border/40",
+                  )}
+                  style={{ backgroundColor: `#${hex}` }}
+                />
+              ))}
+            </div>
+          ) : (
+            /* Avatar thumbnail grid */
+            <div className="grid grid-cols-4 gap-2 sm:grid-cols-5 md:grid-cols-6">
+              {OPTIONS[activeCat]?.map((opt) => (
+                <AvatarThumb
+                  key={opt}
+                  field={activeCat}
+                  opt={opt}
+                  config={config}
+                  selected={config[activeCat] === opt}
+                  onClick={() => updateField(activeCat, opt)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </ScrollArea>
+
+      {/* Active category label */}
+      <div className="border-t border-border/50 bg-muted/10 px-4 py-2">
+        <p className="font-mono text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
+          {currentCat.label} — {isColor ? "pick a colour" : `${OPTIONS[activeCat]?.length ?? 0} options`}
+        </p>
       </div>
     </div>
   );
