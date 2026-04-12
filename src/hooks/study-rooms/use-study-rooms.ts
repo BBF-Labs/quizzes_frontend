@@ -307,8 +307,8 @@ export const useStartStudyRoomGame = () => {
   return useMutation({
     mutationFn: async (payload: {
       code: string;
-      type: "word_guess" | "qa";
-      prompt: string;
+      type?: "word_guess" | "qa";
+      prompt?: string;
       answer?: string;
       source?: "manual" | "ai";
       topic?: string;

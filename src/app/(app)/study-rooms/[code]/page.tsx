@@ -177,8 +177,10 @@ export default function StudyRoomDetailPage() {
   }, []);
 
   // Local Timer Ticker with Drift Correction (Anchored to Server startedAt)
+  const hasAutoTickedRef = useRef(false);
   useEffect(() => {
     if (!room?.timer) return;
+    hasAutoTickedRef.current = false;
 
     const syncTimer = () => {
       const initialRemaining = room.timer?.remainingSeconds ?? 0;
@@ -191,7 +193,22 @@ export default function StudyRoomDetailPage() {
       }
 
       const elapsed = Math.floor((Date.now() - startedAt) / 1000);
-      setLocalRemaining(Math.max(0, initialRemaining - elapsed));
+      const remaining = Math.max(0, initialRemaining - elapsed);
+      setLocalRemaining(remaining);
+
+      // Host auto-completes the cycle when timer reaches zero
+      if (remaining === 0 && !hasAutoTickedRef.current) {
+        hasAutoTickedRef.current = true;
+        const myId = user?.id;
+        const myParticipantRole = room?.participants?.find(
+          (p: any) => p.userId === myId && !p.leftAt,
+        )?.role;
+        const iAmHost =
+          room?.hostId === myId || myParticipantRole === "host" || myParticipantRole === "moderator";
+        if (iAmHost) {
+          updateTimer.mutate({ roomCode: code, action: "tickComplete" });
+        }
+      }
     };
 
     syncTimer();
@@ -703,7 +720,7 @@ export default function StudyRoomDetailPage() {
                                          {isHost && (
                                             <Button 
                                                 className="w-full rounded-(--radius) h-14 uppercase font-mono font-bold text-lg shadow-lg shadow-primary/20"
-                                                onClick={() => startGame.mutate({ code, source: "ai", type: room.activeGame?.type || "word_guess", prompt: room.activeGame?.prompt || "" }, {
+                                                onClick={() => startGame.mutate({ code }, {
                                                     onSuccess: () => toast.success("Challenge deployed to the room!")
                                                 })}
                                                 disabled={startGame.isPending}
