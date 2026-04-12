@@ -74,8 +74,11 @@ export interface StudyRoom {
     status?: "generating" | "ready" | "waiting" | "running" | "reveal" | "ended";
     maskedWord?: string;
     wrongLetters?: string[];
+    guessedLetters?: string[];
     options?: string[];
     correctOption?: number;
+    responses?: Array<{ userId?: string; guestId?: string; optionIndex: number; answeredAt: string }>;
+    roundEndsAt?: string;
     revealEndsAt?: string;
     nextRoundStartsAt?: string;
   };
