@@ -372,6 +372,21 @@ export default function StudyRoomDetailPage() {
     setSelectedOption(null);
   }, [room?.activeGame?.roundEndsAt]);
 
+  // ── game helpers (derived, must be before early return) ───────────────────
+
+  const game = room?.activeGame;
+  const gameVisible = game && game.status !== "ended";
+  const isQa = game?.type === "qa";
+  const isWordGuess = game?.type === "word_guess";
+
+  // Build per-option response counts for reveal
+  const optionCounts = useMemo(() => {
+    if (!game?.options || !game.responses) return [];
+    return game.options.map((_, idx) => game.responses!.filter((r) => r.optionIndex === idx).length);
+  }, [game?.options, game?.responses]);
+
+  const totalResponses = optionCounts.reduce((a, b) => a + b, 0);
+
   // ── loading ────────────────────────────────────────────────────────────────
 
   if (isLoading || !room)
@@ -380,13 +395,6 @@ export default function StudyRoomDetailPage() {
         <Skeleton className="h-20 w-80 rounded-(--radius)" />
       </div>
     );
-
-  // ── game helpers ───────────────────────────────────────────────────────────
-
-  const game = room.activeGame;
-  const gameVisible = game && game.status !== "ended";
-  const isQa = game?.type === "qa";
-  const isWordGuess = game?.type === "word_guess";
 
   const handleSubmitAnswer = () => {
     const answer = isQa ? String(selectedOption ?? "") : gameInput.trim().toUpperCase();
@@ -407,14 +415,6 @@ export default function StudyRoomDetailPage() {
       },
     );
   };
-
-  // Build per-option response counts for reveal
-  const optionCounts = useMemo(() => {
-    if (!game?.options || !game.responses) return [];
-    return game.options.map((_, idx) => game.responses!.filter((r) => r.optionIndex === idx).length);
-  }, [game?.options, game?.responses]);
-
-  const totalResponses = optionCounts.reduce((a, b) => a + b, 0);
 
   // ── render ─────────────────────────────────────────────────────────────────
 
