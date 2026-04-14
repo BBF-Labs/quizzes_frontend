@@ -16,6 +16,8 @@ export interface AdminLibraryItem {
   publishedAt?: string;
   rejectionReason?: string;
   createdAt: string;
+  quizGenerated?: boolean;
+  quizGeneratedAt?: string;
   materialId: {
     _id: string;
     originalName: string;
@@ -23,6 +25,7 @@ export interface AdminLibraryItem {
     size: number;
     pageCount: number;
     wordCount: number;
+    contentType?: "material" | "questions";
   };
   submittedBy?: { _id: string; name: string; username: string };
   universityId?: { _id: string; name: string };
