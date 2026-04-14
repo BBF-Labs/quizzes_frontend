@@ -91,9 +91,14 @@ function ReviewItem({
         <QuestionMarkdown content={q.question} className="text-[11px]" />
       </div>
 
-      {(q.type === "mcq" || q.type === "true_false") && q.options && (
+      {(q.type === "mcq" || q.type === "true_false") && (() => {
+        const opts =
+          q.type === "true_false" && (!q.options || q.options.length === 0)
+            ? ["True", "False"]
+            : q.options ?? [];
+        return opts.length > 0 ? (
         <div className="flex flex-col gap-1 mb-1">
-          {q.options.map((opt, i) => {
+          {opts.map((opt, i) => {
             const isSelected =
               q.type === "true_false"
                 ? answersMatch("true_false", given, opt)
@@ -132,7 +137,8 @@ function ReviewItem({
             );
           })}
         </div>
-      )}
+        ) : null;
+      })()}
 
       {isFreeResponseType(q.type) && (
         <div className="space-y-2">
@@ -226,7 +232,18 @@ export function QuizReviewResults({
   canUseZGrading?: boolean;
   onBack?: () => void;
 }) {
-  const graded = questions.map((q) => {
+  const seenIds = new Set<string>();
+  const seenTexts = new Set<string>();
+  const uniqueQuestions = questions.filter((q) => {
+    const textKey = q.question?.trim().toLowerCase() ?? "";
+    if ((q.id && seenIds.has(q.id)) || (textKey && seenTexts.has(textKey)))
+      return false;
+    if (q.id) seenIds.add(q.id);
+    if (textKey) seenTexts.add(textKey);
+    return true;
+  });
+
+  const graded = uniqueQuestions.map((q) => {
     if (q.type === "mcq" || q.type === "true_false") {
       const ans = answers[q.id] ?? "";
       if (!ans) return null;
@@ -245,7 +262,7 @@ export function QuizReviewResults({
     gradedCount > 0 ? Math.round((correctCount / gradedCount) * 100) : 0;
   const pass = pct >= passingScore;
 
-  const unansweredFreeText = questions.filter(
+  const unansweredFreeText = uniqueQuestions.filter(
     (q) =>
       isFreeResponseType(q.type) &&
       answers[q.id] &&
@@ -254,7 +271,7 @@ export function QuizReviewResults({
   );
   const hasUngradedFreeText = unansweredFreeText.length > 0;
   const isPctFinal =
-    gradedCount === questions.filter((q) => !!answers[q.id]).length;
+    gradedCount === uniqueQuestions.filter((q) => !!answers[q.id]).length;
   const allowManualSelfMark = !config.useZGrading || !canUseZGrading;
 
   return (
@@ -364,7 +381,7 @@ export function QuizReviewResults({
       </motion.div>
 
       <div className="flex flex-col gap-3">
-        {questions.map((q, i) => (
+        {uniqueQuestions.map((q, i) => (
           <ReviewItem
             key={q.id}
             q={q}
