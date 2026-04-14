@@ -149,6 +149,11 @@ function LibraryCard({
                 {tag}
               </Badge>
             ))}
+            {item.tags.length > 4 && (
+              <span className="text-[8px] font-mono text-muted-foreground/40 self-center">
+                +{item.tags.length - 4} more
+              </span>
+            )}
           </div>
         )}
       </div>
