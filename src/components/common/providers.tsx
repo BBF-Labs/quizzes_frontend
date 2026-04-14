@@ -9,6 +9,7 @@ import { SocketProvider } from "@/contexts/socket-context";
 import { UiCustomizationFab } from "@/components/app/layout";
 import { applyUiPreferences, loadUiPreferences } from "@/lib/ui-preferences";
 import { CookieConsent } from "@/components/common/cookie-consent";
+import { PwaThemeColor } from "@/components/common/pwa-theme-color";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -31,6 +32,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+        <PwaThemeColor />
         <AuthProvider>
           <SocketProvider>
             {children}
