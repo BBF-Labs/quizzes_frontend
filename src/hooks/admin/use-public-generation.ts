@@ -1,8 +1,9 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useSocket } from "@/hooks/common/use-socket";
 import { EVENT_NAMES } from "@/types/socket-events";
+import { queryKeys } from "@/lib/query-keys";
 
 type ApiResponseEnvelope<T> = {
   success: boolean;
@@ -437,4 +438,174 @@ export const useTriggerPublicQuizGeneration = () => {
     materialUpdates,
     executionSteps,
   };
+};
+
+// ---------------------------------------------------------------------------
+// Per-material generation hook
+// ---------------------------------------------------------------------------
+
+export type MaterialGenStatus = "idle" | "queued" | "processing" | "completed" | "failed";
+
+export interface MaterialGenState {
+  generationId: string | null;
+  status: MaterialGenStatus;
+  questionsGenerated?: number;
+  quizId?: string;
+  executionSteps: PublicQuizExecutionStep[];
+}
+
+export const useTriggerPublicQuizGenerationForMaterial = () => {
+  const { socket } = useSocket();
+  const qc = useQueryClient();
+  const [state, setState] = useState<MaterialGenState>({
+    generationId: null,
+    status: "idle",
+    executionSteps: [],
+  });
+
+  useEffect(() => {
+    if (!socket || !state.generationId) return;
+    const genId = state.generationId;
+
+    const pushStep = (step: PublicQuizExecutionStep) =>
+      setState((prev) => ({
+        ...prev,
+        executionSteps: [...prev.executionSteps, step].slice(-10),
+      }));
+
+    const onStarted = (data: { generationId: string; message?: string; totalLectures?: number }) => {
+      if (data.generationId !== genId) return;
+      setState((prev) => ({ ...prev, status: "processing" }));
+      pushStep({
+        id: "started",
+        label: data.message || "AI generation started",
+        detail: data.totalLectures ? `${data.totalLectures} section(s) to process` : undefined,
+        status: "completed",
+      });
+    };
+
+    const onProgress = (data: {
+      generationId: string;
+      stage?: string;
+      message?: string;
+      currentLecture?: string;
+      currentTopic?: string;
+    }) => {
+      if (data.generationId !== genId) return;
+      if (data.stage === "topic_generation_started") {
+        pushStep({
+          id: `topic-${Date.now()}`,
+          label: data.message || "Topic agent running",
+          detail: data.currentLecture
+            ? `${data.currentLecture}${data.currentTopic ? ` → ${data.currentTopic}` : ""}`
+            : undefined,
+          status: "processing",
+        });
+      }
+      if (data.stage === "lectures_assembled") {
+        pushStep({
+          id: "assembled",
+          label: "Lecture structure assembled",
+          detail: "Persisting quiz now",
+          status: "completed",
+        });
+      }
+    };
+
+    const onMaterialCompleted = (data: {
+      generationId: string;
+      questionsGenerated?: number;
+      quizId?: string;
+      message?: string;
+    }) => {
+      if (data.generationId !== genId) return;
+      setState((prev) => ({
+        ...prev,
+        status: "completed",
+        questionsGenerated: data.questionsGenerated,
+        quizId: data.quizId,
+      }));
+      pushStep({
+        id: "done",
+        label: data.message || `${data.questionsGenerated ?? 0} questions generated`,
+        status: "completed",
+      });
+      qc.invalidateQueries({ queryKey: queryKeys.adminLibrary.root });
+    };
+
+    const onCompleted = (data: {
+      generationId: string;
+      totalQuestionsGenerated?: number;
+    }) => {
+      if (data.generationId !== genId) return;
+      setState((prev) => ({
+        ...prev,
+        status: "completed",
+        questionsGenerated: prev.questionsGenerated ?? data.totalQuestionsGenerated,
+      }));
+      qc.invalidateQueries({ queryKey: queryKeys.adminLibrary.root });
+    };
+
+    const onFailed = (data: { generationId: string; error?: string; message?: string }) => {
+      if (data.generationId !== genId) return;
+      setState((prev) => ({ ...prev, status: "failed" }));
+      pushStep({
+        id: "failed",
+        label: data.error || data.message || "Generation failed",
+        status: "failed",
+      });
+    };
+
+    socket.on(EVENT_NAMES.PUBLIC_QUIZ_GENERATION_STARTED, onStarted);
+    socket.on(EVENT_NAMES.PUBLIC_QUIZ_GENERATION_PROGRESS, onProgress);
+    socket.on(EVENT_NAMES.PUBLIC_QUIZ_GENERATION_LECTURE_COMPLETED, onMaterialCompleted);
+    socket.on(EVENT_NAMES.PUBLIC_QUIZ_GENERATION_COMPLETED, onCompleted);
+    socket.on(EVENT_NAMES.PUBLIC_QUIZ_GENERATION_LECTURE_FAILED, onFailed);
+    socket.on(EVENT_NAMES.PUBLIC_QUIZ_GENERATION_FAILED, onFailed);
+
+    return () => {
+      socket.off(EVENT_NAMES.PUBLIC_QUIZ_GENERATION_STARTED, onStarted);
+      socket.off(EVENT_NAMES.PUBLIC_QUIZ_GENERATION_PROGRESS, onProgress);
+      socket.off(EVENT_NAMES.PUBLIC_QUIZ_GENERATION_LECTURE_COMPLETED, onMaterialCompleted);
+      socket.off(EVENT_NAMES.PUBLIC_QUIZ_GENERATION_COMPLETED, onCompleted);
+      socket.off(EVENT_NAMES.PUBLIC_QUIZ_GENERATION_LECTURE_FAILED, onFailed);
+      socket.off(EVENT_NAMES.PUBLIC_QUIZ_GENERATION_FAILED, onFailed);
+    };
+  }, [socket, state.generationId, qc]);
+
+  const mutation = useMutation({
+    mutationFn: async (libraryMaterialId: string) => {
+      const res = await api.post<ApiResponseEnvelope<{
+        generationId: string;
+        jobsQueued: number;
+        details: Array<{ materialId: string; materialTitle: string; sessionId: string }>;
+      }>>(`/admin/learning/public-quizzes/trigger-generation/${libraryMaterialId}`, {});
+      return {
+        success: res.data?.success ?? true,
+        message: res.data?.message || "Generation queued",
+        generationId: res.data?.data?.generationId || "",
+      };
+    },
+    onSuccess: (data) => {
+      if (data.generationId) {
+        setState({
+          generationId: data.generationId,
+          status: "queued",
+          executionSteps: [
+            {
+              id: "queued",
+              label: "Generation queued",
+              detail: "Waiting for worker to pick up the job",
+              status: "completed",
+            },
+          ],
+        });
+      }
+    },
+  });
+
+  const reset = () =>
+    setState({ generationId: null, status: "idle", executionSteps: [] });
+
+  return { ...mutation, state, reset };
 };
