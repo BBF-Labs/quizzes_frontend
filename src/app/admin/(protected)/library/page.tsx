@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   BookOpen,
   FileText,
@@ -11,6 +11,11 @@ import {
   Users,
   Search,
   X,
+  Zap,
+  Loader2,
+  HelpCircle,
+  AlertCircle,
+  Check,
 } from "lucide-react";
 import {
   useAdminLibrary,
@@ -18,6 +23,11 @@ import {
   type AdminLibraryItem,
   type LibraryStatus,
 } from "@/hooks/admin/use-admin-library";
+import {
+  useTriggerPublicQuizGenerationForMaterial,
+  type MaterialGenState,
+  type PublicQuizExecutionStep,
+} from "@/hooks/admin/use-public-generation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -27,6 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SquareLoader } from "@/components/ui/square-loader";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -135,109 +146,256 @@ function RejectDialog({
   );
 }
 
+// ─── Generation Panel ─────────────────────────────────────────────────────────
+
+function GenerationPanel({ state, onDismiss }: { state: MaterialGenState; onDismiss: () => void }) {
+  const isDone = state.status === "completed" || state.status === "failed";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: "auto" }}
+      exit={{ opacity: 0, height: 0 }}
+      className="overflow-hidden"
+    >
+      <div className="mt-3 border border-primary/20 bg-primary/5 p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-[9px] font-mono uppercase tracking-widest text-primary/70">
+            {state.status === "queued" && "Waiting for worker…"}
+            {state.status === "processing" && "Generation in progress"}
+            {state.status === "completed" && `Done — ${state.questionsGenerated ?? 0} questions`}
+            {state.status === "failed" && "Generation failed"}
+          </p>
+          {isDone && (
+            <button
+              onClick={onDismiss}
+              className="text-muted-foreground/40 hover:text-muted-foreground"
+            >
+              <X className="size-3" />
+            </button>
+          )}
+        </div>
+
+        <div className="space-y-1.5">
+          <AnimatePresence initial={false}>
+            {state.executionSteps.map((step: PublicQuizExecutionStep) => (
+              <motion.div
+                key={step.id}
+                initial={{ opacity: 0, x: -6 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="flex items-center gap-2"
+              >
+                {step.status === "completed" && (
+                  <div className="w-3.5 h-3.5 border border-primary bg-primary/20 flex items-center justify-center shrink-0">
+                    <Check className="w-2 h-2 text-primary" />
+                  </div>
+                )}
+                {step.status === "processing" && (
+                  <SquareLoader size={14} strokeWidth={1.5} />
+                )}
+                {step.status === "pending" && (
+                  <div className="w-3.5 h-3.5 border border-muted-foreground/30 shrink-0" />
+                )}
+                {step.status === "failed" && (
+                  <div className="w-3.5 h-3.5 border border-destructive/60 bg-destructive/10 flex items-center justify-center shrink-0">
+                    <AlertCircle className="w-2 h-2 text-destructive" />
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <p
+                    className={cn(
+                      "text-[9px] font-mono uppercase tracking-wider truncate",
+                      step.status === "pending" ? "text-muted-foreground/40" :
+                      step.status === "processing" ? "text-primary font-bold" :
+                      step.status === "failed" ? "text-destructive font-bold" :
+                      "text-foreground",
+                    )}
+                  >
+                    {step.label}
+                  </p>
+                  {step.detail && (
+                    <p className="text-[8px] font-mono text-muted-foreground/50 truncate">
+                      {step.detail}
+                    </p>
+                  )}
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 // ─── Row ──────────────────────────────────────────────────────────────────────
 
 function LibraryRow({
   item,
   onPublish,
   onReject,
+  onGenerateQuiz,
   isPending,
+  isGenerating,
+  activeGenState,
+  onDismissGen,
 }: {
   item: AdminLibraryItem;
   onPublish: (id: string) => void;
   onReject: (item: AdminLibraryItem) => void;
+  onGenerateQuiz: (id: string) => void;
   isPending: boolean;
+  isGenerating: boolean;
+  activeGenState: MaterialGenState | null;
+  onDismissGen: () => void;
 }) {
   const cfg = STATUS_CONFIG[item.status];
   const StatusIcon = cfg.icon;
+  const isQuestionFile = item.materialId.contentType === "questions";
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      className="border border-border/30 bg-card/20 p-4 rounded-(--radius) flex flex-col sm:flex-row sm:items-center gap-4"
+      className="border border-border/30 bg-card/20 p-4 rounded-(--radius)"
     >
-      {/* Left: Info */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-primary/60 border border-primary/20 px-1.5 py-0.5">
-            {mimeLabel(item.materialId.mimeType)}
-          </span>
-          <span className={cn("flex items-center gap-1 text-[9px] font-mono uppercase tracking-widest border px-1.5 py-0.5", cfg.className)}>
-            <StatusIcon className="size-2.5" />
-            {cfg.label}
-          </span>
-        </div>
-
-        <p className="font-bold text-sm leading-snug truncate">{item.title}</p>
-
-        {item.description && (
-          <p className="text-[11px] font-mono text-muted-foreground/50 line-clamp-1 mt-0.5">
-            {item.description}
-          </p>
-        )}
-
-        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
-          {item.submittedBy && (
-            <span className="text-[10px] font-mono text-muted-foreground/40 flex items-center gap-1">
-              <Users className="size-2.5" />
-              {item.submittedBy.username}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+        {/* Left: Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-primary/60 border border-primary/20 px-1.5 py-0.5">
+              {mimeLabel(item.materialId.mimeType)}
             </span>
-          )}
-          {item.universityId && (
-            <span className="text-[10px] font-mono text-muted-foreground/40 flex items-center gap-1">
-              <BookOpen className="size-2.5" />
-              {item.universityId.name}
+            <span className={cn("flex items-center gap-1 text-[9px] font-mono uppercase tracking-widest border px-1.5 py-0.5", cfg.className)}>
+              <StatusIcon className="size-2.5" />
+              {cfg.label}
             </span>
+            {isQuestionFile && (
+              <span className="flex items-center gap-1 text-[9px] font-mono uppercase tracking-widest border border-violet-500/30 bg-violet-500/5 text-violet-400 px-1.5 py-0.5">
+                <HelpCircle className="size-2.5" />
+                Question File
+              </span>
+            )}
+            {item.status === "published" && item.quizGenerated && (
+              <span className="flex items-center gap-1 text-[9px] font-mono uppercase tracking-widest border border-emerald-500/30 bg-emerald-500/5 text-emerald-500 px-1.5 py-0.5">
+                <CheckCircle2 className="size-2.5" />
+                Quiz Generated
+              </span>
+            )}
+          </div>
+
+          <p className="font-bold text-sm leading-snug truncate">{item.title}</p>
+
+          {item.description && (
+            <p className="text-[11px] font-mono text-muted-foreground/50 line-clamp-1 mt-0.5">
+              {item.description}
+            </p>
           )}
-          {item.courseId && (
-            <span className="text-[10px] font-mono text-muted-foreground/40 flex items-center gap-1">
-              <FileText className="size-2.5" />
-              {item.courseId.code}
-            </span>
-          )}
-          <span className="text-[10px] font-mono text-muted-foreground/30">
-            {fileSize(item.materialId.size)}
-            {item.materialId.pageCount > 0 && ` · ${item.materialId.pageCount}p`}
-          </span>
-          {item.useCount > 0 && (
+
+          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
+            {item.submittedBy && (
+              <span className="text-[10px] font-mono text-muted-foreground/40 flex items-center gap-1">
+                <Users className="size-2.5" />
+                {item.submittedBy.username}
+              </span>
+            )}
+            {item.universityId && (
+              <span className="text-[10px] font-mono text-muted-foreground/40 flex items-center gap-1">
+                <BookOpen className="size-2.5" />
+                {item.universityId.name}
+              </span>
+            )}
+            {item.courseId && (
+              <span className="text-[10px] font-mono text-muted-foreground/40 flex items-center gap-1">
+                <FileText className="size-2.5" />
+                {item.courseId.code}
+              </span>
+            )}
             <span className="text-[10px] font-mono text-muted-foreground/30">
-              {item.useCount} {item.useCount === 1 ? "use" : "uses"}
+              {fileSize(item.materialId.size)}
+              {item.materialId.pageCount > 0 && ` · ${item.materialId.pageCount}p`}
             </span>
+            {item.useCount > 0 && (
+              <span className="text-[10px] font-mono text-muted-foreground/30">
+                {item.useCount} {item.useCount === 1 ? "use" : "uses"}
+              </span>
+            )}
+          </div>
+
+          {item.status === "rejected" && item.rejectionReason && (
+            <p className="text-[10px] font-mono text-destructive/60 mt-1">
+              Reason: {item.rejectionReason}
+            </p>
           )}
         </div>
 
-        {item.status === "rejected" && item.rejectionReason && (
-          <p className="text-[10px] font-mono text-destructive/60 mt-1">
-            Reason: {item.rejectionReason}
-          </p>
-        )}
+        {/* Right: Actions */}
+        <div className="flex gap-2 shrink-0">
+          {item.status === "pending_review" && (
+            <>
+              <Button
+                size="sm"
+                className="h-8 text-[10px] font-mono gap-1.5"
+                onClick={() => onPublish(item._id)}
+                disabled={isPending}
+              >
+                <CheckCircle2 className="size-3" />
+                Publish
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-[10px] font-mono gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/10"
+                onClick={() => onReject(item)}
+                disabled={isPending}
+              >
+                <XCircle className="size-3" />
+                Reject
+              </Button>
+            </>
+          )}
+
+          {item.status === "published" && !item.quizGenerated && !activeGenState && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-[10px] font-mono gap-1.5 border-primary/30 text-primary hover:bg-primary/10"
+              onClick={() => onGenerateQuiz(item._id)}
+              disabled={isGenerating}
+            >
+              {isGenerating ? (
+                <Loader2 className="size-3 animate-spin" />
+              ) : (
+                <Zap className="size-3" />
+              )}
+              {isGenerating ? "Queuing…" : "Generate Quiz"}
+            </Button>
+          )}
+
+          {item.status === "published" && activeGenState && (
+            <span className="text-[9px] font-mono text-primary/60 flex items-center gap-1.5 border border-primary/20 px-2 h-8">
+              {activeGenState.status === "completed" ? (
+                <CheckCircle2 className="size-3 text-emerald-500" />
+              ) : activeGenState.status === "failed" ? (
+                <AlertCircle className="size-3 text-destructive" />
+              ) : (
+                <Loader2 className="size-3 animate-spin" />
+              )}
+              {activeGenState.status === "queued" && "Queued"}
+              {activeGenState.status === "processing" && "Generating…"}
+              {activeGenState.status === "completed" && "Complete"}
+              {activeGenState.status === "failed" && "Failed"}
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Right: Actions */}
-      {item.status === "pending_review" && (
-        <div className="flex gap-2 shrink-0">
-          <Button
-            size="sm"
-            className="h-8 text-[10px] font-mono gap-1.5"
-            onClick={() => onPublish(item._id)}
-            disabled={isPending}
-          >
-            <CheckCircle2 className="size-3" />
-            Publish
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 text-[10px] font-mono gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/10"
-            onClick={() => onReject(item)}
-            disabled={isPending}
-          >
-            <XCircle className="size-3" />
-            Reject
-          </Button>
-        </div>
-      )}
+      {/* Inline generation panel */}
+      <AnimatePresence>
+        {activeGenState && (
+          <GenerationPanel state={activeGenState} onDismiss={onDismissGen} />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
@@ -249,6 +407,7 @@ export default function AdminLibraryPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [rejectTarget, setRejectTarget] = useState<AdminLibraryItem | null>(null);
+  const [activeGeneratingId, setActiveGeneratingId] = useState<string | null>(null);
 
   const [debouncedSearch, setDebouncedSearch] = useState("");
   useEffect(() => {
@@ -263,6 +422,12 @@ export default function AdminLibraryPage() {
     limit: 20,
   });
   const review = useReviewLibraryItem();
+  const {
+    mutate: triggerQuizGen,
+    isPending: isQuizGenPending,
+    state: genState,
+    reset: resetGenState,
+  } = useTriggerPublicQuizGenerationForMaterial();
 
   const items = data?.data ?? [];
   const pagination = data?.pagination;
@@ -285,6 +450,24 @@ export default function AdminLibraryPage() {
     } catch {
       toast.error("Failed to reject item");
     }
+  };
+
+  const handleGenerateQuiz = (libraryMaterialId: string) => {
+    setActiveGeneratingId(libraryMaterialId);
+    triggerQuizGen(libraryMaterialId, {
+      onSuccess: (data) => {
+        toast.success(data.message || "Quiz generation queued");
+      },
+      onError: () => {
+        toast.error("Failed to queue quiz generation");
+        setActiveGeneratingId(null);
+      },
+    });
+  };
+
+  const handleDismissGen = () => {
+    setActiveGeneratingId(null);
+    resetGenState();
   };
 
   return (
@@ -383,7 +566,11 @@ export default function AdminLibraryPage() {
                 item={item}
                 onPublish={handlePublish}
                 onReject={setRejectTarget}
+                onGenerateQuiz={handleGenerateQuiz}
                 isPending={review.isPending}
+                isGenerating={isQuizGenPending}
+                activeGenState={activeGeneratingId === item._id ? genState : null}
+                onDismissGen={handleDismissGen}
               />
             ))}
           </div>
