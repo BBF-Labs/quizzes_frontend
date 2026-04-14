@@ -10,7 +10,6 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ServiceWorkerRegistration } from "@/components/common";
 
 export const viewport: Viewport = {
-  themeColor: "#006eff",
   width: "device-width",
   initialScale: 1,
   minimumScale: 1,
@@ -55,6 +54,14 @@ export default function RootLayout({
       suppressHydrationWarning
       data-ui-customized="true"
     >
+      <head>
+        {/* Synchronously set theme-color before first paint to avoid flash */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('theme');var c=t==='light'?'#f9f9fb':'#131b27';var m=document.querySelector('meta[name="theme-color"]');if(!m){m=document.createElement('meta');m.name='theme-color';document.head.appendChild(m);}m.content=c;}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body
         className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}
         suppressHydrationWarning
