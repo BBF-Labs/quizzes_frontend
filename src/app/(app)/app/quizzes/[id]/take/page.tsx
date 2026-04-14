@@ -92,7 +92,8 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 function buildQuestions(quiz: QuizDetail, config: QuizConfig): QuizQuestion[] {
-  const seen = new Set<string>();
+  const seenIds = new Set<string>();
+  const seenTexts = new Set<string>();
   const qs = quiz.lectures
     .flatMap((l, li) =>
       l.topics.flatMap((t, ti) => {
@@ -102,8 +103,11 @@ function buildQuestions(quiz: QuizDetail, config: QuizConfig): QuizQuestion[] {
     )
     .filter(Boolean)
     .filter((q) => {
-      if (!q.id || seen.has(q.id)) return false;
-      seen.add(q.id);
+      const textKey = q.question?.trim().toLowerCase() ?? "";
+      if ((q.id && seenIds.has(q.id)) || (textKey && seenTexts.has(textKey)))
+        return false;
+      if (q.id) seenIds.add(q.id);
+      if (textKey) seenTexts.add(textKey);
       return true;
     });
   return config.shuffle ? shuffle(qs) : qs;
