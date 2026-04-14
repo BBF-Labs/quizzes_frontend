@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useTheme } from "next-themes";
+import { usePathname } from "next/navigation";
 
 const THEME_COLORS = {
   dark: "#131b27",
@@ -10,6 +11,7 @@ const THEME_COLORS = {
 
 export function PwaThemeColor() {
   const { resolvedTheme } = useTheme();
+  const pathname = usePathname();
 
   useEffect(() => {
     const color =
@@ -24,7 +26,7 @@ export function PwaThemeColor() {
       document.head.appendChild(meta);
     }
     meta.content = color;
-  }, [resolvedTheme]);
+  }, [resolvedTheme, pathname]);
 
   return null;
 }
