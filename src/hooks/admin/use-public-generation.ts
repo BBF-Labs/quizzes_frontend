@@ -132,7 +132,10 @@ export const useTriggerPublicQuizGeneration = () => {
     };
 
     const appendStep = (step: PublicQuizExecutionStep) => {
-      setExecutionSteps((prev) => [...prev, step].slice(-12));
+      setExecutionSteps((prev) => {
+        if (prev.some((s) => s.id === step.id)) return prev;
+        return [...prev, step].slice(-12);
+      });
     };
 
     setStep("outline", {
@@ -198,7 +201,7 @@ export const useTriggerPublicQuizGeneration = () => {
 
         if (data.stage === "topic_generation_started" && data.currentLecture) {
           appendStep({
-            id: `topic-start:${data.currentLecture}:${data.currentTopic || ""}:${data.completedTopics || 0}`,
+            id: `topic-start:${data.currentLecture}:${data.currentTopic || ""}`,
             label: "Parallel topic agent started",
             detail:
               data.message ||
@@ -218,7 +221,7 @@ export const useTriggerPublicQuizGeneration = () => {
           data.currentLecture
         ) {
           appendStep({
-            id: `topic-done:${data.currentLecture}:${data.currentTopic || ""}:${data.completedTopics || 0}`,
+            id: `topic-done:${data.currentLecture}:${data.currentTopic || ""}`,
             label: "Parallel topic agent completed",
             detail:
               data.message ||
@@ -468,10 +471,13 @@ export const useTriggerPublicQuizGenerationForMaterial = () => {
     const genId = state.generationId;
 
     const pushStep = (step: PublicQuizExecutionStep) =>
-      setState((prev) => ({
-        ...prev,
-        executionSteps: [...prev.executionSteps, step].slice(-10),
-      }));
+      setState((prev) => {
+        if (prev.executionSteps.some((s) => s.id === step.id)) return prev;
+        return {
+          ...prev,
+          executionSteps: [...prev.executionSteps, step].slice(-10),
+        };
+      });
 
     const onStarted = (data: { generationId: string; message?: string; totalLectures?: number }) => {
       if (data.generationId !== genId) return;
@@ -493,8 +499,9 @@ export const useTriggerPublicQuizGenerationForMaterial = () => {
     }) => {
       if (data.generationId !== genId) return;
       if (data.stage === "topic_generation_started") {
+        const topicId = `topic-${data.currentLecture || ""}${data.currentTopic ? `-${data.currentTopic}` : ""}`;
         pushStep({
-          id: `topic-${Date.now()}`,
+          id: topicId,
           label: data.message || "Topic agent running",
           detail: data.currentLecture
             ? `${data.currentLecture}${data.currentTopic ? ` → ${data.currentTopic}` : ""}`
