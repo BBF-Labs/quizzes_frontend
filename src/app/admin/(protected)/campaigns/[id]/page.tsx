@@ -15,6 +15,7 @@ import {
   Settings2,
   ImageIcon,
   PenTool,
+  Copy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +32,7 @@ import {
   useGenerateCampaign,
   useApproveCampaign,
   useSendCampaignPreview,
+  useCloneCampaign,
   ILinkContext,
   INewsletterImage,
   IAudienceFilter,
@@ -111,6 +113,7 @@ export default function CampaignDetailPage() {
   const generateMutation = useGenerateCampaign(id);
   const approveMutation = useApproveCampaign(id);
   const sendPreviewMutation = useSendCampaignPreview(id);
+  const cloneMutation = useCloneCampaign();
 
   const [promptInstruction, setPromptInstruction] = useState("");
   const [linkContexts, setLinkContexts] = useState<ILinkContext[]>([]);
@@ -473,6 +476,16 @@ export default function CampaignDetailPage() {
     }
   };
 
+  const handleClone = async () => {
+    try {
+      const clone = await cloneMutation.mutateAsync(id);
+      toast.success("Campaign cloned as a new draft.");
+      router.push(`/admin/campaigns/${clone._id}`);
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, "Could not clone campaign."));
+    }
+  };
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
@@ -534,6 +547,17 @@ export default function CampaignDetailPage() {
               className="rounded-(--radius)"
             >
               <RefreshCw className="size-4" />
+            </Button>
+
+            <Button
+              id="clone-campaign"
+              onClick={handleClone}
+              disabled={cloneMutation.isPending}
+              variant="outline"
+              className="rounded-(--radius) font-mono text-[10px] tracking-widest uppercase border-border/60 hover:bg-secondary px-4"
+            >
+              <Copy className="size-4" />
+              {cloneMutation.isPending ? "Cloning…" : "Clone"}
             </Button>
 
             {isDirty && isEditable && (

@@ -343,3 +343,14 @@ export function useSendCampaignPreview(id: string) {
     },
   });
 }
+
+export function useCloneCampaign() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await api.post(`${BASE}/${id}/clone`);
+      return res.data?.data as ICampaign;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["campaigns"] }),
+  });
+}
