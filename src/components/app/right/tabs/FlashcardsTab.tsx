@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
+import { MarkdownContent } from "@/components/common/MarkdownContent";
 import { cn } from "@/lib/utils";
 import type { StudioFlashcard } from "@/types/session";
 
@@ -58,9 +59,9 @@ function FlipCard({
           {card.savedToLibrary && (
             <CheckCircle className="absolute top-1.5 right-1.5 size-3 text-green-500" />
           )}
-          <p className="text-[11px] font-mono text-center text-foreground leading-relaxed">
-            {card.front}
-          </p>
+          <div className="text-[11px] font-mono text-center text-foreground leading-relaxed prose prose-sm dark:prose-invert max-w-none">
+            <MarkdownContent>{card.front}</MarkdownContent>
+          </div>
         </div>
 
         {/* Back */}
@@ -68,9 +69,9 @@ function FlipCard({
           className="absolute inset-0 flex items-center justify-center border border-primary/30 bg-primary/5 px-3 py-2"
           style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
         >
-          <p className="text-[11px] font-mono text-center text-foreground leading-relaxed">
-            {card.back}
-          </p>
+          <div className="text-[11px] font-mono text-center text-foreground leading-relaxed prose prose-sm dark:prose-invert max-w-none">
+            <MarkdownContent>{card.back}</MarkdownContent>
+          </div>
         </div>
       </motion.div>
     </div>
