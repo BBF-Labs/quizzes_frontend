@@ -14,6 +14,12 @@ const config: Record<
   ConnectionType,
   { label: string; icon: typeof Wifi; dot: string; text: string }
 > = {
+  socket: {
+    label: "Socket",
+    icon: Wifi,
+    dot: "bg-primary animate-pulse shadow-[0_0_8px_rgba(var(--primary),0.6)]",
+    text: "text-primary",
+  },
   sse: {
     label: "Live",
     icon: Radio,
