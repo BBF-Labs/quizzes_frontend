@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { Brain } from "lucide-react";
 import type { ZSessionMessage } from "@/types/session";
 import { MessageBubble } from "./MessageBubble";
@@ -72,20 +72,30 @@ export function MessageFeed({
           const resolved = msg.messageId !== activeDirectiveMessageId;
 
           return (
-            <DirectiveCard
-              key={msg.id}
-              directive={msg.directive}
-              resolved={resolved}
-              onSubmitAnswer={onSubmitAnswer}
-              onApprove={onApprove}
-              onContinue={onContinue}
-              onRetry={onRetry}
-              onSkip={onSkip}
-              onExplainDifferently={onExplainDifferently}
-              onTestMe={onTestMe}
-              onTryMyself={onTryMyself}
-              onAction={onAction}
-            />
+            <AnimatePresence key={msg.id}>
+              {!resolved && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8, scale: 0.97 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <DirectiveCard
+                    directive={msg.directive}
+                    resolved={resolved}
+                    onSubmitAnswer={onSubmitAnswer}
+                    onApprove={onApprove}
+                    onContinue={onContinue}
+                    onRetry={onRetry}
+                    onSkip={onSkip}
+                    onExplainDifferently={onExplainDifferently}
+                    onTestMe={onTestMe}
+                    onTryMyself={onTryMyself}
+                    onAction={onAction}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
           );
         }
 
