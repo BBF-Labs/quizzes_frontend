@@ -13,6 +13,7 @@ interface UseAppStreamOptions {
   onAppUpdate?: (app: ZApp) => void;
   onConnectionChange?: (connected: boolean, type: ConnectionType) => void;
   onCitationsUpdate?: (citations: unknown[]) => void;
+  onRequestRefetch?: () => void;
 }
 
 interface StreamSignal {
@@ -135,6 +136,9 @@ export const useAppStream = (
   useEffect(() => {
     if (!socket || !isSocketConnected || !sessionId || !enabled) return;
 
+    // JOIN the session room to receive broadcasts (directives, etc.)
+    socket.emit("join:app_session", sessionId);
+
     const handleAppSignal = (signal: StreamSignal) => {
       // Handle the signal if it belongs to this session
       if (signal.sessionId !== sessionId) return;
@@ -236,6 +240,14 @@ export const useAppStream = (
             break;
           }
 
+          case "phase_changed":
+          case "artifact_saved":
+          case "artifact_updated":
+          case "app_interrupted":
+            // Trigger a refetch of the main session data to sync the UI
+            optionsRef.current?.onRequestRefetch?.();
+            break;
+ 
           case "error":
             console.error(
               "Session signal error:",
@@ -251,6 +263,7 @@ export const useAppStream = (
     socket.on("app:signal", handleAppSignal);
     return () => {
       socket.off("app:signal", handleAppSignal);
+      socket.emit("leave:app_session", sessionId);
     };
   }, [socket, isSocketConnected, sessionId, enabled]);
 
