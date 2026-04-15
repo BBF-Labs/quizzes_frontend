@@ -3,8 +3,7 @@
 import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Brain, Pencil, Trash2, Plus, Users } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { MarkdownContent } from "@/components/common/MarkdownContent";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
@@ -172,9 +171,7 @@ function NoteCard({ sessionId, note, onUpdate, onDelete }: NoteCardProps) {
                 />
               ) : (
                 <div className="prose prose-sm dark:prose-invert max-w-none text-[11px] font-mono">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {note.content}
-                  </ReactMarkdown>
+                  <MarkdownContent>{note.content}</MarkdownContent>
                 </div>
               )}
             </div>
