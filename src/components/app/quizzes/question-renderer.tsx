@@ -12,6 +12,8 @@
 import { useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 import rehypeRaw from "rehype-raw";
 import { motion, useAnimation } from "framer-motion";
 import { CheckCircle2, XCircle } from "lucide-react";
@@ -53,8 +55,8 @@ export function QuestionMarkdown({
         .join(" ")}
     >
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeRaw]}
+        remarkPlugins={[remarkGfm, remarkMath]}
+        rehypePlugins={[rehypeRaw, rehypeKatex]}
       >
         {content}
       </ReactMarkdown>
