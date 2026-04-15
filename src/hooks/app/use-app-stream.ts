@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { getAccessToken } from "@/lib/session";
+import { useSocket } from "@/hooks";
 import type {
   ZApp,
   ZAppMessage,
@@ -115,223 +115,169 @@ export const useAppStream = (
     });
   }, [initialMessages]);
 
-  const eventSourceRef = useRef<EventSource | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const connectRef = useRef<(() => void) | null>(null);
-  const retryCountRef = useRef(0);
-  const maxRetriesRef = useRef(5);
-
+  const { socket, isConnected: isSocketConnected } = useSocket();
   const streamingMessageIds = useRef<Set<string>>(new Set());
 
-  const connect = useCallback(() => {
-    if (eventSourceRef.current) {
-      return;
-    }
+  useEffect(() => {
+    setIsConnected(isSocketConnected);
+    setConnectionType(isSocketConnected ? "socket" : "disconnected");
+    options?.onConnectionChange?.(
+      isSocketConnected,
+      isSocketConnected ? "socket" : "disconnected",
+    );
+  }, [isSocketConnected, options]);
 
-    try {
-      const token = getAccessToken();
-      const url = token
-        ? `${process.env.NEXT_PUBLIC_API_URL}/app/${sessionId}/stream?token=${encodeURIComponent(token)}`
-        : `${process.env.NEXT_PUBLIC_API_URL}/app/${sessionId}/stream`;
+  const optionsRef = useRef(options);
+  useEffect(() => {
+    optionsRef.current = options;
+  }, [options]);
 
-      const eventSource = new EventSource(url);
-      eventSourceRef.current = eventSource;
+  useEffect(() => {
+    if (!socket || !isSocketConnected || !sessionId || !enabled) return;
 
-      eventSource.addEventListener("open", () => {
-        retryCountRef.current = 0;
-        setIsConnected(true);
-        setConnectionType("sse");
-        options?.onConnectionChange?.(true, "sse");
-      });
+    const handleAppSignal = (signal: StreamSignal) => {
+      // Handle the signal if it belongs to this session
+      if (signal.sessionId !== sessionId) return;
 
-      eventSource.addEventListener("message", (event) => {
-        try {
-          const signal: StreamSignal = JSON.parse(event.data);
-          if (signal.sessionId !== sessionId) return;
+      try {
+        switch (signal.type) {
+          case "thinking_chunk":
+          case "text_chunk":
+            if (
+              signal.payload?.text !== undefined ||
+              signal.payload?.chunk !== undefined
+            ) {
+              const text = signal.payload?.text ?? signal.payload?.chunk ?? "";
+              const msgId = signal.payload?.messageId;
 
-          switch (signal.type) {
-            case "text_chunk":
-              if (
-                signal.payload?.text !== undefined ||
-                signal.payload?.chunk !== undefined
-              ) {
-                const text =
-                  signal.payload?.text ?? signal.payload?.chunk ?? "";
-                const msgId = signal.payload?.messageId;
+              setMessages((prev) => {
+                const msgs = [...prev];
+                const existingIdx = msgId
+                  ? msgs.findIndex(
+                      (m) => m.messageId === msgId || m.id === msgId,
+                    )
+                  : -1;
 
-                setMessages((prev) => {
-                  const msgs = [...prev];
-                  const existingIdx = msgId
-                    ? msgs.findIndex((m) => m.messageId === msgId || m.id === msgId)
-                    : -1;
-
-                  if (existingIdx >= 0) {
-                    streamingMessageIds.current.add(msgId!);
-                    msgs[existingIdx] = {
-                      ...msgs[existingIdx],
-                      content: msgs[existingIdx].content + text,
-                      isStreaming: true,
-                    };
-                  } else {
-                    const stableId = msgId || uuidv4();
-                    streamingMessageIds.current.add(stableId);
-                    const newMsg: ZAppMessage = {
-                      id: stableId,
-                      messageId: stableId,
-                      role: "z",
-                      type: "text" as ZAppMessageType,
-                      content: text,
-                      timestamp: signal.timestamp || new Date().toISOString(),
-                      isStreaming: true,
-                    };
-                    if (isMountedRef.current) {
-                      msgs.push(newMsg);
-                    }
-                  }
-                  return msgs;
-                });
-              }
-              break;
-
-            case "text_done": {
-              const doneId = signal.payload?.messageId as string | undefined;
-              if (doneId) {
-                streamingMessageIds.current.delete(doneId);
-                setMessages((prev) => {
-                  const msgs = [...prev];
-                  const idx = msgs.findIndex(
-                    (m) => m.id === doneId || m.messageId === doneId,
-                  );
-                  if (idx >= 0) {
-                    msgs[idx] = { ...msgs[idx], isStreaming: false };
-                  }
-                  return msgs;
-                });
-              }
-              const freshCitations = signal.payload?.citations;
-              if (Array.isArray(freshCitations) && freshCitations.length > 0) {
-                options?.onCitationsUpdate?.(freshCitations);
-              }
-              break;
-            }
-
-            case "directive": {
-              const msgId = signal.payload?.messageId as string | undefined;
-              const directive = signal.payload?.directive as ZDirective | undefined;
-              if (directive && msgId) {
-                setMessages((prev) => {
-                  const exists = prev.some(
-                    (m) => m.id === msgId || m.messageId === msgId,
-                  );
-                  if (exists) return prev;
-                  const newMsg: ZAppMessage = {
-                    id: msgId,
-                    messageId: msgId,
-                    role: "z",
-                    type: "directive" as ZAppMessageType,
-                    content: "",
-                    directive,
-                    timestamp: signal.timestamp || new Date().toISOString(),
-                    isStreaming: false,
+                if (existingIdx >= 0) {
+                  streamingMessageIds.current.add(msgId!);
+                  msgs[existingIdx] = {
+                    ...msgs[existingIdx],
+                    content: msgs[existingIdx].content + text,
+                    isStreaming: true,
                   };
-                  return [...prev, newMsg];
-                });
-              }
-              break;
+                } else {
+                  const stableId = msgId || uuidv4();
+                  streamingMessageIds.current.add(stableId);
+                  const newMsg: ZAppMessage = {
+                    id: stableId,
+                    messageId: stableId,
+                    role: "z",
+                    type: "text" as ZAppMessageType,
+                    content: text,
+                    timestamp: signal.timestamp || new Date().toISOString(),
+                    isStreaming: true,
+                  };
+                  if (isMountedRef.current) {
+                    msgs.push(newMsg);
+                  }
+                }
+                return msgs;
+              });
             }
+            break;
 
-            case "error":
-              console.error(
-                "Session stream error:",
-                signal.payload?.error || signal,
-              );
-              break;
+          case "thinking_done":
+          case "text_done": {
+            const doneId = signal.payload?.messageId as string | undefined;
+            if (doneId) {
+              streamingMessageIds.current.delete(doneId);
+              setMessages((prev) => {
+                const msgs = [...prev];
+                const idx = msgs.findIndex(
+                  (m) => m.id === doneId || m.messageId === doneId,
+                );
+                if (idx >= 0) {
+                  msgs[idx] = { ...msgs[idx], isStreaming: false };
+                }
+                return msgs;
+              });
+            }
+            const freshCitations = (signal.payload as any)?.citations;
+            if (Array.isArray(freshCitations) && freshCitations.length > 0) {
+              optionsRef.current?.onCitationsUpdate?.(freshCitations);
+            }
+            break;
           }
-        } catch (err) {
-          console.error("Failed to parse stream message:", err);
+
+          case "directive": {
+            const msgId = signal.payload?.messageId as string | undefined;
+            const directive = signal.payload?.directive as
+              | ZDirective
+              | undefined;
+            if (directive && msgId) {
+              setMessages((prev) => {
+                const exists = prev.some(
+                  (m) => m.id === msgId || m.messageId === msgId,
+                );
+                if (exists) return prev;
+                const newMsg: ZAppMessage = {
+                  id: msgId,
+                  messageId: msgId,
+                  role: "z",
+                  type: "directive" as ZAppMessageType,
+                  content: "",
+                  directive,
+                  timestamp: signal.timestamp || new Date().toISOString(),
+                  isStreaming: false,
+                };
+                return [...prev, newMsg];
+              });
+            }
+            break;
+          }
+
+          case "error":
+            console.error(
+              "Session signal error:",
+              signal.payload?.error || signal,
+            );
+            break;
         }
-      });
-
-      eventSource.addEventListener("error", () => {
-        eventSource.close();
-        eventSourceRef.current = null;
-        setIsConnected(false);
-        setConnectionType("disconnected");
-        options?.onConnectionChange?.(false, "disconnected");
-
-        if (retryCountRef.current < maxRetriesRef.current) {
-          const delayMs = Math.min(
-            1000 * Math.pow(2, retryCountRef.current),
-            16000,
-          );
-          retryCountRef.current++;
-          reconnectTimeoutRef.current = setTimeout(() => {
-            if (connectRef.current) connectRef.current();
-          }, delayMs);
-        }
-      });
-    } catch (err) {
-      setIsConnected(false);
-
-      if (retryCountRef.current < maxRetriesRef.current) {
-        const delayMs = Math.min(
-          1000 * Math.pow(2, retryCountRef.current),
-          16000,
-        );
-        retryCountRef.current++;
-        reconnectTimeoutRef.current = setTimeout(() => {
-          if (connectRef.current) connectRef.current();
-        }, delayMs);
+      } catch (err) {
+        console.error("Failed to process socket signal:", err);
       }
-    }
-  }, [sessionId, options]);
+    };
 
-  useEffect(() => {
-    connectRef.current = connect;
-  }, [connect]);
-
-  const disconnect = useCallback(() => {
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-      eventSourceRef.current = null;
-    }
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-    }
-    retryCountRef.current = 0;
-    setIsConnected(false);
-    setConnectionType("disconnected");
-  }, []);
-
-  useEffect(() => {
-    if (sessionId && enabled) {
-      // Small deferred execution to ensure state updates don't cascade into renders
-      const timer = setTimeout(() => connect(), 0);
-      return () => {
-        clearTimeout(timer);
-        disconnect();
-      };
-    }
-  }, [sessionId, enabled, connect, disconnect]);
-
+    socket.on("app:signal", handleAppSignal);
+    return () => {
+      socket.off("app:signal", handleAppSignal);
+    };
+  }, [socket, isSocketConnected, sessionId, enabled]);
 
   const pushMessage = useCallback((msg: ZAppMessage) => {
     setMessages((prev) => [...prev, msg]);
   }, []);
 
-  const updateMessage = useCallback((id: string, updates: Partial<ZAppMessage>) => {
-    setMessages((prev) => {
-      const idx = prev.findIndex((m) => m.id === id);
-      if (idx < 0) return prev;
-      const next = [...prev];
-      next[idx] = { ...next[idx], ...updates };
-      return next;
-    });
-  }, []);
+  const updateMessage = useCallback(
+    (id: string, updates: Partial<ZAppMessage>) => {
+      setMessages((prev) => {
+        const idx = prev.findIndex((m) => m.id === id);
+        if (idx < 0) return prev;
+        const next = [...prev];
+        next[idx] = { ...next[idx], ...updates };
+        return next;
+      });
+    },
+    [],
+  );
 
   const removeMessagesByReplyTo = useCallback((replyToMessageId: string) => {
     setMessages((prev) =>
-      prev.filter((m) => (m as ZAppMessage & { replyToMessageId?: string }).replyToMessageId !== replyToMessageId),
+      prev.filter(
+        (m) =>
+          (m as ZAppMessage & { replyToMessageId?: string })
+            .replyToMessageId !== replyToMessageId,
+      ),
     );
   }, []);
 
@@ -357,14 +303,26 @@ export const useAppStream = (
     });
   }, []);
 
-  return {
-    messages,
-    isConnected,
-    connectionType,
-    pushMessage,
-    updateMessage,
-    removeMessagesByReplyTo,
-    truncateAfter,
-    truncateFrom,
-  };
+  return useMemo(
+    () => ({
+      messages,
+      isConnected,
+      connectionType,
+      pushMessage,
+      updateMessage,
+      removeMessagesByReplyTo,
+      truncateAfter,
+      truncateFrom,
+    }),
+    [
+      messages,
+      isConnected,
+      connectionType,
+      pushMessage,
+      updateMessage,
+      removeMessagesByReplyTo,
+      truncateAfter,
+      truncateFrom,
+    ],
+  );
 };

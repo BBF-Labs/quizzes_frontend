@@ -61,7 +61,7 @@ function ActionButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "text-[10px] font-mono uppercase tracking-widest px-3 py-1.5 border transition-colors",
+        "rounded-(--radius) text-[10px] font-mono uppercase tracking-widest px-3 py-1.5 border transition-colors",
         variant === "primary" &&
           "border-primary/60 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground",
         variant === "secondary" &&
