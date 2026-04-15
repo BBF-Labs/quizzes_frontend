@@ -436,9 +436,10 @@ function ShowPlanCard({
                   {step.title}
                 </span>
                 {step.description && !resolved && (
-                  <p className="text-muted-foreground/60 text-[10px] mt-0.5 normal-case tracking-normal">
-                    {step.description}
-                  </p>
+                  <QuestionMarkdown
+                    content={step.description}
+                    className="text-[10px] italic text-muted-foreground/60 mt-0.5"
+                  />
                 )}
               </div>
             </motion.div>
@@ -512,9 +513,10 @@ function UnlockTopicCard({
     >
       <p className="text-sm font-bold text-foreground">{payload.topicTitle}</p>
       {payload.description && (
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          {payload.description}
-        </p>
+        <QuestionMarkdown
+          content={payload.description}
+          className="text-sm text-muted-foreground leading-relaxed"
+        />
       )}
 
       {!resolved && (
@@ -567,9 +569,10 @@ function ShowResultCard({
         </p>
       )}
       {payload.message && (
-        <p className="text-sm text-foreground leading-relaxed">
-          {payload.message}
-        </p>
+        <QuestionMarkdown
+          content={payload.message}
+          className="text-sm text-foreground leading-relaxed"
+        />
       )}
 
       {!resolved && (
@@ -615,9 +618,10 @@ function ShowSuggestionCard({
         </p>
       )}
       {payload.description && (
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          {payload.description}
-        </p>
+        <QuestionMarkdown
+          content={payload.description}
+          className="text-sm text-muted-foreground leading-relaxed"
+        />
       )}
 
       {!resolved && (
@@ -701,9 +705,10 @@ function ShowSummaryCard({
         </p>
       )}
       {payload.content && (
-        <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-          {payload.content}
-        </p>
+        <QuestionMarkdown
+          content={payload.content}
+          className="text-sm text-foreground leading-relaxed"
+        />
       )}
       {payload.keyPoints && payload.keyPoints.length > 0 && (
         <ul className="space-y-1">
@@ -713,7 +718,7 @@ function ShowSummaryCard({
               className="flex items-start gap-2 text-sm text-foreground"
             >
               <ChevronRight className="mt-0.5 size-3 shrink-0 text-primary" />
-              {point}
+              <QuestionMarkdown content={point} className="flex-1" />
             </li>
           ))}
         </ul>

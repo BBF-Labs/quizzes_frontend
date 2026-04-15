@@ -17,6 +17,7 @@ interface UseAppStreamOptions {
 }
 
 interface StreamSignal {
+  signalId?: string;
   sessionId: string;
   type: "text_chunk" | "error" | string;
   timestamp?: string;
@@ -139,7 +140,22 @@ export const useAppStream = (
     // JOIN the session room to receive broadcasts (directives, etc.)
     socket.emit("join:app_session", sessionId);
 
+    // Track processed signals to avoid duplicates from multiple delivery paths
+    const processedSignalIds = new Set<string>();
+
     const handleAppSignal = (signal: StreamSignal) => {
+      // Deduplicate signals using signalId
+      if (signal.signalId) {
+        if (processedSignalIds.has(signal.signalId)) return;
+        processedSignalIds.add(signal.signalId);
+
+        // Keep set size reasonable for long sessions
+        if (processedSignalIds.size > 1000) {
+          const first = processedSignalIds.values().next().value;
+          if (first) processedSignalIds.delete(first);
+        }
+      }
+
       // Handle the signal if it belongs to this session
       if (signal.sessionId !== sessionId) return;
 
