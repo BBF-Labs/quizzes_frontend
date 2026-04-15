@@ -3,6 +3,7 @@ import { Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { LibraryFlashcard } from "@/types/session";
 import React from "react";
+import { MarkdownContent } from "@/components/common/MarkdownContent";
 
 export function FlipCard({
   card,
@@ -44,9 +45,9 @@ export function FlipCard({
           style={{ backfaceVisibility: "hidden" }}
         >
           <div className="w-full max-w-4xl">
-            <p className="text-lg sm:text-xl md:text-2xl font-mono text-center text-foreground leading-relaxed wrap-break-word select-none">
-              {card.front}
-            </p>
+            <div className="text-lg sm:text-xl md:text-2xl font-mono text-center text-foreground leading-relaxed wrap-break-word select-none prose prose-invert max-w-none">
+              <MarkdownContent>{card.front}</MarkdownContent>
+            </div>
             {children}
           </div>
         </div>
@@ -56,9 +57,9 @@ export function FlipCard({
           style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
         >
           <div className="w-full max-w-4xl">
-            <p className="text-lg sm:text-xl md:text-2xl font-mono text-center text-foreground leading-relaxed wrap-break-word select-none">
-              {card.back}
-            </p>
+            <div className="text-lg sm:text-xl md:text-2xl font-mono text-center text-foreground leading-relaxed wrap-break-word select-none prose prose-invert max-w-none">
+              <MarkdownContent>{card.back}</MarkdownContent>
+            </div>
           </div>
         </div>
       </motion.div>
