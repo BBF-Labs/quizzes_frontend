@@ -141,11 +141,25 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
   const renameAction = useRenameApp();
   const messageAction = useAppMessage();
   const createStudioNoteAction = useCreateStudioNote(sessionId);
- 
+
+  const [localCitations, setLocalCitations] = useState<SessionCitation[]>([]);
+
+  // Keep localCitations in sync when the query refetches
+  useEffect(() => {
+    if (app?.citations) {
+      setLocalCitations(app.citations);
+    }
+  }, [app?.citations]);
+
   const stream = useAppStream(
     sessionId,
     app?.zMessages || [],
     !!sessionId,
+    {
+      onCitationsUpdate: (citations) => {
+        setLocalCitations(citations as SessionCitation[]);
+      },
+    },
   );
   const { isConnected: isSocketConnected } = useSocket();
 
@@ -318,7 +332,7 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
     toggleLeft,
     toggleRight,
     messages: stream.messages,
-    citations: app?.citations ?? [],
+    citations: localCitations,
     pushMessage: stream.pushMessage,
     sendMessage,
     addNote,
