@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
+  CheckCircle2,
   ChevronRight,
   ClipboardList,
   FlaskConical,
@@ -30,7 +31,6 @@ import type {
 } from "@/types/session";
 
 // ─── Shared sub-components ────────────────────────────────────────────────────
-
 
 interface ActionButtonProps {
   onClick: () => void;
@@ -91,6 +91,44 @@ function CardWrapper({ resolved: _resolved, icon, label, children }: CardWrapper
   );
 }
 
+// ─── Q:A resolved display (shared by question-type directives) ─────────────────
+
+interface QAEntryProps {
+  question: string;
+  answer: string;
+}
+
+function QAResolvedCard({ entries }: { entries: QAEntryProps[] }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
+      className="rounded-(--radius) border border-border/25 bg-muted/10 px-4 py-3 space-y-3 font-mono text-xs"
+    >
+      {entries.map((e, i) => (
+        <div key={i} className="space-y-1.5">
+          <div className="flex gap-2.5">
+            <span className="text-[9px] uppercase tracking-widest text-muted-foreground/50 w-3 shrink-0 mt-0.5">
+              Q
+            </span>
+            <QuestionMarkdown
+              content={e.question}
+              className="text-muted-foreground leading-relaxed"
+            />
+          </div>
+          <div className="flex gap-2.5">
+            <span className="text-[9px] uppercase tracking-widest text-primary/60 w-3 shrink-0 mt-0.5">
+              A
+            </span>
+            <p className="text-foreground leading-relaxed">{e.answer || "—"}</p>
+          </div>
+        </div>
+      ))}
+    </motion.div>
+  );
+}
+
 // ─── ASK_QUESTION ─────────────────────────────────────────────────────────────
 
 interface AskQuestionCardProps {
@@ -110,11 +148,25 @@ function AskQuestionCard({
 }: AskQuestionCardProps) {
   const [textAnswer, setTextAnswer] = useState("");
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const submittedAnswerRef = useRef<string>("");
 
   const handleSubmit = () => {
     const ans = payload.options ? selectedOption : textAnswer.trim();
-    if (ans) onSubmitAnswer([ans]);
+    if (ans) {
+      submittedAnswerRef.current = ans;
+      onSubmitAnswer([ans], [payload.question]);
+    }
   };
+
+  if (resolved && submittedAnswerRef.current) {
+    return (
+      <QAResolvedCard
+        entries={[{ question: payload.question, answer: submittedAnswerRef.current }]}
+      />
+    );
+  }
+
+  if (resolved) return null;
 
   return (
     <CardWrapper
@@ -182,14 +234,31 @@ function AskQuestionsCard({
   onSkip,
 }: AskQuestionsCardProps) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const submittedAnswersRef = useRef<string[]>([]);
 
   const setAnswer = (id: string, value: string) =>
     setAnswers((prev) => ({ ...prev, [id]: value }));
 
   const handleSubmit = () => {
     const all = payload.questions.map((q) => answers[q.id] ?? "");
-    if (all.some((a) => a.trim())) onSubmitAnswer(all);
+    if (all.some((a) => a.trim())) {
+      submittedAnswersRef.current = all;
+      onSubmitAnswer(all, payload.questions.map((q) => q.question));
+    }
   };
+
+  if (resolved && submittedAnswersRef.current.length > 0) {
+    return (
+      <QAResolvedCard
+        entries={payload.questions.map((q, i) => ({
+          question: q.question,
+          answer: submittedAnswersRef.current[i] ?? "—",
+        }))}
+      />
+    );
+  }
+
+  if (resolved) return null;
 
   return (
     <CardWrapper
@@ -207,29 +276,29 @@ function AskQuestionsCard({
               <QuestionMarkdown content={q.question} />
             </div>
             {q.options ? (
-                <div className="flex flex-col gap-1">
-                  {q.options.map((opt, oi) => (
-                    <QuizOptionBtn
-                      key={opt}
-                      opt={opt}
-                      index={oi}
-                      selected={answers[q.id] === opt}
-                      feedbackState={null}
-                      isCorrectOption={false}
-                      disabled={false}
-                      onClick={() => setAnswer(q.id, opt)}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <input
-                  type="text"
-                  value={answers[q.id] ?? ""}
-                  onChange={(e) => setAnswer(q.id, e.target.value)}
-                  placeholder="Your answer…"
-                  className="rounded-(--radius) w-full border border-border/50 bg-background/50 px-3 py-1.5 font-mono text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:outline-none"
-                />
-              )}
+              <div className="flex flex-col gap-1">
+                {q.options.map((opt, oi) => (
+                  <QuizOptionBtn
+                    key={opt}
+                    opt={opt}
+                    index={oi}
+                    selected={answers[q.id] === opt}
+                    feedbackState={null}
+                    isCorrectOption={false}
+                    disabled={false}
+                    onClick={() => setAnswer(q.id, opt)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <input
+                type="text"
+                value={answers[q.id] ?? ""}
+                onChange={(e) => setAnswer(q.id, e.target.value)}
+                placeholder="Your answer…"
+                className="rounded-(--radius) w-full border border-border/50 bg-background/50 px-3 py-1.5 font-mono text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:outline-none"
+              />
+            )}
           </div>
         ))}
       </div>
@@ -263,11 +332,28 @@ function ShowQuizCard({
   onSkip,
 }: ShowQuizCardProps) {
   const [selected, setSelected] = useState<Record<string, string>>({});
+  const submittedRef = useRef<Record<string, string>>({});
 
   const handleSubmit = () => {
     const answers = payload.questions.map((q) => selected[q.id] ?? "");
-    if (answers.some((a) => a)) onSubmitAnswer(answers);
+    if (answers.some((a) => a)) {
+      submittedRef.current = selected;
+      onSubmitAnswer(answers, payload.questions.map((q) => q.question));
+    }
   };
+
+  if (resolved && Object.keys(submittedRef.current).length > 0) {
+    return (
+      <QAResolvedCard
+        entries={payload.questions.map((q) => ({
+          question: q.question,
+          answer: submittedRef.current[q.id] ?? "—",
+        }))}
+      />
+    );
+  }
+
+  if (resolved) return null;
 
   return (
     <CardWrapper
@@ -284,22 +370,20 @@ function ShowQuizCard({
               </span>
               <QuestionMarkdown content={q.question} />
             </div>
-            {!resolved && (
-              <div className="flex flex-col gap-1">
-                {q.options.map((opt, oi) => (
-                  <QuizOptionBtn
-                    key={opt}
-                    opt={opt}
-                    index={oi}
-                    selected={selected[q.id] === opt}
-                    feedbackState={null}
-                    isCorrectOption={false}
-                    disabled={false}
-                    onClick={() => setSelected((prev) => ({ ...prev, [q.id]: opt }))}
-                  />
-                ))}
-              </div>
-            )}
+            <div className="flex flex-col gap-1">
+              {q.options.map((opt, oi) => (
+                <QuizOptionBtn
+                  key={opt}
+                  opt={opt}
+                  index={oi}
+                  selected={selected[q.id] === opt}
+                  feedbackState={null}
+                  isCorrectOption={false}
+                  disabled={false}
+                  onClick={() => setSelected((prev) => ({ ...prev, [q.id]: opt }))}
+                />
+              ))}
+            </div>
           </div>
         ))}
       </div>
@@ -332,10 +416,10 @@ function ShowPlanCard({
   onApprove,
   onSkip,
 }: ShowPlanCardProps) {
+  if (resolved) return null;
+
   const steps = payload.steps ?? [];
   const total = steps.length;
-  // SHOW_PLAN steps are always pending before approval
-  const progressPct = 0;
 
   return (
     <motion.div
@@ -350,9 +434,7 @@ function ShowPlanCard({
           Z
         </div>
         <div className="font-bold text-foreground uppercase tracking-widest flex items-center gap-2 flex-1">
-          {!resolved && (
-            <span className="w-1.5 h-1.5 bg-primary block animate-pulse shrink-0" />
-          )}
+          <span className="w-1.5 h-1.5 bg-primary block animate-pulse shrink-0" />
           <span>{payload.title || "Study Plan"}</span>
         </div>
         <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest shrink-0">
@@ -362,76 +444,38 @@ function ShowPlanCard({
 
       {/* Step log */}
       <div className="px-5 py-4 space-y-3 bg-card/20">
-        {steps.map((step, i) => {
-          // SHOW_PLAN steps do not have status until they become tasks
-          const isDone = false;
-          const isActive = false;
-          return (
-            <motion.div
-              key={step.id ?? i}
-              initial={{ opacity: 0, x: -8 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.07, duration: 0.25 }}
-              className="flex items-start gap-3"
-            >
-              {/* Status icon */}
-              {isDone && (
-                <div className="mt-0.5 w-4 h-4 border border-primary bg-primary/20 flex items-center justify-center shrink-0 rounded-(--radius)">
-                  <CheckCircle2 className="w-2.5 h-2.5 text-primary" />
-                </div>
+        {steps.map((step, i) => (
+          <motion.div
+            key={step.id ?? i}
+            initial={{ opacity: 0, x: -8 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: i * 0.07, duration: 0.25 }}
+            className="flex items-start gap-3"
+          >
+            <div className="mt-0.5 w-4 h-4 border border-muted-foreground/30 shrink-0 rounded-(--radius)" />
+            <div className="flex-1 min-w-0">
+              <span className="uppercase tracking-wider text-[11px] text-muted-foreground/50">
+                {step.title}
+              </span>
+              {step.description && (
+                <QuestionMarkdown
+                  content={step.description}
+                  className="text-[10px] italic text-muted-foreground/60 mt-0.5"
+                />
               )}
-              {isActive && (
-                <div className="mt-0.5 shrink-0">
-                  <SquareLoader size={16} strokeWidth={1.5} />
-                </div>
-              )}
-              {!isDone && !isActive && (
-                <div className="mt-0.5 w-4 h-4 border border-muted-foreground/30 shrink-0 rounded-(--radius)" />
-              )}
-
-              {/* Step text */}
-              <div className="flex-1 min-w-0">
-                <span
-                  className={cn(
-                    "uppercase tracking-wider text-[11px]",
-                    isDone && "text-foreground font-medium",
-                    isActive && "text-primary font-bold",
-                    !isDone && !isActive && "text-muted-foreground/50",
-                  )}
-                >
-                  {step.title}
-                </span>
-                {step.description && !resolved && (
-                  <QuestionMarkdown
-                    content={step.description}
-                    className="text-[10px] italic text-muted-foreground/60 mt-0.5"
-                  />
-                )}
-              </div>
-            </motion.div>
-          );
-        })}
+            </div>
+          </motion.div>
+        ))}
       </div>
 
       {/* Progress bar */}
       <div className="px-5 py-3 border-t border-border/50 bg-background/50">
         <div className="flex justify-between text-[10px] text-muted-foreground mb-2 font-bold uppercase tracking-widest">
           <span>System Progress</span>
-          <span
-            className={cn(
-              progressPct > 0 ? "text-primary" : "text-muted-foreground/40",
-            )}
-          >
-            {progressPct}% Complete
-          </span>
+          <span className="text-muted-foreground/40">0% Complete</span>
         </div>
         <div className="h-px bg-border/50 overflow-hidden">
-          <motion.div
-            className="h-full bg-primary"
-            initial={{ width: "0%" }}
-            animate={{ width: `${progressPct}%` }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-          />
+          <div className="h-full bg-primary w-0" />
         </div>
       </div>
 
@@ -455,14 +499,14 @@ function ShowPlanCard({
 interface UnlockTopicCardProps {
   payload: ZUnlockTopicPayload;
   resolved: boolean;
-  onContinue: () => void;
 }
 
 function UnlockTopicCard({
   payload,
   resolved,
-  onContinue,
 }: UnlockTopicCardProps) {
+  if (resolved) return null;
+
   return (
     <CardWrapper
       resolved={resolved}
@@ -476,11 +520,6 @@ function UnlockTopicCard({
           className="text-sm text-muted-foreground leading-relaxed"
         />
       )}
-
-      <ActionButton onClick={onContinue} variant="primary">
-        <ChevronRight className="inline size-2.5 mr-1" />
-        Continue
-      </ActionButton>
     </CardWrapper>
   );
 }
@@ -490,14 +529,14 @@ function UnlockTopicCard({
 interface ShowResultCardProps {
   payload: ZShowResultPayload;
   resolved: boolean;
-  onContinue: () => void;
 }
 
 function ShowResultCard({
   payload,
   resolved,
-  onContinue,
 }: ShowResultCardProps) {
+  if (resolved) return null;
+
   const hasScore =
     typeof payload.score === "number" && typeof payload.total === "number";
 
@@ -509,12 +548,8 @@ function ShowResultCard({
     >
       {hasScore && (
         <div className="flex items-center gap-2">
-          <span className="text-3xl font-black text-primary">
-            {payload.score}
-          </span>
-          <span className="text-muted-foreground font-mono text-sm">
-            / {payload.total}
-          </span>
+          <span className="text-3xl font-black text-primary">{payload.score}</span>
+          <span className="text-muted-foreground font-mono text-sm">/ {payload.total}</span>
         </div>
       )}
       {payload.topicTitle && (
@@ -528,11 +563,6 @@ function ShowResultCard({
           className="text-sm text-foreground leading-relaxed"
         />
       )}
-
-      <ActionButton onClick={onContinue} variant="primary">
-        <ChevronRight className="inline size-2.5 mr-1" />
-        Continue
-      </ActionButton>
     </CardWrapper>
   );
 }
@@ -556,6 +586,8 @@ function ShowSuggestionCard({
   onTryMyself,
   onAction,
 }: ShowSuggestionCardProps) {
+  if (resolved) return null;
+
   return (
     <CardWrapper
       resolved={resolved}
@@ -563,9 +595,7 @@ function ShowSuggestionCard({
       label="Suggestion"
     >
       {payload.topicTitle && (
-        <p className="text-sm font-bold text-foreground">
-          {payload.topicTitle}
-        </p>
+        <p className="text-sm font-bold text-foreground">{payload.topicTitle}</p>
       )}
       {payload.description && (
         <QuestionMarkdown
@@ -624,14 +654,14 @@ function ShowSuggestionCard({
 interface ShowSummaryCardProps {
   payload: ZShowSummaryPayload;
   resolved: boolean;
-  onContinue: () => void;
 }
 
 function ShowSummaryCard({
   payload,
   resolved,
-  onContinue,
 }: ShowSummaryCardProps) {
+  if (resolved) return null;
+
   return (
     <CardWrapper
       resolved={resolved}
@@ -639,9 +669,7 @@ function ShowSummaryCard({
       label="Summary"
     >
       {payload.topicTitle && (
-        <p className="text-sm font-bold text-foreground">
-          {payload.topicTitle}
-        </p>
+        <p className="text-sm font-bold text-foreground">{payload.topicTitle}</p>
       )}
       {payload.content && (
         <QuestionMarkdown
@@ -652,21 +680,13 @@ function ShowSummaryCard({
       {payload.keyPoints && payload.keyPoints.length > 0 && (
         <ul className="space-y-1">
           {payload.keyPoints.map((point, i) => (
-            <li
-              key={i}
-              className="flex items-start gap-2 text-sm text-foreground"
-            >
+            <li key={i} className="flex items-start gap-2 text-sm text-foreground">
               <ChevronRight className="mt-0.5 size-3 shrink-0 text-primary" />
               <QuestionMarkdown content={point} className="flex-1" />
             </li>
           ))}
         </ul>
       )}
-
-      <ActionButton onClick={onContinue} variant="primary">
-        <ChevronRight className="inline size-2.5 mr-1" />
-        Continue
-      </ActionButton>
     </CardWrapper>
   );
 }
@@ -684,6 +704,8 @@ function UnknownDirectiveCard({
   resolved: boolean;
   onContinue: () => void;
 }) {
+  if (resolved) return null;
+
   return (
     <CardWrapper
       resolved={resolved}
@@ -712,7 +734,7 @@ function UnknownDirectiveCard({
 // ─── Public DirectiveCardCallbacks interface ──────────────────────────────────
 
 export interface DirectiveCardCallbacks {
-  onSubmitAnswer: (answers: string[]) => void;
+  onSubmitAnswer: (answers: string[], questions?: string[]) => void;
   onApprove: () => void;
   onContinue: () => void;
   onRetry: () => void;
@@ -786,7 +808,6 @@ export function DirectiveCard({
         <UnlockTopicCard
           payload={directive.payload}
           resolved={resolved}
-          onContinue={onContinue}
         />
       );
     case "SHOW_RESULT":
@@ -794,7 +815,6 @@ export function DirectiveCard({
         <ShowResultCard
           payload={directive.payload}
           resolved={resolved}
-          onContinue={onContinue}
         />
       );
     case "SHOW_SUGGESTION":
@@ -813,7 +833,6 @@ export function DirectiveCard({
         <ShowSummaryCard
           payload={directive.payload}
           resolved={resolved}
-          onContinue={onContinue}
         />
       );
     default:

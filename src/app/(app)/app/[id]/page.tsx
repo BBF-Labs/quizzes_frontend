@@ -128,15 +128,16 @@ export default function ChatPage() {
   // ── Directive action helpers ─────────────────────────────────────────────
 
   const handleSubmitAnswer = useCallback(
-    (answers: string[]) => {
+    (answers: string[], questions?: string[]) => {
       if (!sessionId) return;
-      const joined = answers.join(", ");
+      const message =
+        questions && questions.length > 0
+          ? questions
+              .map((q, i) => `Q: ${q}\nA: ${answers[i] ?? ""}`)
+              .join("\n\n")
+          : answers.join(", ");
       messageMutation
-        .mutateAsync({
-          sessionId,
-          message:
-            Object.keys(answers).length > 1 ? `Answers: ${joined}` : joined,
-        })
+        .mutateAsync({ sessionId, message })
         .catch((err: unknown) => console.error("[submitAnswer] failed", err));
     },
     [sessionId, messageMutation],

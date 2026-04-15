@@ -13,11 +13,10 @@ import type { ZAppMessage, SessionCitation } from "@/types/session";
 import { DirectiveCard } from "@/components/app/center/DirectiveCard";
 import type { DirectiveCardCallbacks } from "@/components/app/center/DirectiveCard";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 export interface MessageFeedProps extends DirectiveCardCallbacks {
   messages: ZAppMessage[];
@@ -293,36 +292,34 @@ function UserBubble({
 
 function CitationMarker({ citation }: { citation: SessionCitation }) {
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <sup className="inline-flex items-center cursor-pointer text-primary font-mono text-[9px] font-bold ml-0.5 hover:text-primary/70 transition-colors">
-            {citation.marker}
-          </sup>
-        </TooltipTrigger>
-        <TooltipContent
-          side="top"
-          className="max-w-72 p-3 bg-card border border-border text-foreground shadow-lg"
-        >
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-1.5">
-              <FileText className="size-3 text-primary shrink-0" />
-              <span className="text-[10px] font-mono font-bold text-primary truncate">
-                {citation.filename}
+    <Popover>
+      <PopoverTrigger asChild>
+        <sup className="inline-flex items-center cursor-pointer text-primary font-mono text-[9px] font-bold ml-0.5 hover:text-primary/70 transition-colors">
+          {citation.marker}
+        </sup>
+      </PopoverTrigger>
+      <PopoverContent
+        side="top"
+        className="max-w-72 p-3 bg-card border border-border text-foreground shadow-lg"
+      >
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1.5">
+            <FileText className="size-3 text-primary shrink-0" />
+            <span className="text-[10px] font-mono font-bold text-primary truncate">
+              {citation.filename}
+            </span>
+            {citation.pageNumber && (
+              <span className="text-[9px] font-mono text-muted-foreground shrink-0">
+                p.{citation.pageNumber}
               </span>
-              {citation.pageNumber && (
-                <span className="text-[9px] font-mono text-muted-foreground shrink-0">
-                  p.{citation.pageNumber}
-                </span>
-              )}
-            </div>
-            <p className="text-[11px] leading-relaxed text-foreground/80 border-l-2 border-primary/30 pl-2 italic">
-              &ldquo;{citation.excerpt}&rdquo;
-            </p>
+            )}
           </div>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+          <p className="text-[11px] leading-relaxed text-foreground/80 border-l-2 border-primary/30 pl-2 italic">
+            &ldquo;{citation.excerpt}&rdquo;
+          </p>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 
