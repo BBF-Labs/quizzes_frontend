@@ -11,14 +11,14 @@ import { useAuth } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-const AMOUNT_PRESETS = [5, 10, 20, 50];
+const AMOUNT_PRESETS = [50, 100, 200, 500, 1000];
 
 export function DonationWidget() {
   const { user } = useAuth();
   const { data: ledger } = useDonationLedger();
   const { mutate: initiate, isPending } = useInitiateDonation();
 
-  const [amount, setAmount] = useState<number | "">(10);
+  const [amount, setAmount] = useState<number | "">(50);
   const [email, setEmail] = useState((user as any)?.email ?? "");
   const [donorName, setDonorName] = useState("");
   const [message, setMessage] = useState("");
