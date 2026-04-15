@@ -10,3 +10,4 @@ export * from "./cookie-consent";
 export * from "./plan-card";
 export * from "./referral-card";
 export * from "./json-ld";
+export * from "./MarkdownContent";
