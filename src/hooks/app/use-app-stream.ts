@@ -5,12 +5,14 @@ import type {
   ZApp,
   ZAppMessage,
   ZAppMessageType,
+  ZDirective,
   ConnectionType,
 } from "@/types/session";
 
 interface UseAppStreamOptions {
   onAppUpdate?: (app: ZApp) => void;
   onConnectionChange?: (connected: boolean, type: ConnectionType) => void;
+  onCitationsUpdate?: (citations: unknown[]) => void;
 }
 
 interface StreamSignal {
@@ -204,6 +206,35 @@ export const useAppStream = (
                     msgs[idx] = { ...msgs[idx], isStreaming: false };
                   }
                   return msgs;
+                });
+              }
+              const freshCitations = signal.payload?.citations;
+              if (Array.isArray(freshCitations) && freshCitations.length > 0) {
+                options?.onCitationsUpdate?.(freshCitations);
+              }
+              break;
+            }
+
+            case "directive": {
+              const msgId = signal.payload?.messageId as string | undefined;
+              const directive = signal.payload?.directive as ZDirective | undefined;
+              if (directive && msgId) {
+                setMessages((prev) => {
+                  const exists = prev.some(
+                    (m) => m.id === msgId || m.messageId === msgId,
+                  );
+                  if (exists) return prev;
+                  const newMsg: ZAppMessage = {
+                    id: msgId,
+                    messageId: msgId,
+                    role: "z",
+                    type: "directive" as ZAppMessageType,
+                    content: "",
+                    directive,
+                    timestamp: signal.timestamp || new Date().toISOString(),
+                    isStreaming: false,
+                  };
+                  return [...prev, newMsg];
                 });
               }
               break;
