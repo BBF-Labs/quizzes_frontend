@@ -126,21 +126,19 @@ export function DonationWidget() {
         </div>
 
         {/* Email — pre-filled if logged in */}
-        {!user && (
-          <div>
-            <label className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground/60 mb-2 block">
-              Email
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@email.com"
-              required
-              className="w-full border border-border/50 bg-background/40 px-3 py-2 text-sm font-mono focus:outline-none focus:border-primary/60 placeholder:text-muted-foreground/30"
-            />
-          </div>
-        )}
+        <div>
+          <label className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground/60 mb-2 block">
+            Email
+          </label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="your@email.com"
+            required
+            className="w-full border border-border/50 bg-background/40 px-3 py-2 text-sm font-mono focus:outline-none focus:border-primary/60 placeholder:text-muted-foreground/30"
+          />
+        </div>
 
         {/* Anonymous toggle */}
         <label className="flex items-center gap-3 cursor-pointer select-none">
