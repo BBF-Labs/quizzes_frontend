@@ -135,7 +135,7 @@ export interface ZAppMessage {
   rating?: 1 | -1;
 }
 
-export type ConnectionType = "sse" | "polling" | "disconnected";
+export type ConnectionType = "socket" | "sse" | "polling" | "disconnected";
 
 // ─── Agent Task ───────────────────────────────────────────────────────────────
 
