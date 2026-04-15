@@ -134,7 +134,7 @@ function QAResolvedCard({ entries }: { entries: QAEntryProps[] }) {
 interface AskQuestionCardProps {
   payload: ZAskQuestionPayload;
   resolved: boolean;
-  onSubmitAnswer: (answers: string[]) => void;
+  onSubmitAnswer: (answers: string[], questions?: string[]) => void;
   onRetry: () => void;
   onSkip: () => void;
 }
@@ -223,7 +223,7 @@ function AskQuestionCard({
 interface AskQuestionsCardProps {
   payload: ZAskQuestionsPayload;
   resolved: boolean;
-  onSubmitAnswer: (answers: string[]) => void;
+  onSubmitAnswer: (answers: string[], questions?: string[]) => void;
   onSkip: () => void;
 }
 
@@ -321,7 +321,7 @@ function AskQuestionsCard({
 interface ShowQuizCardProps {
   payload: ZShowQuizPayload;
   resolved: boolean;
-  onSubmitAnswer: (answers: string[]) => void;
+  onSubmitAnswer: (answers: string[], questions?: string[]) => void;
   onSkip: () => void;
 }
 
