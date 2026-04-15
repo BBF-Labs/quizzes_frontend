@@ -3,7 +3,7 @@
 import { use } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import ReactMarkdown from "react-markdown";
+import { MarkdownContent } from "@/components/common/MarkdownContent";
 import { Badge } from "@/components/ui/badge";
 import { useLibraryNote } from "@/hooks/app";
 
@@ -80,7 +80,7 @@ export default function NoteDetailPage({
 
             <div className="mt-6 border border-border/40 bg-card/20 p-4">
               <div className="prose prose-sm prose-invert max-w-none text-[12px] font-mono leading-relaxed">
-                <ReactMarkdown>{note.content}</ReactMarkdown>
+                <MarkdownContent>{note.content}</MarkdownContent>
               </div>
             </div>
 
