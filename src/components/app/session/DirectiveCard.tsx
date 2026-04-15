@@ -731,6 +731,48 @@ function ShowSummaryCard({
   );
 }
 
+// ─── UNKNOWN_DIRECTIVE (Fallback) ─────────────────────────────────────────────
+
+function UnknownDirectiveCard({
+  type,
+  payload,
+  resolved,
+  onContinue,
+}: {
+  type: string;
+  payload: any;
+  resolved: boolean;
+  onContinue: () => void;
+}) {
+  return (
+    <CardWrapper
+      resolved={resolved}
+      icon={<HelpCircle className="size-3" />}
+      label={`Action: ${type}`}
+    >
+      <div className="space-y-2">
+        <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest italic">
+          New system action received. Some controls may be limited.
+        </p>
+        <div className="rounded border border-border/40 bg-muted/20 p-2 overflow-auto max-h-40">
+          <pre className="text-[10px] font-mono text-muted-foreground leading-tight">
+            {JSON.stringify(payload, null, 2)}
+          </pre>
+        </div>
+      </div>
+
+      {!resolved && (
+        <ActionButton onClick={onContinue} variant="primary">
+          <ChevronRight className="inline size-2.5 mr-1" />
+          Got it
+        </ActionButton>
+      )}
+
+      {resolved && <ResolvedIndicator />}
+    </CardWrapper>
+  );
+}
+
 // ─── Public DirectiveCardCallbacks interface ──────────────────────────────────
 
 export interface DirectiveCardCallbacks {
@@ -833,6 +875,15 @@ export function DirectiveCard({
     case "SHOW_SUMMARY":
       return (
         <ShowSummaryCard
+          payload={directive.payload}
+          resolved={resolved}
+          onContinue={onContinue}
+        />
+      );
+    default:
+      return (
+        <UnknownDirectiveCard
+          type={directive.type}
           payload={directive.payload}
           resolved={resolved}
           onContinue={onContinue}
