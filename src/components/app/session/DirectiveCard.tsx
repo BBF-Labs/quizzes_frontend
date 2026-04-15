@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import {
-  CheckCircle2,
   ChevronRight,
   ClipboardList,
   FlaskConical,
@@ -32,16 +31,6 @@ import type {
 
 // ─── Shared sub-components ────────────────────────────────────────────────────
 
-function ResolvedIndicator() {
-  return (
-    <div className="mt-3 flex items-center gap-1.5 text-muted-foreground/60">
-      <CheckCircle2 className="size-3" />
-      <span className="text-[9px] font-mono uppercase tracking-widest">
-        Completed
-      </span>
-    </div>
-  );
-}
 
 interface ActionButtonProps {
   onClick: () => void;
@@ -83,18 +72,13 @@ interface CardWrapperProps {
   children: React.ReactNode;
 }
 
-function CardWrapper({ resolved, icon, label, children }: CardWrapperProps) {
+function CardWrapper({ resolved: _resolved, icon, label, children }: CardWrapperProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className={cn(
-        "border px-4 py-3 space-y-3",
-        resolved
-          ? "border-border/30 bg-card/20 opacity-60"
-          : "border-amber-500/40 bg-amber-500/5",
-      )}
+      className="rounded-(--radius) border border-amber-500/40 bg-amber-500/5 px-4 py-3 space-y-3"
     >
       <div className="flex items-center gap-2">
         <span className="text-amber-500">{icon}</span>
@@ -140,50 +124,44 @@ function AskQuestionCard({
     >
       <QuestionMarkdown content={payload.question} />
 
-      {!resolved && (
-        <>
-          {payload.options ? (
-            <div className="flex flex-col gap-1.5">
-              {payload.options.map((opt, i) => (
-                <QuizOptionBtn
-                  key={opt}
-                  opt={opt}
-                  index={i}
-                  selected={selectedOption === opt}
-                  feedbackState={null}
-                  isCorrectOption={false}
-                  disabled={false}
-                  onClick={() => setSelectedOption(opt)}
-                />
-              ))}
-            </div>
-          ) : (
-            <textarea
-              value={textAnswer}
-              onChange={(e) => setTextAnswer(e.target.value)}
-              placeholder="Type your answer…"
-              rows={3}
-              className="w-full resize-none border border-border/50 bg-background/50 px-3 py-2 font-mono text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:outline-none"
+      {payload.options ? (
+        <div className="flex flex-col gap-1.5">
+          {payload.options.map((opt, i) => (
+            <QuizOptionBtn
+              key={opt}
+              opt={opt}
+              index={i}
+              selected={selectedOption === opt}
+              feedbackState={null}
+              isCorrectOption={false}
+              disabled={false}
+              onClick={() => setSelectedOption(opt)}
             />
-          )}
-
-          <div className="flex flex-wrap items-center gap-2">
-            <ActionButton onClick={handleSubmit} variant="primary">
-              Submit Answer
-            </ActionButton>
-            <ActionButton onClick={onRetry}>
-              <RotateCcw className="inline size-2.5 mr-1" />
-              Retry
-            </ActionButton>
-            <ActionButton onClick={onSkip} variant="danger">
-              <SkipForward className="inline size-2.5 mr-1" />
-              Skip
-            </ActionButton>
-          </div>
-        </>
+          ))}
+        </div>
+      ) : (
+        <textarea
+          value={textAnswer}
+          onChange={(e) => setTextAnswer(e.target.value)}
+          placeholder="Type your answer…"
+          rows={3}
+          className="rounded-(--radius) w-full resize-none border border-border/50 bg-background/50 px-3 py-2 font-mono text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:outline-none"
+        />
       )}
 
-      {resolved && <ResolvedIndicator />}
+      <div className="flex flex-wrap items-center gap-2">
+        <ActionButton onClick={handleSubmit} variant="primary">
+          Submit Answer
+        </ActionButton>
+        <ActionButton onClick={onRetry}>
+          <RotateCcw className="inline size-2.5 mr-1" />
+          Retry
+        </ActionButton>
+        <ActionButton onClick={onSkip} variant="danger">
+          <SkipForward className="inline size-2.5 mr-1" />
+          Skip
+        </ActionButton>
+      </div>
     </CardWrapper>
   );
 }
@@ -228,8 +206,7 @@ function AskQuestionsCard({
               </span>
               <QuestionMarkdown content={q.question} />
             </div>
-            {!resolved &&
-              (q.options ? (
+            {q.options ? (
                 <div className="flex flex-col gap-1">
                   {q.options.map((opt, oi) => (
                     <QuizOptionBtn
@@ -250,26 +227,22 @@ function AskQuestionsCard({
                   value={answers[q.id] ?? ""}
                   onChange={(e) => setAnswer(q.id, e.target.value)}
                   placeholder="Your answer…"
-                  className="w-full border border-border/50 bg-background/50 px-3 py-1.5 font-mono text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:outline-none"
+                  className="rounded-(--radius) w-full border border-border/50 bg-background/50 px-3 py-1.5 font-mono text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:outline-none"
                 />
-              ))}
+              )}
           </div>
         ))}
       </div>
 
-      {!resolved && (
-        <div className="flex flex-wrap items-center gap-2">
-          <ActionButton onClick={handleSubmit} variant="primary">
-            Submit All
-          </ActionButton>
-          <ActionButton onClick={onSkip} variant="danger">
-            <SkipForward className="inline size-2.5 mr-1" />
-            Skip
-          </ActionButton>
-        </div>
-      )}
-
-      {resolved && <ResolvedIndicator />}
+      <div className="flex flex-wrap items-center gap-2">
+        <ActionButton onClick={handleSubmit} variant="primary">
+          Submit All
+        </ActionButton>
+        <ActionButton onClick={onSkip} variant="danger">
+          <SkipForward className="inline size-2.5 mr-1" />
+          Skip
+        </ActionButton>
+      </div>
     </CardWrapper>
   );
 }
@@ -331,19 +304,15 @@ function ShowQuizCard({
         ))}
       </div>
 
-      {!resolved && (
-        <div className="flex flex-wrap items-center gap-2">
-          <ActionButton onClick={handleSubmit} variant="primary">
-            Submit Quiz
-          </ActionButton>
-          <ActionButton onClick={onSkip} variant="danger">
-            <SkipForward className="inline size-2.5 mr-1" />
-            Skip
-          </ActionButton>
-        </div>
-      )}
-
-      {resolved && <ResolvedIndicator />}
+      <div className="flex flex-wrap items-center gap-2">
+        <ActionButton onClick={handleSubmit} variant="primary">
+          Submit Quiz
+        </ActionButton>
+        <ActionButton onClick={onSkip} variant="danger">
+          <SkipForward className="inline size-2.5 mr-1" />
+          Skip
+        </ActionButton>
+      </div>
     </CardWrapper>
   );
 }
@@ -373,10 +342,7 @@ function ShowPlanCard({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className={cn(
-        "border overflow-hidden font-mono text-xs",
-        resolved ? "border-border/30 opacity-60" : "border-border/50",
-      )}
+      className="rounded-(--radius) border border-border/50 overflow-hidden font-mono text-xs"
     >
       {/* Header bar */}
       <div className="px-4 py-3 border-b border-border/50 bg-background/80 flex items-center gap-3">
@@ -470,24 +436,16 @@ function ShowPlanCard({
       </div>
 
       {/* Actions */}
-      {!resolved && (
-        <div className="px-5 py-3 border-t border-border/50 flex items-center gap-2">
-          <ActionButton onClick={onApprove} variant="primary">
-            <CheckCircle2 className="inline size-2.5 mr-1" />
-            Approve Plan
-          </ActionButton>
-          <ActionButton onClick={onSkip} variant="danger">
-            <SkipForward className="inline size-2.5 mr-1" />
-            Skip
-          </ActionButton>
-        </div>
-      )}
-
-      {resolved && (
-        <div className="px-5 py-3 border-t border-border/50">
-          <ResolvedIndicator />
-        </div>
-      )}
+      <div className="px-5 py-3 border-t border-border/50 flex items-center gap-2">
+        <ActionButton onClick={onApprove} variant="primary">
+          <CheckCircle2 className="inline size-2.5 mr-1" />
+          Approve Plan
+        </ActionButton>
+        <ActionButton onClick={onSkip} variant="danger">
+          <SkipForward className="inline size-2.5 mr-1" />
+          Skip
+        </ActionButton>
+      </div>
     </motion.div>
   );
 }
@@ -519,14 +477,10 @@ function UnlockTopicCard({
         />
       )}
 
-      {!resolved && (
-        <ActionButton onClick={onContinue} variant="primary">
-          <ChevronRight className="inline size-2.5 mr-1" />
-          Continue
-        </ActionButton>
-      )}
-
-      {resolved && <ResolvedIndicator />}
+      <ActionButton onClick={onContinue} variant="primary">
+        <ChevronRight className="inline size-2.5 mr-1" />
+        Continue
+      </ActionButton>
     </CardWrapper>
   );
 }
@@ -575,14 +529,10 @@ function ShowResultCard({
         />
       )}
 
-      {!resolved && (
-        <ActionButton onClick={onContinue} variant="primary">
-          <ChevronRight className="inline size-2.5 mr-1" />
-          Continue
-        </ActionButton>
-      )}
-
-      {resolved && <ResolvedIndicator />}
+      <ActionButton onClick={onContinue} variant="primary">
+        <ChevronRight className="inline size-2.5 mr-1" />
+        Continue
+      </ActionButton>
     </CardWrapper>
   );
 }
@@ -624,58 +574,47 @@ function ShowSuggestionCard({
         />
       )}
 
-      {!resolved && (
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Topic-specific action buttons */}
-          {payload.topicTitle && (
-            <>
-              <ActionButton
-                onClick={() => onExplainDifferently(payload.topicTitle!)}
-                variant="secondary"
-              >
-                Explain differently
-              </ActionButton>
-              <ActionButton
-                onClick={() => onTestMe(payload.topicTitle!)}
-                variant="secondary"
-              >
-                Test me
-              </ActionButton>
-              <ActionButton
-                onClick={() => onTryMyself(payload.topicTitle!)}
-                variant="secondary"
-              >
-                Try myself
-              </ActionButton>
-            </>
-          )}
-
-          {/* Pre-defined suggestion list */}
-          {payload.suggestions?.map((s) => (
+      <div className="flex flex-wrap items-center gap-2">
+        {payload.topicTitle && (
+          <>
             <ActionButton
-              key={s.actionType}
-              onClick={() => onAction(s.actionType)}
+              onClick={() => onExplainDifferently(payload.topicTitle!)}
               variant="secondary"
             >
-              {s.label}
+              Explain differently
             </ActionButton>
-          ))}
-
-          {/* Single generic action */}
-          {!payload.topicTitle &&
-            !payload.suggestions?.length &&
-            payload.actionType && (
-              <ActionButton
-                onClick={() => onAction(payload.actionType!)}
-                variant="primary"
-              >
-                {payload.label ?? payload.actionType}
-              </ActionButton>
-            )}
-        </div>
-      )}
-
-      {resolved && <ResolvedIndicator />}
+            <ActionButton
+              onClick={() => onTestMe(payload.topicTitle!)}
+              variant="secondary"
+            >
+              Test me
+            </ActionButton>
+            <ActionButton
+              onClick={() => onTryMyself(payload.topicTitle!)}
+              variant="secondary"
+            >
+              Try myself
+            </ActionButton>
+          </>
+        )}
+        {payload.suggestions?.map((s) => (
+          <ActionButton
+            key={s.actionType}
+            onClick={() => onAction(s.actionType)}
+            variant="secondary"
+          >
+            {s.label}
+          </ActionButton>
+        ))}
+        {!payload.topicTitle && !payload.suggestions?.length && payload.actionType && (
+          <ActionButton
+            onClick={() => onAction(payload.actionType!)}
+            variant="primary"
+          >
+            {payload.label ?? payload.actionType}
+          </ActionButton>
+        )}
+      </div>
     </CardWrapper>
   );
 }
@@ -724,14 +663,10 @@ function ShowSummaryCard({
         </ul>
       )}
 
-      {!resolved && (
-        <ActionButton onClick={onContinue} variant="primary">
-          <ChevronRight className="inline size-2.5 mr-1" />
-          Continue
-        </ActionButton>
-      )}
-
-      {resolved && <ResolvedIndicator />}
+      <ActionButton onClick={onContinue} variant="primary">
+        <ChevronRight className="inline size-2.5 mr-1" />
+        Continue
+      </ActionButton>
     </CardWrapper>
   );
 }
@@ -759,21 +694,17 @@ function UnknownDirectiveCard({
         <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest italic">
           New system action received. Some controls may be limited.
         </p>
-        <div className="rounded border border-border/40 bg-muted/20 p-2 overflow-auto max-h-40">
+        <div className="rounded-(--radius) border border-border/40 bg-muted/20 p-2 overflow-auto max-h-40">
           <pre className="text-[10px] font-mono text-muted-foreground leading-tight">
             {JSON.stringify(payload, null, 2)}
           </pre>
         </div>
       </div>
 
-      {!resolved && (
-        <ActionButton onClick={onContinue} variant="primary">
-          <ChevronRight className="inline size-2.5 mr-1" />
-          Got it
-        </ActionButton>
-      )}
-
-      {resolved && <ResolvedIndicator />}
+      <ActionButton onClick={onContinue} variant="primary">
+        <ChevronRight className="inline size-2.5 mr-1" />
+        Got it
+      </ActionButton>
     </CardWrapper>
   );
 }
