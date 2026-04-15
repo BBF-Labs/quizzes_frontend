@@ -5,6 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Brain, Copy, Check, RotateCcw, Pencil, FileText, ThumbsUp, ThumbsDown } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import rehypeRaw from "rehype-raw";
 import { cn } from "@/lib/utils";
 import type { ZAppMessage, SessionCitation } from "@/types/session";
 import { DirectiveCard } from "@/components/app/center/DirectiveCard";
@@ -343,7 +346,8 @@ function MessageContent({
         return (
           <ReactMarkdown
             key={i}
-            remarkPlugins={[remarkGfm]}
+            remarkPlugins={[remarkGfm, remarkMath]}
+            rehypePlugins={[rehypeRaw, rehypeKatex]}
             components={{ p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p> }}
           >
             {part}

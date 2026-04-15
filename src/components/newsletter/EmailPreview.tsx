@@ -2,6 +2,8 @@
 import React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 import { cn } from "@/lib/utils";
 
 interface EmailPreviewProps {
@@ -137,7 +139,8 @@ export function EmailPreview({
               prose-hr:border-zinc-200 dark:prose-hr:border-zinc-800"
             >
               <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
+                remarkPlugins={[remarkGfm, remarkMath]}
+                rehypePlugins={[rehypeKatex]}
                 components={{
                   a: ({ children, href }) => (
                     <a 

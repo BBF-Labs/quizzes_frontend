@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { BookMarked, Brain, Search, Trash2, X } from "lucide-react";
-import ReactMarkdown from "react-markdown";
+import { MarkdownContent } from "@/components/common/MarkdownContent";
 import { useDeleteLibraryNote, useLibraryNotes } from "@/hooks/app";
 import { cn } from "@/lib/utils";
 import type { NoteSummary } from "@/types/session";
@@ -107,7 +107,7 @@ function NoteRow({
           >
             <div className="px-4 pb-4 border-t border-border/30">
               <div className="mt-3 prose prose-sm prose-invert max-w-none text-[12px] font-mono leading-relaxed">
-                <ReactMarkdown>{note.contentPreview}</ReactMarkdown>
+                <MarkdownContent>{note.contentPreview}</MarkdownContent>
               </div>
               <div className="mt-3 flex items-center gap-3">
                 <Link
