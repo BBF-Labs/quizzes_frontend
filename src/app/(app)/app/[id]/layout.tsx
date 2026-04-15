@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import {
   createContext,
   useCallback,
@@ -15,6 +16,7 @@ import { PanelLeftOpen, PanelRightOpen, X, Users, Sparkles, Loader2 } from "luci
 import { toast } from "sonner";
 import { nanoid } from "nanoid";
 import { api } from "@/lib/api";
+import { queryKeys } from "@/lib/query-keys";
 import {
   useApp,
 } from "@/hooks/app/use-app-queries";
@@ -141,6 +143,7 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
   const renameAction = useRenameApp();
   const messageAction = useAppMessage();
   const createStudioNoteAction = useCreateStudioNote(sessionId);
+  const queryClient = useQueryClient();
 
   const [localCitations, setLocalCitations] = useState<SessionCitation[]>([]);
 
@@ -158,6 +161,9 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
     {
       onCitationsUpdate: (citations) => {
         setLocalCitations(citations as SessionCitation[]);
+      },
+      onRequestRefetch: () => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.app.detail(sessionId) });
       },
     },
   );

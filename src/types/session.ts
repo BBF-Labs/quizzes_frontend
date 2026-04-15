@@ -107,7 +107,8 @@ export type ZDirective =
   | { type: "UNLOCK_TOPIC"; payload: ZUnlockTopicPayload }
   | { type: "SHOW_RESULT"; payload: ZShowResultPayload }
   | { type: "SHOW_SUGGESTION"; payload: ZShowSuggestionPayload }
-  | { type: "SHOW_SUMMARY"; payload: ZShowSummaryPayload };
+  | { type: "SHOW_SUMMARY"; payload: ZShowSummaryPayload }
+  | { type: string; payload: any };
 
 // ─── App Messages ────────────────────────────────────────────────────────────
 
