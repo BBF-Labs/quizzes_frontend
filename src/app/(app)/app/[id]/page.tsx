@@ -170,6 +170,10 @@ export default function ChatPage() {
     (actionType: string) => sendMessage(actionType),
     [sendMessage],
   );
+  const handlePomodoroResume = useCallback(
+    () => sendMessage("Pomodoro done, ready to continue"),
+    [sendMessage],
+  );
 
   // Guard: invalid session
   if (!sessionId || sessionId === "undefined") {
@@ -205,6 +209,7 @@ export default function ChatPage() {
         onTestMe={handleTestMe}
         onTryMyself={handleTryMyself}
         onAction={handleAction}
+        onPomodoroResume={handlePomodoroResume}
         onRetryMessage={(messageId: string) => {
           truncateAfter(messageId);
           retryMutation.mutate(messageId);

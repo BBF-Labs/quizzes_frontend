@@ -103,6 +103,20 @@ export interface ZShowSummaryPayload {
   keyPoints?: string[];
 }
 
+export interface ZPomodoroPayload {
+  topicTitle: string;
+  /** Work interval in minutes (default 25) */
+  workMinutes: number;
+  /** Short break in minutes (default 5) */
+  shortBreakMinutes: number;
+  /** Long break in minutes (default 15) */
+  longBreakMinutes: number;
+  /** How many work intervals before a long break (default 4) */
+  intervalsBeforeLongBreak: number;
+  /** Optional note from Z about this session */
+  note?: string;
+}
+
 /** Discriminated union — TypeScript narrows payload by type */
 export type ZDirective =
   | { type: "ASK_QUESTION"; payload: ZAskQuestionPayload }
@@ -113,6 +127,7 @@ export type ZDirective =
   | { type: "SHOW_RESULT"; payload: ZShowResultPayload }
   | { type: "SHOW_SUGGESTION"; payload: ZShowSuggestionPayload }
   | { type: "SHOW_SUMMARY"; payload: ZShowSummaryPayload }
+  | { type: "POMODORO"; payload: ZPomodoroPayload }
   | { type: string; payload: any };
 
 // ─── App Messages ────────────────────────────────────────────────────────────

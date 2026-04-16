@@ -1,16 +1,18 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
   CheckCircle2,
   ChevronRight,
   ClipboardList,
+  Coffee,
   FlaskConical,
   HelpCircle,
   Lightbulb,
   RotateCcw,
   SkipForward,
+  Timer,
   Trophy,
   Unlock,
 } from "lucide-react";
@@ -22,6 +24,7 @@ import type {
   ZAskQuestionPayload,
   ZAskQuestionsPayload,
   ZDirective,
+  ZPomodoroPayload,
   ZShowPlanPayload,
   ZShowQuizPayload,
   ZShowResultPayload,
@@ -794,6 +797,209 @@ function UnknownDirectiveCard({
   );
 }
 
+// ─── POMODORO ─────────────────────────────────────────────────────────────────
+
+type PomodoroPhase = "work" | "short_break" | "long_break" | "done";
+
+interface PomodoroCardProps {
+  payload: ZPomodoroPayload;
+  resolved: boolean;
+  onResume: () => void;
+}
+
+function PomodoroCard({ payload, resolved, onResume }: PomodoroCardProps) {
+  const {
+    topicTitle,
+    workMinutes,
+    shortBreakMinutes,
+    longBreakMinutes,
+    intervalsBeforeLongBreak,
+    note,
+  } = payload;
+
+  const [phase, setPhase] = useState<PomodoroPhase>("work");
+  const [interval, setInterval_] = useState(1);
+  const [secondsLeft, setSecondsLeft] = useState(workMinutes * 60);
+  const [running, setRunning] = useState(!resolved);
+  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const phaseDuration = (p: PomodoroPhase) => {
+    if (p === "work") return workMinutes * 60;
+    if (p === "short_break") return shortBreakMinutes * 60;
+    if (p === "long_break") return longBreakMinutes * 60;
+    return 0;
+  };
+
+  // Tick
+  useEffect(() => {
+    if (!running || phase === "done") return;
+    tickRef.current = setInterval(() => {
+      setSecondsLeft((s) => {
+        if (s <= 1) {
+          // Advance phase
+          setPhase((prev) => {
+            if (prev === "work") {
+              const nextInterval = interval + 1;
+              const isLong = nextInterval > intervalsBeforeLongBreak;
+              if (isLong) {
+                setInterval_(1);
+                setSecondsLeft(longBreakMinutes * 60);
+                return "long_break";
+              } else {
+                setInterval_(nextInterval);
+                setSecondsLeft(shortBreakMinutes * 60);
+                return "short_break";
+              }
+            }
+            // break → back to work
+            setSecondsLeft(workMinutes * 60);
+            return "work";
+          });
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+    return () => {
+      if (tickRef.current) clearInterval(tickRef.current);
+    };
+  }, [running, phase, interval, workMinutes, shortBreakMinutes, longBreakMinutes, intervalsBeforeLongBreak]);
+
+  const mm = String(Math.floor(secondsLeft / 60)).padStart(2, "0");
+  const ss = String(secondsLeft % 60).padStart(2, "0");
+
+  const total = phaseDuration(phase) || 1;
+  const progress = ((total - secondsLeft) / total) * 100;
+
+  const phaseLabel =
+    phase === "work"
+      ? `Work · Round ${interval}`
+      : phase === "short_break"
+        ? "Short Break"
+        : phase === "long_break"
+          ? "Long Break"
+          : "Done";
+
+  const isBreak = phase === "short_break" || phase === "long_break";
+
+  if (resolved) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="rounded-(--radius) border border-border/25 bg-card/10 px-4 py-2.5 flex items-center gap-3 font-mono text-xs opacity-50"
+      >
+        <Timer className="size-3 text-muted-foreground/50 shrink-0" />
+        <span className="text-muted-foreground/60 uppercase tracking-widest truncate flex-1">
+          Pomodoro · {topicTitle}
+        </span>
+        <span className="text-muted-foreground/40 uppercase tracking-widest shrink-0">
+          {workMinutes}m work / {shortBreakMinutes}m break
+        </span>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+      className={cn(
+        "rounded-(--radius) border overflow-hidden font-mono text-xs",
+        isBreak
+          ? "border-emerald-500/30 bg-emerald-500/5"
+          : "border-primary/30 bg-primary/5",
+      )}
+    >
+      {/* Header */}
+      <div className="px-4 py-3 border-b border-border/30 flex items-center gap-3">
+        {isBreak ? (
+          <Coffee className="size-3.5 text-emerald-400 shrink-0" />
+        ) : (
+          <Timer className="size-3.5 text-primary shrink-0" />
+        )}
+        <span
+          className={cn(
+            "text-[9px] font-bold uppercase tracking-widest flex-1",
+            isBreak ? "text-emerald-400" : "text-primary",
+          )}
+        >
+          {phaseLabel}
+        </span>
+        <span className="text-[10px] text-muted-foreground/50 uppercase tracking-widest shrink-0 truncate max-w-32">
+          {topicTitle}
+        </span>
+      </div>
+
+      {/* Countdown */}
+      <div className="px-4 py-6 flex flex-col items-center gap-4">
+        <div
+          className={cn(
+            "text-5xl font-black tabular-nums tracking-tight",
+            isBreak ? "text-emerald-400" : "text-primary",
+          )}
+        >
+          {mm}:{ss}
+        </div>
+
+        {/* Progress bar */}
+        <div className="w-full h-px bg-border/30 overflow-hidden">
+          <motion.div
+            className={cn(
+              "h-full",
+              isBreak ? "bg-emerald-400" : "bg-primary",
+            )}
+            style={{ width: `${progress}%` }}
+            transition={{ duration: 0.5 }}
+          />
+        </div>
+
+        {/* Interval dots */}
+        <div className="flex items-center gap-1.5">
+          {Array.from({ length: intervalsBeforeLongBreak }).map((_, i) => (
+            <div
+              key={i}
+              className={cn(
+                "w-1.5 h-1.5 rounded-full transition-colors",
+                i < interval
+                  ? isBreak
+                    ? "bg-emerald-400"
+                    : "bg-primary"
+                  : "bg-border/50",
+              )}
+            />
+          ))}
+          <span className="ml-2 text-[9px] uppercase tracking-widest text-muted-foreground/40">
+            until long break
+          </span>
+        </div>
+      </div>
+
+      {/* Note */}
+      {note && (
+        <div className="px-4 pb-3">
+          <p className="text-[10px] italic text-muted-foreground/50 leading-relaxed">{note}</p>
+        </div>
+      )}
+
+      {/* Controls */}
+      <div className="px-4 py-3 border-t border-border/30 flex items-center gap-2">
+        <ActionButton
+          onClick={() => setRunning((r) => !r)}
+          variant="secondary"
+        >
+          {running ? "Pause" : "Resume Timer"}
+        </ActionButton>
+        <ActionButton onClick={onResume} variant="primary">
+          <ChevronRight className="inline size-2.5 mr-1" />
+          Done, Continue
+        </ActionButton>
+      </div>
+    </motion.div>
+  );
+}
+
 // ─── Public DirectiveCardCallbacks interface ──────────────────────────────────
 
 export interface DirectiveCardCallbacks {
@@ -806,6 +1012,7 @@ export interface DirectiveCardCallbacks {
   onTestMe: (topicTitle: string) => void;
   onTryMyself: (topicTitle: string) => void;
   onAction: (actionType: string) => void;
+  onPomodoroResume: () => void;
 }
 
 interface DirectiveCardProps extends DirectiveCardCallbacks {
@@ -827,6 +1034,7 @@ export function DirectiveCard({
   onTestMe,
   onTryMyself,
   onAction,
+  onPomodoroResume,
 }: DirectiveCardProps) {
   switch (directive.type) {
     case "ASK_QUESTION":
@@ -896,6 +1104,14 @@ export function DirectiveCard({
         <ShowSummaryCard
           payload={directive.payload}
           resolved={resolved}
+        />
+      );
+    case "POMODORO":
+      return (
+        <PomodoroCard
+          payload={directive.payload}
+          resolved={resolved}
+          onResume={onPomodoroResume}
         />
       );
     default:
