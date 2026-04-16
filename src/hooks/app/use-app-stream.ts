@@ -91,10 +91,15 @@ export const useAppStream = (
             }
           }
         } else {
-          // New message from server, but check if we already have it by content + role if ID fails
-          const contentMatch = next.find(
-            (m) => m.role === im.role && m.content === im.content,
-          );
+          // Content-dedup fallback: only apply to non-empty text messages to
+          // avoid false matches on directives/tool calls that share empty content.
+          const canContentMatch =
+            im.type === "text" && im.content && im.content.length > 0;
+
+          const contentMatch = canContentMatch
+            ? next.find((m) => m.role === im.role && m.content === im.content)
+            : undefined;
+
           if (!contentMatch) {
             next.push(im);
             changed = true;
