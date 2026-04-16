@@ -72,13 +72,16 @@ interface CardWrapperProps {
   children: React.ReactNode;
 }
 
-function CardWrapper({ resolved: _resolved, icon, label, children }: CardWrapperProps) {
+function CardWrapper({ resolved, icon, label, children }: CardWrapperProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className="rounded-(--radius) border border-amber-500/40 bg-amber-500/5 px-4 py-3 space-y-3"
+      className={cn(
+        "rounded-(--radius) border border-amber-500/40 bg-amber-500/5 px-4 py-3 space-y-3 transition-opacity",
+        resolved && "opacity-50",
+      )}
     >
       <div className="flex items-center gap-2">
         <span className="text-amber-500">{icon}</span>
@@ -158,15 +161,13 @@ function AskQuestionCard({
     }
   };
 
-  if (resolved && submittedAnswerRef.current) {
+  if (resolved) {
     return (
       <QAResolvedCard
-        entries={[{ question: payload.question, answer: submittedAnswerRef.current }]}
+        entries={[{ question: payload.question, answer: submittedAnswerRef.current || "—" }]}
       />
     );
   }
-
-  if (resolved) return null;
 
   return (
     <CardWrapper
@@ -247,7 +248,7 @@ function AskQuestionsCard({
     }
   };
 
-  if (resolved && submittedAnswersRef.current.length > 0) {
+  if (resolved) {
     return (
       <QAResolvedCard
         entries={payload.questions.map((q, i) => ({
@@ -257,8 +258,6 @@ function AskQuestionsCard({
       />
     );
   }
-
-  if (resolved) return null;
 
   return (
     <CardWrapper
@@ -342,7 +341,7 @@ function ShowQuizCard({
     }
   };
 
-  if (resolved && Object.keys(submittedRef.current).length > 0) {
+  if (resolved) {
     return (
       <QAResolvedCard
         entries={payload.questions.map((q) => ({
@@ -352,8 +351,6 @@ function ShowQuizCard({
       />
     );
   }
-
-  if (resolved) return null;
 
   return (
     <CardWrapper
@@ -577,8 +574,6 @@ function UnlockTopicCard({
   payload,
   resolved,
 }: UnlockTopicCardProps) {
-  if (resolved) return null;
-
   return (
     <CardWrapper
       resolved={resolved}
@@ -607,8 +602,6 @@ function ShowResultCard({
   payload,
   resolved,
 }: ShowResultCardProps) {
-  if (resolved) return null;
-
   const hasScore =
     typeof payload.score === "number" && typeof payload.total === "number";
 
@@ -658,8 +651,6 @@ function ShowSuggestionCard({
   onTryMyself,
   onAction,
 }: ShowSuggestionCardProps) {
-  if (resolved) return null;
-
   return (
     <CardWrapper
       resolved={resolved}
@@ -676,47 +667,49 @@ function ShowSuggestionCard({
         />
       )}
 
-      <div className="flex flex-wrap items-center gap-2">
-        {payload.topicTitle && (
-          <>
+      {!resolved && (
+        <div className="flex flex-wrap items-center gap-2">
+          {payload.topicTitle && (
+            <>
+              <ActionButton
+                onClick={() => onExplainDifferently(payload.topicTitle!)}
+                variant="secondary"
+              >
+                Explain differently
+              </ActionButton>
+              <ActionButton
+                onClick={() => onTestMe(payload.topicTitle!)}
+                variant="secondary"
+              >
+                Test me
+              </ActionButton>
+              <ActionButton
+                onClick={() => onTryMyself(payload.topicTitle!)}
+                variant="secondary"
+              >
+                Try myself
+              </ActionButton>
+            </>
+          )}
+          {payload.suggestions?.map((s) => (
             <ActionButton
-              onClick={() => onExplainDifferently(payload.topicTitle!)}
+              key={s.actionType}
+              onClick={() => onAction(s.actionType)}
               variant="secondary"
             >
-              Explain differently
+              {s.label}
             </ActionButton>
+          ))}
+          {!payload.topicTitle && !payload.suggestions?.length && payload.actionType && (
             <ActionButton
-              onClick={() => onTestMe(payload.topicTitle!)}
-              variant="secondary"
+              onClick={() => onAction(payload.actionType!)}
+              variant="primary"
             >
-              Test me
+              {payload.label ?? payload.actionType}
             </ActionButton>
-            <ActionButton
-              onClick={() => onTryMyself(payload.topicTitle!)}
-              variant="secondary"
-            >
-              Try myself
-            </ActionButton>
-          </>
-        )}
-        {payload.suggestions?.map((s) => (
-          <ActionButton
-            key={s.actionType}
-            onClick={() => onAction(s.actionType)}
-            variant="secondary"
-          >
-            {s.label}
-          </ActionButton>
-        ))}
-        {!payload.topicTitle && !payload.suggestions?.length && payload.actionType && (
-          <ActionButton
-            onClick={() => onAction(payload.actionType!)}
-            variant="primary"
-          >
-            {payload.label ?? payload.actionType}
-          </ActionButton>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </CardWrapper>
   );
 }
@@ -732,8 +725,6 @@ function ShowSummaryCard({
   payload,
   resolved,
 }: ShowSummaryCardProps) {
-  if (resolved) return null;
-
   return (
     <CardWrapper
       resolved={resolved}
@@ -776,8 +767,6 @@ function UnknownDirectiveCard({
   resolved: boolean;
   onContinue: () => void;
 }) {
-  if (resolved) return null;
-
   return (
     <CardWrapper
       resolved={resolved}
@@ -795,10 +784,12 @@ function UnknownDirectiveCard({
         </div>
       </div>
 
-      <ActionButton onClick={onContinue} variant="primary">
-        <ChevronRight className="inline size-2.5 mr-1" />
-        Got it
-      </ActionButton>
+      {!resolved && (
+        <ActionButton onClick={onContinue} variant="primary">
+          <ChevronRight className="inline size-2.5 mr-1" />
+          Got it
+        </ActionButton>
+      )}
     </CardWrapper>
   );
 }
