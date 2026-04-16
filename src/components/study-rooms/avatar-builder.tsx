@@ -209,28 +209,28 @@ export function AvatarBuilder({ initialConfig, onUpdate }: AvatarBuilderProps) {
     <div className="flex flex-col gap-0">
 
       {/* ── TOP: preview + quick actions ── */}
-      <div className="flex items-center gap-6 border-b border-border/50 bg-muted/10 px-5 py-5">
+      <div className="flex items-center gap-4 border-b border-border/50 bg-muted/10 px-4 py-4 sm:gap-6 sm:px-5 sm:py-5">
         {/* Avatar preview */}
         <div
-          className="relative size-24 shrink-0 cursor-pointer overflow-hidden rounded-full border-2 border-border/50 bg-background shadow-inner group"
+          className="relative size-16 shrink-0 cursor-pointer overflow-hidden rounded-full border-2 border-border/50 bg-background shadow-inner group sm:size-24"
           onClick={randomize}
           title="Click to randomize"
         >
           <img src={previewUri} alt="Preview" className="size-full object-cover" />
           <div className="absolute inset-0 flex items-center justify-center bg-background/70 opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm rounded-full">
-            <RefreshCw className="size-5 text-primary animate-spin" />
+            <RefreshCw className="size-4 text-primary animate-spin sm:size-5" />
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex flex-1 flex-col gap-2">
+        <div className="flex flex-1 flex-col gap-2 min-w-0">
           <p className="font-mono text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Quick styles</p>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5 sm:gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={() => applyPreset("styleA")}
-              className="rounded-(--radius) font-mono text-[9px] uppercase h-8 px-4"
+              className="rounded-(--radius) font-mono text-[9px] uppercase h-7 px-3 sm:h-8 sm:px-4"
             >
               Style A
             </Button>
@@ -238,7 +238,7 @@ export function AvatarBuilder({ initialConfig, onUpdate }: AvatarBuilderProps) {
               variant="outline"
               size="sm"
               onClick={() => applyPreset("styleB")}
-              className="rounded-(--radius) font-mono text-[9px] uppercase h-8 px-4"
+              className="rounded-(--radius) font-mono text-[9px] uppercase h-7 px-3 sm:h-8 sm:px-4"
             >
               Style B
             </Button>
@@ -246,7 +246,7 @@ export function AvatarBuilder({ initialConfig, onUpdate }: AvatarBuilderProps) {
               variant="ghost"
               size="sm"
               onClick={randomize}
-              className="rounded-(--radius) font-mono text-[9px] uppercase h-8 px-4 gap-1.5 text-muted-foreground"
+              className="rounded-(--radius) font-mono text-[9px] uppercase h-7 px-3 gap-1 text-muted-foreground sm:h-8 sm:px-4 sm:gap-1.5"
             >
               <RefreshCw className="size-3" /> Random
             </Button>
@@ -255,7 +255,7 @@ export function AvatarBuilder({ initialConfig, onUpdate }: AvatarBuilderProps) {
       </div>
 
       {/* ── MIDDLE: category tab strip (horizontal scroll) ── */}
-      <div className="flex gap-1 overflow-x-auto border-b border-border/50 bg-muted/5 px-3 py-2 no-scrollbar">
+      <div className="flex gap-1 overflow-x-auto border-b border-border/50 bg-muted/5 px-2 py-2 no-scrollbar sm:px-3">
         {CATEGORIES.map((cat) => {
           const active = activeCat === cat.id;
           return (
@@ -263,7 +263,7 @@ export function AvatarBuilder({ initialConfig, onUpdate }: AvatarBuilderProps) {
               key={cat.id}
               onClick={() => setActiveCat(cat.id)}
               className={cn(
-                "flex shrink-0 items-center gap-1.5 rounded-(--radius) px-3 py-1.5 font-mono text-[9px] font-bold uppercase tracking-wider transition-all",
+                "flex shrink-0 items-center gap-1 rounded-(--radius) px-2 py-1.5 font-mono text-[9px] font-bold uppercase tracking-wider transition-all sm:gap-1.5 sm:px-3",
                 active
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -277,18 +277,18 @@ export function AvatarBuilder({ initialConfig, onUpdate }: AvatarBuilderProps) {
       </div>
 
       {/* ── BOTTOM: options grid ── */}
-      <ScrollArea className="h-64">
-        <div className="p-4">
+      <ScrollArea className="max-h-[40vh] min-h-[10rem] sm:max-h-[50vh]">
+        <div className="p-3 sm:p-4">
           {isColor ? (
             /* Colour swatches */
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-2 sm:gap-3">
               {OPTIONS[activeCat]?.map((hex) => (
                 <button
                   key={hex}
                   onClick={() => updateField(activeCat, hex)}
                   title={`#${hex}`}
                   className={cn(
-                    "size-9 rounded-full border-2 transition-all hover:scale-110",
+                    "size-8 rounded-full border-2 transition-all hover:scale-110 sm:size-9",
                     config[activeCat] === hex
                       ? "border-primary scale-110 ring-2 ring-primary/30 shadow-sm"
                       : "border-border/40",
@@ -299,7 +299,7 @@ export function AvatarBuilder({ initialConfig, onUpdate }: AvatarBuilderProps) {
             </div>
           ) : (
             /* Avatar thumbnail grid */
-            <div className="grid grid-cols-4 gap-2 sm:grid-cols-5 md:grid-cols-6">
+            <div className="grid grid-cols-3 gap-2 xs:grid-cols-4 sm:grid-cols-5 md:grid-cols-6">
               {OPTIONS[activeCat]?.map((opt) => (
                 <AvatarThumb
                   key={opt}
@@ -316,7 +316,7 @@ export function AvatarBuilder({ initialConfig, onUpdate }: AvatarBuilderProps) {
       </ScrollArea>
 
       {/* Active category label */}
-      <div className="border-t border-border/50 bg-muted/10 px-4 py-2">
+      <div className="border-t border-border/50 bg-muted/10 px-3 py-2 sm:px-4">
         <p className="font-mono text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
           {currentCat.label} — {isColor ? "pick a colour" : `${OPTIONS[activeCat]?.length ?? 0} options`}
         </p>
