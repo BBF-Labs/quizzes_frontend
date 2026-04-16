@@ -416,10 +416,48 @@ function ShowPlanCard({
   onApprove,
   onSkip,
 }: ShowPlanCardProps) {
-  if (resolved) return null;
-
   const steps = payload.steps ?? [];
   const total = steps.length;
+  const completedCount = steps.filter((s) => s.status === "completed").length;
+  const progressPct = total > 0 ? Math.round((completedCount / total) * 100) : 0;
+  // True once Z starts populating statuses (implementation phase re-emissions)
+  const hasStatuses = steps.some((s) => s.status !== undefined);
+
+  // Compact resolved snapshot — shows progress at the time this card was emitted
+  if (resolved) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.2 }}
+        className="rounded-(--radius) border border-border/25 bg-card/10 overflow-hidden font-mono text-xs"
+      >
+        <div className="px-4 py-2.5 flex items-center gap-3">
+          <div className="w-5 h-5 border border-primary/25 bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0 rounded-(--radius) text-[9px]">
+            Z
+          </div>
+          <span className="text-[10px] uppercase tracking-widest text-muted-foreground/60 flex-1 truncate">
+            {payload.title || "Study Plan"}
+          </span>
+          {hasStatuses && (
+            <span className="text-[10px] text-muted-foreground/40 uppercase tracking-widest shrink-0">
+              {completedCount}/{total} done
+            </span>
+          )}
+        </div>
+        {hasStatuses && total > 0 && (
+          <div className="px-4 pb-2.5">
+            <div className="h-px bg-border/30 overflow-hidden">
+              <div
+                className="h-full bg-primary/50 transition-all duration-500"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+          </div>
+        )}
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
@@ -442,54 +480,88 @@ function ShowPlanCard({
         </span>
       </div>
 
-      {/* Step log */}
+      {/* Step list */}
       <div className="px-5 py-4 space-y-3 bg-card/20">
-        {steps.map((step, i) => (
-          <motion.div
-            key={step.id ?? i}
-            initial={{ opacity: 0, x: -8 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.07, duration: 0.25 }}
-            className="flex items-start gap-3"
-          >
-            <div className="mt-0.5 w-4 h-4 border border-muted-foreground/30 shrink-0 rounded-(--radius)" />
-            <div className="flex-1 min-w-0">
-              <span className="uppercase tracking-wider text-[11px] text-muted-foreground/50">
-                {step.title}
-              </span>
-              {step.description && (
-                <QuestionMarkdown
-                  content={step.description}
-                  className="text-[10px] italic text-muted-foreground/60 mt-0.5"
-                />
-              )}
-            </div>
-          </motion.div>
-        ))}
+        {steps.map((step, i) => {
+          const isDone = step.status === "completed";
+          const isActive = step.status === "active";
+          return (
+            <motion.div
+              key={step.id ?? i}
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.07, duration: 0.25 }}
+              className="flex items-start gap-3"
+            >
+              <div
+                className={cn(
+                  "mt-0.5 w-4 h-4 border shrink-0 rounded-(--radius) flex items-center justify-center",
+                  isDone
+                    ? "border-primary/60 bg-primary/20"
+                    : isActive
+                      ? "border-primary/40 bg-primary/5"
+                      : "border-muted-foreground/30",
+                )}
+              >
+                {isDone && <CheckCircle2 className="size-2.5 text-primary" />}
+                {isActive && (
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <span
+                  className={cn(
+                    "uppercase tracking-wider text-[11px]",
+                    isDone
+                      ? "text-muted-foreground/35 line-through"
+                      : isActive
+                        ? "text-foreground font-bold"
+                        : "text-muted-foreground/50",
+                  )}
+                >
+                  {step.title}
+                </span>
+                {step.description && !isDone && (
+                  <QuestionMarkdown
+                    content={step.description}
+                    className="text-[10px] italic text-muted-foreground/60 mt-0.5"
+                  />
+                )}
+              </div>
+            </motion.div>
+          );
+        })}
       </div>
 
       {/* Progress bar */}
       <div className="px-5 py-3 border-t border-border/50 bg-background/50">
         <div className="flex justify-between text-[10px] text-muted-foreground mb-2 font-bold uppercase tracking-widest">
           <span>System Progress</span>
-          <span className="text-muted-foreground/40">0% Complete</span>
+          <span className={completedCount > 0 ? "text-primary" : "text-muted-foreground/40"}>
+            {progressPct}% Complete
+          </span>
         </div>
         <div className="h-px bg-border/50 overflow-hidden">
-          <div className="h-full bg-primary w-0" />
+          <div
+            className="h-full bg-primary transition-all duration-500"
+            style={{ width: `${progressPct}%` }}
+          />
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="px-5 py-3 border-t border-border/50 flex items-center gap-2">
-        <ActionButton onClick={onApprove} variant="primary">
-          <CheckCircle2 className="inline size-2.5 mr-1" />
-          Approve Plan
-        </ActionButton>
-        <ActionButton onClick={onSkip} variant="danger">
-          <SkipForward className="inline size-2.5 mr-1" />
-          Skip
-        </ActionButton>
-      </div>
+      {/* Actions — only shown for initial planning-phase emission (no statuses yet) */}
+      {!hasStatuses && (
+        <div className="px-5 py-3 border-t border-border/50 flex items-center gap-2">
+          <ActionButton onClick={onApprove} variant="primary">
+            <CheckCircle2 className="inline size-2.5 mr-1" />
+            Approve Plan
+          </ActionButton>
+          <ActionButton onClick={onSkip} variant="danger">
+            <SkipForward className="inline size-2.5 mr-1" />
+            Skip
+          </ActionButton>
+        </div>
+      )}
     </motion.div>
   );
 }

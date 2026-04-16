@@ -62,7 +62,12 @@ export interface ZShowQuizPayload {
 
 export interface ZShowPlanPayload {
   title?: string;
-  steps: Array<{ id: string; title: string; description?: string }>;
+  steps: Array<{
+    id: string;
+    title: string;
+    description?: string;
+    status?: "pending" | "active" | "completed";
+  }>;
 }
 
 export interface ZUnlockTopicPayload {
