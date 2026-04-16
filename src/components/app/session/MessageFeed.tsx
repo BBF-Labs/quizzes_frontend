@@ -26,6 +26,7 @@ export function MessageFeed({
   onTestMe,
   onTryMyself,
   onAction,
+  onPomodoroResume,
   onRetryMessage,
   onEditMessage,
   onRateMessage,
@@ -85,6 +86,7 @@ export function MessageFeed({
               onTestMe={onTestMe}
               onTryMyself={onTryMyself}
               onAction={onAction}
+              onPomodoroResume={onPomodoroResume}
             />
           );
         }
