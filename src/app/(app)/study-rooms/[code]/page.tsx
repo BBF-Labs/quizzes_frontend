@@ -1273,7 +1273,7 @@ export default function StudyRoomDetailPage() {
                       Edit Avatar
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="w-full max-w-sm rounded-(--radius) border-border/50 bg-background shadow-2xl p-0 sm:max-w-lg">
+                  <DialogContent className="w-full max-w-[95vw] rounded-(--radius) border-border/50 bg-background shadow-2xl p-0 sm:max-w-xl">
                     <div className="border-b border-border/50 px-4 py-4 sm:px-5">
                       <h2 className="font-mono text-base font-bold italic tracking-tighter">Avatar Builder</h2>
                     </div>

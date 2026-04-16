@@ -254,8 +254,8 @@ export function AvatarBuilder({ initialConfig, onUpdate }: AvatarBuilderProps) {
         </div>
       </div>
 
-      {/* ── MIDDLE: category tab strip (horizontal scroll) ── */}
-      <div className="flex gap-1 overflow-x-auto border-b border-border/50 bg-muted/5 px-2 py-2 no-scrollbar sm:px-3">
+      {/* ── MIDDLE: category tab strip (wraps so all tabs are visible) ── */}
+      <div className="flex flex-wrap gap-1 border-b border-border/50 bg-muted/5 px-2 py-2">
         {CATEGORIES.map((cat) => {
           const active = activeCat === cat.id;
           return (
@@ -263,7 +263,7 @@ export function AvatarBuilder({ initialConfig, onUpdate }: AvatarBuilderProps) {
               key={cat.id}
               onClick={() => setActiveCat(cat.id)}
               className={cn(
-                "flex shrink-0 items-center gap-1 rounded-(--radius) px-2 py-1.5 font-mono text-[9px] font-bold uppercase tracking-wider transition-all sm:gap-1.5 sm:px-3",
+                "flex items-center gap-1 rounded-(--radius) px-2 py-1.5 font-mono text-[9px] font-bold uppercase tracking-wider transition-all",
                 active
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground",
