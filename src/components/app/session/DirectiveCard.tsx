@@ -107,12 +107,12 @@ function QAResolvedCard({ entries }: { entries: QAEntryProps[] }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.2 }}
-      className="rounded-(--radius) border border-border/25 bg-muted/10 px-4 py-3 space-y-3 font-mono text-xs"
+      className="rounded-(--radius) border border-border/25 bg-muted/10 px-4 py-3 font-mono text-xs divide-y divide-border/20"
     >
       {entries.map((e, i) => (
-        <div key={i} className="space-y-1.5">
-          <div className="flex gap-2.5">
-            <span className="text-[9px] uppercase tracking-widest text-muted-foreground/50 w-3 shrink-0 mt-0.5">
+        <div key={i} className="py-3 first:pt-0 last:pb-0 space-y-2">
+          <div>
+            <span className="text-[9px] uppercase tracking-widest text-muted-foreground/50 block mb-1">
               Q
             </span>
             <QuestionMarkdown
@@ -120,8 +120,8 @@ function QAResolvedCard({ entries }: { entries: QAEntryProps[] }) {
               className="text-muted-foreground leading-relaxed"
             />
           </div>
-          <div className="flex gap-2.5">
-            <span className="text-[9px] uppercase tracking-widest text-primary/60 w-3 shrink-0 mt-0.5">
+          <div>
+            <span className="text-[9px] uppercase tracking-widest text-primary/60 block mb-1">
               A
             </span>
             <p className="text-foreground leading-relaxed">{e.answer || "—"}</p>
