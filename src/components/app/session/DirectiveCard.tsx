@@ -884,29 +884,22 @@ function PomodoroCard({ payload, resolved, onResume }: PomodoroCardProps) {
 
   if (resolved) {
     return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="rounded-(--radius) border border-border/25 bg-card/10 px-4 py-2.5 flex items-center gap-3 font-mono text-xs opacity-50"
-      >
+      <div className="rounded-(--radius) border border-border/25 bg-card/10 px-4 py-2.5 flex items-center gap-3 font-mono text-xs opacity-50">
         <Timer className="size-3 text-muted-foreground/50 shrink-0" />
         <span className="text-muted-foreground/60 uppercase tracking-widest truncate flex-1">
           Pomodoro · {topicTitle}
         </span>
         <span className="text-muted-foreground/40 uppercase tracking-widest shrink-0">
-          {workMinutes}m work / {shortBreakMinutes}m break
+          {workMinutes}m / {shortBreakMinutes}m
         </span>
-      </motion.div>
+      </div>
     );
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
+    <div
       className={cn(
-        "rounded-(--radius) border overflow-hidden font-mono text-xs",
+        "rounded-(--radius) border font-mono text-xs",
         isBreak
           ? "border-emerald-500/30 bg-emerald-500/5"
           : "border-primary/30 bg-primary/5",
@@ -933,44 +926,41 @@ function PomodoroCard({ payload, resolved, onResume }: PomodoroCardProps) {
       </div>
 
       {/* Countdown */}
-      <div className="px-4 py-6 flex flex-col items-center gap-4">
-        <div
+      <div className="px-4 py-8 flex flex-col items-center gap-5">
+        <span
           className={cn(
-            "text-5xl font-black tabular-nums tracking-tight",
+            "text-6xl font-black tabular-nums tracking-tight leading-none",
             isBreak ? "text-emerald-400" : "text-primary",
           )}
         >
           {mm}:{ss}
-        </div>
+        </span>
 
         {/* Progress bar */}
-        <div className="w-full h-px bg-border/30 overflow-hidden">
-          <motion.div
+        <div className="w-full h-1 bg-border/30 rounded-full">
+          <div
             className={cn(
-              "h-full",
+              "h-full rounded-full transition-[width] duration-1000 ease-linear",
               isBreak ? "bg-emerald-400" : "bg-primary",
             )}
             style={{ width: `${progress}%` }}
-            transition={{ duration: 0.5 }}
           />
         </div>
 
         {/* Interval dots */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           {Array.from({ length: intervalsBeforeLongBreak }).map((_, i) => (
             <div
               key={i}
               className={cn(
-                "w-1.5 h-1.5 rounded-full transition-colors",
+                "w-2 h-2 rounded-full transition-colors duration-300",
                 i < interval
-                  ? isBreak
-                    ? "bg-emerald-400"
-                    : "bg-primary"
+                  ? isBreak ? "bg-emerald-400" : "bg-primary"
                   : "bg-border/50",
               )}
             />
           ))}
-          <span className="ml-2 text-[9px] uppercase tracking-widest text-muted-foreground/40">
+          <span className="ml-1 text-[9px] uppercase tracking-widest text-muted-foreground/40">
             until long break
           </span>
         </div>
@@ -978,17 +968,14 @@ function PomodoroCard({ payload, resolved, onResume }: PomodoroCardProps) {
 
       {/* Note */}
       {note && (
-        <div className="px-4 pb-3">
+        <div className="px-4 pb-4">
           <p className="text-[10px] italic text-muted-foreground/50 leading-relaxed">{note}</p>
         </div>
       )}
 
       {/* Controls */}
       <div className="px-4 py-3 border-t border-border/30 flex items-center gap-2">
-        <ActionButton
-          onClick={() => setRunning((r) => !r)}
-          variant="secondary"
-        >
+        <ActionButton onClick={() => setRunning((r) => !r)} variant="secondary">
           {running ? "Pause" : "Resume Timer"}
         </ActionButton>
         <ActionButton onClick={onResume} variant="primary">
@@ -996,7 +983,7 @@ function PomodoroCard({ payload, resolved, onResume }: PomodoroCardProps) {
           Done, Continue
         </ActionButton>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
