@@ -74,7 +74,7 @@ export function DateTimePicker({ date, setDate, className }: DateTimePickerProps
             mode="single"
             selected={selectedDate}
             onSelect={handleDateSelect}
-            initialFocus
+            autoFocus
             className="rounded-none bg-background font-mono"
           />
           <div className="p-3 border-t border-border/40 flex items-center gap-3 bg-secondary/5">
