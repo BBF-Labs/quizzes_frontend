@@ -10,31 +10,36 @@ import Link from "next/link";
 function VerifyContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
-  
+
   const confirm = useConfirmStudentVerify();
-  const [status, setStatus] = useState<"loading" | "success" | "error" | "idle">("idle");
+  const [status, setStatus] = useState<
+    "loading" | "success" | "error" | "idle"
+  >("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const initialized = useRef(false);
 
   useEffect(() => {
     if (!token) {
       setStatus("error");
-      setErrorMessage("The verification token is missing. Please initiate a new verification request from your settings.");
+      setErrorMessage(
+        "The verification token is missing. Please initiate a new verification request from your settings.",
+      );
       return;
     }
 
     if (status === "idle" && !initialized.current) {
       initialized.current = true;
       setStatus("loading");
-      confirm.mutateAsync(token)
+      confirm
+        .mutateAsync(token)
         .then(() => {
           setStatus("success");
         })
         .catch((err: any) => {
           setStatus("error");
           setErrorMessage(
-            err?.response?.data?.message ?? 
-            "This verification link has expired or is invalid. Please request a new one."
+            err?.response?.data?.message ??
+              "This verification link has expired or is invalid. Please request a new one.",
           );
         });
     }
@@ -49,8 +54,8 @@ function VerifyContent() {
       >
         {/* Decorative corner */}
         <div className="absolute top-0 right-0 w-16 h-16 pointer-events-none">
-          <div className="absolute top-0 right-0 w-[2px] h-8 bg-primary" />
-          <div className="absolute top-0 right-0 w-8 h-[2px] bg-primary" />
+          <div className="absolute top-0 right-0 w-0.5 h-8 bg-primary" />
+          <div className="absolute top-0 right-0 w-8 h-0.5 bg-primary" />
         </div>
 
         <div className="flex justify-center mb-8">
@@ -78,8 +83,10 @@ function VerifyContent() {
         <div className="h-px bg-border/50 w-full mb-8" />
 
         <p className="text-sm font-mono text-muted-foreground leading-relaxed mb-10">
-          {status === "loading" && "Please wait while we verify your institutional email address..."}
-          {status === "success" && "Your institutional email has been verified! You now have access to special academic discounts."}
+          {status === "loading" &&
+            "Please wait while we verify your institutional email address..."}
+          {status === "success" &&
+            "Your institutional email has been verified! You now have access to special academic discounts."}
           {status === "error" && errorMessage}
         </p>
 
@@ -99,7 +106,7 @@ export default function StudentVerifyConfirmPage() {
   return (
     <div className="relative min-h-[60vh] flex flex-col items-center justify-center px-4 w-full">
       {/* Background Grid Pattern (matching newsletter) */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px]" />
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[40px_40px]" />
 
       <Suspense
         fallback={

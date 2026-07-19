@@ -195,7 +195,9 @@ function MigrationsContent() {
               isConnected ? "text-green-500" : "text-yellow-500",
             )}
           >
-            {isConnected ? "Live updates connected" : "Live updates reconnecting"}
+            {isConnected
+              ? "Live updates connected"
+              : "Live updates reconnecting"}
           </span>
         </div>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -490,7 +492,7 @@ function MigrationsContent() {
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="space-y-2 max-h-120 overflow-y-auto pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:w-0">
+                <div className="space-y-2 max-h-120 overflow-y-auto pr-1 scrollbar-none [-ms-overflow-style:none] [&::-webkit-scrollbar]:w-0">
                   {pending.map((file) => (
                     <div
                       key={file}

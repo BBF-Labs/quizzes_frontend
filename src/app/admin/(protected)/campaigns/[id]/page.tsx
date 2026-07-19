@@ -102,7 +102,7 @@ function getErrorMessage(error: unknown, fallback: string): string {
 }
 
 export default function CampaignDetailPage() {
-  const params = useParams();
+  const params = useParams<{ id: string }>();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -600,13 +600,12 @@ export default function CampaignDetailPage() {
               variant="outline"
               className={cn(
                 "rounded-(--radius) font-mono text-[10px] tracking-widest uppercase border-primary/50 text-primary bg-primary/5 hover:bg-primary hover:text-primary-foreground shadow-[0_0_10px_rgba(0,110,255,0.1)] hover:shadow-[0_0_20px_rgba(0,110,255,0.2)] transition-all px-4",
-                !isDraft && "opacity-50 grayscale cursor-not-allowed border-muted text-muted-foreground bg-transparent shadow-none"
+                !isDraft &&
+                  "opacity-50 grayscale cursor-not-allowed border-muted text-muted-foreground bg-transparent shadow-none",
               )}
             >
               <Sparkles className="size-4" />
-              {generateMutation.isPending
-                ? "Generating…"
-                : "Generate AI Body"}
+              {generateMutation.isPending ? "Generating…" : "Generate AI Body"}
             </Button>
 
             {isDraft && campaign.bodyMarkdown && (
@@ -701,32 +700,32 @@ export default function CampaignDetailPage() {
             variant="line"
             className="bg-transparent w-auto min-w-full justify-start h-auto px-0 overflow-x-auto overflow-y-hidden no-scrollbar flex-nowrap shrink-0 border-none"
           >
-          <TabsTrigger
-            value="configure"
-            className="relative rounded-none! border-none bg-transparent data-[state=active]:bg-transparent px-6 pb-4 text-muted-foreground data-[state=active]:text-primary transition-all after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-200"
-          >
-            <Settings2 className="size-3.5 mr-1.5" /> CONFIGURE
-          </TabsTrigger>
-          <TabsTrigger
-            value="assets"
-            className="relative rounded-none! border-none bg-transparent data-[state=active]:bg-transparent px-6 pb-4 text-muted-foreground data-[state=active]:text-primary transition-all after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-200"
-          >
-            <ImageIcon className="size-3.5 mr-1.5" /> ASSETS
-          </TabsTrigger>
-          <TabsTrigger
-            value="ai-writer"
-            className="relative rounded-none! border-none bg-transparent data-[state=active]:bg-transparent px-6 pb-4 text-muted-foreground data-[state=active]:text-primary transition-all after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-200"
-          >
-            <Sparkles className="size-3.5 mr-1.5" /> AI WRITER
-          </TabsTrigger>
-          <TabsTrigger
-            value="composing"
-            className="relative rounded-none! border-none bg-transparent data-[state=active]:bg-transparent px-6 pb-4 text-muted-foreground data-[state=active]:text-primary transition-all after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-200"
-          >
-            <PenTool className="size-3.5 mr-1.5" /> COMPOSING
-          </TabsTrigger>
-        </TabsList>
-      </div>
+            <TabsTrigger
+              value="configure"
+              className="relative rounded-none! border-none bg-transparent data-[state=active]:bg-transparent px-6 pb-4 text-muted-foreground data-[state=active]:text-primary transition-all after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-200"
+            >
+              <Settings2 className="size-3.5 mr-1.5" /> CONFIGURE
+            </TabsTrigger>
+            <TabsTrigger
+              value="assets"
+              className="relative rounded-none! border-none bg-transparent data-[state=active]:bg-transparent px-6 pb-4 text-muted-foreground data-[state=active]:text-primary transition-all after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-200"
+            >
+              <ImageIcon className="size-3.5 mr-1.5" /> ASSETS
+            </TabsTrigger>
+            <TabsTrigger
+              value="ai-writer"
+              className="relative rounded-none! border-none bg-transparent data-[state=active]:bg-transparent px-6 pb-4 text-muted-foreground data-[state=active]:text-primary transition-all after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-200"
+            >
+              <Sparkles className="size-3.5 mr-1.5" /> AI WRITER
+            </TabsTrigger>
+            <TabsTrigger
+              value="composing"
+              className="relative rounded-none! border-none bg-transparent data-[state=active]:bg-transparent px-6 pb-4 text-muted-foreground data-[state=active]:text-primary transition-all after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-200"
+            >
+              <PenTool className="size-3.5 mr-1.5" /> COMPOSING
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <div className="min-h-125">
           <AnimatePresence mode="wait">

@@ -120,8 +120,8 @@ function PaymentCallbackInner() {
         >
           {/* Decorative corner */}
           <div className="absolute top-0 right-0 w-16 h-16 pointer-events-none">
-            <div className="absolute top-0 right-0 w-[2px] h-8 bg-primary" />
-            <div className="absolute top-0 right-0 w-8 h-[2px] bg-primary" />
+            <div className="absolute top-0 right-0 w-0.5 h-8 bg-primary" />
+            <div className="absolute top-0 right-0 w-8 h-0.5 bg-primary" />
           </div>
 
           <div className="flex justify-center mb-8">
@@ -169,7 +169,7 @@ function PaymentCallbackInner() {
 
           {stage === "success" && (
             <div className="mb-10">
-              <div className="w-full h-[2px] bg-border/30 relative overflow-hidden mt-6">
+              <div className="w-full h-0.5 bg-border/30 relative overflow-hidden mt-6">
                 <motion.div
                   className="absolute inset-y-0 left-0 bg-primary"
                   initial={{ width: "0%" }}
@@ -221,7 +221,7 @@ export default function PaymentCallbackPage() {
       <Navbar />
       <main className="flex-1 flex items-center justify-center p-4 relative py-24">
         {/* Background Grid Pattern */}
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px]" />
+        <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[40px_40px]" />
 
         <Suspense
           fallback={

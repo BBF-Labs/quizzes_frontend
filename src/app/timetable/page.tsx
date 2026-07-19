@@ -50,18 +50,25 @@ const formatDuration = (minutes: number) => {
   return `${hours}h ${remainingMinutes}m`;
 };
 
-const getEntryStatus = (entry: PublicExamEntry): "ongoing" | "today" | "upcoming" => {
+const getEntryStatus = (
+  entry: PublicExamEntry,
+): "ongoing" | "today" | "upcoming" => {
   return entry.timingStatus ?? "upcoming";
 };
 
-const getStatusValue = (entry: PublicExamEntry, nowMs: number): string | number => {
+const getStatusValue = (
+  entry: PublicExamEntry,
+  nowMs: number,
+): string | number => {
   const status = getEntryStatus(entry);
   if (status === "ongoing") return "ONGOING";
   if (status === "today") return "TODAY";
 
   return Math.max(
     0,
-    Math.ceil((new Date(entry.scheduledAt).getTime() - nowMs) / (1000 * 60 * 60 * 24)),
+    Math.ceil(
+      (new Date(entry.scheduledAt).getTime() - nowMs) / (1000 * 60 * 60 * 24),
+    ),
   );
 };
 
@@ -305,7 +312,7 @@ function PublicExamsContent() {
                   </div>
                 </div>
 
-                <div className="divide-y divide-border/50 flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:w-0">
+                <div className="divide-y divide-border/50 flex-1 overflow-y-auto scrollbar-none [-ms-overflow-style:none] [&::-webkit-scrollbar]:w-0">
                   {allEntries.map((entry, idx) => {
                     const sessDate = new Date(entry.scheduledAt);
                     return (

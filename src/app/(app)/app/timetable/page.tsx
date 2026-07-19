@@ -130,7 +130,10 @@ export default function TimetablePage() {
   const mostRecentDaysRemaining = mostRecentEntry
     ? Math.max(
         0,
-        getCalendarDaysAway(new Date(mostRecentEntry.scheduledAt).getTime(), nowMs),
+        getCalendarDaysAway(
+          new Date(mostRecentEntry.scheduledAt).getTime(),
+          nowMs,
+        ),
       )
     : null;
 
@@ -297,7 +300,7 @@ export default function TimetablePage() {
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:w-0">
+              <div className="flex-1 overflow-y-auto scrollbar-none [-ms-overflow-style:none] [&::-webkit-scrollbar]:w-0">
                 {otherEntries.length > 0 ? (
                   otherEntries.map((entry) => {
                     const dateInfo = formatDate(entry.scheduledAt);
@@ -378,7 +381,9 @@ export default function TimetablePage() {
                         </div>
 
                         {(() => {
-                          const itemStart = new Date(entry.scheduledAt).getTime();
+                          const itemStart = new Date(
+                            entry.scheduledAt,
+                          ).getTime();
                           const itemDaysAway = Math.max(
                             0,
                             getCalendarDaysAway(itemStart, nowMs),

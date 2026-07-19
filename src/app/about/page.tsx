@@ -26,7 +26,11 @@ const containerVariants: Variants = {
 
 const itemVariants: Variants = {
   hidden: { opacity: 0, y: 24 },
-  visible: { opacity: 1, y: 0, transition: { ease: "easeOut", duration: 0.55 } },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { ease: "easeOut", duration: 0.55 },
+  },
 };
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
@@ -68,27 +72,32 @@ const TIMELINE = [
   {
     year: "2023",
     event: "The frustration begins",
-    detail: "Two Computer Science students at a Ghanaian university notice that every study tool available was designed for a student in California — not for them.",
+    detail:
+      "Two Computer Science students at a Ghanaian university notice that every study tool available was designed for a student in California — not for them.",
   },
   {
     year: "2024",
     event: "BetaForge Labs founded",
-    detail: "The first internal prototype of Qz is built: a chatbot that could read a PDF and generate quiz questions. It was rough. It was promising.",
+    detail:
+      "The first internal prototype of Qz is built: a chatbot that could read a PDF and generate quiz questions. It was rough. It was promising.",
   },
   {
     year: "Early 2025",
     event: "Z comes to life",
-    detail: "The simple quiz bot evolves into a full AI study agent with phase-based sessions, syllabus awareness, memory, and verification gating.",
+    detail:
+      "The simple quiz bot evolves into a full AI study agent with phase-based sessions, syllabus awareness, memory, and verification gating.",
   },
   {
     year: "2025",
     event: "Public launch",
-    detail: "Qz opens to students across Ghana, with curriculum support for over 14 universities, 200+ departments, and 1,200+ courses.",
+    detail:
+      "Qz opens to students across Ghana, with curriculum support for over 14 universities, 200+ departments, and 1,200+ courses.",
   },
   {
     year: "2026 →",
     event: "Expanding the map",
-    detail: "Partnerships with institutions, expansion into West Africa, and continued investment in the Z agent's reasoning capabilities.",
+    detail:
+      "Partnerships with institutions, expansion into West Africa, and continued investment in the Z agent's reasoning capabilities.",
   },
 ];
 
@@ -117,7 +126,6 @@ export default function AboutPage() {
 
       <main className="pt-32 pb-20 px-4">
         <div className="max-w-5xl mx-auto">
-
           {/* ── Hero ─────────────────────────────────────────────────────── */}
           <motion.div
             variants={containerVariants}
@@ -132,7 +140,8 @@ export default function AboutPage() {
               variants={itemVariants}
               className="text-5xl md:text-7xl font-black tracking-tighter mb-6 uppercase leading-none"
             >
-              We built the<br />
+              We built the
+              <br />
               <span className="text-primary">tool we needed.</span>
             </motion.h1>
             <motion.p
@@ -163,7 +172,8 @@ export default function AboutPage() {
             >
               <div className="p-10 border-r border-border/40 bg-primary/5">
                 <p className="text-3xl md:text-4xl font-black tracking-tighter uppercase leading-tight text-foreground">
-                  Make every African student<br />
+                  Make every African student
+                  <br />
                   <span className="text-primary">examination-ready.</span>
                 </p>
               </div>
@@ -200,7 +210,9 @@ export default function AboutPage() {
               variants={itemVariants}
               className="text-3xl md:text-4xl font-black tracking-tighter uppercase mb-10"
             >
-              Six principles<br />that shape every decision.
+              Six principles
+              <br />
+              that shape every decision.
             </motion.h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-px bg-border/30">
               {PRINCIPLES.map((p, i) => (
@@ -240,14 +252,20 @@ export default function AboutPage() {
               variants={itemVariants}
               className="text-3xl md:text-4xl font-black tracking-tighter uppercase mb-10"
             >
-              From frustration<br />to infrastructure.
+              From frustration
+              <br />
+              to infrastructure.
             </motion.h2>
 
             <div className="relative pl-8 border-l border-border/40 space-y-10">
               {TIMELINE.map((t, i) => (
-                <motion.div key={i} variants={itemVariants} className="relative">
+                <motion.div
+                  key={i}
+                  variants={itemVariants}
+                  className="relative"
+                >
                   {/* dot */}
-                  <div className="absolute -left-[2.15rem] top-1 size-3.5 border-2 border-primary bg-background" />
+                  <div className="absolute left-[-2.15rem] top-1 size-3.5 border-2 border-primary bg-background" />
                   <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 mb-1">
                     <span className="text-[10px] font-mono font-bold uppercase tracking-[0.3em] text-primary shrink-0">
                       {t.year}
@@ -287,14 +305,15 @@ export default function AboutPage() {
                 </span>
               </div>
               <h2 className="text-3xl md:text-5xl font-black tracking-tighter uppercase leading-tight mb-6">
-                Z isn&apos;t a chatbot.<br />
+                Z isn&apos;t a chatbot.
+                <br />
                 <span className="text-primary">Z is a study system.</span>
               </h2>
               <p className="max-w-2xl font-mono text-sm text-muted-foreground/80 leading-relaxed mb-8">
                 Z reads your curriculum, identifies your knowledge gaps, builds
                 a structured study plan, generates lessons, quizzes, flashcards,
-                and mind maps tailored to your material, and won&apos;t sign you off
-                until you can prove mastery. No hand-holding. No shortcuts.
+                and mind maps tailored to your material, and won&apos;t sign you
+                off until you can prove mastery. No hand-holding. No shortcuts.
               </p>
               <Link href="/app">
                 <Button className="font-mono text-[10px] uppercase tracking-[0.2em] h-11 px-6 bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
@@ -313,7 +332,6 @@ export default function AboutPage() {
             <ArrowLeft className="size-3 group-hover:-translate-x-1 transition-transform" />
             Back to Home
           </Link>
-
         </div>
       </main>
 

@@ -27,7 +27,10 @@ import {
   LectureSection,
   QuizStatsBar,
 } from "@/components/app/quizzes/quiz-content";
-import { formatNextAttemptTime, formatNextAttemptWindow } from "@/lib/attempt-window";
+import {
+  formatNextAttemptTime,
+  formatNextAttemptWindow,
+} from "@/lib/attempt-window";
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -81,24 +84,24 @@ export default function SystemQuizDetailPage({
           <div className="border border-destructive/20 bg-destructive/5 px-6 py-8 rounded-(--radius) text-center">
             <AlertCircle className="size-8 text-destructive/40 mx-auto mb-3" />
             <p className="text-sm font-mono font-bold uppercase tracking-widest text-destructive mb-2">
-              {error instanceof Error && error.message === "UNAUTHENTICATED" 
-                ? "Sign in to take this quiz" 
+              {error instanceof Error && error.message === "UNAUTHENTICATED"
+                ? "Sign in to take this quiz"
                 : "Failed to load quiz"}
             </p>
-            <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-6 max-w-[240px] mx-auto opacity-70">
+            <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-6 max-w-60 mx-auto opacity-70">
               {error instanceof Error && error.message === "UNAUTHENTICATED"
                 ? "You need an active session to participate in this assessment and track your scores."
                 : "There was a problem retrieving the quiz data. Please try again later."}
             </p>
             {error instanceof Error && error.message === "UNAUTHENTICATED" ? (
-              <Button 
+              <Button
                 onClick={() => router.push(`/login?redirectUrl=/quizzes/${id}`)}
                 className="h-9 px-8 font-mono text-[10px] uppercase tracking-[0.2em]"
               >
                 Login to Start
               </Button>
             ) : (
-              <Button 
+              <Button
                 variant="outline"
                 onClick={() => window.location.reload()}
                 className="h-9 px-8 font-mono text-[10px] uppercase tracking-[0.2em]"
@@ -133,15 +136,36 @@ export default function SystemQuizDetailPage({
                     Attempt Limit Reached
                   </AlertTitle>
                   <AlertDescription className="text-[11px] font-mono mt-1">
-                    {quiz.nextAttemptAt ? (() => {
-                      const timeWindow = formatNextAttemptWindow(quiz.nextAttemptAt!);
-                      const atTime = formatNextAttemptTime(quiz.nextAttemptAt!);
-                      if (!timeWindow || !atTime) {
-                        return <>You've reached your free attempt limit for this 12-hour window.</>;
-                      }
-                      return <>Next attempt available in <strong>{timeWindow}</strong> ({atTime}).</>;
-                    })() : <>You've reached your free attempt limit for this 12-hour window.</>}
-                    {" "}Get <strong>unlimited attempts</strong> with a premium plan.
+                    {quiz.nextAttemptAt ? (
+                      (() => {
+                        const timeWindow = formatNextAttemptWindow(
+                          quiz.nextAttemptAt!,
+                        );
+                        const atTime = formatNextAttemptTime(
+                          quiz.nextAttemptAt!,
+                        );
+                        if (!timeWindow || !atTime) {
+                          return (
+                            <>
+                              You've reached your free attempt limit for this
+                              12-hour window.
+                            </>
+                          );
+                        }
+                        return (
+                          <>
+                            Next attempt available in{" "}
+                            <strong>{timeWindow}</strong> ({atTime}).
+                          </>
+                        );
+                      })()
+                    ) : (
+                      <>
+                        You've reached your free attempt limit for this 12-hour
+                        window.
+                      </>
+                    )}{" "}
+                    Get <strong>unlimited attempts</strong> with a premium plan.
                     <div className="mt-3">
                       <Button
                         size="sm"
@@ -217,23 +241,23 @@ export default function SystemQuizDetailPage({
                 initial="hidden"
                 animate="visible"
               >
-              <Accordion type="multiple" className="grid gap-3">
-                {quiz.lectures.map((lecture, idx) => (
-                  <motion.div
-                    key={`${lecture.lectureTitle}-${idx}`}
-                    variants={{
-                      hidden: { opacity: 0, y: 10 },
-                      visible: {
-                        opacity: 1,
-                        y: 0,
-                        transition: { duration: 0.22 },
-                      },
-                    }}
-                  >
-                    <LectureSection lecture={lecture} index={idx} />
-                  </motion.div>
-                ))}
-              </Accordion>
+                <Accordion type="multiple" className="grid gap-3">
+                  {quiz.lectures.map((lecture, idx) => (
+                    <motion.div
+                      key={`${lecture.lectureTitle}-${idx}`}
+                      variants={{
+                        hidden: { opacity: 0, y: 10 },
+                        visible: {
+                          opacity: 1,
+                          y: 0,
+                          transition: { duration: 0.22 },
+                        },
+                      }}
+                    >
+                      <LectureSection lecture={lecture} index={idx} />
+                    </motion.div>
+                  ))}
+                </Accordion>
               </motion.div>
             )}
           </>

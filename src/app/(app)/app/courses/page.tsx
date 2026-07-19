@@ -66,7 +66,9 @@ export default function MyCoursesPage() {
     useCourseSearch(debouncedSearch);
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [selectedCourseIds, setSelectedCourseIds] = useState<Set<string>>(new Set());
+  const [selectedCourseIds, setSelectedCourseIds] = useState<Set<string>>(
+    new Set(),
+  );
   const [selectedCourses, setSelectedCourses] = useState<ICourse[]>([]);
 
   const handleEnroll = async () => {
@@ -104,7 +106,7 @@ export default function MyCoursesPage() {
 
         <div className="flex items-center gap-3">
           <Select value={selectedSemester} onValueChange={setSelectedSemester}>
-            <SelectTrigger className="w-[160px] font-mono text-[11px] uppercase tracking-widest bg-background">
+            <SelectTrigger className="w-40 font-mono text-[11px] uppercase tracking-widest bg-background">
               <SelectValue placeholder="Semester" />
             </SelectTrigger>
             <SelectContent>
@@ -117,7 +119,7 @@ export default function MyCoursesPage() {
           </Select>
 
           <Select value={selectedYear} onValueChange={setSelectedYear}>
-            <SelectTrigger className="w-[140px] font-mono text-[11px] uppercase tracking-widest bg-background">
+            <SelectTrigger className="w-35 font-mono text-[11px] uppercase tracking-widest bg-background">
               <SelectValue placeholder="Year" />
             </SelectTrigger>
             <SelectContent>
@@ -139,7 +141,7 @@ export default function MyCoursesPage() {
                 Add Course
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-106.25">
               <DialogHeader>
                 <DialogTitle className="font-black tracking-tighter uppercase">
                   Add Course
@@ -172,9 +174,11 @@ export default function MyCoursesPage() {
                                   initial={{ scale: 0.8, opacity: 0 }}
                                   animate={{ scale: 1, opacity: 1 }}
                                   exit={{ scale: 0.8, opacity: 0 }}
-                                  className="flex items-center gap-2 px-2 py-1 bg-primary/10 border border-primary/30 rounded text-[10px] font-mono uppercase tracking-[0.1em] group/chip"
+                                  className="flex items-center gap-2 px-2 py-1 bg-primary/10 border border-primary/30 rounded text-[10px] font-mono uppercase tracking-widest group/chip"
                                 >
-                                  <span className="text-primary font-bold">{c.code}</span>
+                                  <span className="text-primary font-bold">
+                                    {c.code}
+                                  </span>
                                   <button
                                     onClick={() => {
                                       setSelectedCourseIds((prev) => {
@@ -182,7 +186,9 @@ export default function MyCoursesPage() {
                                         next.delete(c._id);
                                         return next;
                                       });
-                                      setSelectedCourses((prev) => prev.filter(x => x._id !== c._id));
+                                      setSelectedCourses((prev) =>
+                                        prev.filter((x) => x._id !== c._id),
+                                      );
                                     }}
                                     className="p-0.5 hover:bg-primary/20 rounded-full transition-colors"
                                   >
@@ -220,7 +226,7 @@ export default function MyCoursesPage() {
 
                       {/* Integrated Scrollable List */}
                       <div className="border border-border/40 rounded-md bg-zinc-950/20 overflow-hidden">
-                        <div className="max-h-[320px] overflow-y-auto no-scrollbar py-2 px-2 space-y-1">
+                        <div className="max-h-80 overflow-y-auto no-scrollbar py-2 px-2 space-y-1">
                           {isSearching && searchResults.length === 0 ? (
                             <div className="py-16 text-center space-y-3">
                               <Loader2 className="size-5 animate-spin mx-auto text-primary" />
@@ -240,7 +246,7 @@ export default function MyCoursesPage() {
                                 (e) =>
                                   e.courseId?._id === c._id &&
                                   e.semester === selectedSemester &&
-                                  e.academicYear === selectedYear
+                                  e.academicYear === selectedYear,
                               );
                               const isSelected = selectedCourseIds.has(c._id);
 
@@ -261,7 +267,9 @@ export default function MyCoursesPage() {
                                     });
                                     setSelectedCourses((prev) => {
                                       if (isSelected) {
-                                        return prev.filter((x) => x._id !== c._id);
+                                        return prev.filter(
+                                          (x) => x._id !== c._id,
+                                        );
                                       } else {
                                         return [...prev, c];
                                       }
@@ -272,8 +280,8 @@ export default function MyCoursesPage() {
                                     isAlreadyEnrolled
                                       ? "opacity-50 cursor-not-allowed bg-zinc-900/20"
                                       : isSelected
-                                      ? "bg-primary/5 border border-primary/20 shadow-[0_0_15px_-5px_rgba(var(--primary-rgb),0.2)]"
-                                      : "hover:bg-zinc-900/50 border border-transparent"
+                                        ? "bg-primary/5 border border-primary/20 shadow-[0_0_15px_-5px_rgba(var(--primary-rgb),0.2)]"
+                                        : "hover:bg-zinc-900/50 border border-transparent",
                                   )}
                                 >
                                   <div className="flex items-center justify-between gap-4">
@@ -284,8 +292,8 @@ export default function MyCoursesPage() {
                                           isAlreadyEnrolled
                                             ? "text-muted-foreground"
                                             : isSelected
-                                            ? "text-primary"
-                                            : "text-foreground/90 group-hover/item:text-foreground"
+                                              ? "text-primary"
+                                              : "text-foreground/90 group-hover/item:text-foreground",
                                         )}
                                       >
                                         {c.code}
@@ -306,7 +314,7 @@ export default function MyCoursesPage() {
                                           animate={{ scale: 1, opacity: 1 }}
                                           className="size-4 rounded-full bg-primary flex items-center justify-center shadow-[0_0_10px_rgba(var(--primary-rgb),0.5)]"
                                         >
-                                          <Check className="size-2.5 text-black stroke-[3]" />
+                                          <Check className="size-2.5 text-black stroke-3" />
                                         </motion.div>
                                       )}
                                     </div>
@@ -323,7 +331,9 @@ export default function MyCoursesPage() {
               </div>
               <DialogFooter>
                 <Button
-                  disabled={selectedCourseIds.size === 0 || enrollMutation.isPending}
+                  disabled={
+                    selectedCourseIds.size === 0 || enrollMutation.isPending
+                  }
                   onClick={handleEnroll}
                   className="w-full font-mono text-[11px] uppercase tracking-widest"
                 >
@@ -420,10 +430,16 @@ export default function MyCoursesPage() {
                 </CardContent>
                 <CardFooter className="pt-0 bg-secondary/5 border-t border-border/20 py-3">
                   <Link
-                    href={enrollment.courseId?._id ? `/app/courses/${enrollment.courseId._id}` : "#"}
+                    href={
+                      enrollment.courseId?._id
+                        ? `/app/courses/${enrollment.courseId._id}`
+                        : "#"
+                    }
                     className={cn(
                       "w-full flex items-center justify-between text-[10px] font-mono uppercase tracking-widest text-muted-foreground transition-colors",
-                      enrollment.courseId?._id ? "hover:text-primary" : "cursor-not-allowed opacity-50"
+                      enrollment.courseId?._id
+                        ? "hover:text-primary"
+                        : "cursor-not-allowed opacity-50",
                     )}
                   >
                     Course Content

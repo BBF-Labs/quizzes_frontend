@@ -263,7 +263,7 @@ function SyncTimetableDialog({ onClose }: { onClose: () => void }) {
           <Button
             type="submit"
             disabled={syncMutation.isPending}
-            className="font-mono text-[10px] uppercase tracking-widest bg-primary hover:bg-primary/90 text-primary-foreground min-w-[140px]"
+            className="font-mono text-[10px] uppercase tracking-widest bg-primary hover:bg-primary/90 text-primary-foreground min-w-35"
           >
             {syncMutation.isPending ? (
               <>
@@ -661,56 +661,54 @@ function TimetableRow({ timetable }: { timetable: any }) {
 
                         {/* Sessions List */}
                         <div className="divide-y divide-border/10">
-                          {entry.sessions?.map(
-                            (session: any, sIdx: number) => (
-                              <div
-                                key={session.sessionId || sIdx}
-                                className="grid grid-cols-12 items-center px-4 py-3 hover:bg-primary/5 transition-colors"
-                              >
-                                <div className="col-span-3 flex items-center gap-2">
-                                  <div className="w-1.5 h-1.5 rounded-full bg-primary/30" />
-                                  <span className="text-[10px] font-mono uppercase font-bold">
-                                    {session.label || `Batch ${sIdx + 1}`}
+                          {entry.sessions?.map((session: any, sIdx: number) => (
+                            <div
+                              key={session.sessionId || sIdx}
+                              className="grid grid-cols-12 items-center px-4 py-3 hover:bg-primary/5 transition-colors"
+                            >
+                              <div className="col-span-3 flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-primary/30" />
+                                <span className="text-[10px] font-mono uppercase font-bold">
+                                  {session.label || `Batch ${sIdx + 1}`}
+                                </span>
+                              </div>
+                              <div className="col-span-4 flex items-center gap-2">
+                                <Clock className="size-3 text-muted-foreground/50" />
+                                <span className="text-[10px] font-mono uppercase">
+                                  {format(
+                                    new Date(session.scheduledAt),
+                                    "MMM d, HH:mm",
+                                  )}
+                                  <span className="ml-2 opacity-40">
+                                    ({session.durationMinutes}m)
                                   </span>
-                                </div>
-                                <div className="col-span-4 flex items-center gap-2">
-                                  <Clock className="size-3 text-muted-foreground/50" />
-                                  <span className="text-[10px] font-mono uppercase">
-                                    {format(
-                                      new Date(session.scheduledAt),
-                                      "MMM d, HH:mm",
-                                    )}
-                                    <span className="ml-2 opacity-40">
-                                      ({session.durationMinutes}m)
+                                </span>
+                              </div>
+                              <div className="col-span-5 flex items-center gap-2 overflow-hidden">
+                                <MapPin className="size-3 text-muted-foreground/50 shrink-0" />
+                                <div className="flex flex-wrap gap-1">
+                                  {session.venues?.map(
+                                    (v: any, vIdx: number) => (
+                                      <Badge
+                                        key={vIdx}
+                                        variant="outline"
+                                        className="rounded-(--radius) bg-primary/5 text-[8px] font-mono py-0 px-1 border-primary/20"
+                                      >
+                                        {v.venue}{" "}
+                                        {v.indexStart
+                                          ? `(${v.indexStart}-${v.indexEnd})`
+                                          : ""}
+                                      </Badge>
+                                    ),
+                                  ) || (
+                                    <span className="text-[10px] font-mono opacity-40 italic">
+                                      No venues
                                     </span>
-                                  </span>
-                                </div>
-                                <div className="col-span-5 flex items-center gap-2 overflow-hidden">
-                                  <MapPin className="size-3 text-muted-foreground/50 shrink-0" />
-                                  <div className="flex flex-wrap gap-1">
-                                    {session.venues?.map(
-                                      (v: any, vIdx: number) => (
-                                        <Badge
-                                          key={vIdx}
-                                          variant="outline"
-                                          className="rounded-(--radius) bg-primary/5 text-[8px] font-mono py-0 px-1 border-primary/20"
-                                        >
-                                          {v.venue}{" "}
-                                          {v.indexStart
-                                            ? `(${v.indexStart}-${v.indexEnd})`
-                                            : ""}
-                                        </Badge>
-                                      ),
-                                    ) || (
-                                      <span className="text-[10px] font-mono opacity-40 italic">
-                                        No venues
-                                      </span>
-                                    )}
-                                  </div>
+                                  )}
                                 </div>
                               </div>
-                            ),
-                          ) || (
+                            </div>
+                          )) || (
                             <div className="py-4 text-center text-[10px] font-mono opacity-40 italic">
                               No sessions found
                             </div>

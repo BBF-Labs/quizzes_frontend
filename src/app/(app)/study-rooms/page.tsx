@@ -44,7 +44,6 @@ export default function StudyRoomsPage() {
   return (
     <main className="min-h-screen bg-background">
       <div className="mx-auto max-w-6xl px-6 py-12 md:py-20">
-
         {/* ── Hero ── */}
         <header className="mb-12 flex flex-col items-center justify-between gap-8 md:flex-row">
           <div className="space-y-3 text-center md:text-left">
@@ -58,7 +57,8 @@ export default function StudyRoomsPage() {
               Study <span className="text-primary">Sprints</span>
             </h1>
             <p className="max-w-md text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground leading-relaxed">
-              Global study protocol. Join a room, set a timer, and grind with the crew.
+              Global study protocol. Join a room, set a timer, and grind with
+              the crew.
             </p>
           </div>
 
@@ -113,7 +113,10 @@ export default function StudyRoomsPage() {
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {isLoading ? (
             Array.from({ length: 6 }).map((_, i) => (
-              <Card key={i} className="rounded-(--radius) border overflow-hidden">
+              <Card
+                key={i}
+                className="rounded-(--radius) border overflow-hidden"
+              >
                 <CardContent className="p-0">
                   <Skeleton className="h-2 w-full rounded-none" />
                   <div className="space-y-3 p-5">
@@ -142,8 +145,11 @@ export default function StudyRoomsPage() {
             </div>
           ) : (
             filteredRooms.map((room) => {
-              const activeParticipants = (room.participants || []).filter((p) => !p.leftAt);
-              const fillPercent = (activeParticipants.length / (room.maxParticipants || 1)) * 100;
+              const activeParticipants = (room.participants || []).filter(
+                (p) => !p.leftAt,
+              );
+              const fillPercent =
+                (activeParticipants.length / (room.maxParticipants || 1)) * 100;
               const isRunning = room.timer?.isRunning;
 
               return (
@@ -153,7 +159,9 @@ export default function StudyRoomsPage() {
                     <div
                       className={cn(
                         "h-0.5 w-full transition-colors",
-                        isRunning ? "bg-emerald-500 animate-pulse" : "bg-border/30",
+                        isRunning
+                          ? "bg-emerald-500 animate-pulse"
+                          : "bg-border/30",
                       )}
                     />
 
@@ -170,7 +178,10 @@ export default function StudyRoomsPage() {
                             </Badge>
                           )}
                           {room.isLocked ? (
-                            <Badge variant="destructive" className="rounded-(--radius) text-[9px] font-mono font-bold uppercase tracking-wider">
+                            <Badge
+                              variant="destructive"
+                              className="rounded-(--radius) text-[9px] font-mono font-bold uppercase tracking-wider"
+                            >
                               <Lock className="mr-1 size-2.5" /> Locked
                             </Badge>
                           ) : (
@@ -185,7 +196,7 @@ export default function StudyRoomsPage() {
                       <h3 className="mb-1 font-mono text-sm font-bold uppercase tracking-tight text-foreground transition-colors group-hover:text-primary line-clamp-1">
                         {room.title}
                       </h3>
-                      <p className="mb-5 min-h-[2.25rem] line-clamp-2 text-[10px] font-mono font-semibold uppercase tracking-widest text-muted-foreground/70">
+                      <p className="mb-5 min-h-9 line-clamp-2 text-[10px] font-mono font-semibold uppercase tracking-widest text-muted-foreground/70">
                         {room.topic || "Intense focus session. Join the grind."}
                       </p>
 
@@ -197,7 +208,10 @@ export default function StudyRoomsPage() {
                             {activeParticipants.length} / {room.maxParticipants}
                           </span>
                         </div>
-                        <Progress value={fillPercent} className="h-1 rounded-(--radius) bg-muted" />
+                        <Progress
+                          value={fillPercent}
+                          className="h-1 rounded-(--radius) bg-muted"
+                        />
 
                         {/* Footer row */}
                         <div className="flex items-center justify-between pt-1">
@@ -234,4 +248,3 @@ export default function StudyRoomsPage() {
     </main>
   );
 }
-
