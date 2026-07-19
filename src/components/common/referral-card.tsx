@@ -31,7 +31,7 @@ export function ReferralCard() {
 
   if (isLoading) {
     return (
-      <div className="p-6 border border-border/50 bg-card rounded-(--radius) animate-pulse h-[200px]" />
+      <div className="p-6 border border-border/50 bg-card rounded-(--radius) animate-pulse h-50" />
     );
   }
 
@@ -41,7 +41,7 @@ export function ReferralCard() {
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="relative overflow-hidden p-6 border border-border/10 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl rounded-(--radius) shadow-2xl group"
+      className="relative overflow-hidden p-6 border border-border/10 bg-linear-to-br from-card/80 to-card/40 backdrop-blur-xl rounded-(--radius) shadow-2xl group"
     >
       {/* Background decoration */}
       <div className="absolute top-0 right-0 -mr-12 -mt-12 size-48 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-colors duration-500" />
@@ -59,7 +59,8 @@ export function ReferralCard() {
             Share the knowledge, <br /> get 15% off.
           </h3>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Invite your friends to Qz. When they complete their first subscription, you&apos;ll get a 15% discount on your next renewal.
+            Invite your friends to Qz. When they complete their first
+            subscription, you&apos;ll get a 15% discount on your next renewal.
           </p>
         </div>
 

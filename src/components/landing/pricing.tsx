@@ -13,9 +13,9 @@ import { useAuth } from "@/contexts/auth-context";
 type Duration = "daily" | "weekly" | "semester";
 
 const PRICES: Record<string, Record<Duration, string>> = {
-  cooked:    { daily: "2.99",  weekly: "4.99",  semester: "14.99" },
-  cruising:  { daily: "3.99",  weekly: "6.99",  semester: "19.99" },
-  locked_in: { daily: "4.99",  weekly: "9.99",  semester: "29.99" },
+  cooked: { daily: "2.99", weekly: "4.99", semester: "14.99" },
+  cruising: { daily: "3.99", weekly: "6.99", semester: "19.99" },
+  locked_in: { daily: "4.99", weekly: "9.99", semester: "29.99" },
 };
 
 const TIERS = [
@@ -112,9 +112,7 @@ function PlanCard({
       variants={itemVariants}
       className={cn(
         "relative flex flex-col border bg-card/30 p-6 transition-colors duration-300 rounded-(--radius)",
-        tier.popular
-          ? "border-sky-400/30 bg-sky-400/[0.03]"
-          : "border-border/50",
+        tier.popular ? "border-sky-400/30 bg-sky-400/3" : "border-border/50",
         tier.borderHover,
       )}
     >
@@ -130,7 +128,12 @@ function PlanCard({
 
       {/* Tier label + tagline */}
       <div className="mb-4">
-        <p className={cn("text-[10px] font-mono uppercase tracking-[0.2em] mb-1", tier.color)}>
+        <p
+          className={cn(
+            "text-[10px] font-mono uppercase tracking-[0.2em] mb-1",
+            tier.color,
+          )}
+        >
           {tier.name}
         </p>
         <p className="text-xs text-muted-foreground font-mono leading-relaxed">
@@ -142,7 +145,9 @@ function PlanCard({
       <div className="flex items-baseline gap-1 mb-5">
         <span className="text-4xl font-black tracking-tighter">{price}</span>
         <div className="flex items-center gap-1">
-          <span className="text-[10px] font-mono text-muted-foreground/60 uppercase">GHS</span>
+          <span className="text-[10px] font-mono text-muted-foreground/60 uppercase">
+            GHS
+          </span>
           <span className="text-[10px] font-mono text-muted-foreground/60 uppercase">
             / {DURATION_LABELS[duration].toLowerCase()}
           </span>
@@ -161,17 +166,23 @@ function PlanCard({
         ))}
         {tier.notIncluded.map((f) => (
           <li key={f} className="flex items-center gap-2 opacity-30">
-            <span className="size-3 shrink-0 flex items-center justify-center text-[10px] text-muted-foreground">—</span>
-            <span className="text-xs font-mono text-muted-foreground line-through">{f}</span>
+            <span className="size-3 shrink-0 flex items-center justify-center text-[10px] text-muted-foreground">
+              —
+            </span>
+            <span className="text-xs font-mono text-muted-foreground line-through">
+              {f}
+            </span>
           </li>
         ))}
       </ul>
 
       {isSuperAdmin ? (
-        <div className={cn(
-          "w-full py-2.5 text-[10px] font-mono uppercase tracking-[0.15em] border text-center rounded-(--radius) opacity-50 cursor-default",
-          "border-border/40 text-muted-foreground",
-        )}>
+        <div
+          className={cn(
+            "w-full py-2.5 text-[10px] font-mono uppercase tracking-[0.15em] border text-center rounded-(--radius) opacity-50 cursor-default",
+            "border-border/40 text-muted-foreground",
+          )}
+        >
           Admin Access
         </div>
       ) : (
@@ -182,8 +193,8 @@ function PlanCard({
             tier.id === "locked_in"
               ? "border-primary bg-primary text-primary-foreground hover:bg-primary/90"
               : tier.id === "cruising"
-              ? "border-sky-400/50 text-sky-400 hover:bg-sky-400/10"
-              : "border-border/60 text-foreground hover:border-amber-400/50 hover:text-amber-400",
+                ? "border-sky-400/50 text-sky-400 hover:bg-sky-400/10"
+                : "border-border/60 text-foreground hover:border-amber-400/50 hover:text-amber-400",
           )}
         >
           Get started
@@ -199,13 +210,19 @@ export function Pricing() {
   const [duration, setDuration] = useState<Duration>("weekly");
 
   return (
-    <section id="pricing" className="py-24 md:py-32 bg-background border-b border-border/50">
+    <section
+      id="pricing"
+      className="py-24 md:py-32 bg-background border-b border-border/50"
+    >
       <div className="container mx-auto px-4 max-w-6xl">
-
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0, transition: { ease: "easeOut", duration: 0.5 } }}
+          whileInView={{
+            opacity: 1,
+            y: 0,
+            transition: { ease: "easeOut", duration: 0.5 },
+          }}
           viewport={{ once: true, margin: "-80px" }}
           className="mb-12"
         >
@@ -218,7 +235,8 @@ export function Pricing() {
                 Pick your grind level.
               </h2>
               <p className="mt-3 text-sm text-muted-foreground font-mono max-w-md">
-                All plans include free tier fallback. Upgrade when you need more. Cancel anytime.
+                All plans include free tier fallback. Upgrade when you need
+                more. Cancel anytime.
               </p>
             </div>
             <Link
@@ -234,7 +252,11 @@ export function Pricing() {
         {/* Duration toggle */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
-          whileInView={{ opacity: 1, y: 0, transition: { ease: "easeOut", duration: 0.4 } }}
+          whileInView={{
+            opacity: 1,
+            y: 0,
+            transition: { ease: "easeOut", duration: 0.4 },
+          }}
           viewport={{ once: true }}
           className="mb-8 flex gap-0 border border-border/50 w-fit"
         >
@@ -251,7 +273,9 @@ export function Pricing() {
             >
               {DURATION_LABELS[d]}
               {d === "semester" && (
-                <span className="ml-1.5 text-[8px] text-amber-400/80">Best value</span>
+                <span className="ml-1.5 text-[8px] text-amber-400/80">
+                  Best value
+                </span>
               )}
             </button>
           ))}
@@ -283,19 +307,25 @@ export function Pricing() {
           className="flex flex-col sm:flex-row gap-4 sm:items-center justify-between border-t border-border/30 pt-6"
         >
           <p className="text-xs font-mono text-muted-foreground">
-            <span className="text-foreground font-semibold">Free tier included</span> — 1 Z session, 2 quizzes, 2 flashcard sets, 1 mind map per day. No card required.
+            <span className="text-foreground font-semibold">
+              Free tier included
+            </span>{" "}
+            — 1 Z session, 2 quizzes, 2 flashcard sets, 1 mind map per day. No
+            card required.
           </p>
           <div className="flex items-center gap-2 shrink-0">
             <Zap className="size-3 text-amber-400" />
             <span className="text-xs font-mono text-muted-foreground">
               Need more? Top up with{" "}
-              <Link href="/pricing#credits" className="text-amber-400 hover:underline underline-offset-2">
+              <Link
+                href="/pricing#credits"
+                className="text-amber-400 hover:underline underline-offset-2"
+              >
                 pay-as-you-go credits
               </Link>
             </span>
           </div>
         </motion.div>
-
       </div>
     </section>
   );

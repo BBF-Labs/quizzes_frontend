@@ -68,7 +68,7 @@ export function SprintChat({
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: 320, opacity: 0 }}
       transition={{ type: "spring", damping: 28, stiffness: 300 }}
-      className="fixed inset-y-0 right-0 z-[110] flex w-full flex-col border-l border-border/50 bg-background shadow-2xl sm:w-96"
+      className="fixed inset-y-0 right-0 z-100 flex w-full flex-col border-l border-border/50 bg-background shadow-2xl sm:w-96"
     >
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border/50 px-5 py-4">
@@ -131,11 +131,20 @@ export function SprintChat({
                   </span>
                 )}
 
-                <div className={cn("flex max-w-[85%] gap-2", isMine ? "flex-row-reverse" : "flex-row")}>
+                <div
+                  className={cn(
+                    "flex max-w-[85%] gap-2",
+                    isMine ? "flex-row-reverse" : "flex-row",
+                  )}
+                >
                   {/* Avatar — shown only on first message in a group */}
                   {!isGrouped ? (
                     <div className="size-7 shrink-0 self-end overflow-hidden rounded-full border border-border/50 bg-muted shadow-sm">
-                      <img src={buildAvatarUri(m.senderName)} alt="" className="size-full" />
+                      <img
+                        src={buildAvatarUri(m.senderName)}
+                        alt=""
+                        className="size-full"
+                      />
                     </div>
                   ) : (
                     <div className="size-7 shrink-0" />
@@ -171,7 +180,11 @@ export function SprintChat({
                       key={u}
                       className="size-6 overflow-hidden rounded-full border-2 border-background bg-muted"
                     >
-                      <img src={buildAvatarUri(u)} alt="" className="size-full" />
+                      <img
+                        src={buildAvatarUri(u)}
+                        alt=""
+                        className="size-full"
+                      />
                     </div>
                   ))}
                 </div>

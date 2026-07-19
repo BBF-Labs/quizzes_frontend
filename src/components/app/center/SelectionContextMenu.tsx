@@ -9,11 +9,21 @@ import { cn } from "@/lib/utils";
 
 interface SelectionContextMenuProps {
   containerRef: React.RefObject<HTMLDivElement | null>;
-  onHighlight?: (text: string, rect: DOMRect, color: string, note?: string) => void;
+  onHighlight?: (
+    text: string,
+    rect: DOMRect,
+    color: string,
+    note?: string,
+  ) => void;
 }
 
-export function SelectionContextMenu({ containerRef, onHighlight }: SelectionContextMenuProps) {
-  const [position, setPosition] = useState<{ x: number, y: number } | null>(null);
+export function SelectionContextMenu({
+  containerRef,
+  onHighlight,
+}: SelectionContextMenuProps) {
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(
+    null,
+  );
   const [selectedText, setSelectedText] = useState("");
   const [selectedRect, setSelectedRect] = useState<DOMRect | null>(null);
   const { sendMessage, addNote } = useAppLayout();
@@ -45,21 +55,24 @@ export function SelectionContextMenu({ containerRef, onHighlight }: SelectionCon
 
         if (text.length > 0) {
           try {
-             // Get bounding rect relative to the reader container
+            // Get bounding rect relative to the reader container
             const rect = range.getBoundingClientRect();
             const containerRect = containerRef.current?.getBoundingClientRect();
 
             if (containerRect && rect.width > 0) {
               // Position above the selection
               setPosition({
-                x: rect.left - containerRect.left + (rect.width / 2),
+                x: rect.left - containerRect.left + rect.width / 2,
                 y: rect.top - containerRect.top - 10,
               });
               setSelectedText(text);
               setSelectedRect(rect);
             }
           } catch (e) {
-            console.warn("[SelectionContextMenu] Failed to get bounding rect", e);
+            console.warn(
+              "[SelectionContextMenu] Failed to get bounding rect",
+              e,
+            );
             setPosition(null);
             setSelectedRect(null);
           }
@@ -136,16 +149,16 @@ export function SelectionContextMenu({ containerRef, onHighlight }: SelectionCon
           onMouseUp={(e) => e.stopPropagation()}
           className={cn(
             "absolute z-100 flex flex-col bg-background/95 backdrop-blur-md border border-border/50 shadow-xl overflow-hidden",
-            isAddingNote ? "rounded-2xl w-64" : "rounded-full"
+            isAddingNote ? "rounded-2xl w-64" : "rounded-full",
           )}
-          style={{ 
-            left: `${position.x}px`, 
+          style={{
+            left: `${position.x}px`,
             top: `${position.y}px`,
-            transform: 'translateX(-50%) translateY(-100%)'
+            transform: "translateX(-50%) translateY(-100%)",
           }}
         >
           <div className="flex items-center gap-1 p-1">
-            <button 
+            <button
               onMouseDown={(e) => e.preventDefault()}
               onClick={handleAskZ}
               className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-semibold text-primary hover:bg-primary/10 rounded-full transition-colors whitespace-nowrap"
@@ -153,19 +166,23 @@ export function SelectionContextMenu({ containerRef, onHighlight }: SelectionCon
               <Sparkles className="size-3" />
               Ask Z
             </button>
-            
+
             <div className="w-px h-3 bg-border/50 mx-0.5" />
-            
-            <button 
+
+            <button
               onMouseDown={(e) => e.preventDefault()}
               onClick={handleCopy}
               className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors"
               title="Copy"
             >
-              {copied ? <Check className="size-3 text-green-500" /> : <Copy className="size-3" />}
+              {copied ? (
+                <Check className="size-3 text-green-500" />
+              ) : (
+                <Copy className="size-3" />
+              )}
             </button>
 
-            <button 
+            <button
               onMouseDown={(e) => e.preventDefault()}
               onClick={handleSaveNote}
               className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors"
@@ -177,12 +194,14 @@ export function SelectionContextMenu({ containerRef, onHighlight }: SelectionCon
             {onHighlight && (
               <>
                 <div className="w-px h-3 bg-border/50 mx-0.5" />
-                <button 
+                <button
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => setIsAddingNote(!isAddingNote)}
                   className={cn(
                     "p-1.5 rounded-full transition-colors",
-                    isAddingNote ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    isAddingNote
+                      ? "text-primary bg-primary/10"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted",
                   )}
                   title="Attach Note"
                 >
@@ -215,7 +234,7 @@ export function SelectionContextMenu({ containerRef, onHighlight }: SelectionCon
                 placeholder="Type your note here..."
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                className="w-full bg-transparent text-[11px] font-mono placeholder:text-muted-foreground/40 resize-none focus:outline-none min-h-[60px] leading-relaxed"
+                className="w-full bg-transparent text-[11px] font-mono placeholder:text-muted-foreground/40 resize-none focus:outline-none min-h-15 leading-relaxed"
               />
               <div className="flex items-center justify-between mt-2">
                 <span className="text-[9px] font-mono text-muted-foreground/50 uppercase tracking-widest">

@@ -5,9 +5,12 @@ import { DonationWidget } from "./donation-widget";
 
 export function Donations() {
   return (
-    <section id="donate" className="py-24 relative overflow-hidden bg-background border-t border-border/50 scroll-mt-24">
+    <section
+      id="donate"
+      className="py-24 relative overflow-hidden bg-background border-t border-border/50 scroll-mt-24"
+    >
       {/* Background grid */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px]" />
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[40px_40px]" />
 
       <div className="container mx-auto px-4 max-w-6xl relative">
         <div className="flex flex-col lg:flex-row gap-12 lg:gap-24 items-center">
@@ -54,18 +57,18 @@ export function Donations() {
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="w-full lg:w-[480px] shrink-0"
+            className="w-full lg:w-120 shrink-0"
           >
             <div className="relative">
               {/* Decorative blocks behind widget */}
               <div className="absolute -inset-1 bg-primary/20 blur-2xl opacity-50 pointer-events-none" />
               <div className="absolute top-0 right-0 w-8 h-8 pointer-events-none -mt-4 -mr-4 rounded(--radius)">
-                <div className="absolute top-0 right-0 w-[2px] h-full bg-primary" />
-                <div className="absolute top-0 right-0 w-full h-[2px] bg-primary" />
+                <div className="absolute top-0 right-0 w-0.5 h-full bg-primary" />
+                <div className="absolute top-0 right-0 w-full h-0.5 bg-primary" />
               </div>
               <div className="absolute bottom-0 left-0 w-8 h-8 pointer-events-none -mb-4 -ml-4 rounded(--radius)">
-                <div className="absolute bottom-0 left-0 w-[2px] h-full bg-primary" />
-                <div className="absolute bottom-0 left-0 w-full h-[2px] bg-primary" />
+                <div className="absolute bottom-0 left-0 w-0.5 h-full bg-primary" />
+                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary" />
               </div>
 
               <div className="relative bg-card/80 backdrop-blur-sm border border-border/50 p-2 shadow-2xl">

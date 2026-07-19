@@ -16,7 +16,10 @@ function isHidden(): boolean {
 }
 
 function hide(forever = false) {
-  localStorage.setItem(HIDE_KEY, String(Date.now() + (forever ? REMEMBER_MS : 24 * 60 * 60 * 1000)));
+  localStorage.setItem(
+    HIDE_KEY,
+    String(Date.now() + (forever ? REMEMBER_MS : 24 * 60 * 60 * 1000)),
+  );
 }
 
 export function DonationBanner() {
@@ -38,7 +41,9 @@ export function DonationBanner() {
     timerRef.current = setInterval(() => {
       setIdx((i) => (i + 1) % donations.length);
     }, 4000);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
   }, [donations.length]);
 
   const total = ledger?.totalRaisedGHS ?? 0;
@@ -49,7 +54,8 @@ export function DonationBanner() {
     ? "Someone"
     : current.donorName || "Someone";
 
-  const prev = () => setIdx((i) => (i - 1 + donations.length) % donations.length);
+  const prev = () =>
+    setIdx((i) => (i - 1 + donations.length) % donations.length);
   const next = () => setIdx((i) => (i + 1) % donations.length);
 
   const dismiss = (remember: boolean) => {
@@ -64,10 +70,9 @@ export function DonationBanner() {
         animate={{ y: 0 }}
         exit={{ y: -48 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="fixed top-0 left-0 w-full z-[60] h-12 bg-primary/10 border-b border-primary/20 backdrop-blur-md flex items-center"
+        className="fixed top-0 left-0 w-full z-60 h-12 bg-primary/10 border-b border-primary/20 backdrop-blur-md flex items-center"
       >
         <div className="container mx-auto px-4 max-w-6xl flex items-center justify-between gap-4 h-full">
-
           {/* Left: icon + message */}
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <Heart className="size-3.5 text-primary shrink-0 animate-pulse" />
@@ -83,12 +88,19 @@ export function DonationBanner() {
               >
                 <span className="font-bold">{donorLabel}</span>
                 {" donated "}
-                <span className="text-primary font-bold">GHS {current.amount}</span>
+                <span className="text-primary font-bold">
+                  GHS {current.amount}
+                </span>
                 {current.message && (
-                  <span className="text-muted-foreground"> · &ldquo;{current.message}&rdquo;</span>
+                  <span className="text-muted-foreground">
+                    {" "}
+                    · &ldquo;{current.message}&rdquo;
+                  </span>
                 )}
                 {donations.length === 1 && total > 0 && (
-                  <span className="text-muted-foreground/60 ml-2">· GHS {total.toFixed(2)} raised total</span>
+                  <span className="text-muted-foreground/60 ml-2">
+                    · GHS {total.toFixed(2)} raised total
+                  </span>
                 )}
               </motion.p>
             </AnimatePresence>
@@ -96,13 +108,19 @@ export function DonationBanner() {
             {/* Carousel controls — only when multiple */}
             {donations.length > 1 && (
               <div className="flex items-center gap-1 shrink-0 ml-1">
-                <button onClick={prev} className="p-0.5 text-muted-foreground hover:text-foreground transition-colors">
+                <button
+                  onClick={prev}
+                  className="p-0.5 text-muted-foreground hover:text-foreground transition-colors"
+                >
                   <ChevronLeft className="size-3" />
                 </button>
                 <span className="text-[9px] font-mono text-muted-foreground/50 tabular-nums">
                   {idx + 1}/{donations.length}
                 </span>
-                <button onClick={next} className="p-0.5 text-muted-foreground hover:text-foreground transition-colors">
+                <button
+                  onClick={next}
+                  className="p-0.5 text-muted-foreground hover:text-foreground transition-colors"
+                >
                   <ChevronRight className="size-3" />
                 </button>
               </div>
@@ -131,7 +149,6 @@ export function DonationBanner() {
               <X className="size-3" />
             </button>
           </div>
-
         </div>
       </motion.div>
     </AnimatePresence>
