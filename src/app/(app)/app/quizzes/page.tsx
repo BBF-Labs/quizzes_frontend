@@ -18,7 +18,11 @@ import { QuizCard } from "@/components/app/quizzes/quiz-card";
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function QuizzesPage() {
-  const { data: quizzes = [], isLoading, error: queryError } = useLibraryQuizzes();
+  const {
+    data: quizzes = [],
+    isLoading,
+    error: queryError,
+  } = useLibraryQuizzes();
   const deleteMutation = useDeleteLibraryQuiz();
   const generateQuizMutation = useGenerateQuiz();
 
@@ -27,9 +31,13 @@ export default function QuizzesPage() {
   const [isGenerationDialogOpen, setIsGenerationDialogOpen] = useState(false);
 
   // Client-side filtering
-  const searchRe = useMemo(() => 
-    search.trim() ? new RegExp(search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") : null
-  , [search]);
+  const searchRe = useMemo(
+    () =>
+      search.trim()
+        ? new RegExp(search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i")
+        : null,
+    [search],
+  );
 
   const filtered = quizzes.filter((q) => {
     if (searchRe && !searchRe.test(q.title)) return false;
@@ -50,7 +58,10 @@ export default function QuizzesPage() {
     }
   };
 
-  const handleGenerate = async (materialId: string, settings?: Record<string, unknown>) => {
+  const handleGenerate = async (
+    materialId: string,
+    settings?: Record<string, unknown>,
+  ) => {
     await generateQuizMutation.mutateAsync({ materialId, settings });
   };
 
@@ -61,32 +72,34 @@ export default function QuizzesPage() {
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-6 rounded-(--radius) border border-border/40 bg-card/30 p-4 md:p-5"
+          className="mb-6 rounded-lg border border-border/40 bg-card/30 p-4 md:p-5"
         >
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-[10px] font-mono uppercase tracking-[0.25em] text-primary/80">
                 Self Assessment
               </p>
-              <h1 className="mt-1 text-2xl font-black tracking-tight">Quizzes</h1>
+              <h1 className="mt-1 text-2xl font-black tracking-tight">
+                Quizzes
+              </h1>
               <p className="mt-2 text-sm font-mono text-muted-foreground/70">
                 Test your knowledge with AI-generated quizzes.
               </p>
             </div>
-            
+
             <div className="flex flex-col gap-3 items-end">
-               <div className="rounded-(--radius) border border-border/40 bg-background/40 px-3 py-2 w-full sm:w-auto text-center">
-                  <p className="text-xs font-mono font-semibold text-foreground">
-                    {quizzes.length}
-                  </p>
-                  <p className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/60">
-                    Total Quizzes
-                  </p>
-                </div>
+              <div className="rounded-lg border border-border/40 bg-background/40 px-3 py-2 w-full sm:w-auto text-center">
+                <p className="text-xs font-mono font-semibold text-foreground">
+                  {quizzes.length}
+                </p>
+                <p className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/60">
+                  Total Quizzes
+                </p>
+              </div>
 
               <button
                 onClick={() => setIsGenerationDialogOpen(true)}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-primary px-4 py-2 rounded-(--radius) text-[11px] font-mono uppercase tracking-widest text-primary-foreground hover:opacity-90 transition-all font-bold"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-primary px-4 py-2 rounded-lg text-[11px] font-mono uppercase tracking-widest text-primary-foreground hover:opacity-90 transition-all font-bold"
               >
                 <Plus className="size-3.5" />
                 Generate Quiz

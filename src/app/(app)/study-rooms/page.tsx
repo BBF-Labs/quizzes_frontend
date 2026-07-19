@@ -44,13 +44,12 @@ export default function StudyRoomsPage() {
   return (
     <main className="min-h-screen bg-background">
       <div className="mx-auto max-w-6xl px-6 py-12 md:py-20">
-
         {/* ── Hero ── */}
         <header className="mb-12 flex flex-col items-center justify-between gap-8 md:flex-row">
           <div className="space-y-3 text-center md:text-left">
             <Badge
               variant="outline"
-              className="rounded-(--radius) border-primary/30 bg-primary/5 px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-primary"
+              className="rounded-lg border-primary/30 bg-primary/5 px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-primary"
             >
               Live Sessions
             </Badge>
@@ -58,7 +57,8 @@ export default function StudyRoomsPage() {
               Study <span className="text-primary">Sprints</span>
             </h1>
             <p className="max-w-md text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground leading-relaxed">
-              Global study protocol. Join a room, set a timer, and grind with the crew.
+              Global study protocol. Join a room, set a timer, and grind with
+              the crew.
             </p>
           </div>
 
@@ -67,7 +67,7 @@ export default function StudyRoomsPage() {
               <CreateRoomDialog>
                 <Button
                   size="lg"
-                  className="rounded-(--radius) h-14 px-12 text-sm font-bold uppercase tracking-[0.2em] shadow-sm transition-transform active:scale-[0.98]"
+                  className="rounded-lg h-14 px-12 text-sm font-bold uppercase tracking-[0.2em] shadow-sm transition-transform active:scale-[0.98]"
                 >
                   Start New Session
                 </Button>
@@ -77,7 +77,7 @@ export default function StudyRoomsPage() {
                 asChild
                 size="lg"
                 variant="outline"
-                className="rounded-(--radius) h-14 border-border/50 px-12 text-sm font-bold uppercase tracking-[0.2em]"
+                className="rounded-lg h-14 border-border/50 px-12 text-sm font-bold uppercase tracking-[0.2em]"
               >
                 <Link href="/login">Login to Create</Link>
               </Button>
@@ -94,7 +94,7 @@ export default function StudyRoomsPage() {
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search by name, code or topic…"
-              className="rounded-(--radius) h-11 border-border/50 pl-10 font-mono text-sm focus-visible:ring-primary"
+              className="rounded-lg h-11 border-border/50 pl-10 font-mono text-sm focus-visible:ring-primary"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -113,7 +113,7 @@ export default function StudyRoomsPage() {
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {isLoading ? (
             Array.from({ length: 6 }).map((_, i) => (
-              <Card key={i} className="rounded-(--radius) border overflow-hidden">
+              <Card key={i} className="rounded-lg border overflow-hidden">
                 <CardContent className="p-0">
                   <Skeleton className="h-2 w-full rounded-none" />
                   <div className="space-y-3 p-5">
@@ -130,7 +130,7 @@ export default function StudyRoomsPage() {
             ))
           ) : filteredRooms.length === 0 ? (
             <div className="col-span-full py-20 text-center">
-              <div className="mx-auto mb-6 flex size-20 items-center justify-center rounded-(--radius) border border-border/50 bg-muted text-muted-foreground">
+              <div className="mx-auto mb-6 flex size-20 items-center justify-center rounded-lg border border-border/50 bg-muted text-muted-foreground">
                 <Rocket className="size-10" />
               </div>
               <h3 className="text-2xl font-black uppercase tracking-tight text-foreground">
@@ -142,39 +142,47 @@ export default function StudyRoomsPage() {
             </div>
           ) : (
             filteredRooms.map((room) => {
-              const activeParticipants = (room.participants || []).filter((p) => !p.leftAt);
-              const fillPercent = (activeParticipants.length / (room.maxParticipants || 1)) * 100;
+              const activeParticipants = (room.participants || []).filter(
+                (p) => !p.leftAt,
+              );
+              const fillPercent =
+                (activeParticipants.length / (room.maxParticipants || 1)) * 100;
               const isRunning = room.timer?.isRunning;
 
               return (
                 <Link key={room._id} href={`/study-rooms/${room.roomCode}`}>
-                  <Card className="group relative h-full overflow-hidden rounded-(--radius) border border-border/50 bg-card shadow-sm transition-all hover:border-primary/40 hover:shadow-lg">
+                  <Card className="group relative h-full overflow-hidden rounded-lg border border-border/50 bg-card shadow-sm transition-all hover:border-primary/40 hover:shadow-lg">
                     {/* Running indicator bar */}
                     <div
                       className={cn(
                         "h-0.5 w-full transition-colors",
-                        isRunning ? "bg-emerald-500 animate-pulse" : "bg-border/30",
+                        isRunning
+                          ? "bg-emerald-500 animate-pulse"
+                          : "bg-border/30",
                       )}
                     />
 
                     <CardContent className="p-5">
                       {/* Top row */}
                       <div className="mb-4 flex items-start justify-between gap-2">
-                        <div className="flex size-9 shrink-0 items-center justify-center rounded-(--radius) bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                        <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
                           <Users className="size-4" />
                         </div>
                         <div className="flex items-center gap-1.5">
                           {isRunning && (
-                            <Badge className="rounded-(--radius) gap-1 bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[9px] font-mono font-bold uppercase tracking-wider">
+                            <Badge className="rounded-lg gap-1 bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[9px] font-mono font-bold uppercase tracking-wider">
                               <Timer className="size-2.5" /> Live
                             </Badge>
                           )}
                           {room.isLocked ? (
-                            <Badge variant="destructive" className="rounded-(--radius) text-[9px] font-mono font-bold uppercase tracking-wider">
+                            <Badge
+                              variant="destructive"
+                              className="rounded-lg text-[9px] font-mono font-bold uppercase tracking-wider"
+                            >
                               <Lock className="mr-1 size-2.5" /> Locked
                             </Badge>
                           ) : (
-                            <Badge className="rounded-(--radius) bg-emerald-500 text-[9px] font-mono font-bold uppercase tracking-wider text-white">
+                            <Badge className="rounded-lg bg-emerald-500 text-[9px] font-mono font-bold uppercase tracking-wider text-white">
                               Open
                             </Badge>
                           )}
@@ -185,7 +193,7 @@ export default function StudyRoomsPage() {
                       <h3 className="mb-1 font-mono text-sm font-bold uppercase tracking-tight text-foreground transition-colors group-hover:text-primary line-clamp-1">
                         {room.title}
                       </h3>
-                      <p className="mb-5 min-h-[2.25rem] line-clamp-2 text-[10px] font-mono font-semibold uppercase tracking-widest text-muted-foreground/70">
+                      <p className="mb-5 min-h-9 line-clamp-2 text-[10px] font-mono font-semibold uppercase tracking-widest text-muted-foreground/70">
                         {room.topic || "Intense focus session. Join the grind."}
                       </p>
 
@@ -197,7 +205,10 @@ export default function StudyRoomsPage() {
                             {activeParticipants.length} / {room.maxParticipants}
                           </span>
                         </div>
-                        <Progress value={fillPercent} className="h-1 rounded-(--radius) bg-muted" />
+                        <Progress
+                          value={fillPercent}
+                          className="h-1 rounded-lg bg-muted"
+                        />
 
                         {/* Footer row */}
                         <div className="flex items-center justify-between pt-1">
@@ -234,4 +245,3 @@ export default function StudyRoomsPage() {
     </main>
   );
 }
-

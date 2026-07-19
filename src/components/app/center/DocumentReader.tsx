@@ -170,7 +170,7 @@ export function DocumentReader({ materialId, sessionId }: DocumentReaderProps) {
         <div className="flex items-center gap-3 min-w-0">
           <div className="flex items-center gap-1.5 min-w-0">
             <Search className="size-3 text-muted-foreground/60 shrink-0" />
-            <span className="text-[11px] font-semibold truncate text-foreground/80 max-w-[7rem] sm:max-w-[12.5rem]">
+            <span className="text-[11px] font-semibold truncate text-foreground/80 max-w-28 sm:max-w-50">
               {material?.filename || "Loading..."}
             </span>
             {material?.processingStatus === "pending" && (
@@ -346,7 +346,7 @@ export function DocumentReader({ materialId, sessionId }: DocumentReaderProps) {
                                       autoFocus
                                       defaultValue={h.note}
                                       id={`edit-note-${h.id}`}
-                                      className="w-full bg-muted/30 border border-border/40 rounded p-1.5 text-[10px] font-mono focus:outline-none focus:ring-1 focus:ring-primary/30 min-h-[60px] resize-none leading-relaxed"
+                                      className="w-full bg-muted/30 border border-border/40 rounded p-1.5 text-[10px] font-mono focus:outline-none focus:ring-1 focus:ring-primary/30 min-h-15 resize-none leading-relaxed"
                                     />
 
                                     <div className="flex items-center justify-between pt-1">

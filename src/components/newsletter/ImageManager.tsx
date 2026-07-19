@@ -240,7 +240,7 @@ export function ImageManager({
                   type="button"
                   variant="outline"
                   size="xs"
-                  className="rounded-(--radius) font-mono text-[9px] tracking-widest uppercase border-border/40 text-muted-foreground bg-secondary/10 hover:bg-secondary h-6"
+                  className="rounded-lg font-mono text-[9px] tracking-widest uppercase border-border/40 text-muted-foreground bg-secondary/10 hover:bg-secondary h-6"
                 >
                   <Search className="size-3" /> Browse System Gallery
                 </Button>
@@ -259,7 +259,7 @@ export function ImageManager({
                           {[...Array(6)].map((_, i) => (
                             <Skeleton
                               key={i}
-                              className="aspect-square rounded-(--radius) bg-secondary/30"
+                              className="aspect-square rounded-lg bg-secondary/30"
                             />
                           ))}
                         </div>
@@ -340,7 +340,7 @@ export function ImageManager({
                         size="xs"
                         disabled={page === 1}
                         onClick={() => setPage((p) => p - 1)}
-                        className="rounded-(--radius) text-[8px] h-6 uppercase font-mono tracking-widest"
+                        className="rounded-lg text-[8px] h-6 uppercase font-mono tracking-widest"
                       >
                         PREV
                       </Button>
@@ -352,7 +352,7 @@ export function ImageManager({
                         size="xs"
                         disabled={(galleryData?.total || 0) <= page * 12}
                         onClick={() => setPage((p) => p + 1)}
-                        className="rounded-(--radius) text-[8px] h-6 uppercase font-mono tracking-widest"
+                        className="rounded-lg text-[8px] h-6 uppercase font-mono tracking-widest"
                       >
                         NEXT
                       </Button>
@@ -367,7 +367,7 @@ export function ImageManager({
               onClick={addImage}
               variant="outline"
               size="xs"
-              className="rounded-(--radius) font-mono text-[9px] tracking-widest uppercase border-primary/40 text-primary bg-primary/5 hover:bg-primary hover:text-primary-foreground h-6"
+              className="rounded-lg font-mono text-[9px] tracking-widest uppercase border-primary/40 text-primary bg-primary/5 hover:bg-primary hover:text-primary-foreground h-6"
             >
               <Plus className="size-3" /> New Image
             </Button>
@@ -408,7 +408,7 @@ export function ImageManager({
                     <button
                       type="button"
                       onClick={() => removeImage(i)}
-                      className="absolute -top-2 -right-2 size-5 bg-background border border-border rounded-(--radius) hover:border-destructive hover:text-destructive flex items-center justify-center transition-all z-10"
+                      className="absolute -top-2 -right-2 size-5 bg-background border border-border rounded-lg hover:border-destructive hover:text-destructive flex items-center justify-center transition-all z-10"
                       title="Remove Image"
                     >
                       <X className="size-3" />
@@ -531,7 +531,7 @@ export function ImageManager({
                           }
                           disabled={disabled || !!pending}
                           placeholder="https://cdn.qz.tech/asset.jpg"
-                          className="h-7 text-[10px] font-mono rounded-(--radius) bg-secondary/10 border-border/30 focus:border-primary/50 transition-colors"
+                          className="h-7 text-[10px] font-mono rounded-lg bg-secondary/10 border-border/30 focus:border-primary/50 transition-colors"
                         />
                       </div>
 
@@ -547,7 +547,7 @@ export function ImageManager({
                           }
                           disabled={disabled}
                           placeholder="Explain for Z..."
-                          className="h-7 text-[10px] font-mono rounded-(--radius) bg-secondary/10 border-border/30 focus:border-primary/50 transition-colors"
+                          className="h-7 text-[10px] font-mono rounded-lg bg-secondary/10 border-border/30 focus:border-primary/50 transition-colors"
                         />
                       </div>
 
@@ -564,7 +564,7 @@ export function ImageManager({
                               type="button"
                               onClick={() => confirmUpload(i)}
                               size="xs"
-                              className="flex-1 rounded-(--radius) h-6 font-mono text-[8px] uppercase tracking-widest"
+                              className="flex-1 rounded-lg h-6 font-mono text-[8px] uppercase tracking-widest"
                             >
                               <Check className="size-2.5 mr-1" /> Confirm Upload
                             </Button>
@@ -573,7 +573,7 @@ export function ImageManager({
                               onClick={() => cancelPending(i)}
                               variant="outline"
                               size="xs"
-                              className="rounded-(--radius) h-6 font-mono text-[8px] uppercase tracking-widest px-2"
+                              className="rounded-lg h-6 font-mono text-[8px] uppercase tracking-widest px-2"
                             >
                               Cancel
                             </Button>

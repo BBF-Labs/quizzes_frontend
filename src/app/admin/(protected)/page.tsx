@@ -117,7 +117,7 @@ export default function AdminDashboardPage() {
       >
         {cards.map((card) => (
           <motion.div key={card.title} variants={itemVariants}>
-            <Card className="rounded-(--radius) border-border/50 bg-card/40 hover:border-primary/50 transition-all duration-300 group">
+            <Card className="rounded-lg border-border/50 bg-card/40 hover:border-primary/50 transition-all duration-300 group">
               <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                 <CardTitle className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground leading-none">
                   {card.title}
@@ -131,7 +131,7 @@ export default function AdminDashboardPage() {
               <CardContent className="h-28 flex flex-col">
                 <div className="text-2xl font-mono font-bold tracking-tighter">
                   {isLoading ? (
-                    <Skeleton className="h-8 w-16 rounded-(--radius) bg-muted/20" />
+                    <Skeleton className="h-8 w-16 rounded-lg bg-muted/20" />
                   ) : (
                     card.value
                   )}
@@ -192,7 +192,7 @@ export default function AdminDashboardPage() {
                 variant="outline"
                 size="sm"
                 disabled
-                className="w-full rounded-(--radius) h-7 text-[8px] font-mono tracking-widest uppercase opacity-50"
+                className="w-full rounded-lg h-7 text-[8px] font-mono tracking-widest uppercase opacity-50"
               >
                 Locked
               </Button>
@@ -212,7 +212,7 @@ export default function AdminDashboardPage() {
                 variant="outline"
                 size="sm"
                 disabled
-                className="w-full rounded-(--radius) h-7 text-[8px] font-mono tracking-widest uppercase opacity-50"
+                className="w-full rounded-lg h-7 text-[8px] font-mono tracking-widest uppercase opacity-50"
               >
                 Locked
               </Button>
@@ -230,7 +230,7 @@ export default function AdminDashboardPage() {
             <Link href="/admin/campaigns">
               <Button
                 variant="ghost"
-                className="w-full justify-start rounded-(--radius) h-11 border border-border/30 hover:bg-secondary/20 hover:border-primary/50 group"
+                className="w-full justify-start rounded-lg h-11 border border-border/30 hover:bg-secondary/20 hover:border-primary/50 group"
               >
                 <Send className="size-4 mr-3 text-muted-foreground group-hover:text-primary transition-colors" />
                 <span className="text-[10px] font-mono tracking-widest uppercase">
@@ -243,7 +243,7 @@ export default function AdminDashboardPage() {
             <Link href="/admin/academics/timetables">
               <Button
                 variant="ghost"
-                className="w-full justify-start rounded-(--radius) h-11 border border-border/30 hover:bg-secondary/20 hover:border-primary/50 group"
+                className="w-full justify-start rounded-lg h-11 border border-border/30 hover:bg-secondary/20 hover:border-primary/50 group"
               >
                 <Calendar className="size-4 mr-3 text-muted-foreground group-hover:text-primary transition-colors" />
                 <span className="text-[10px] font-mono tracking-widest uppercase">
@@ -256,7 +256,7 @@ export default function AdminDashboardPage() {
             <Link href="/admin/migrations">
               <Button
                 variant="ghost"
-                className="w-full justify-start rounded-(--radius) h-11 border border-border/30 hover:bg-secondary/20 hover:border-primary/50 group"
+                className="w-full justify-start rounded-lg h-11 border border-border/30 hover:bg-secondary/20 hover:border-primary/50 group"
               >
                 <Database className="size-4 mr-3 text-muted-foreground group-hover:text-primary transition-colors" />
                 <span className="text-[10px] font-mono tracking-widest uppercase">

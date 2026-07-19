@@ -80,7 +80,7 @@ function CreateTimetableForm({ onClose }: { onClose: () => void }) {
     <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="border border-primary/30 bg-primary/5 p-6 mb-8 rounded-(--radius)"
+      className="border border-primary/30 bg-primary/5 p-6 mb-8 rounded-lg"
     >
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-mono font-bold uppercase tracking-widest text-primary">
@@ -175,7 +175,7 @@ function SyncTimetableDialog({ onClose }: { onClose: () => void }) {
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="border border-primary/30 bg-primary/5 p-6 mb-8 rounded-(--radius)"
+      className="border border-primary/30 bg-primary/5 p-6 mb-8 rounded-lg"
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
@@ -263,7 +263,7 @@ function SyncTimetableDialog({ onClose }: { onClose: () => void }) {
           <Button
             type="submit"
             disabled={syncMutation.isPending}
-            className="font-mono text-[10px] uppercase tracking-widest bg-primary hover:bg-primary/90 text-primary-foreground min-w-[140px]"
+            className="font-mono text-[10px] uppercase tracking-widest bg-primary hover:bg-primary/90 text-primary-foreground min-w-35"
           >
             {syncMutation.isPending ? (
               <>
@@ -545,7 +545,7 @@ function TimetableRow({ timetable }: { timetable: any }) {
   };
 
   return (
-    <div className="border border-border/40 rounded-(--radius) overflow-hidden mb-4 bg-card/20">
+    <div className="border border-border/40 rounded-lg overflow-hidden mb-4 bg-card/20">
       {/* Header Info */}
       <div
         className={cn(
@@ -555,7 +555,7 @@ function TimetableRow({ timetable }: { timetable: any }) {
         onClick={() => setExpanded(!expanded)}
       >
         <div className="flex items-center gap-4">
-          <div className="flex size-10 items-center justify-center rounded-(--radius) border border-primary/20 bg-primary/5">
+          <div className="flex size-10 items-center justify-center rounded-lg border border-primary/20 bg-primary/5">
             <Calendar className="size-5 text-primary/70" />
           </div>
           <div>
@@ -631,7 +631,7 @@ function TimetableRow({ timetable }: { timetable: any }) {
                     .map((entry: any) => (
                       <div
                         key={entry._id}
-                        className="border border-border/20 rounded-(--radius) overflow-hidden"
+                        className="border border-border/20 rounded-lg overflow-hidden"
                       >
                         {/* Course Header */}
                         <div className="bg-secondary/5 px-4 py-2 border-b border-border/10 flex items-center justify-between">
@@ -661,56 +661,54 @@ function TimetableRow({ timetable }: { timetable: any }) {
 
                         {/* Sessions List */}
                         <div className="divide-y divide-border/10">
-                          {entry.sessions?.map(
-                            (session: any, sIdx: number) => (
-                              <div
-                                key={session.sessionId || sIdx}
-                                className="grid grid-cols-12 items-center px-4 py-3 hover:bg-primary/5 transition-colors"
-                              >
-                                <div className="col-span-3 flex items-center gap-2">
-                                  <div className="w-1.5 h-1.5 rounded-full bg-primary/30" />
-                                  <span className="text-[10px] font-mono uppercase font-bold">
-                                    {session.label || `Batch ${sIdx + 1}`}
+                          {entry.sessions?.map((session: any, sIdx: number) => (
+                            <div
+                              key={session.sessionId || sIdx}
+                              className="grid grid-cols-12 items-center px-4 py-3 hover:bg-primary/5 transition-colors"
+                            >
+                              <div className="col-span-3 flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-primary/30" />
+                                <span className="text-[10px] font-mono uppercase font-bold">
+                                  {session.label || `Batch ${sIdx + 1}`}
+                                </span>
+                              </div>
+                              <div className="col-span-4 flex items-center gap-2">
+                                <Clock className="size-3 text-muted-foreground/50" />
+                                <span className="text-[10px] font-mono uppercase">
+                                  {format(
+                                    new Date(session.scheduledAt),
+                                    "MMM d, HH:mm",
+                                  )}
+                                  <span className="ml-2 opacity-40">
+                                    ({session.durationMinutes}m)
                                   </span>
-                                </div>
-                                <div className="col-span-4 flex items-center gap-2">
-                                  <Clock className="size-3 text-muted-foreground/50" />
-                                  <span className="text-[10px] font-mono uppercase">
-                                    {format(
-                                      new Date(session.scheduledAt),
-                                      "MMM d, HH:mm",
-                                    )}
-                                    <span className="ml-2 opacity-40">
-                                      ({session.durationMinutes}m)
+                                </span>
+                              </div>
+                              <div className="col-span-5 flex items-center gap-2 overflow-hidden">
+                                <MapPin className="size-3 text-muted-foreground/50 shrink-0" />
+                                <div className="flex flex-wrap gap-1">
+                                  {session.venues?.map(
+                                    (v: any, vIdx: number) => (
+                                      <Badge
+                                        key={vIdx}
+                                        variant="outline"
+                                        className="rounded-lg bg-primary/5 text-[8px] font-mono py-0 px-1 border-primary/20"
+                                      >
+                                        {v.venue}{" "}
+                                        {v.indexStart
+                                          ? `(${v.indexStart}-${v.indexEnd})`
+                                          : ""}
+                                      </Badge>
+                                    ),
+                                  ) || (
+                                    <span className="text-[10px] font-mono opacity-40 italic">
+                                      No venues
                                     </span>
-                                  </span>
-                                </div>
-                                <div className="col-span-5 flex items-center gap-2 overflow-hidden">
-                                  <MapPin className="size-3 text-muted-foreground/50 shrink-0" />
-                                  <div className="flex flex-wrap gap-1">
-                                    {session.venues?.map(
-                                      (v: any, vIdx: number) => (
-                                        <Badge
-                                          key={vIdx}
-                                          variant="outline"
-                                          className="rounded-(--radius) bg-primary/5 text-[8px] font-mono py-0 px-1 border-primary/20"
-                                        >
-                                          {v.venue}{" "}
-                                          {v.indexStart
-                                            ? `(${v.indexStart}-${v.indexEnd})`
-                                            : ""}
-                                        </Badge>
-                                      ),
-                                    ) || (
-                                      <span className="text-[10px] font-mono opacity-40 italic">
-                                        No venues
-                                      </span>
-                                    )}
-                                  </div>
+                                  )}
                                 </div>
                               </div>
-                            ),
-                          ) || (
+                            </div>
+                          )) || (
                             <div className="py-4 text-center text-[10px] font-mono opacity-40 italic">
                               No sessions found
                             </div>
@@ -761,13 +759,13 @@ export default function AdminTimetablesPage() {
           <Button
             variant="outline"
             onClick={() => setShowSync(true)}
-            className="rounded-(--radius) font-mono uppercase tracking-widest px-6 border-primary/30 text-primary hover:bg-primary/10"
+            className="rounded-lg font-mono uppercase tracking-widest px-6 border-primary/30 text-primary hover:bg-primary/10"
           >
             <RefreshCw className="mr-2 h-4 w-4" /> Sync with STS
           </Button>
           <Button
             onClick={() => setShowCreate(true)}
-            className="rounded-(--radius) font-mono uppercase tracking-widest px-6"
+            className="rounded-lg font-mono uppercase tracking-widest px-6"
           >
             <Plus className="mr-2 h-4 w-4" /> Initialize
           </Button>

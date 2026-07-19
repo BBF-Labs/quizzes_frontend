@@ -29,7 +29,17 @@ export function toDiceBearOptions(config: Record<string, string>) {
   const opts: Record<string, unknown> = {
     backgroundColor: ["d1d4f9", "c0aede", "b6e3f4", "ffd5dc"],
   };
-  const ARRAY_KEYS = ["top", "clothing", "hairColor", "clothesColor", "eyes", "eyebrows", "mouth", "skinColor", "accessories"];
+  const ARRAY_KEYS = [
+    "top",
+    "clothing",
+    "hairColor",
+    "clothesColor",
+    "eyes",
+    "eyebrows",
+    "mouth",
+    "skinColor",
+    "accessories",
+  ];
   for (const key of ARRAY_KEYS) {
     if (key === "accessories") {
       if (config.accessories && config.accessories !== "none") {
@@ -48,36 +58,152 @@ export function toDiceBearOptions(config: Record<string, string>) {
 const COLOR_CATEGORIES = new Set(["hairColor", "clothesColor", "skinColor"]);
 
 const CATEGORIES = [
-  { id: "top",          label: "Hair",          icon: User },
-  { id: "hairColor",    label: "Hair Color",    icon: Palette },
-  { id: "eyes",         label: "Eyes",          icon: Eye },
-  { id: "eyebrows",     label: "Eyebrows",      icon: Sparkles },
-  { id: "mouth",        label: "Mouth",         icon: Smile },
-  { id: "clothing",     label: "Clothes",       icon: Shirt },
+  { id: "top", label: "Hair", icon: User },
+  { id: "hairColor", label: "Hair Color", icon: Palette },
+  { id: "eyes", label: "Eyes", icon: Eye },
+  { id: "eyebrows", label: "Eyebrows", icon: Sparkles },
+  { id: "mouth", label: "Mouth", icon: Smile },
+  { id: "clothing", label: "Clothes", icon: Shirt },
   { id: "clothesColor", label: "Clothes Color", icon: Palette },
-  { id: "accessories",  label: "Accessories",   icon: Glasses },
-  { id: "skinColor",    label: "Skin",          icon: Palette },
+  { id: "accessories", label: "Accessories", icon: Glasses },
+  { id: "skinColor", label: "Skin", icon: Palette },
 ];
 
 const OPTIONS: Record<string, string[]> = {
   top: [
-    "bigHair", "bob", "bun", "curly", "curvy", "dreads", "frida", "fro", "froBand",
-    "longButNotTooLong", "miaWallace", "shavedSides", "straight01", "straight02",
-    "straightAndStrand", "dreads01", "dreads02", "frizzle", "shaggyMullet",
-    "shortCurly", "shortFlat", "shortRound", "shortWaved", "sides",
-    "theCaesar", "theCaesarAndSidePart", "turban", "hijab", "hat",
-    "winterHat1", "winterHat02", "winterHat03", "winterHat04",
+    "bigHair",
+    "bob",
+    "bun",
+    "curly",
+    "curvy",
+    "dreads",
+    "frida",
+    "fro",
+    "froBand",
+    "longButNotTooLong",
+    "miaWallace",
+    "shavedSides",
+    "straight01",
+    "straight02",
+    "straightAndStrand",
+    "dreads01",
+    "dreads02",
+    "frizzle",
+    "shaggyMullet",
+    "shortCurly",
+    "shortFlat",
+    "shortRound",
+    "shortWaved",
+    "sides",
+    "theCaesar",
+    "theCaesarAndSidePart",
+    "turban",
+    "hijab",
+    "hat",
+    "winterHat1",
+    "winterHat02",
+    "winterHat03",
+    "winterHat04",
   ],
   accessories: [
-    "none", "kurt", "prescription01", "prescription02", "round", "sunglasses", "wayfarers", "eyepatch",
+    "none",
+    "kurt",
+    "prescription01",
+    "prescription02",
+    "round",
+    "sunglasses",
+    "wayfarers",
+    "eyepatch",
   ],
-  hairColor:    ["2c1b18", "4a312c", "724133", "a55728", "b58143", "d6b370", "e8e1e1", "f59797", "ecdcbf", "c93305"],
-  clothing:     ["blazerAndShirt", "blazerAndSweater", "collarAndSweater", "graphicShirt", "hoodie", "overall", "shirtCrewNeck", "shirtScoopNeck", "shirtVNeck"],
-  clothesColor: ["262e33", "65c9ff", "5199e4", "25557c", "e6e6e6", "929598", "3c4f5c", "b1e2ff", "a7ffc4", "ffafb9", "ff488e", "ff5c5c", "ffffff"],
-  eyes:         ["closed", "cry", "default", "eyeRoll", "happy", "hearts", "side", "squint", "surprised", "wink", "winkWacky", "xDizzy"],
-  eyebrows:     ["angry", "angryNatural", "default", "defaultNatural", "flatNatural", "raisedExcited", "raisedExcitedNatural", "sadConcerned", "sadConcernedNatural", "unibrowNatural", "upDown", "upDownNatural"],
-  mouth:        ["concerned", "default", "disbelief", "eating", "grimace", "sad", "screamOpen", "serious", "smile", "tongue", "twinkle", "vomit"],
-  skinColor:    ["614335", "ae5d29", "d08b5b", "edb98a", "ffd9c0", "f8d25c", "fd9841"],
+  hairColor: [
+    "2c1b18",
+    "4a312c",
+    "724133",
+    "a55728",
+    "b58143",
+    "d6b370",
+    "e8e1e1",
+    "f59797",
+    "ecdcbf",
+    "c93305",
+  ],
+  clothing: [
+    "blazerAndShirt",
+    "blazerAndSweater",
+    "collarAndSweater",
+    "graphicShirt",
+    "hoodie",
+    "overall",
+    "shirtCrewNeck",
+    "shirtScoopNeck",
+    "shirtVNeck",
+  ],
+  clothesColor: [
+    "262e33",
+    "65c9ff",
+    "5199e4",
+    "25557c",
+    "e6e6e6",
+    "929598",
+    "3c4f5c",
+    "b1e2ff",
+    "a7ffc4",
+    "ffafb9",
+    "ff488e",
+    "ff5c5c",
+    "ffffff",
+  ],
+  eyes: [
+    "closed",
+    "cry",
+    "default",
+    "eyeRoll",
+    "happy",
+    "hearts",
+    "side",
+    "squint",
+    "surprised",
+    "wink",
+    "winkWacky",
+    "xDizzy",
+  ],
+  eyebrows: [
+    "angry",
+    "angryNatural",
+    "default",
+    "defaultNatural",
+    "flatNatural",
+    "raisedExcited",
+    "raisedExcitedNatural",
+    "sadConcerned",
+    "sadConcernedNatural",
+    "unibrowNatural",
+    "upDown",
+    "upDownNatural",
+  ],
+  mouth: [
+    "concerned",
+    "default",
+    "disbelief",
+    "eating",
+    "grimace",
+    "sad",
+    "screamOpen",
+    "serious",
+    "smile",
+    "tongue",
+    "twinkle",
+    "vomit",
+  ],
+  skinColor: [
+    "614335",
+    "ae5d29",
+    "d08b5b",
+    "edb98a",
+    "ffd9c0",
+    "f8d25c",
+    "fd9841",
+  ],
 };
 
 const DEFAULT_CONFIG: Record<string, string> = {
@@ -134,7 +260,7 @@ const AvatarThumb = memo(function AvatarThumb({
   const uri = useMemo(() => {
     const preview = toDiceBearOptions({ ...config, [field]: opt });
     return createAvatar(avataaars, preview).toDataUri();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [opt, field, JSON.stringify(config)]);
 
   if (opt === "none") {
@@ -142,8 +268,10 @@ const AvatarThumb = memo(function AvatarThumb({
       <button
         onClick={onClick}
         className={cn(
-          "aspect-square rounded-(--radius) border-2 flex items-center justify-center transition-all hover:border-primary/60 text-[9px] font-mono font-bold uppercase tracking-wider text-muted-foreground",
-          selected ? "border-primary bg-primary/5 shadow-sm text-primary" : "border-border/30 bg-muted/20",
+          "aspect-square rounded-lg border-2 flex items-center justify-center transition-all hover:border-primary/60 text-[9px] font-mono font-bold uppercase tracking-wider text-muted-foreground",
+          selected
+            ? "border-primary bg-primary/5 shadow-sm text-primary"
+            : "border-border/30 bg-muted/20",
         )}
       >
         None
@@ -155,8 +283,10 @@ const AvatarThumb = memo(function AvatarThumb({
     <button
       onClick={onClick}
       className={cn(
-        "group relative aspect-square overflow-hidden rounded-(--radius) border-2 p-0.5 transition-all hover:border-primary/60",
-        selected ? "border-primary bg-primary/5 shadow-sm" : "border-border/30 bg-muted/20",
+        "group relative aspect-square overflow-hidden rounded-lg border-2 p-0.5 transition-all hover:border-primary/60",
+        selected
+          ? "border-primary bg-primary/5 shadow-sm"
+          : "border-border/30 bg-muted/20",
       )}
     >
       <img src={uri} alt={opt} className="size-full object-contain" />
@@ -169,7 +299,9 @@ const AvatarThumb = memo(function AvatarThumb({
 
 export function AvatarBuilder({ initialConfig, onUpdate }: AvatarBuilderProps) {
   const [config, setConfig] = useState<Record<string, string>>(
-    initialConfig && Object.keys(initialConfig).length > 0 ? initialConfig : DEFAULT_CONFIG,
+    initialConfig && Object.keys(initialConfig).length > 0
+      ? initialConfig
+      : DEFAULT_CONFIG,
   );
   const [activeCat, setActiveCat] = useState(CATEGORIES[0].id);
 
@@ -194,9 +326,14 @@ export function AvatarBuilder({ initialConfig, onUpdate }: AvatarBuilderProps) {
     const next: Record<string, string> = {};
     for (const key of Object.keys(OPTIONS)) {
       const opts = OPTIONS[key];
-      next[key] = key === "accessories" && Math.random() < 0.6
-        ? "none"
-        : opts.filter((o) => o !== "none")[Math.floor(Math.random() * (opts.filter((o) => o !== "none").length))];
+      next[key] =
+        key === "accessories" && Math.random() < 0.6
+          ? "none"
+          : opts.filter((o) => o !== "none")[
+              Math.floor(
+                Math.random() * opts.filter((o) => o !== "none").length,
+              )
+            ];
     }
     setConfig(next);
     onUpdate(next);
@@ -207,7 +344,6 @@ export function AvatarBuilder({ initialConfig, onUpdate }: AvatarBuilderProps) {
 
   return (
     <div className="flex flex-col gap-0">
-
       {/* ── TOP: preview + quick actions ── */}
       <div className="flex items-center gap-4 border-b border-border/50 bg-muted/10 px-4 py-4 sm:gap-6 sm:px-5 sm:py-5">
         {/* Avatar preview */}
@@ -216,7 +352,11 @@ export function AvatarBuilder({ initialConfig, onUpdate }: AvatarBuilderProps) {
           onClick={randomize}
           title="Click to randomize"
         >
-          <img src={previewUri} alt="Preview" className="size-full object-cover" />
+          <img
+            src={previewUri}
+            alt="Preview"
+            className="size-full object-cover"
+          />
           <div className="absolute inset-0 flex items-center justify-center bg-background/70 opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm rounded-full">
             <RefreshCw className="size-4 text-primary animate-spin sm:size-5" />
           </div>
@@ -224,13 +364,15 @@ export function AvatarBuilder({ initialConfig, onUpdate }: AvatarBuilderProps) {
 
         {/* Actions */}
         <div className="flex flex-1 flex-col gap-2 min-w-0">
-          <p className="font-mono text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Quick styles</p>
+          <p className="font-mono text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
+            Quick styles
+          </p>
           <div className="flex flex-wrap gap-1.5 sm:gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={() => applyPreset("styleA")}
-              className="rounded-(--radius) font-mono text-[9px] uppercase h-7 px-3 sm:h-8 sm:px-4"
+              className="rounded-lg font-mono text-[9px] uppercase h-7 px-3 sm:h-8 sm:px-4"
             >
               Style A
             </Button>
@@ -238,7 +380,7 @@ export function AvatarBuilder({ initialConfig, onUpdate }: AvatarBuilderProps) {
               variant="outline"
               size="sm"
               onClick={() => applyPreset("styleB")}
-              className="rounded-(--radius) font-mono text-[9px] uppercase h-7 px-3 sm:h-8 sm:px-4"
+              className="rounded-lg font-mono text-[9px] uppercase h-7 px-3 sm:h-8 sm:px-4"
             >
               Style B
             </Button>
@@ -246,7 +388,7 @@ export function AvatarBuilder({ initialConfig, onUpdate }: AvatarBuilderProps) {
               variant="ghost"
               size="sm"
               onClick={randomize}
-              className="rounded-(--radius) font-mono text-[9px] uppercase h-7 px-3 gap-1 text-muted-foreground sm:h-8 sm:px-4 sm:gap-1.5"
+              className="rounded-lg font-mono text-[9px] uppercase h-7 px-3 gap-1 text-muted-foreground sm:h-8 sm:px-4 sm:gap-1.5"
             >
               <RefreshCw className="size-3" /> Random
             </Button>
@@ -263,7 +405,7 @@ export function AvatarBuilder({ initialConfig, onUpdate }: AvatarBuilderProps) {
               key={cat.id}
               onClick={() => setActiveCat(cat.id)}
               className={cn(
-                "flex items-center gap-1 rounded-(--radius) px-2 py-1.5 font-mono text-[9px] font-bold uppercase tracking-wider transition-all",
+                "flex items-center gap-1 rounded-lg px-2 py-1.5 font-mono text-[9px] font-bold uppercase tracking-wider transition-all",
                 active
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -277,7 +419,7 @@ export function AvatarBuilder({ initialConfig, onUpdate }: AvatarBuilderProps) {
       </div>
 
       {/* ── BOTTOM: options grid ── */}
-      <ScrollArea className="max-h-[40vh] min-h-[10rem] sm:max-h-[50vh]">
+      <ScrollArea className="max-h-[40vh] min-h-40 sm:max-h-[50vh]">
         <div className="p-3 sm:p-4">
           {isColor ? (
             /* Colour swatches */
@@ -318,7 +460,10 @@ export function AvatarBuilder({ initialConfig, onUpdate }: AvatarBuilderProps) {
       {/* Active category label */}
       <div className="border-t border-border/50 bg-muted/10 px-3 py-2 sm:px-4">
         <p className="font-mono text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
-          {currentCat.label} — {isColor ? "pick a colour" : `${OPTIONS[activeCat]?.length ?? 0} options`}
+          {currentCat.label} —{" "}
+          {isColor
+            ? "pick a colour"
+            : `${OPTIONS[activeCat]?.length ?? 0} options`}
         </p>
       </div>
     </div>

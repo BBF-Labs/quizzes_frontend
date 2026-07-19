@@ -102,7 +102,7 @@ function getErrorMessage(error: unknown, fallback: string): string {
 }
 
 export default function CampaignDetailPage() {
-  const params = useParams();
+  const params = useParams<{ id: string }>();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -511,12 +511,12 @@ export default function CampaignDetailPage() {
                 {campaign.title}
               </h1>
               <div className="flex items-center gap-2">
-                <span className="text-[9px] font-mono tracking-widest uppercase border border-primary/30 px-1.5 py-0.5 rounded-(--radius) text-primary/70">
+                <span className="text-[9px] font-mono tracking-widest uppercase border border-primary/30 px-1.5 py-0.5 rounded-lg text-primary/70">
                   {TYPE_LABELS[campaign.campaignType] || campaign.campaignType}
                 </span>
                 <span
                   className={cn(
-                    "text-[9px] font-mono tracking-widest uppercase border px-1.5 py-0.5 rounded-(--radius)",
+                    "text-[9px] font-mono tracking-widest uppercase border px-1.5 py-0.5 rounded-lg",
                     STATUS_CLASS[campaign.status || "draft"],
                   )}
                 >
@@ -530,7 +530,7 @@ export default function CampaignDetailPage() {
               </p>
               {isDirty && (
                 <span
-                  className="size-1.5 rounded-(--radius) bg-primary animate-pulse"
+                  className="size-1.5 rounded-lg bg-primary animate-pulse"
                   title="Unsaved changes"
                 />
               )}
@@ -544,7 +544,7 @@ export default function CampaignDetailPage() {
               onClick={() => refetch()}
               variant="outline"
               size="icon"
-              className="rounded-(--radius)"
+              className="rounded-lg"
             >
               <RefreshCw className="size-4" />
             </Button>
@@ -554,7 +554,7 @@ export default function CampaignDetailPage() {
               onClick={handleClone}
               disabled={cloneMutation.isPending}
               variant="outline"
-              className="rounded-(--radius) font-mono text-[10px] tracking-widest uppercase border-border/60 hover:bg-secondary px-4"
+              className="rounded-lg font-mono text-[10px] tracking-widest uppercase border-border/60 hover:bg-secondary px-4"
             >
               <Copy className="size-4" />
               {cloneMutation.isPending ? "Cloning…" : "Clone"}
@@ -564,7 +564,7 @@ export default function CampaignDetailPage() {
               <Button
                 onClick={saveChanges}
                 disabled={updateMutation.isPending}
-                className="rounded-(--radius) font-mono text-[10px] tracking-widest uppercase bg-primary/90 hover:bg-primary px-4"
+                className="rounded-lg font-mono text-[10px] tracking-widest uppercase bg-primary/90 hover:bg-primary px-4"
               >
                 {updateMutation.isPending ? (
                   <RefreshCw className="size-4 animate-spin mr-2" />
@@ -581,7 +581,7 @@ export default function CampaignDetailPage() {
                 onClick={handleSendPreview}
                 disabled={sendPreviewMutation.isPending}
                 variant="outline"
-                className="rounded-(--radius) font-mono text-[10px] tracking-widest uppercase border-border/60 hover:bg-secondary px-4"
+                className="rounded-lg font-mono text-[10px] tracking-widest uppercase border-border/60 hover:bg-secondary px-4"
               >
                 <RefreshCw
                   className={cn(
@@ -599,14 +599,13 @@ export default function CampaignDetailPage() {
               disabled={!isDraft || generateMutation.isPending}
               variant="outline"
               className={cn(
-                "rounded-(--radius) font-mono text-[10px] tracking-widest uppercase border-primary/50 text-primary bg-primary/5 hover:bg-primary hover:text-primary-foreground shadow-[0_0_10px_rgba(0,110,255,0.1)] hover:shadow-[0_0_20px_rgba(0,110,255,0.2)] transition-all px-4",
-                !isDraft && "opacity-50 grayscale cursor-not-allowed border-muted text-muted-foreground bg-transparent shadow-none"
+                "rounded-lg font-mono text-[10px] tracking-widest uppercase border-primary/50 text-primary bg-primary/5 hover:bg-primary hover:text-primary-foreground shadow-[0_0_10px_rgba(0,110,255,0.1)] hover:shadow-[0_0_20px_rgba(0,110,255,0.2)] transition-all px-4",
+                !isDraft &&
+                  "opacity-50 grayscale cursor-not-allowed border-muted text-muted-foreground bg-transparent shadow-none",
               )}
             >
               <Sparkles className="size-4" />
-              {generateMutation.isPending
-                ? "Generating…"
-                : "Generate AI Body"}
+              {generateMutation.isPending ? "Generating…" : "Generate AI Body"}
             </Button>
 
             {isDraft && campaign.bodyMarkdown && (
@@ -614,7 +613,7 @@ export default function CampaignDetailPage() {
                 id="approve-campaign"
                 onClick={handleApprove}
                 disabled={approveMutation.isPending}
-                className="rounded-(--radius) font-mono text-[10px] tracking-widest uppercase shadow-[0_0_15px_rgba(0,110,255,0.1)] hover:shadow-[0_0_25px_rgba(0,110,255,0.2)] transition-all px-4"
+                className="rounded-lg font-mono text-[10px] tracking-widest uppercase shadow-[0_0_15px_rgba(0,110,255,0.1)] hover:shadow-[0_0_25px_rgba(0,110,255,0.2)] transition-all px-4"
               >
                 <Check className="size-4" />
                 {approveMutation.isPending
@@ -677,7 +676,7 @@ export default function CampaignDetailPage() {
 
             {campaign.status === "dispatching" && (
               <div className="flex items-center gap-2 sm:ml-auto">
-                <div className="size-1.5 rounded-(--radius) bg-yellow-400 animate-pulse" />
+                <div className="size-1.5 rounded-lg bg-yellow-400 animate-pulse" />
                 <span className="text-[10px] font-mono text-yellow-400 uppercase tracking-widest">
                   Dispatching —{" "}
                   {campaign.dispatchTotal
@@ -701,32 +700,32 @@ export default function CampaignDetailPage() {
             variant="line"
             className="bg-transparent w-auto min-w-full justify-start h-auto px-0 overflow-x-auto overflow-y-hidden no-scrollbar flex-nowrap shrink-0 border-none"
           >
-          <TabsTrigger
-            value="configure"
-            className="relative rounded-none! border-none bg-transparent data-[state=active]:bg-transparent px-6 pb-4 text-muted-foreground data-[state=active]:text-primary transition-all after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-200"
-          >
-            <Settings2 className="size-3.5 mr-1.5" /> CONFIGURE
-          </TabsTrigger>
-          <TabsTrigger
-            value="assets"
-            className="relative rounded-none! border-none bg-transparent data-[state=active]:bg-transparent px-6 pb-4 text-muted-foreground data-[state=active]:text-primary transition-all after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-200"
-          >
-            <ImageIcon className="size-3.5 mr-1.5" /> ASSETS
-          </TabsTrigger>
-          <TabsTrigger
-            value="ai-writer"
-            className="relative rounded-none! border-none bg-transparent data-[state=active]:bg-transparent px-6 pb-4 text-muted-foreground data-[state=active]:text-primary transition-all after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-200"
-          >
-            <Sparkles className="size-3.5 mr-1.5" /> AI WRITER
-          </TabsTrigger>
-          <TabsTrigger
-            value="composing"
-            className="relative rounded-none! border-none bg-transparent data-[state=active]:bg-transparent px-6 pb-4 text-muted-foreground data-[state=active]:text-primary transition-all after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-200"
-          >
-            <PenTool className="size-3.5 mr-1.5" /> COMPOSING
-          </TabsTrigger>
-        </TabsList>
-      </div>
+            <TabsTrigger
+              value="configure"
+              className="relative rounded-none! border-none bg-transparent data-[state=active]:bg-transparent px-6 pb-4 text-muted-foreground data-[state=active]:text-primary transition-all after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-200"
+            >
+              <Settings2 className="size-3.5 mr-1.5" /> CONFIGURE
+            </TabsTrigger>
+            <TabsTrigger
+              value="assets"
+              className="relative rounded-none! border-none bg-transparent data-[state=active]:bg-transparent px-6 pb-4 text-muted-foreground data-[state=active]:text-primary transition-all after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-200"
+            >
+              <ImageIcon className="size-3.5 mr-1.5" /> ASSETS
+            </TabsTrigger>
+            <TabsTrigger
+              value="ai-writer"
+              className="relative rounded-none! border-none bg-transparent data-[state=active]:bg-transparent px-6 pb-4 text-muted-foreground data-[state=active]:text-primary transition-all after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-200"
+            >
+              <Sparkles className="size-3.5 mr-1.5" /> AI WRITER
+            </TabsTrigger>
+            <TabsTrigger
+              value="composing"
+              className="relative rounded-none! border-none bg-transparent data-[state=active]:bg-transparent px-6 pb-4 text-muted-foreground data-[state=active]:text-primary transition-all after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-200"
+            >
+              <PenTool className="size-3.5 mr-1.5" /> COMPOSING
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <div className="min-h-125">
           <AnimatePresence mode="wait">
@@ -751,7 +750,7 @@ export default function CampaignDetailPage() {
                           setTitle(e.target.value);
                           setMetaDirty(true);
                         }}
-                        className="rounded-(--radius) h-10 bg-background/50 font-mono text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                        className="rounded-lg h-10 bg-background/50 font-mono text-sm disabled:opacity-60 disabled:cursor-not-allowed"
                       />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -767,49 +766,49 @@ export default function CampaignDetailPage() {
                           }}
                           disabled={!isEditable}
                         >
-                          <SelectTrigger className="w-full rounded-(--radius) bg-background/50 border border-border/40 font-mono text-xs uppercase focus-visible:ring-0 disabled:opacity-50">
+                          <SelectTrigger className="w-full rounded-lg bg-background/50 border border-border/40 font-mono text-xs uppercase focus-visible:ring-0 disabled:opacity-50">
                             <SelectValue placeholder="Select type" />
                           </SelectTrigger>
-                          <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
+                          <SelectContent className="rounded-lg border-border/40 bg-card/95 font-mono text-xs uppercase">
                             <SelectItem
                               value="newsletter"
-                              className="rounded-(--radius) font-mono text-xs uppercase"
+                              className="rounded-lg font-mono text-xs uppercase"
                             >
                               Newsletter
                             </SelectItem>
                             <SelectItem
                               value="announcement"
-                              className="rounded-(--radius) font-mono text-xs uppercase"
+                              className="rounded-lg font-mono text-xs uppercase"
                             >
                               Announcement
                             </SelectItem>
                             <SelectItem
                               value="product_update"
-                              className="rounded-(--radius) font-mono text-xs uppercase"
+                              className="rounded-lg font-mono text-xs uppercase"
                             >
                               Product Update
                             </SelectItem>
                             <SelectItem
                               value="waitlist_update"
-                              className="rounded-(--radius) font-mono text-xs uppercase"
+                              className="rounded-lg font-mono text-xs uppercase"
                             >
                               Waitlist Update
                             </SelectItem>
                             <SelectItem
                               value="system_update"
-                              className="rounded-(--radius) font-mono text-xs uppercase"
+                              className="rounded-lg font-mono text-xs uppercase"
                             >
                               System Update
                             </SelectItem>
                             <SelectItem
                               value="exam_reminder"
-                              className="rounded-(--radius) font-mono text-xs uppercase"
+                              className="rounded-lg font-mono text-xs uppercase"
                             >
                               Exam Reminder
                             </SelectItem>
                             <SelectItem
                               value="quiz_available"
-                              className="rounded-(--radius) font-mono text-xs uppercase"
+                              className="rounded-lg font-mono text-xs uppercase"
                             >
                               Quiz Available
                             </SelectItem>
@@ -831,7 +830,7 @@ export default function CampaignDetailPage() {
                                 setAudience(opt);
                                 setMetaDirty(true);
                               }}
-                              className="flex-1 rounded-(--radius) font-mono text-[10px] uppercase h-10"
+                              className="flex-1 rounded-lg font-mono text-[10px] uppercase h-10"
                             >
                               {opt}
                             </Button>
@@ -904,14 +903,14 @@ export default function CampaignDetailPage() {
                       }}
                       disabled={!isDraft}
                       rows={8}
-                      className="w-full rounded-(--radius) font-mono text-sm border border-input bg-background/30 px-3 py-2 text-foreground focus-visible:outline-none focus-visible:border-primary/50 focus-visible:ring-0 resize-none"
+                      className="w-full rounded-lg font-mono text-sm border border-input bg-background/30 px-3 py-2 text-foreground focus-visible:outline-none focus-visible:border-primary/50 focus-visible:ring-0 resize-none"
                       placeholder={`Write a ${campaignType.replace("_", " ")} for our students...`}
                     />
                     <div className="flex items-center gap-4 pt-4 border-t border-border/10">
                       <Button
                         onClick={handleGenerate}
                         disabled={generateMutation.isPending || !isDraft}
-                        className="rounded-(--radius) font-mono text-xs tracking-widest uppercase"
+                        className="rounded-lg font-mono text-xs tracking-widest uppercase"
                       >
                         {generateMutation.isPending ? (
                           <RefreshCw className="size-3.5 animate-spin mr-2" />
@@ -992,7 +991,7 @@ export default function CampaignDetailPage() {
                             Email Preview
                           </span>
                           <div className="flex items-center gap-2">
-                            <div className="size-1.5 rounded-(--radius) bg-green-500 animate-pulse" />
+                            <div className="size-1.5 rounded-lg bg-green-500 animate-pulse" />
                             <span className="text-[8px] font-mono text-muted-foreground uppercase">
                               Real-time Rendering
                             </span>

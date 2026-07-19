@@ -161,7 +161,10 @@ export function AdminSidebar() {
     <Sidebar collapsible="icon" className="border-r border-border/50">
       <SidebarHeader className="h-14 flex items-center px-4">
         <div className="flex items-center gap-3 w-full">
-          <Link href="/" className="flex items-end space-x-1.5 px-0.5 hover:opacity-80 transition-opacity">
+          <Link
+            href="/"
+            className="flex items-end space-x-1.5 px-0.5 hover:opacity-80 transition-opacity"
+          >
             <span className="text-lg font-bold tracking-widest text-foreground leading-none">
               Qz.
             </span>
@@ -195,7 +198,7 @@ export function AdminSidebar() {
                         isActive={isActive}
                         tooltip={item.title}
                         className={cn(
-                          "h-9 px-4 rounded-(--radius) transition-all duration-200",
+                          "h-9 px-4 rounded-lg transition-all duration-200",
                           isActive
                             ? "bg-primary/5 text-primary border-r-2 border-primary"
                             : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
@@ -235,12 +238,12 @@ export function AdminSidebar() {
                 "bg-primary/5 border-l-2 border-primary",
             )}
           >
-            <Avatar className="size-8 rounded-(--radius) border border-border/50 bg-secondary/20 shrink-0">
+            <Avatar className="size-8 rounded-lg border border-border/50 bg-secondary/20 shrink-0">
               <AvatarImage
                 src={user?.profilePicture}
                 className="object-cover"
               />
-              <AvatarFallback className="rounded-(--radius) bg-zinc-800 font-mono text-[10px] font-bold text-zinc-400">
+              <AvatarFallback className="rounded-lg bg-zinc-800 font-mono text-[10px] font-bold text-zinc-400">
                 {user?.username?.[0]?.toUpperCase() || "A"}
               </AvatarFallback>
             </Avatar>
@@ -252,7 +255,7 @@ export function AdminSidebar() {
                 <div className="flex items-center gap-1.5 min-w-0">
                   <div
                     className={cn(
-                      "size-1 shrink-0 rounded-(--radius)",
+                      "size-1 shrink-0 rounded-lg",
                       isSuperAdminRole ? "bg-blue-500" : "bg-zinc-500",
                     )}
                   />
@@ -279,7 +282,7 @@ export function AdminSidebar() {
         <div className="flex items-center gap-3 px-4 py-2 bg-secondary/5 border-t border-border/50">
           <div
             className={cn(
-              "size-1.5 rounded-(--radius) transition-colors duration-500",
+              "size-1.5 rounded-lg transition-colors duration-500",
               isConnected
                 ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]"
                 : "bg-destructive animate-pulse",

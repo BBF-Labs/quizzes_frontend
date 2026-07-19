@@ -61,7 +61,7 @@ export function RecommendationsPreview() {
           viewport={{ once: true }}
           className="w-full mx-auto"
         >
-          <div className="border border-border/50 bg-card rounded-(--radius) overflow-hidden font-mono text-xs">
+          <div className="border border-border/50 bg-card rounded-lg overflow-hidden font-mono text-xs">
             <div className="p-4 border-b border-border/50 bg-background/80 flex flex-row items-center gap-4">
               <div className="w-6 h-6 border border-primary/40 bg-primary/20 flex items-center justify-center text-primary font-bold shadow-sm shrink-0">
                 Z
@@ -79,7 +79,7 @@ export function RecommendationsPreview() {
                   variants={itemVariants}
                   whileHover={{ y: -4, transition: { duration: 0.2 } }}
                 >
-                  <Card className="h-full flex flex-col border-border bg-card/80 backdrop-blur-sm overflow-hidden hover:border-primary/50 transition-colors rounded-(--radius)">
+                  <Card className="h-full flex flex-col border-border bg-card/80 backdrop-blur-sm overflow-hidden hover:border-primary/50 transition-colors rounded-lg">
                     <div className="h-2 w-full bg-primary/20"></div>
                     <CardHeader className="pb-4">
                       <div className="flex items-center gap-3 mb-2">
@@ -88,7 +88,7 @@ export function RecommendationsPreview() {
                         </div>
                         <Badge
                           variant="outline"
-                          className="text-xs font-medium border-border rounded-(--radius)"
+                          className="text-xs font-medium border-border rounded-lg"
                         >
                           Recommended course
                         </Badge>
@@ -103,7 +103,7 @@ export function RecommendationsPreview() {
                         interest in Complexity.
                       </p>
                       <Button
-                        className="w-full gap-2 group rounded-(--radius)"
+                        className="w-full gap-2 group rounded-lg"
                         variant="secondary"
                       >
                         <span>View Course</span>
@@ -118,7 +118,7 @@ export function RecommendationsPreview() {
                   variants={itemVariants}
                   whileHover={{ y: -4, transition: { duration: 0.2 } }}
                 >
-                  <Card className="h-full flex flex-col border-border bg-card/80 backdrop-blur-sm overflow-hidden hover:border-primary/50 transition-colors rounded-(--radius)">
+                  <Card className="h-full flex flex-col border-border bg-card/80 backdrop-blur-sm overflow-hidden hover:border-primary/50 transition-colors rounded-lg">
                     <div className="h-2 w-full bg-primary/50"></div>
                     <CardHeader className="pb-4">
                       <div className="flex items-center gap-3 mb-2">
@@ -127,7 +127,7 @@ export function RecommendationsPreview() {
                         </div>
                         <Badge
                           variant="outline"
-                          className="text-xs font-medium border-border rounded-(--radius)"
+                          className="text-xs font-medium border-border rounded-lg"
                         >
                           From YouTube
                         </Badge>
@@ -140,7 +140,7 @@ export function RecommendationsPreview() {
                       <p className="text-[15px] text-primary/80 mb-6 flex-1 font-light leading-relaxed">
                         Matches your weak area: Complexity Analysis.
                       </p>
-                      <Button className="w-full gap-2 group text-primary-foreground hover:bg-primary/90 rounded-(--radius)">
+                      <Button className="w-full gap-2 group text-primary-foreground hover:bg-primary/90 rounded-lg">
                         <span>Watch Now</span>
                         <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                       </Button>
@@ -153,7 +153,7 @@ export function RecommendationsPreview() {
                   variants={itemVariants}
                   whileHover={{ y: -4, transition: { duration: 0.2 } }}
                 >
-                  <Card className="h-full flex flex-col border-border bg-card/80 backdrop-blur-sm overflow-hidden hover:border-primary/50 transition-colors rounded-(--radius)">
+                  <Card className="h-full flex flex-col border-border bg-card/80 backdrop-blur-sm overflow-hidden hover:border-primary/50 transition-colors rounded-lg">
                     <div className="h-2 w-full bg-primary/80"></div>
                     <CardHeader className="pb-4">
                       <div className="flex items-center gap-3 mb-2">
@@ -162,7 +162,7 @@ export function RecommendationsPreview() {
                         </div>
                         <Badge
                           variant="outline"
-                          className="text-xs font-medium border-border rounded-(--radius)"
+                          className="text-xs font-medium border-border rounded-lg"
                         >
                           Study Partner Match
                         </Badge>
@@ -179,7 +179,7 @@ export function RecommendationsPreview() {
                         Strong in Complexity — your current weak area.
                       </p>
                       <Button
-                        className="w-full gap-2 group rounded-(--radius)"
+                        className="w-full gap-2 group rounded-lg"
                         variant="outline"
                       >
                         <span>Connect</span>

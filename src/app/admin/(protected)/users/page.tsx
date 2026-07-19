@@ -27,7 +27,13 @@ import { useUsers } from "@/hooks";
 import { useUpdateUser } from "@/hooks/admin/use-admin";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { MoreHorizontal, Ban, RotateCcw, User as UserIcon, X } from "lucide-react";
+import {
+  MoreHorizontal,
+  Ban,
+  RotateCcw,
+  User as UserIcon,
+  X,
+} from "lucide-react";
 
 // ─── Ban Dialog ───────────────────────────────────────────────────────────────
 
@@ -58,14 +64,20 @@ function BanDialog({
             </p>
             <p className="font-mono font-bold text-sm">{userName}</p>
           </div>
-          <button onClick={onCancel} className="text-muted-foreground/40 hover:text-muted-foreground">
+          <button
+            onClick={onCancel}
+            className="text-muted-foreground/40 hover:text-muted-foreground"
+          >
             <X className="size-4" />
           </button>
         </div>
 
         <div className="mb-4">
           <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1.5">
-            Reason <span className="text-muted-foreground/30">(sent to user in the ban email)</span>
+            Reason{" "}
+            <span className="text-muted-foreground/30">
+              (sent to user in the ban email)
+            </span>
           </label>
           <textarea
             value={reason}
@@ -134,26 +146,37 @@ export default function UsersPage() {
   });
 
   const { mutate: updateUser, isPending: isUpdating } = useUpdateUser();
-  const [banTarget, setBanTarget] = useState<{ id: string; name: string } | null>(null);
+  const [banTarget, setBanTarget] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   const handleRoleChange = (userId: string, newRole: string) => {
     updateUser(
       { id: userId, data: { role: newRole } },
       {
         onSuccess: () => toast.success("User role updated"),
-        onError: (err: any) => toast.error(err.message || "Failed to update role"),
-      }
+        onError: (err: any) =>
+          toast.error(err.message || "Failed to update role"),
+      },
     );
   };
 
   const handleBanConfirm = (reason: string) => {
     if (!banTarget) return;
     updateUser(
-      { id: banTarget.id, data: { isBanned: true, banReason: reason || undefined } },
       {
-        onSuccess: () => { toast.success("User banned"); setBanTarget(null); },
-        onError: (err: any) => toast.error(err.message || "Failed to ban account"),
-      }
+        id: banTarget.id,
+        data: { isBanned: true, banReason: reason || undefined },
+      },
+      {
+        onSuccess: () => {
+          toast.success("User banned");
+          setBanTarget(null);
+        },
+        onError: (err: any) =>
+          toast.error(err.message || "Failed to ban account"),
+      },
     );
   };
 
@@ -162,8 +185,9 @@ export default function UsersPage() {
       { id: userId, data: { isBanned: false } },
       {
         onSuccess: () => toast.success("User unbanned"),
-        onError: (err: any) => toast.error(err.message || "Failed to unban account"),
-      }
+        onError: (err: any) =>
+          toast.error(err.message || "Failed to unban account"),
+      },
     );
   };
 
@@ -209,7 +233,7 @@ export default function UsersPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
             placeholder="Search by name, email, or username..."
-            className="pl-9 rounded-(--radius) bg-background/50 font-mono text-xs uppercase tracking-widest"
+            className="pl-9 rounded-lg bg-background/50 font-mono text-xs uppercase tracking-widest"
             value={search}
             onChange={(e) => {
               updateQueryParams({ search: e.target.value || null, page: "1" });
@@ -225,37 +249,37 @@ export default function UsersPage() {
             });
           }}
         >
-          <SelectTrigger className="w-full sm:w-auto sm:min-w-[120px] rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+          <SelectTrigger className="w-full sm:w-auto sm:min-w-30 rounded-lg bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
             <SelectValue placeholder="All Roles" />
           </SelectTrigger>
-          <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
+          <SelectContent className="rounded-lg border-border/40 bg-card/95 font-mono text-xs uppercase">
             <SelectItem
               value="all"
-              className="rounded-(--radius) font-mono text-xs uppercase"
+              className="rounded-lg font-mono text-xs uppercase"
             >
               All Roles
             </SelectItem>
             <SelectItem
               value="student"
-              className="rounded-(--radius) font-mono text-xs uppercase"
+              className="rounded-lg font-mono text-xs uppercase"
             >
               Student
             </SelectItem>
             <SelectItem
               value="creator"
-              className="rounded-(--radius) font-mono text-xs uppercase"
+              className="rounded-lg font-mono text-xs uppercase"
             >
               Creator
             </SelectItem>
             <SelectItem
               value="moderator"
-              className="rounded-(--radius) font-mono text-xs uppercase"
+              className="rounded-lg font-mono text-xs uppercase"
             >
               Moderator
             </SelectItem>
             <SelectItem
               value="super_admin"
-              className="rounded-(--radius) font-mono text-xs uppercase"
+              className="rounded-lg font-mono text-xs uppercase"
             >
               Admin
             </SelectItem>
@@ -270,25 +294,25 @@ export default function UsersPage() {
             });
           }}
         >
-          <SelectTrigger className="w-full sm:w-auto sm:min-w-[120px] rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+          <SelectTrigger className="w-full sm:w-auto sm:min-w-30 rounded-lg bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
             <SelectValue placeholder="All Status" />
           </SelectTrigger>
-          <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
+          <SelectContent className="rounded-lg border-border/40 bg-card/95 font-mono text-xs uppercase">
             <SelectItem
               value="all"
-              className="rounded-(--radius) font-mono text-xs uppercase"
+              className="rounded-lg font-mono text-xs uppercase"
             >
               All Status
             </SelectItem>
             <SelectItem
               value="false"
-              className="rounded-(--radius) font-mono text-xs uppercase text-green-500"
+              className="rounded-lg font-mono text-xs uppercase text-green-500"
             >
               Active
             </SelectItem>
             <SelectItem
               value="true"
-              className="rounded-(--radius) font-mono text-xs uppercase text-destructive"
+              className="rounded-lg font-mono text-xs uppercase text-destructive"
             >
               Banned
             </SelectItem>
@@ -297,14 +321,14 @@ export default function UsersPage() {
         <Button
           variant="outline"
           size="sm"
-          className="rounded-(--radius) font-mono text-[10px] tracking-widest uppercase gap-2"
+          className="rounded-lg font-mono text-[10px] tracking-widest uppercase gap-2"
         >
           <Download className="size-3.5" /> Export
         </Button>
       </div>
 
       {/* List */}
-      <Card className="rounded-(--radius) border-border/50 bg-card/40 overflow-hidden">
+      <Card className="rounded-lg border-border/50 bg-card/40 overflow-hidden">
         <CardHeader className="border-b border-border/10">
           <CardTitle className="text-[11px] font-mono tracking-[0.2em] uppercase text-muted-foreground">
             Registered Users {usersData?.total ? `(${usersData.total})` : ""}
@@ -377,18 +401,40 @@ export default function UsersPage() {
                         <Select
                           disabled={isUpdating}
                           value={user.role}
-                          onValueChange={(value) => handleRoleChange(user._id, value)}
+                          onValueChange={(value) =>
+                            handleRoleChange(user._id, value)
+                          }
                         >
-                          <SelectTrigger className="h-7 w-[110px] bg-transparent border-primary/20 text-[10px] font-bold uppercase transition-all hover:bg-primary/5">
+                          <SelectTrigger className="h-7 w-27.5 bg-transparent border-primary/20 text-[10px] font-bold uppercase transition-all hover:bg-primary/5">
                             <div className="flex items-center gap-1.5 truncate">
                               <SelectValue />
                             </div>
                           </SelectTrigger>
                           <SelectContent className="bg-background/95 backdrop-blur-md border-primary/20">
-                            <SelectItem value="student" className="text-[10px] font-bold uppercase">Student</SelectItem>
-                            <SelectItem value="creator" className="text-[10px] font-bold uppercase">Creator</SelectItem>
-                            <SelectItem value="moderator" className="text-[10px] font-bold uppercase">Moderator</SelectItem>
-                            <SelectItem value="super_admin" className="text-[10px] font-bold uppercase">Admin</SelectItem>
+                            <SelectItem
+                              value="student"
+                              className="text-[10px] font-bold uppercase"
+                            >
+                              Student
+                            </SelectItem>
+                            <SelectItem
+                              value="creator"
+                              className="text-[10px] font-bold uppercase"
+                            >
+                              Creator
+                            </SelectItem>
+                            <SelectItem
+                              value="moderator"
+                              className="text-[10px] font-bold uppercase"
+                            >
+                              Moderator
+                            </SelectItem>
+                            <SelectItem
+                              value="super_admin"
+                              className="text-[10px] font-bold uppercase"
+                            >
+                              Admin
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </td>
@@ -432,17 +478,22 @@ export default function UsersPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="size-8 rounded-(--radius) group-hover:bg-primary/10 group-hover:text-primary transition-all"
+                              className="size-8 rounded-lg group-hover:bg-primary/10 group-hover:text-primary transition-all"
                             >
                               <MoreHorizontal className="size-3.5" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48 bg-background/95 backdrop-blur-md border-primary/20 p-1.5">
-                            <DropdownMenuLabel className="text-[9px] uppercase tracking-widest text-muted-foreground px-2 py-1.5">Actions</DropdownMenuLabel>
-                            <DropdownMenuItem className="gap-2 text-[10px] font-bold uppercase cursor-pointer rounded-(--radius) mb-0.5">
+                          <DropdownMenuContent
+                            align="end"
+                            className="w-48 bg-background/95 backdrop-blur-md border-primary/20 p-1.5"
+                          >
+                            <DropdownMenuLabel className="text-[9px] uppercase tracking-widest text-muted-foreground px-2 py-1.5">
+                              Actions
+                            </DropdownMenuLabel>
+                            <DropdownMenuItem className="gap-2 text-[10px] font-bold uppercase cursor-pointer rounded-lg mb-0.5">
                               <UserIcon className="size-3" /> View Profile
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="gap-2 text-[10px] font-bold uppercase cursor-pointer rounded-(--radius) mb-0.5">
+                            <DropdownMenuItem className="gap-2 text-[10px] font-bold uppercase cursor-pointer rounded-lg mb-0.5">
                               <ExternalLink className="size-3" /> External Link
                             </DropdownMenuItem>
                             <DropdownMenuSeparator className="bg-primary/10 my-1.5" />
@@ -450,17 +501,26 @@ export default function UsersPage() {
                               onClick={() =>
                                 user.isBanned
                                   ? handleUnban(user._id)
-                                  : setBanTarget({ id: user._id, name: user.name ?? user.email })
+                                  : setBanTarget({
+                                      id: user._id,
+                                      name: user.name ?? user.email,
+                                    })
                               }
                               className={cn(
-                                "gap-2 text-[10px] font-bold uppercase cursor-pointer rounded-(--radius)",
-                                user.isBanned ? "text-green-500 focus:text-green-500" : "text-destructive focus:text-destructive"
+                                "gap-2 text-[10px] font-bold uppercase cursor-pointer rounded-lg",
+                                user.isBanned
+                                  ? "text-green-500 focus:text-green-500"
+                                  : "text-destructive focus:text-destructive",
                               )}
                             >
                               {user.isBanned ? (
-                                <><RotateCcw className="size-3" /> Unban Account</>
+                                <>
+                                  <RotateCcw className="size-3" /> Unban Account
+                                </>
                               ) : (
-                                <><Ban className="size-3" /> Ban Account</>
+                                <>
+                                  <Ban className="size-3" /> Ban Account
+                                </>
                               )}
                             </DropdownMenuItem>
                           </DropdownMenuContent>

@@ -12,14 +12,19 @@ import {
 import { use } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { PanelLeftOpen, PanelRightOpen, X, Users, Sparkles, Loader2 } from "lucide-react";
+import {
+  PanelLeftOpen,
+  PanelRightOpen,
+  X,
+  Users,
+  Sparkles,
+  Loader2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { nanoid } from "nanoid";
 import { api } from "@/lib/api";
 import { queryKeys } from "@/lib/query-keys";
-import {
-  useApp,
-} from "@/hooks/app/use-app-queries";
+import { useApp } from "@/hooks/app/use-app-queries";
 import {
   useRenameApp,
   useAppMessage,
@@ -121,7 +126,6 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
   const toggleLeft = useCallback(() => setLeftOpen((v) => !v), []);
   const toggleRight = useCallback(() => setRightOpen((v) => !v), []);
 
-
   // ── Queries and Mutations ────────────────────────────────────────────────────
   const { user, logout } = useAuth();
   const { data: app, isLoading, error } = useApp(sessionId, !!sessionId);
@@ -132,7 +136,7 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
     try {
       await api.post(`/app/${sessionId}/join`);
       toast.success("Joined session!");
-      window.location.reload(); 
+      window.location.reload();
     } catch {
       toast.error("Failed to join session.");
     } finally {
@@ -154,34 +158,37 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
     }
   }, [app?.citations]);
 
-  const stream = useAppStream(
-    sessionId,
-    app?.zMessages || [],
-    !!sessionId,
-    {
-      onCitationsUpdate: (citations) => {
-        setLocalCitations(citations as SessionCitation[]);
-      },
-      onRequestRefetch: () => {
-        queryClient.invalidateQueries({ queryKey: queryKeys.app.detail(sessionId) });
-      },
+  const stream = useAppStream(sessionId, app?.zMessages || [], !!sessionId, {
+    onCitationsUpdate: (citations) => {
+      setLocalCitations(citations as SessionCitation[]);
     },
-  );
+    onRequestRefetch: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.app.detail(sessionId),
+      });
+    },
+  });
   const { isConnected: isSocketConnected } = useSocket();
 
   // ── Studio workspace state ──────────────────────────────────────────────────
   const [studioNotes, setStudioNotes] = useState<StudioNote[]>([]);
   const [studioSharedNotes, setStudioSharedNotes] = useState<SharedNote[]>([]);
-  const [studioFlashcards, setStudioFlashcards] = useState<StudioFlashcard[]>([]);
+  const [studioFlashcards, setStudioFlashcards] = useState<StudioFlashcard[]>(
+    [],
+  );
   const [studioQuizzes, setStudioQuizzes] = useState<StudioQuiz[]>([]);
-  const [studioMindMap, setStudioMindMap] = useState<StudioMindMap | undefined>(undefined);
+  const [studioMindMap, setStudioMindMap] = useState<StudioMindMap | undefined>(
+    undefined,
+  );
   const [studioExports, setStudioExports] = useState<StudioExport[]>([]);
 
   const handleSessionChange = useCallback(
     (updated: Partial<IZStudyPartnerApp>) => {
       if (updated.notes !== undefined) setStudioNotes(updated.notes);
-      if (updated.sharedNotes !== undefined) setStudioSharedNotes(updated.sharedNotes);
-      if (updated.flashcards !== undefined) setStudioFlashcards(updated.flashcards);
+      if (updated.sharedNotes !== undefined)
+        setStudioSharedNotes(updated.sharedNotes);
+      if (updated.flashcards !== undefined)
+        setStudioFlashcards(updated.flashcards);
       if (updated.quizzes !== undefined) setStudioQuizzes(updated.quizzes);
       if (updated.mindMap !== undefined) setStudioMindMap(updated.mindMap);
       if (updated.exports !== undefined) setStudioExports(updated.exports);
@@ -193,17 +200,22 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
   useEffect(() => {
     if (app?.artifacts) {
       // Sync mindmap
-      const mmArtifact = (app.artifacts ?? [])
-        .find((a) => a.type === "mindmap");
+      const mmArtifact = (app.artifacts ?? []).find(
+        (a) => a.type === "mindmap",
+      );
       if (mmArtifact) {
         setStudioMindMap(mmArtifact.content as StudioMindMap);
       }
- 
+
       // Sync quizzes
       const quizArtifacts = (app.artifacts ?? [])
         .filter((a) => a.type === "quiz")
         .map((a) => {
-          const content = a.content as { topicTitle?: string; questions?: unknown[]; savedToPersonalQuizId?: string };
+          const content = a.content as {
+            topicTitle?: string;
+            questions?: unknown[];
+            savedToPersonalQuizId?: string;
+          };
           return {
             id: a.artifactId,
             title: a.title,
@@ -213,16 +225,18 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
             savedToBank: !!content.savedToPersonalQuizId,
           };
         }) as StudioQuiz[];
-      
+
       if (quizArtifacts.length > 0) {
         setStudioQuizzes(quizArtifacts);
       }
- 
+
       // Sync flashcards
       const fcArtifacts = (app.artifacts ?? [])
         .filter((a) => a.type === "flashcard_set")
-        .flatMap((a) => (a.content as { cards?: unknown[] }).cards || []) as StudioFlashcard[];
-      
+        .flatMap(
+          (a) => (a.content as { cards?: unknown[] }).cards || [],
+        ) as StudioFlashcard[];
+
       if (fcArtifacts.length > 0) {
         setStudioFlashcards(fcArtifacts);
       }
@@ -230,15 +244,28 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
       // Sync notes
       const notes = (app.artifacts ?? [])
         .filter((a) => a.type === "notes")
-        .flatMap((a) => ((a.content as { sections?: { id?: string; title?: string; body?: string; content?: string }[] }).sections || []).map((s) => ({
-          id: s.id || nanoid(),
-          title: s.title || "Untitled",
-          content: s.content || s.body || "",
-          generatedByZ: true,
-          createdAt: a.createdAt,
-          updatedAt: a.updatedAt
-        }))) as StudioNote[];
-      
+        .flatMap((a) =>
+          (
+            (
+              a.content as {
+                sections?: {
+                  id?: string;
+                  title?: string;
+                  body?: string;
+                  content?: string;
+                }[];
+              }
+            ).sections || []
+          ).map((s) => ({
+            id: s.id || nanoid(),
+            title: s.title || "Untitled",
+            content: s.content || s.body || "",
+            generatedByZ: true,
+            createdAt: a.createdAt,
+            updatedAt: a.updatedAt,
+          })),
+        ) as StudioNote[];
+
       if (notes.length > 0) {
         setStudioNotes(notes);
       }
@@ -254,12 +281,17 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
         setStudioSharedNotes(app.sharedNotes as unknown as SharedNote[]);
       }
     }
-  }, [app?.artifacts, app?.studio?.exportedFiles, app?.studio?.notes, app?.sharedNotes]);
+  }, [
+    app?.artifacts,
+    app?.studio?.exportedFiles,
+    app?.studio?.notes,
+    app?.sharedNotes,
+  ]);
 
   // ── Inline session name editing ─────────────────────────────────────────────
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameInput, setNameInput] = useState("");
-  
+
   const appName = app?.name || app?.title || "New App";
 
   function handleNameClick() {
@@ -373,7 +405,11 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
                 <motion.div
                   key="left-panel"
                   initial={isLg ? { width: 0 } : { x: -LEFT_PANEL_WIDTH }}
-                  animate={isLg ? { width: LEFT_PANEL_WIDTH } : { x: 0, width: LEFT_PANEL_WIDTH }}
+                  animate={
+                    isLg
+                      ? { width: LEFT_PANEL_WIDTH }
+                      : { x: 0, width: LEFT_PANEL_WIDTH }
+                  }
                   exit={isLg ? { width: 0 } : { x: -LEFT_PANEL_WIDTH }}
                   transition={{ duration: 0.2, ease: "easeInOut" }}
                   style={{ overflow: "hidden" }}
@@ -381,7 +417,7 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
                     "border-r border-border/50 bg-card/10 flex flex-col",
                     isLg
                       ? "shrink-0"
-                      : "fixed left-0 top-0 h-full z-40 shadow-2xl shadow-black/30 bg-background"
+                      : "fixed left-0 top-0 h-full z-40 shadow-2xl shadow-black/30 bg-background",
                   )}
                 >
                   <div
@@ -471,7 +507,7 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
 
               {/* Right controls: Badges & Open Studio if closed */}
               <div className="flex items-center gap-2 pointer-events-auto">
-                <div className="hidden md:flex rounded-(--radius) border border-border/40 bg-card/60 backdrop-blur-md h-8 px-2.5 items-center gap-1.5 shadow-sm">
+                <div className="hidden md:flex rounded-lg border border-border/40 bg-card/60 backdrop-blur-md h-8 px-2.5 items-center gap-1.5 shadow-sm">
                   <div
                     className={cn(
                       "size-2 rounded-full",
@@ -508,14 +544,19 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
                     Connecting to study partner session...
                   </p>
                 </div>
-              ) : error && (error as { response?: { status: number } }).response?.status === 403 ? (
+              ) : error &&
+                (error as { response?: { status: number } }).response
+                  ?.status === 403 ? (
                 <div className="flex-1 flex flex-col items-center justify-center p-8 text-center max-w-md mx-auto">
                   <div className="size-20 rounded-2xl bg-primary/5 flex items-center justify-center mb-6 shadow-sm border border-primary/10">
                     <Users className="size-10 text-primary/60" />
                   </div>
-                  <h2 className="text-2xl font-bold text-foreground mb-2">Study Partner Session</h2>
+                  <h2 className="text-2xl font-bold text-foreground mb-2">
+                    Study Partner Session
+                  </h2>
                   <p className="text-sm text-muted-foreground mb-8 leading-relaxed">
-                    This is a private study session. You&apos;ve been invited to join as a partner to collaborate on notes and chat with Z.
+                    This is a private study session. You&apos;ve been invited to
+                    join as a partner to collaborate on notes and chat with Z.
                   </p>
                   <button
                     onClick={handleJoin}
@@ -534,7 +575,9 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
                 </div>
               ) : error ? (
                 <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-                  <p className="text-sm text-destructive font-mono">Failed to load session.</p>
+                  <p className="text-sm text-destructive font-mono">
+                    Failed to load session.
+                  </p>
                 </div>
               ) : activeMaterialId ? (
                 <div className="flex-1 flex flex-col min-h-0">
@@ -591,8 +634,8 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
                       className={cn(
                         "flex-col min-w-0",
                         readerView === "chat" ? "flex flex-1" : "hidden",
-                        "md:flex md:w-80 md:flex-none md:min-w-[280px]",
-                        "lg:w-[450px] lg:min-w-[320px]",
+                        "md:flex md:w-80 md:flex-none md:min-w-70",
+                        "lg:w-112.5 lg:min-w-[320px]",
                       )}
                     >
                       {children}
@@ -624,18 +667,24 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
                 <motion.div
                   key="right-panel"
                   initial={isLg ? { width: 0 } : { x: RIGHT_PANEL_WIDTH }}
-                  animate={isLg ? { width: RIGHT_PANEL_WIDTH } : { x: 0, width: RIGHT_PANEL_WIDTH }}
+                  animate={
+                    isLg
+                      ? { width: RIGHT_PANEL_WIDTH }
+                      : { x: 0, width: RIGHT_PANEL_WIDTH }
+                  }
                   exit={isLg ? { width: 0 } : { x: RIGHT_PANEL_WIDTH }}
                   transition={{ duration: 0.2, ease: "easeInOut" }}
                   style={{ overflow: "hidden", zIndex: isLg ? 10 : 40 }}
                   className={cn(
                     "border-l border-border/50 shadow-sm",
-                    isLg ? "shrink-0" : "fixed right-0 top-0 h-full shadow-2xl shadow-black/30"
+                    isLg
+                      ? "shrink-0"
+                      : "fixed right-0 top-0 h-full shadow-2xl shadow-black/30",
                   )}
                 >
                   <div
                     style={{ width: RIGHT_PANEL_WIDTH }}
-                    className="h-full flex flex-col bg-card/10 bg-background"
+                    className="h-full flex flex-col bg-background"
                   >
                     {app && (
                       <StudioPanel

@@ -166,10 +166,10 @@ function ResumePrompt({
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-(--radius) border border-border/40 bg-card/30 px-6 py-8 text-center max-w-sm mx-auto mt-16"
+      className="rounded-lg border border-border/40 bg-card/30 px-6 py-8 text-center max-w-sm mx-auto mt-16"
     >
       <div className="flex justify-center mb-4">
-        <div className="rounded-(--radius) size-12 border border-primary/30 bg-primary/5 flex items-center justify-center">
+        <div className="rounded-lg size-12 border border-primary/30 bg-primary/5 flex items-center justify-center">
           <BookOpen className="size-5 text-primary/70" />
         </div>
       </div>
@@ -276,7 +276,7 @@ function ConfigScreen({
 
       <div className="flex flex-col gap-4">
         {/* Quiz Range */}
-        <section className="rounded-(--radius) border border-border/40 bg-card/20 px-4 py-4">
+        <section className="rounded-lg border border-border/40 bg-card/20 px-4 py-4">
           <div className="flex items-center justify-between mb-3">
             <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/70">
               Quiz Range
@@ -293,7 +293,7 @@ function ConfigScreen({
               return (
                 <div
                   key={li}
-                  className="rounded-(--radius) border border-border/20 px-3 py-2"
+                  className="rounded-lg border border-border/20 px-3 py-2"
                 >
                   <button
                     type="button"
@@ -356,7 +356,7 @@ function ConfigScreen({
         </section>
 
         {/* Feedback mode */}
-        <section className="rounded-(--radius) border border-border/40 bg-card/20 px-4 py-4">
+        <section className="rounded-lg border border-border/40 bg-card/20 px-4 py-4">
           <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/70 mb-3">
             Feedback
           </p>
@@ -366,7 +366,7 @@ function ConfigScreen({
                 key={m}
                 type="button"
                 onClick={() => setFeedbackMode(m)}
-                className={`rounded-(--radius) flex-1 py-2 border text-[10px] font-mono uppercase tracking-widest font-semibold transition-all ${
+                className={`rounded-lg flex-1 py-2 border text-[10px] font-mono uppercase tracking-widest font-semibold transition-all ${
                   feedbackMode === m
                     ? "border-primary bg-primary/10 text-primary"
                     : "border-border/40 text-muted-foreground/60 hover:border-border/70"
@@ -395,7 +395,7 @@ function ConfigScreen({
         </section>
 
         {/* Timer Slider */}
-        <section className="rounded-(--radius) border border-border/40 bg-card/20 px-4 py-4">
+        <section className="rounded-lg border border-border/40 bg-card/20 px-4 py-4">
           <div className="flex items-center justify-between mb-4">
             <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/70">
               Timer (Minutes)
@@ -424,7 +424,7 @@ function ConfigScreen({
 
         {/* Passing score + options row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <section className="rounded-(--radius) border border-border/40 bg-card/20 px-4 py-4">
+          <section className="rounded-lg border border-border/40 bg-card/20 px-4 py-4">
             <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/70 mb-3">
               Passing Score
             </p>
@@ -434,7 +434,7 @@ function ConfigScreen({
                   key={s}
                   type="button"
                   onClick={() => setPassingScore(s)}
-                  className={`rounded-(--radius) px-3 py-1 border text-[10px] font-mono font-semibold transition-all ${
+                  className={`rounded-lg px-3 py-1 border text-[10px] font-mono font-semibold transition-all ${
                     passingScore === s
                       ? "border-primary bg-primary/10 text-primary"
                       : "border-border/40 text-muted-foreground/60 hover:border-border/70"
@@ -446,7 +446,7 @@ function ConfigScreen({
             </div>
           </section>
 
-          <section className="rounded-(--radius) border border-border/40 bg-card/20 px-4 py-4">
+          <section className="rounded-lg border border-border/40 bg-card/20 px-4 py-4">
             <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/70 mb-3">
               Options
             </p>
@@ -480,7 +480,7 @@ function ConfigScreen({
 
         {/* Z-grading */}
         {hasFreeTxt && (
-          <section className="rounded-(--radius) border border-primary/20 bg-primary/5 px-4 py-4">
+          <section className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-4">
             <label className="flex items-start gap-3 cursor-pointer">
               <button
                 type="button"
@@ -595,7 +595,7 @@ function QuestionMap({
             key={q.id}
             type="button"
             onClick={() => onJump(i)}
-            className={`rounded-(--radius) size-2.5 border transition-colors ${color} hover:border-primary/60`}
+            className={`rounded-lg size-2.5 border transition-colors ${color} hover:border-primary/60`}
             aria-label={`Question ${i + 1}`}
           />
         );
@@ -931,7 +931,7 @@ export default function QuizTakePage({
           {[...Array(5)].map((_, i) => (
             <div
               key={i}
-              className="rounded-(--radius) h-12 animate-pulse bg-card/40 border border-border/20"
+              className="rounded-lg h-12 animate-pulse bg-card/40 border border-border/20"
             />
           ))}
         </div>
@@ -942,7 +942,7 @@ export default function QuizTakePage({
   if (loadError || !quiz) {
     return (
       <div className="min-h-full px-4 pt-6 pb-8">
-        <div className="rounded-(--radius) mx-auto max-w-2xl border border-destructive/40 bg-destructive/5 px-4 py-3 font-mono text-sm text-destructive">
+        <div className="rounded-lg mx-auto max-w-2xl border border-destructive/40 bg-destructive/5 px-4 py-3 font-mono text-sm text-destructive">
           {loadError ?? "Quiz not found."}
         </div>
       </div>
@@ -976,7 +976,7 @@ export default function QuizTakePage({
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
-                  className="rounded-(--radius) flex items-center gap-1 border border-amber-500/30 bg-amber-500/10 px-2 py-0.5"
+                  className="rounded-lg flex items-center gap-1 border border-amber-500/30 bg-amber-500/10 px-2 py-0.5"
                 >
                   <Flame className="size-3 text-amber-500" />
                   <span className="text-[9px] font-mono text-amber-500 font-semibold">

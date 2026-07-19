@@ -3,7 +3,15 @@
 import { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import type { ZSessionMessage } from "@/types/session";
-import { MessageSquare, Copy, RotateCcw, Pencil, Check, ThumbsUp, ThumbsDown } from "lucide-react";
+import {
+  MessageSquare,
+  Copy,
+  RotateCcw,
+  Pencil,
+  Check,
+  ThumbsUp,
+  ThumbsDown,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface MessageBubbleProps {
@@ -119,7 +127,7 @@ function UserMessage({
               if (e.key === "Escape") cancelEdit();
             }}
             rows={3}
-            className="w-full resize-none border border-primary/50 bg-secondary px-4 py-3 text-sm font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary rounded-(--radius)"
+            className="w-full resize-none border border-primary/50 bg-secondary px-4 py-3 text-sm font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary rounded-lg"
           />
           <div className="flex justify-end gap-2">
             <button
@@ -139,7 +147,7 @@ function UserMessage({
       ) : (
         <div
           className={cn(
-            "max-w-[55%] border px-4 py-3 text-sm font-mono rounded-(--radius)",
+            "max-w-[55%] border px-4 py-3 text-sm font-mono rounded-lg",
             isErrorMessage
               ? "border-destructive/50 bg-destructive/10 text-destructive-foreground"
               : "border-border/50 bg-secondary text-foreground",
@@ -157,7 +165,9 @@ function UserMessage({
         )}
         {isErrorMessage && (
           <button
-            onClick={() => onRetry?.(message.messageId || message.id, message.content)}
+            onClick={() =>
+              onRetry?.(message.messageId || message.id, message.content)
+            }
             className="text-[9px] font-mono uppercase text-destructive hover:underline"
           >
             Retry
@@ -182,7 +192,10 @@ function UserMessage({
           >
             {onEdit && (
               <button
-                onClick={() => { setDraft(message.content); setEditing(true); }}
+                onClick={() => {
+                  setDraft(message.content);
+                  setEditing(true);
+                }}
                 className="flex items-center gap-1 text-[9px] font-mono uppercase text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Pencil className="size-2.5" />
@@ -191,7 +204,9 @@ function UserMessage({
             )}
             {onRetry && !isErrorMessage && (
               <button
-                onClick={() => onRetry(message.messageId || message.id, message.content)}
+                onClick={() =>
+                  onRetry(message.messageId || message.id, message.content)
+                }
                 className="flex items-center gap-1 text-[9px] font-mono uppercase text-muted-foreground hover:text-foreground transition-colors"
               >
                 <RotateCcw className="size-2.5" />
@@ -221,7 +236,7 @@ function ZMessage({
   const [hovered, setHovered] = useState(false);
   const [copied, setCopied] = useState(false);
   const isZ = message.role === "z" || message.role === "system";
-  const label = isZ ? "Z" : (message.authorName || authorName || "Peer");
+  const label = isZ ? "Z" : message.authorName || authorName || "Peer";
 
   function copyContent() {
     navigator.clipboard.writeText(message.content).then(() => {
@@ -239,16 +254,18 @@ function ZMessage({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <div className="mt-0.5 flex size-6 shrink-0 items-center justify-center border border-border/50 bg-card text-foreground rounded-(--radius)">
+      <div className="mt-0.5 flex size-6 shrink-0 items-center justify-center border border-border/50 bg-card text-foreground rounded-lg">
         <MessageSquare className="size-3 text-muted-foreground" />
       </div>
 
       <div className="flex-1 space-y-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className={cn(
-            "text-[9px] font-mono font-bold tracking-widest uppercase",
-            isZ ? "text-primary" : "text-muted-foreground"
-          )}>
+          <span
+            className={cn(
+              "text-[9px] font-mono font-bold tracking-widest uppercase",
+              isZ ? "text-primary" : "text-muted-foreground",
+            )}
+          >
             {label}
           </span>
           <span className="text-[9px] font-mono text-muted-foreground/50">
@@ -264,10 +281,10 @@ function ZMessage({
           )}
         </div>
 
-        <div className="border border-border/50 bg-card px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap break-words text-foreground rounded-(--radius)">
+        <div className="border border-border/50 bg-card px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap wrap-break-word text-foreground rounded-lg">
           {message.content}
           {message.isStreaming && (
-            <span className="inline-block w-[2px] h-[1em] bg-primary/70 ml-0.5 align-middle animate-pulse" />
+            <span className="inline-block w-0.5 h-[1em] bg-primary/70 ml-0.5 align-middle animate-pulse" />
           )}
         </div>
 
@@ -282,21 +299,33 @@ function ZMessage({
               onClick={copyContent}
               className="flex items-center gap-1 text-[9px] font-mono uppercase text-muted-foreground hover:text-foreground transition-colors"
             >
-              {copied ? <Check className="size-2.5" /> : <Copy className="size-2.5" />}
+              {copied ? (
+                <Check className="size-2.5" />
+              ) : (
+                <Copy className="size-2.5" />
+              )}
               {copied ? "Copied" : "Copy"}
             </button>
-            {onRetry && (message as ZSessionMessage & { replyToMessageId?: string }).replyToMessageId && (
-              <button
-                onClick={() => onRetry(
-                  (message as ZSessionMessage & { replyToMessageId?: string }).replyToMessageId!,
-                  message.content,
-                )}
-                className="flex items-center gap-1 text-[9px] font-mono uppercase text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <RotateCcw className="size-2.5" />
-                Retry
-              </button>
-            )}
+            {onRetry &&
+              (message as ZSessionMessage & { replyToMessageId?: string })
+                .replyToMessageId && (
+                <button
+                  onClick={() =>
+                    onRetry(
+                      (
+                        message as ZSessionMessage & {
+                          replyToMessageId?: string;
+                        }
+                      ).replyToMessageId!,
+                      message.content,
+                    )
+                  }
+                  className="flex items-center gap-1 text-[9px] font-mono uppercase text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <RotateCcw className="size-2.5" />
+                  Retry
+                </button>
+              )}
             {onRate && message.role === "z" && (
               <>
                 <button
@@ -305,7 +334,7 @@ function ZMessage({
                     "flex items-center gap-1 text-[9px] font-mono uppercase transition-colors",
                     message.rating === 1
                       ? "text-emerald-500"
-                      : "text-muted-foreground hover:text-emerald-500"
+                      : "text-muted-foreground hover:text-emerald-500",
                   )}
                 >
                   <ThumbsUp className="size-2.5" />
@@ -316,7 +345,7 @@ function ZMessage({
                     "flex items-center gap-1 text-[9px] font-mono uppercase transition-colors",
                     message.rating === -1
                       ? "text-destructive"
-                      : "text-muted-foreground hover:text-destructive"
+                      : "text-muted-foreground hover:text-destructive",
                   )}
                 >
                   <ThumbsDown className="size-2.5" />

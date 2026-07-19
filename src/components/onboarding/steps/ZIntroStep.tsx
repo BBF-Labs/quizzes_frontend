@@ -87,7 +87,7 @@ export default function ZIntroStep({
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.3 }}
-              className="text-4xl font-black tracking-[-0.05em] uppercase" // Kept original className for motion.h1
+              className="text-4xl font-black tracking-tighter uppercase" // Kept original className for motion.h1
             >
               {messages[messageIndex].title}
             </motion.h1>
@@ -123,7 +123,7 @@ export default function ZIntroStep({
             <Button
               onClick={handleFinish}
               disabled={isFinishing}
-              className="w-full rounded-(--radius) font-mono text-xs tracking-[0.3em] uppercase h-14 bg-primary text-primary-foreground group overflow-hidden"
+              className="w-full rounded-lg font-mono text-xs tracking-[0.3em] uppercase h-14 bg-primary text-primary-foreground group overflow-hidden"
             >
               <div className="relative z-10 flex items-center gap-2">
                 Enter the App{" "}

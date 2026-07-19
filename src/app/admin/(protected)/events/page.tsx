@@ -94,11 +94,11 @@ export default function EventsPage() {
 
       {/* Stats / Controls */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="rounded-(--radius) border border-border/50 bg-card/40 h-10 px-4 flex items-center justify-between">
+        <div className="rounded-lg border border-border/50 bg-card/40 h-10 px-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div
               className={cn(
-                "size-2 rounded-(--radius)",
+                "size-2 rounded-lg",
                 isConnected
                   ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]"
                   : "bg-destructive animate-pulse",
@@ -143,7 +143,7 @@ export default function EventsPage() {
               }
             }}
             disabled={isSendingPushTest}
-            className="rounded-(--radius) font-mono text-[10px] tracking-widest uppercase gap-2 h-10 px-4"
+            className="rounded-lg font-mono text-[10px] tracking-widest uppercase gap-2 h-10 px-4"
           >
             <Zap
               className={cn("size-3.5", isSendingPushTest && "animate-pulse")}
@@ -154,7 +154,7 @@ export default function EventsPage() {
             variant="outline"
             size="sm"
             onClick={() => setIsPaused(!isPaused)}
-            className="rounded-(--radius) font-mono text-[10px] tracking-widest uppercase gap-2 h-10 px-4"
+            className="rounded-lg font-mono text-[10px] tracking-widest uppercase gap-2 h-10 px-4"
           >
             {isPaused ? (
               <PlayCircle className="size-3.5" />
@@ -167,7 +167,7 @@ export default function EventsPage() {
             variant="outline"
             size="sm"
             onClick={() => setEvents([])}
-            className="rounded-(--radius) font-mono text-[10px] tracking-widest uppercase gap-2 h-10 px-4"
+            className="rounded-lg font-mono text-[10px] tracking-widest uppercase gap-2 h-10 px-4"
           >
             <Trash2 className="size-3.5" /> Clear Logs
           </Button>
@@ -175,7 +175,7 @@ export default function EventsPage() {
       </div>
 
       {/* Event Log */}
-      <Card className="rounded-(--radius) border-border/50 bg-card/40 flex flex-col h-96">
+      <Card className="rounded-lg border-border/50 bg-card/40 flex flex-col h-96">
         <CardHeader className="border-b border-border/10 shrink-0">
           <CardTitle className="text-[11px] font-mono tracking-[0.2em] uppercase text-muted-foreground flex items-center justify-between">
             Event Log

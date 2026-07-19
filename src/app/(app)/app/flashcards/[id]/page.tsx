@@ -132,7 +132,7 @@ export default function FlashcardSetDetailPage({
               setFlippedIds(new Set());
             }}
             disabled={currentIndex === 0}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-12 w-12 flex items-center justify-center rounded-(--radius) border border-border/50 bg-card/60 text-2xl text-muted-foreground/60 hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed"
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-12 w-12 flex items-center justify-center rounded-lg border border-border/50 bg-card/60 text-2xl text-muted-foreground/60 hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed"
             aria-label="Previous card"
           >
             <ChevronLeft className="size-7" />
@@ -249,7 +249,7 @@ export default function FlashcardSetDetailPage({
               setFlippedIds(new Set());
             }}
             disabled={currentIndex >= set.cards.length - 1}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-12 w-12 flex items-center justify-center rounded-(--radius) border border-border/50 bg-card/60 text-2xl text-muted-foreground/60 hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed"
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-12 w-12 flex items-center justify-center rounded-lg border border-border/50 bg-card/60 text-2xl text-muted-foreground/60 hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed"
             aria-label="Next card"
           >
             <ChevronRight className="size-7" />

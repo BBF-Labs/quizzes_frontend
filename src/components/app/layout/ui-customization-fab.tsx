@@ -163,7 +163,7 @@ export function UiCustomizationFab() {
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="fixed right-4 top-1/2 z-110 -translate-y-1/2 border border-border/70 bg-card/95 backdrop-blur px-3 py-3 text-foreground hover:border-primary/60 transition-colors rounded-(--radius)"
+        className="fixed right-4 top-1/2 z-110 -translate-y-1/2 border border-border/70 bg-card/95 backdrop-blur px-3 py-3 text-foreground hover:border-primary/60 transition-colors rounded-lg"
         aria-label="Open UI customization"
       >
         <Settings2 className="size-4" />
@@ -201,14 +201,14 @@ export function UiCustomizationFab() {
             <button
               type="button"
               onClick={() => updatePrefs(DEFAULT_UI_PREFERENCES)}
-              className="border border-border/70 px-2.5 py-2 text-[10px] font-sans uppercase tracking-widest text-muted-foreground hover:border-primary/60 hover:text-primary transition-colors rounded-(--radius)"
+              className="border border-border/70 px-2.5 py-2 text-[10px] font-sans uppercase tracking-widest text-muted-foreground hover:border-primary/60 hover:text-primary transition-colors rounded-lg"
             >
               Reset
             </button>
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="border border-border/70 p-2 hover:border-primary/60 transition-colors rounded-(--radius)"
+              className="border border-border/70 p-2 hover:border-primary/60 transition-colors rounded-lg"
               aria-label="Close UI customization"
             >
               <X className="size-4" />
@@ -217,7 +217,7 @@ export function UiCustomizationFab() {
         </div>
 
         <div className="p-4 space-y-4 overflow-auto no-scrollbar h-[calc(100%-56px)] font-sans">
-          <div className="border border-border/40 bg-card/30 px-4 py-4 rounded-(--radius)">
+          <div className="border border-border/40 bg-card/30 px-4 py-4 rounded-lg">
             <div className="flex gap-3 mb-3">
               <Type className="size-4 text-muted-foreground/70 shrink-0 mt-0.5" />
               <div>
@@ -244,7 +244,7 @@ export function UiCustomizationFab() {
                     onClick={() =>
                       updatePrefs({ ...uiPrefs, fontPreset: font.id })
                     }
-                    className={`border px-3 py-2 text-left text-[10px] font-sans uppercase tracking-widest transition-colors rounded-(--radius) ${
+                    className={`border px-3 py-2 text-left text-[10px] font-sans uppercase tracking-widest transition-colors rounded-lg ${
                       isActive
                         ? "border-primary bg-primary/10"
                         : "border-border/60 hover:border-primary/50"
@@ -270,7 +270,7 @@ export function UiCustomizationFab() {
                     onClick={() =>
                       updatePrefs({ ...uiPrefs, monoFontPreset: font.id })
                     }
-                    className={`border px-3 py-2 text-left text-[10px] font-sans uppercase tracking-widest transition-colors rounded-(--radius) ${
+                    className={`border px-3 py-2 text-left text-[10px] font-sans uppercase tracking-widest transition-colors rounded-lg ${
                       isActive
                         ? "border-primary bg-primary/10"
                         : "border-border/60 hover:border-primary/50"
@@ -283,7 +283,7 @@ export function UiCustomizationFab() {
             </div>
           </div>
 
-          <div className="border border-border/40 bg-card/30 px-4 py-4 rounded-(--radius)">
+          <div className="border border-border/40 bg-card/30 px-4 py-4 rounded-lg">
             <div className="flex gap-3 mb-3">
               <Circle className="size-4 text-muted-foreground/70 shrink-0 mt-0.5" />
               <div>
@@ -315,7 +315,7 @@ export function UiCustomizationFab() {
             </p>
           </div>
 
-          <div className="border border-border/40 bg-card/30 px-4 py-4 rounded-(--radius)">
+          <div className="border border-border/40 bg-card/30 px-4 py-4 rounded-lg">
             <div className="flex gap-3 mb-3">
               <Palette className="size-4 text-muted-foreground/70 shrink-0 mt-0.5" />
               <div>
@@ -340,7 +340,7 @@ export function UiCustomizationFab() {
                     onClick={() =>
                       updatePrefs({ ...uiPrefs, palette: palette.id })
                     }
-                    className={`border px-3 py-2 text-left transition-colors rounded-(--radius) ${
+                    className={`border px-3 py-2 text-left transition-colors rounded-lg ${
                       isActive
                         ? "border-primary bg-primary/10"
                         : "border-border/60 hover:border-primary/50"
@@ -371,35 +371,35 @@ export function UiCustomizationFab() {
                   <button
                     type="button"
                     onClick={() => generateCustomPalette("analogous")}
-                    className="border border-border/60 px-2 py-2 text-[10px] font-sans uppercase tracking-widest hover:border-primary/50 transition-colors rounded-(--radius)"
+                    className="border border-border/60 px-2 py-2 text-[10px] font-sans uppercase tracking-widest hover:border-primary/50 transition-colors rounded-lg"
                   >
                     Analogous
                   </button>
                   <button
                     type="button"
                     onClick={() => generateCustomPalette("complementary")}
-                    className="border border-border/60 px-2 py-2 text-[10px] font-sans uppercase tracking-widest hover:border-primary/50 transition-colors rounded-(--radius)"
+                    className="border border-border/60 px-2 py-2 text-[10px] font-sans uppercase tracking-widest hover:border-primary/50 transition-colors rounded-lg"
                   >
                     Complement
                   </button>
                   <button
                     type="button"
                     onClick={() => generateCustomPalette("triad")}
-                    className="border border-border/60 px-2 py-2 text-[10px] font-sans uppercase tracking-widest hover:border-primary/50 transition-colors rounded-(--radius)"
+                    className="border border-border/60 px-2 py-2 text-[10px] font-sans uppercase tracking-widest hover:border-primary/50 transition-colors rounded-lg"
                   >
                     Triad
                   </button>
                   <button
                     type="button"
                     onClick={() => generateCustomPalette("random")}
-                    className="border border-border/60 px-2 py-2 text-[10px] font-sans uppercase tracking-widest hover:border-primary/50 transition-colors flex items-center justify-center gap-1 rounded-(--radius)"
+                    className="border border-border/60 px-2 py-2 text-[10px] font-sans uppercase tracking-widest hover:border-primary/50 transition-colors flex items-center justify-center gap-1 rounded-lg"
                   >
                     <Sparkles className="size-3" />
                     Random
                   </button>
                 </div>
 
-                <label className="flex items-center justify-between border border-border/60 px-3 py-2 rounded-(--radius)">
+                <label className="flex items-center justify-between border border-border/60 px-3 py-2 rounded-lg">
                   <span className="text-[10px] font-sans uppercase tracking-widest text-muted-foreground">
                     Primary
                   </span>
@@ -421,7 +421,7 @@ export function UiCustomizationFab() {
                   />
                 </label>
 
-                <label className="flex items-center justify-between border border-border/60 px-3 py-2 rounded-(--radius)">
+                <label className="flex items-center justify-between border border-border/60 px-3 py-2 rounded-lg">
                   <span className="text-[10px] font-sans uppercase tracking-widest text-muted-foreground">
                     Accent
                   </span>
@@ -443,7 +443,7 @@ export function UiCustomizationFab() {
                   />
                 </label>
 
-                <label className="flex items-center justify-between border border-border/60 px-3 py-2 rounded-(--radius)">
+                <label className="flex items-center justify-between border border-border/60 px-3 py-2 rounded-lg">
                   <span className="text-[10px] font-sans uppercase tracking-widest text-muted-foreground">
                     Focus Ring
                   </span>
@@ -468,7 +468,7 @@ export function UiCustomizationFab() {
             )}
           </div>
 
-          <div className="border border-border/40 bg-card/30 px-4 py-4 rounded-(--radius)">
+          <div className="border border-border/40 bg-card/30 px-4 py-4 rounded-lg">
             <p className="text-[12px] font-sans font-semibold uppercase tracking-wide mb-3">
               Preview
             </p>
@@ -481,7 +481,7 @@ export function UiCustomizationFab() {
                   Sample Card
                 </p>
                 <span
-                  className="px-2 py-1 text-[10px] font-sans uppercase tracking-widest rounded-(--radius)"
+                  className="px-2 py-1 text-[10px] font-sans uppercase tracking-widest rounded-lg"
                   style={{
                     backgroundColor: selectedPalette.primary,
                     color: "oklch(0.98 0 0)",

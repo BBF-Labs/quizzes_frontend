@@ -76,7 +76,7 @@ export function ExamTimetablePreview() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="grid grid-cols-1 lg:grid-cols-3 gap-0 border border-border/50 rounded-(--radius) overflow-hidden"
+          className="grid grid-cols-1 lg:grid-cols-3 gap-0 border border-border/50 rounded-lg overflow-hidden"
         >
           {/* Left 1/3 — Countdown panel */}
           <div className="border-b lg:border-b-0 lg:border-r border-border/50 p-8 md:p-10 flex flex-col justify-between bg-card">
@@ -123,7 +123,7 @@ export function ExamTimetablePreview() {
           <div className="col-span-1 lg:col-span-2">
             {/* Terminal header */}
             <div className="p-4 border-b border-border/50 bg-background/80 flex items-center gap-4 font-mono text-xs">
-              <div className="w-6 h-6 border border-primary/40 bg-primary/20 flex items-center justify-center text-primary font-bold shrink-0 rounded-(--radius)">
+              <div className="w-6 h-6 border border-primary/40 bg-primary/20 flex items-center justify-center text-primary font-bold shrink-0 rounded-lg">
                 Z
               </div>
               <div className="font-bold text-foreground uppercase tracking-widest flex items-center gap-3">
@@ -163,7 +163,7 @@ export function ExamTimetablePreview() {
                         <span>{exam.duration}</span>
                       </div>
                     </div>
-                    <div className="bg-primary/5 p-3 flex items-center gap-3 border border-primary/10 rounded-(--radius)">
+                    <div className="bg-primary/5 p-3 flex items-center gap-3 border border-primary/10 rounded-lg">
                       <Bell className="w-3.5 h-3.5 text-primary shrink-0" />
                       <span className="text-xs font-mono text-primary">
                         Reminders:{" "}
