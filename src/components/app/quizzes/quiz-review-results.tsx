@@ -68,7 +68,7 @@ function ReviewItem({
         : "border-border/30 bg-card/20";
 
   return (
-    <div className={`rounded-(--radius) border px-4 py-3 ${borderColor}`}>
+    <div className={`rounded-lg border px-4 py-3 ${borderColor}`}>
       <div className="flex items-center justify-between gap-3 mb-2">
         <QuestionTypeBadge type={q.type} />
         <div className="flex items-center gap-1.5 shrink-0">
@@ -91,54 +91,55 @@ function ReviewItem({
         <QuestionMarkdown content={q.question} className="text-[11px]" />
       </div>
 
-      {(q.type === "mcq" || q.type === "true_false") && (() => {
-        const opts =
-          q.type === "true_false" && (!q.options || q.options.length === 0)
-            ? ["True", "False"]
-            : q.options ?? [];
-        return opts.length > 0 ? (
-        <div className="flex flex-col gap-1 mb-1">
-          {opts.map((opt, i) => {
-            const isSelected =
-              q.type === "true_false"
-                ? answersMatch("true_false", given, opt)
-                : given === opt;
-            const isRight =
-              q.type === "true_false"
-                ? answersMatch("true_false", opt, q.correctAnswer)
-                : opt === q.correctAnswer;
-            return (
-              <div
-                key={i}
-                className={`flex items-center gap-2 px-2 py-0.5 text-[10px] font-mono ${
-                  isRight
-                    ? "text-green-500"
-                    : isSelected
-                      ? "text-red-400"
-                      : "text-muted-foreground/30"
-                }`}
-              >
-                <span>{letters[i]}.</span>
-                <QuestionMarkdown
-                  content={opt}
-                  className="text-[10px] flex-1"
-                />
-                {isRight && (
-                  <span className="ml-auto text-[9px] uppercase tracking-widest text-green-500/60">
-                    correct
-                  </span>
-                )}
-                {isSelected && !isRight && (
-                  <span className="ml-auto text-[9px] uppercase tracking-widest text-red-400/60">
-                    yours
-                  </span>
-                )}
-              </div>
-            );
-          })}
-        </div>
-        ) : null;
-      })()}
+      {(q.type === "mcq" || q.type === "true_false") &&
+        (() => {
+          const opts =
+            q.type === "true_false" && (!q.options || q.options.length === 0)
+              ? ["True", "False"]
+              : (q.options ?? []);
+          return opts.length > 0 ? (
+            <div className="flex flex-col gap-1 mb-1">
+              {opts.map((opt, i) => {
+                const isSelected =
+                  q.type === "true_false"
+                    ? answersMatch("true_false", given, opt)
+                    : given === opt;
+                const isRight =
+                  q.type === "true_false"
+                    ? answersMatch("true_false", opt, q.correctAnswer)
+                    : opt === q.correctAnswer;
+                return (
+                  <div
+                    key={i}
+                    className={`flex items-center gap-2 px-2 py-0.5 text-[10px] font-mono ${
+                      isRight
+                        ? "text-green-500"
+                        : isSelected
+                          ? "text-red-400"
+                          : "text-muted-foreground/30"
+                    }`}
+                  >
+                    <span>{letters[i]}.</span>
+                    <QuestionMarkdown
+                      content={opt}
+                      className="text-[10px] flex-1"
+                    />
+                    {isRight && (
+                      <span className="ml-auto text-[9px] uppercase tracking-widest text-green-500/60">
+                        correct
+                      </span>
+                    )}
+                    {isSelected && !isRight && (
+                      <span className="ml-auto text-[9px] uppercase tracking-widest text-red-400/60">
+                        yours
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : null;
+        })()}
 
       {isFreeResponseType(q.type) && (
         <div className="space-y-2">
@@ -166,7 +167,7 @@ function ReviewItem({
             </div>
           )}
           {zGraded && (
-            <div className="rounded-(--radius) border border-primary/20 bg-primary/5 px-3 py-2 mt-2">
+            <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 mt-2">
               <p className="text-[9px] font-mono uppercase tracking-widest text-primary/60 mb-1 flex items-center gap-1">
                 <Zap className="size-2.5" /> Z Feedback
               </p>
@@ -180,7 +181,7 @@ function ReviewItem({
               <button
                 type="button"
                 onClick={() => onSelfMark(true)}
-                className="rounded-(--radius) flex items-center gap-1 text-[10px] font-mono border border-green-500/40 text-green-500 px-2 py-1 hover:bg-green-500/10 transition-colors"
+                className="rounded-lg flex items-center gap-1 text-[10px] font-mono border border-green-500/40 text-green-500 px-2 py-1 hover:bg-green-500/10 transition-colors"
               >
                 <CheckCircle2 className="size-3" />
                 Correct
@@ -188,7 +189,7 @@ function ReviewItem({
               <button
                 type="button"
                 onClick={() => onSelfMark(false)}
-                className="rounded-(--radius) flex items-center gap-1 text-[10px] font-mono border border-red-500/40 text-red-400 px-2 py-1 hover:bg-red-500/10 transition-colors"
+                className="rounded-lg flex items-center gap-1 text-[10px] font-mono border border-red-500/40 text-red-400 px-2 py-1 hover:bg-red-500/10 transition-colors"
               >
                 <XCircle className="size-3" />
                 Incorrect
@@ -279,7 +280,7 @@ export function QuizReviewResults({
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`rounded-(--radius) border px-5 py-6 mb-6 text-center ${
+        className={`rounded-lg border px-5 py-6 mb-6 text-center ${
           isPctFinal
             ? pass
               ? "border-green-500/30 bg-green-500/5"
@@ -315,7 +316,7 @@ export function QuizReviewResults({
         </p>
 
         {maxStreak >= 3 && (
-          <div className="rounded-(--radius) mt-3 inline-flex items-center gap-1 border border-amber-500/30 bg-amber-500/10 px-2 py-0.5">
+          <div className="rounded-lg mt-3 inline-flex items-center gap-1 border border-amber-500/30 bg-amber-500/10 px-2 py-0.5">
             <Flame className="size-3 text-amber-500" />
             <span className="text-[9px] font-mono text-amber-500 uppercase tracking-widest">
               Best streak: {maxStreak}
@@ -327,7 +328,7 @@ export function QuizReviewResults({
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="rounded-(--radius) border border-primary/20 bg-primary/5 px-4 py-4 mt-4"
+            className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-4 mt-4"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="text-left">
@@ -372,7 +373,7 @@ export function QuizReviewResults({
           <button
             type="button"
             onClick={onRetake}
-            className="rounded-(--radius) inline-flex items-center gap-1.5 border border-border/50 px-4 py-1.5 text-[10px] font-mono uppercase tracking-widest text-muted-foreground hover:border-primary/50 hover:text-foreground transition-all"
+            className="rounded-lg inline-flex items-center gap-1.5 border border-border/50 px-4 py-1.5 text-[10px] font-mono uppercase tracking-widest text-muted-foreground hover:border-primary/50 hover:text-foreground transition-all"
           >
             <RotateCcw className="size-3" />
             Retake

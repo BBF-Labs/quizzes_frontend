@@ -268,7 +268,7 @@ const AvatarThumb = memo(function AvatarThumb({
       <button
         onClick={onClick}
         className={cn(
-          "aspect-square rounded-(--radius) border-2 flex items-center justify-center transition-all hover:border-primary/60 text-[9px] font-mono font-bold uppercase tracking-wider text-muted-foreground",
+          "aspect-square rounded-lg border-2 flex items-center justify-center transition-all hover:border-primary/60 text-[9px] font-mono font-bold uppercase tracking-wider text-muted-foreground",
           selected
             ? "border-primary bg-primary/5 shadow-sm text-primary"
             : "border-border/30 bg-muted/20",
@@ -283,7 +283,7 @@ const AvatarThumb = memo(function AvatarThumb({
     <button
       onClick={onClick}
       className={cn(
-        "group relative aspect-square overflow-hidden rounded-(--radius) border-2 p-0.5 transition-all hover:border-primary/60",
+        "group relative aspect-square overflow-hidden rounded-lg border-2 p-0.5 transition-all hover:border-primary/60",
         selected
           ? "border-primary bg-primary/5 shadow-sm"
           : "border-border/30 bg-muted/20",
@@ -372,7 +372,7 @@ export function AvatarBuilder({ initialConfig, onUpdate }: AvatarBuilderProps) {
               variant="outline"
               size="sm"
               onClick={() => applyPreset("styleA")}
-              className="rounded-(--radius) font-mono text-[9px] uppercase h-7 px-3 sm:h-8 sm:px-4"
+              className="rounded-lg font-mono text-[9px] uppercase h-7 px-3 sm:h-8 sm:px-4"
             >
               Style A
             </Button>
@@ -380,7 +380,7 @@ export function AvatarBuilder({ initialConfig, onUpdate }: AvatarBuilderProps) {
               variant="outline"
               size="sm"
               onClick={() => applyPreset("styleB")}
-              className="rounded-(--radius) font-mono text-[9px] uppercase h-7 px-3 sm:h-8 sm:px-4"
+              className="rounded-lg font-mono text-[9px] uppercase h-7 px-3 sm:h-8 sm:px-4"
             >
               Style B
             </Button>
@@ -388,7 +388,7 @@ export function AvatarBuilder({ initialConfig, onUpdate }: AvatarBuilderProps) {
               variant="ghost"
               size="sm"
               onClick={randomize}
-              className="rounded-(--radius) font-mono text-[9px] uppercase h-7 px-3 gap-1 text-muted-foreground sm:h-8 sm:px-4 sm:gap-1.5"
+              className="rounded-lg font-mono text-[9px] uppercase h-7 px-3 gap-1 text-muted-foreground sm:h-8 sm:px-4 sm:gap-1.5"
             >
               <RefreshCw className="size-3" /> Random
             </Button>
@@ -405,7 +405,7 @@ export function AvatarBuilder({ initialConfig, onUpdate }: AvatarBuilderProps) {
               key={cat.id}
               onClick={() => setActiveCat(cat.id)}
               className={cn(
-                "flex items-center gap-1 rounded-(--radius) px-2 py-1.5 font-mono text-[9px] font-bold uppercase tracking-wider transition-all",
+                "flex items-center gap-1 rounded-lg px-2 py-1.5 font-mono text-[9px] font-bold uppercase tracking-wider transition-all",
                 active
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground",

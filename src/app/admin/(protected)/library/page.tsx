@@ -97,7 +97,7 @@ function RejectDialog({
       <motion.div
         initial={{ opacity: 0, scale: 0.97 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-md border border-destructive/40 bg-card p-6 shadow-xl rounded-(--radius)"
+        className="w-full max-w-md border border-destructive/40 bg-card p-6 shadow-xl rounded-lg"
       >
         <div className="flex items-start justify-between mb-4">
           <div>
@@ -275,7 +275,7 @@ function LibraryRow({
     <motion.div
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      className="border border-border/30 bg-card/20 p-4 rounded-(--radius)"
+      className="border border-border/30 bg-card/20 p-4 rounded-lg"
     >
       <div className="flex flex-col sm:flex-row sm:items-center gap-4">
         {/* Left: Info */}
@@ -534,7 +534,7 @@ export default function AdminLibraryPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
             placeholder="Search library items..."
-            className="pl-9 rounded-(--radius) bg-background/50 font-mono text-xs uppercase tracking-widest"
+            className="pl-9 rounded-lg bg-background/50 font-mono text-xs uppercase tracking-widest"
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -560,31 +560,31 @@ export default function AdminLibraryPage() {
             setPage(1);
           }}
         >
-          <SelectTrigger className="w-full sm:w-auto sm:min-w-40 rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+          <SelectTrigger className="w-full sm:w-auto sm:min-w-40 rounded-lg bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
-          <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
+          <SelectContent className="rounded-lg border-border/40 bg-card/95 font-mono text-xs uppercase">
             <SelectItem
               value="pending_review"
-              className="rounded-(--radius) font-mono text-xs uppercase"
+              className="rounded-lg font-mono text-xs uppercase"
             >
               Pending Review
             </SelectItem>
             <SelectItem
               value="published"
-              className="rounded-(--radius) font-mono text-xs uppercase"
+              className="rounded-lg font-mono text-xs uppercase"
             >
               Published
             </SelectItem>
             <SelectItem
               value="rejected"
-              className="rounded-(--radius) font-mono text-xs uppercase"
+              className="rounded-lg font-mono text-xs uppercase"
             >
               Rejected
             </SelectItem>
             <SelectItem
               value="all"
-              className="rounded-(--radius) font-mono text-xs uppercase"
+              className="rounded-lg font-mono text-xs uppercase"
             >
               All Statuses
             </SelectItem>

@@ -476,7 +476,7 @@ export default function SystemQuizTakePage({
           </span>
           <div className="flex items-center gap-3">
             {streak >= 2 && (
-              <div className="rounded-(--radius) flex items-center gap-1 border border-amber-500/30 bg-amber-500/10 px-2 py-0.5">
+              <div className="rounded-lg flex items-center gap-1 border border-amber-500/30 bg-amber-500/10 px-2 py-0.5">
                 <Flame className="size-3 text-amber-500" />
                 <span className="text-[9px] font-mono text-amber-500 font-semibold">
                   {streak}

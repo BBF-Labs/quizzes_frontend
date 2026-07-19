@@ -114,7 +114,7 @@ export function PlanCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay }}
       className={cn(
-        "relative flex flex-col border bg-card/30 p-6 transition-colors duration-300 rounded-(--radius)",
+        "relative flex flex-col border bg-card/30 p-6 transition-colors duration-300 rounded-lg",
         isCurrent ? "border-primary/60 bg-primary/5" : "border-border/50",
         isPopular && !isCurrent && "border-sky-400/30 bg-sky-400/3",
         !isCurrent && onSelect && meta.borderHover,
@@ -193,7 +193,7 @@ export function PlanCard({
           onClick={() => onSelect(pkg)}
           disabled={isCurrent}
           className={cn(
-            "w-full py-2.5 text-[10px] font-mono uppercase tracking-[0.15em] border transition-colors text-center block rounded-(--radius)",
+            "w-full py-2.5 text-[10px] font-mono uppercase tracking-[0.15em] border transition-colors text-center block rounded-lg",
             isCurrent
               ? "border-border/30 text-muted-foreground cursor-not-allowed"
               : pkg.tier === "locked_in"

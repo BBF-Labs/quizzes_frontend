@@ -183,7 +183,7 @@ export default function TimetablePage() {
         </div>
       </div>
 
-      <div className="bg-primary/5 border border-primary/20 p-4 flex items-start gap-3 rounded-(--radius)">
+      <div className="bg-primary/5 border border-primary/20 p-4 flex items-start gap-3 rounded-lg">
         <Bell className="size-4 text-primary shrink-0 mt-0.5" />
         <p className="text-[10px] font-mono uppercase tracking-widest text-primary/80 leading-relaxed">
           Push notifications are enabled. You will be reminded 7 days, 3 days,
@@ -203,7 +203,7 @@ export default function TimetablePage() {
             {[1, 2, 3].map((index) => (
               <div
                 key={index}
-                className="h-32 border border-border/40 animate-pulse bg-card/20 border-dashed rounded-(--radius)"
+                className="h-32 border border-border/40 animate-pulse bg-card/20 border-dashed rounded-lg"
               />
             ))}
           </motion.div>
@@ -213,7 +213,7 @@ export default function TimetablePage() {
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.9fr)] gap-0 border border-border/50 rounded-(--radius) overflow-hidden"
+            className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.9fr)] gap-0 border border-border/50 rounded-lg overflow-hidden"
           >
             <motion.div
               variants={itemVariants}
@@ -341,20 +341,20 @@ export default function TimetablePage() {
                           <div className="flex flex-wrap items-center gap-2">
                             <Badge
                               variant="outline"
-                              className="font-mono text-[9px] uppercase tracking-widest h-5 rounded-(--radius) border-border/40"
+                              className="font-mono text-[9px] uppercase tracking-widest h-5 rounded-lg border-border/40"
                             >
                               {entry.courseCode}
                             </Badge>
                             <Badge
                               variant="outline"
-                              className="font-mono text-[9px] uppercase tracking-widest h-5 rounded-(--radius) border-primary/30 text-primary/70"
+                              className="font-mono text-[9px] uppercase tracking-widest h-5 rounded-lg border-primary/30 text-primary/70"
                             >
                               {entry.examType}
                             </Badge>
                             {displayLabel && (
                               <Badge
                                 variant="secondary"
-                                className="font-mono text-[9px] uppercase tracking-widest h-5 rounded-(--radius) border-primary/20 bg-primary/10 text-primary"
+                                className="font-mono text-[9px] uppercase tracking-widest h-5 rounded-lg border-primary/20 bg-primary/10 text-primary"
                               >
                                 {displayLabel}
                               </Badge>
@@ -429,7 +429,7 @@ export default function TimetablePage() {
                   })
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full py-16 px-6 text-center">
-                    <div className="size-12 border border-border/40 bg-muted/10 flex items-center justify-center rounded-(--radius) mb-4">
+                    <div className="size-12 border border-border/40 bg-muted/10 flex items-center justify-center rounded-lg mb-4">
                       <Calendar className="size-6 text-muted-foreground/40" />
                     </div>
                     <p className="text-sm font-black uppercase tracking-widest">
@@ -448,9 +448,9 @@ export default function TimetablePage() {
             key="empty"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex flex-col items-center justify-center py-24 border-2 border-dashed border-border/40 bg-card/20 gap-6 rounded-(--radius)"
+            className="flex flex-col items-center justify-center py-24 border-2 border-dashed border-border/40 bg-card/20 gap-6 rounded-lg"
           >
-            <div className="size-16 border border-border/40 bg-muted/10 flex items-center justify-center rounded-(--radius)">
+            <div className="size-16 border border-border/40 bg-muted/10 flex items-center justify-center rounded-lg">
               <Calendar className="size-8 text-muted-foreground/40" />
             </div>
             <div className="text-center space-y-2">

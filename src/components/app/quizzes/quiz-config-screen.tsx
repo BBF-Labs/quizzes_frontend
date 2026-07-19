@@ -46,7 +46,7 @@ const TIMER_TOTAL_OPTIONS = [
 
 function allTopicKeys(quiz: QuizDetail): string[] {
   return quiz.lectures.flatMap((l, li) =>
-    l.topics.map((_, ti) => `${li}:${ti}`)
+    l.topics.map((_, ti) => `${li}:${ti}`),
   );
 }
 
@@ -61,32 +61,30 @@ export function QuizConfigScreen({
 }: Props) {
   // --- State ---
   const [selectedKeys, setSelectedKeys] = useState<string[]>(
-    initialConfig?.selectedKeys || allTopicKeys(quiz)
+    initialConfig?.selectedKeys || allTopicKeys(quiz),
   );
 
   const router = useRouter();
 
   const [feedbackMode, setFeedbackMode] = useState<"immediate" | "deferred">(
-    initialConfig?.feedbackMode || "immediate"
+    initialConfig?.feedbackMode || "immediate",
   );
   const [timerMode, setTimerMode] = useState<"none" | "per_question" | "total">(
-    initialConfig?.timerMode || "none"
+    initialConfig?.timerMode || "none",
   );
   const [timerSeconds, setTimerSeconds] = useState(
-    initialConfig?.timerSeconds ?? 60
+    initialConfig?.timerSeconds ?? 60,
   );
   const [autoNext, setAutoNext] = useState(initialConfig?.autoNext ?? true);
   const [allowSkip, setAllowSkip] = useState(initialConfig?.allowSkip ?? true);
   const [doShuffle, setDoShuffle] = useState(initialConfig?.shuffle ?? false);
   const [passingScore, setPassingScore] = useState(
-    initialConfig?.passingScore || 70
+    initialConfig?.passingScore || 70,
   );
   const [useZGrading, setUseZGrading] = useState(
-    initialConfig?.useZGrading ?? false
+    initialConfig?.useZGrading ?? false,
   );
-  const [showHints, setShowHints] = useState(
-    initialConfig?.showHints ?? false
-  );
+  const [showHints, setShowHints] = useState(initialConfig?.showHints ?? false);
 
   // --- Derived ---
   const totalSelected = useMemo(() => {
@@ -99,30 +97,31 @@ export function QuizConfigScreen({
             (selectedKeys.includes(`${li}:${ti}`)
               ? (t.questionCount ?? t.questions?.length ?? 0)
               : 0),
-          0
+          0,
         ),
-      0
+      0,
     );
   }, [quiz, selectedKeys]);
 
   const hasFreeTxt = useMemo(() => {
     return quiz.lectures.some((l) =>
       l.topics.some((t) =>
-        (t.questions ?? []).some((q) =>
-          q.type === "free_text" ||
-          q.type === "short_answer" ||
-          q.type === "essay" ||
-          q.type === "fill_in_blank" ||
-          q.type === "fill_in"
-        )
-      )
+        (t.questions ?? []).some(
+          (q) =>
+            q.type === "free_text" ||
+            q.type === "short_answer" ||
+            q.type === "essay" ||
+            q.type === "fill_in_blank" ||
+            q.type === "fill_in",
+        ),
+      ),
     );
   }, [quiz]);
 
   // --- Handlers ---
   const toggleTopic = (key: string) =>
     setSelectedKeys((prev) =>
-      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
     );
 
   const toggleLecture = (li: number) => {
@@ -131,7 +130,7 @@ export function QuizConfigScreen({
     setSelectedKeys((prev) =>
       allOn
         ? prev.filter((k) => !topicKeys.includes(k))
-        : [...new Set([...prev, ...topicKeys])]
+        : [...new Set([...prev, ...topicKeys])],
     );
   };
 
@@ -160,7 +159,7 @@ export function QuizConfigScreen({
       <div className="flex flex-col gap-4 pb-12">
         {/* Quiz Range (Optional) */}
         {showTopicSelection && (
-          <section className="rounded-(--radius) border border-border/40 bg-card/20 px-4 py-4">
+          <section className="rounded-lg border border-border/40 bg-card/20 px-4 py-4">
             <div className="flex items-center justify-between mb-3">
               <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/70">
                 Quiz Range
@@ -177,7 +176,7 @@ export function QuizConfigScreen({
                 return (
                   <div
                     key={li}
-                    className="rounded-(--radius) border border-border/20 px-3 py-2"
+                    className="rounded-lg border border-border/20 px-3 py-2"
                   >
                     <button
                       type="button"
@@ -252,7 +251,7 @@ export function QuizConfigScreen({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Feedback mode */}
-          <section className="rounded-(--radius) border border-border/40 bg-card/20 px-4 py-4">
+          <section className="rounded-lg border border-border/40 bg-card/20 px-4 py-4">
             <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/70 mb-3">
               Session Mode
             </p>
@@ -262,7 +261,7 @@ export function QuizConfigScreen({
                   key={m}
                   type="button"
                   onClick={() => setFeedbackMode(m)}
-                  className={`rounded-(--radius) flex-1 py-2 border text-[10px] font-mono uppercase tracking-widest font-semibold transition-all ${
+                  className={`rounded-lg flex-1 py-2 border text-[10px] font-mono uppercase tracking-widest font-semibold transition-all ${
                     feedbackMode === m
                       ? "border-primary bg-primary/10 text-primary"
                       : "border-border/40 text-muted-foreground/60 hover:border-border/70"
@@ -283,7 +282,7 @@ export function QuizConfigScreen({
           </section>
 
           {/* Passing Score */}
-          <section className="rounded-(--radius) border border-border/40 bg-card/20 px-4 py-4">
+          <section className="rounded-lg border border-border/40 bg-card/20 px-4 py-4">
             <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/70 mb-3">
               Passing Score
             </p>
@@ -293,7 +292,7 @@ export function QuizConfigScreen({
                   key={s}
                   type="button"
                   onClick={() => setPassingScore(s)}
-                  className={`rounded-(--radius) px-3 py-1 border text-[10px] font-mono font-semibold transition-all ${
+                  className={`rounded-lg px-3 py-1 border text-[10px] font-mono font-semibold transition-all ${
                     passingScore === s
                       ? "border-primary bg-primary/10 text-primary"
                       : "border-border/40 text-muted-foreground/60 hover:border-border/70"
@@ -307,7 +306,7 @@ export function QuizConfigScreen({
         </div>
 
         {/* Timer Section */}
-        <section className="rounded-(--radius) border border-border/40 bg-card/20 px-5 py-5">
+        <section className="rounded-lg border border-border/40 bg-card/20 px-5 py-5">
           <div className="flex items-center justify-between mb-4">
             <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/70">
               Timer Configuration
@@ -348,7 +347,7 @@ export function QuizConfigScreen({
                   <button
                     key={opt.value}
                     onClick={() => setTimerSeconds(opt.value)}
-                    className={`px-3 py-1.5 border font-mono text-[10px] transition-all rounded-(--radius) ${
+                    className={`px-3 py-1.5 border font-mono text-[10px] transition-all rounded-lg ${
                       timerSeconds === opt.value
                         ? "border-primary bg-primary/10 text-primary"
                         : "border-border/40 text-muted-foreground/40"
@@ -400,7 +399,7 @@ export function QuizConfigScreen({
         </section>
 
         {/* Options Toggles */}
-        <section className="rounded-(--radius) border border-border/40 bg-card/20 px-4 py-4">
+        <section className="rounded-lg border border-border/40 bg-card/20 px-4 py-4">
           <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/70 mb-4">
             Advanced Options
           </p>
@@ -448,7 +447,7 @@ export function QuizConfigScreen({
 
         {/* Z-grading */}
         {(hasFreeTxt || showZGrading) && (
-          <section className="rounded-(--radius) border border-primary/20 bg-primary/5 px-4 py-4">
+          <section className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-4">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-3">
                 <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
@@ -470,7 +469,7 @@ export function QuizConfigScreen({
         )}
 
         {error && (
-          <div className="flex items-center gap-3 rounded-(--radius) border border-destructive/20 bg-destructive/5 px-4 py-3 mb-4">
+          <div className="flex items-center gap-3 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 mb-4">
             <div className="size-8 rounded-full bg-destructive/10 flex items-center justify-center shrink-0">
               <span className="text-destructive font-bold text-xs">!</span>
             </div>

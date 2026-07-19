@@ -73,7 +73,7 @@ export function SprintChat({
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border/50 px-5 py-4">
         <div className="flex items-center gap-3">
-          <div className="flex size-9 items-center justify-center rounded-(--radius) bg-primary/10">
+          <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10">
             <MessageSquare className="size-4 text-primary" />
           </div>
           <div>
@@ -89,7 +89,7 @@ export function SprintChat({
           variant="ghost"
           size="icon"
           onClick={onClose}
-          className="rounded-(--radius) text-muted-foreground hover:bg-muted hover:text-foreground"
+          className="rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
         >
           <X className="size-4" />
         </Button>
@@ -152,7 +152,7 @@ export function SprintChat({
 
                   <div
                     className={cn(
-                      "rounded-(--radius) px-3 py-2 text-xs shadow-sm",
+                      "rounded-lg px-3 py-2 text-xs shadow-sm",
                       isMine
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted text-foreground border border-border/50",
@@ -188,7 +188,7 @@ export function SprintChat({
                     </div>
                   ))}
                 </div>
-                <div className="flex gap-1 rounded-(--radius) border border-border/50 bg-muted px-3 py-2 shadow-sm">
+                <div className="flex gap-1 rounded-lg border border-border/50 bg-muted px-3 py-2 shadow-sm">
                   <span className="size-1.5 rounded-full bg-primary animate-bounce" />
                   <span className="size-1.5 rounded-full bg-primary animate-bounce [animation-delay:0.15s]" />
                   <span className="size-1.5 rounded-full bg-primary animate-bounce [animation-delay:0.3s]" />
@@ -201,7 +201,7 @@ export function SprintChat({
 
       {/* Input */}
       <div className="border-t border-border/50 bg-muted/5 p-4">
-        <div className="flex gap-2 rounded-(--radius) border border-border/50 bg-background p-1 shadow-inner transition-colors focus-within:border-primary/50">
+        <div className="flex gap-2 rounded-lg border border-border/50 bg-background p-1 shadow-inner transition-colors focus-within:border-primary/50">
           <Input
             value={input}
             onChange={(e) => handleInputChange(e.target.value)}
@@ -213,7 +213,7 @@ export function SprintChat({
             size="icon"
             onClick={handleSend}
             disabled={!input.trim()}
-            className="size-9 shrink-0 rounded-(--radius)"
+            className="size-9 shrink-0 rounded-lg"
           >
             <Send className="size-3" />
           </Button>

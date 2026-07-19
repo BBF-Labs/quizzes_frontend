@@ -19,7 +19,7 @@ export function ThemeToggle() {
       <Button
         variant="outline"
         size="icon"
-        className="rounded-(--radius) w-9 h-9 border-border/80 bg-transparent flex items-center justify-center"
+        className="rounded-lg w-9 h-9 border-border/80 bg-transparent flex items-center justify-center"
       >
         <div className="w-4 h-4" />
       </Button>
@@ -30,7 +30,7 @@ export function ThemeToggle() {
     <Button
       variant="outline"
       size="icon"
-      className="rounded-(--radius) w-9 h-9 border-border bg-transparent text-foreground hover:bg-foreground hover:text-background transition-all duration-300 flex items-center justify-center p-0"
+      className="rounded-lg w-9 h-9 border-border bg-transparent text-foreground hover:bg-foreground hover:text-background transition-all duration-300 flex items-center justify-center p-0"
       onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
       aria-label="Toggle theme"
     >

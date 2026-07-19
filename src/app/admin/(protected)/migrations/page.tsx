@@ -214,7 +214,7 @@ function MigrationsContent() {
               variant="outline"
               size="icon"
               onClick={() => refetch()}
-              className="rounded-(--radius) size-9"
+              className="rounded-lg size-9"
               disabled={isLoading}
             >
               <RotateCw className={cn("size-4", isLoading && "animate-spin")} />
@@ -222,7 +222,7 @@ function MigrationsContent() {
             <Button
               onClick={() => handleRunMigrations(false)}
               disabled={runMutation.isPending || pending.length === 0}
-              className="rounded-(--radius) font-mono text-[10px] tracking-widest uppercase gap-2 h-9 px-4"
+              className="rounded-lg font-mono text-[10px] tracking-widest uppercase gap-2 h-9 px-4"
             >
               {runMutation.isPending ? (
                 <RotateCw className="size-3.5 animate-spin" />
@@ -235,7 +235,7 @@ function MigrationsContent() {
               onClick={() => handleRunMigrations(true)}
               disabled={runMutation.isPending}
               variant="destructive"
-              className="rounded-(--radius) font-mono text-[10px] tracking-widest uppercase gap-2 h-9 px-4"
+              className="rounded-lg font-mono text-[10px] tracking-widest uppercase gap-2 h-9 px-4"
             >
               {runMutation.isPending ? (
                 <RotateCw className="size-3.5 animate-spin" />
@@ -254,7 +254,7 @@ function MigrationsContent() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
             placeholder="Search migration history..."
-            className="pl-9 rounded-(--radius) bg-background/50 font-mono text-xs uppercase tracking-widest"
+            className="pl-9 rounded-lg bg-background/50 font-mono text-xs uppercase tracking-widest"
             value={search}
             onChange={(e) => {
               updateQueryParams({ search: e.target.value || null, page: "1" });
@@ -265,7 +265,7 @@ function MigrationsContent() {
 
       {/* Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="rounded-(--radius) border-border/50 bg-card/40">
+        <Card className="rounded-lg border-border/50 bg-card/40">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
@@ -280,7 +280,7 @@ function MigrationsContent() {
             </div>
           </CardContent>
         </Card>
-        <Card className="rounded-(--radius) border-border/50 bg-card/40">
+        <Card className="rounded-lg border-border/50 bg-card/40">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
@@ -295,7 +295,7 @@ function MigrationsContent() {
             </div>
           </CardContent>
         </Card>
-        <Card className="rounded-(--radius) border-border/50 bg-card/40">
+        <Card className="rounded-lg border-border/50 bg-card/40">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
@@ -326,7 +326,7 @@ function MigrationsContent() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* History Table */}
-        <Card className="lg:col-span-2 rounded-(--radius) border-border/50 bg-card/40 overflow-hidden">
+        <Card className="lg:col-span-2 rounded-lg border-border/50 bg-card/40 overflow-hidden">
           <CardHeader className="border-b border-border/10 bg-secondary/5">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
@@ -436,7 +436,7 @@ function MigrationsContent() {
                             type="button"
                             variant="outline"
                             size="sm"
-                            className="rounded-(--radius) font-mono text-[9px] tracking-widest uppercase h-7 px-2"
+                            className="rounded-lg font-mono text-[9px] tracking-widest uppercase h-7 px-2"
                             disabled={runMutation.isPending}
                             onClick={() => handleRerunSingleMigration(m.name)}
                           >
@@ -473,7 +473,7 @@ function MigrationsContent() {
         </Card>
 
         {/* Pending Scripts */}
-        <Card className="rounded-(--radius) border-border/50 bg-card/40 lg:max-h-160 flex flex-col min-h-0">
+        <Card className="rounded-lg border-border/50 bg-card/40 lg:max-h-160 flex flex-col min-h-0">
           <CardHeader className="border-b border-border/10 bg-secondary/5">
             <div className="flex items-center gap-2">
               <FileCode className="size-4 text-blue-400" />
@@ -496,7 +496,7 @@ function MigrationsContent() {
                   {pending.map((file) => (
                     <div
                       key={file}
-                      className="flex items-center gap-3 p-3 rounded-(--radius) border border-border/30 bg-background/30 group"
+                      className="flex items-center gap-3 p-3 rounded-lg border border-border/30 bg-background/30 group"
                     >
                       <div className="size-1.5 rounded-full bg-blue-500 animate-pulse" />
                       <span className="text-[11px] font-mono text-foreground truncate flex-1">
@@ -506,7 +506,7 @@ function MigrationsContent() {
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="rounded-(--radius) font-mono text-[9px] tracking-widest uppercase h-7 px-2"
+                        className="rounded-lg font-mono text-[9px] tracking-widest uppercase h-7 px-2"
                         disabled={runMutation.isPending}
                         onClick={() => handleRunPendingSingleMigration(file)}
                       >

@@ -233,7 +233,7 @@ export default function UsersPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
             placeholder="Search by name, email, or username..."
-            className="pl-9 rounded-(--radius) bg-background/50 font-mono text-xs uppercase tracking-widest"
+            className="pl-9 rounded-lg bg-background/50 font-mono text-xs uppercase tracking-widest"
             value={search}
             onChange={(e) => {
               updateQueryParams({ search: e.target.value || null, page: "1" });
@@ -249,37 +249,37 @@ export default function UsersPage() {
             });
           }}
         >
-          <SelectTrigger className="w-full sm:w-auto sm:min-w-30 rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+          <SelectTrigger className="w-full sm:w-auto sm:min-w-30 rounded-lg bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
             <SelectValue placeholder="All Roles" />
           </SelectTrigger>
-          <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
+          <SelectContent className="rounded-lg border-border/40 bg-card/95 font-mono text-xs uppercase">
             <SelectItem
               value="all"
-              className="rounded-(--radius) font-mono text-xs uppercase"
+              className="rounded-lg font-mono text-xs uppercase"
             >
               All Roles
             </SelectItem>
             <SelectItem
               value="student"
-              className="rounded-(--radius) font-mono text-xs uppercase"
+              className="rounded-lg font-mono text-xs uppercase"
             >
               Student
             </SelectItem>
             <SelectItem
               value="creator"
-              className="rounded-(--radius) font-mono text-xs uppercase"
+              className="rounded-lg font-mono text-xs uppercase"
             >
               Creator
             </SelectItem>
             <SelectItem
               value="moderator"
-              className="rounded-(--radius) font-mono text-xs uppercase"
+              className="rounded-lg font-mono text-xs uppercase"
             >
               Moderator
             </SelectItem>
             <SelectItem
               value="super_admin"
-              className="rounded-(--radius) font-mono text-xs uppercase"
+              className="rounded-lg font-mono text-xs uppercase"
             >
               Admin
             </SelectItem>
@@ -294,25 +294,25 @@ export default function UsersPage() {
             });
           }}
         >
-          <SelectTrigger className="w-full sm:w-auto sm:min-w-30 rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+          <SelectTrigger className="w-full sm:w-auto sm:min-w-30 rounded-lg bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
             <SelectValue placeholder="All Status" />
           </SelectTrigger>
-          <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
+          <SelectContent className="rounded-lg border-border/40 bg-card/95 font-mono text-xs uppercase">
             <SelectItem
               value="all"
-              className="rounded-(--radius) font-mono text-xs uppercase"
+              className="rounded-lg font-mono text-xs uppercase"
             >
               All Status
             </SelectItem>
             <SelectItem
               value="false"
-              className="rounded-(--radius) font-mono text-xs uppercase text-green-500"
+              className="rounded-lg font-mono text-xs uppercase text-green-500"
             >
               Active
             </SelectItem>
             <SelectItem
               value="true"
-              className="rounded-(--radius) font-mono text-xs uppercase text-destructive"
+              className="rounded-lg font-mono text-xs uppercase text-destructive"
             >
               Banned
             </SelectItem>
@@ -321,14 +321,14 @@ export default function UsersPage() {
         <Button
           variant="outline"
           size="sm"
-          className="rounded-(--radius) font-mono text-[10px] tracking-widest uppercase gap-2"
+          className="rounded-lg font-mono text-[10px] tracking-widest uppercase gap-2"
         >
           <Download className="size-3.5" /> Export
         </Button>
       </div>
 
       {/* List */}
-      <Card className="rounded-(--radius) border-border/50 bg-card/40 overflow-hidden">
+      <Card className="rounded-lg border-border/50 bg-card/40 overflow-hidden">
         <CardHeader className="border-b border-border/10">
           <CardTitle className="text-[11px] font-mono tracking-[0.2em] uppercase text-muted-foreground">
             Registered Users {usersData?.total ? `(${usersData.total})` : ""}
@@ -478,7 +478,7 @@ export default function UsersPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="size-8 rounded-(--radius) group-hover:bg-primary/10 group-hover:text-primary transition-all"
+                              className="size-8 rounded-lg group-hover:bg-primary/10 group-hover:text-primary transition-all"
                             >
                               <MoreHorizontal className="size-3.5" />
                             </Button>
@@ -490,10 +490,10 @@ export default function UsersPage() {
                             <DropdownMenuLabel className="text-[9px] uppercase tracking-widest text-muted-foreground px-2 py-1.5">
                               Actions
                             </DropdownMenuLabel>
-                            <DropdownMenuItem className="gap-2 text-[10px] font-bold uppercase cursor-pointer rounded-(--radius) mb-0.5">
+                            <DropdownMenuItem className="gap-2 text-[10px] font-bold uppercase cursor-pointer rounded-lg mb-0.5">
                               <UserIcon className="size-3" /> View Profile
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="gap-2 text-[10px] font-bold uppercase cursor-pointer rounded-(--radius) mb-0.5">
+                            <DropdownMenuItem className="gap-2 text-[10px] font-bold uppercase cursor-pointer rounded-lg mb-0.5">
                               <ExternalLink className="size-3" /> External Link
                             </DropdownMenuItem>
                             <DropdownMenuSeparator className="bg-primary/10 my-1.5" />
@@ -507,7 +507,7 @@ export default function UsersPage() {
                                     })
                               }
                               className={cn(
-                                "gap-2 text-[10px] font-bold uppercase cursor-pointer rounded-(--radius)",
+                                "gap-2 text-[10px] font-bold uppercase cursor-pointer rounded-lg",
                                 user.isBanned
                                   ? "text-green-500 focus:text-green-500"
                                   : "text-destructive focus:text-destructive",

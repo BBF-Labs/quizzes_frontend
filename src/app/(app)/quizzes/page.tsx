@@ -37,7 +37,11 @@ function SystemQuizzesContent() {
     });
   };
 
-  const { data, isLoading, error: queryError } = useSystemQuizzes({
+  const {
+    data,
+    isLoading,
+    error: queryError,
+  } = useSystemQuizzes({
     page,
     limit: PAGE_SIZE,
     search: search || undefined,
@@ -68,19 +72,21 @@ function SystemQuizzesContent() {
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-6 rounded-(--radius) border border-border/40 bg-card/30 p-4 md:p-5"
+          className="mb-6 rounded-lg border border-border/40 bg-card/30 p-4 md:p-5"
         >
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-[10px] font-mono uppercase tracking-[0.25em] text-primary/80">
                 Qz Platform
               </p>
-              <h1 className="mt-1 text-2xl font-black tracking-tight">Quizzes</h1>
+              <h1 className="mt-1 text-2xl font-black tracking-tight">
+                Quizzes
+              </h1>
               <p className="mt-2 text-sm font-mono text-muted-foreground/70">
                 Official Qz quizzes — curated and reviewed by the team.
               </p>
             </div>
-            <div className="rounded-(--radius) border border-border/40 bg-background/40 px-3 py-2 text-center shrink-0">
+            <div className="rounded-lg border border-border/40 bg-background/40 px-3 py-2 text-center shrink-0">
               <p className="text-xs font-mono font-semibold text-foreground">
                 {isLoading ? "—" : total}
               </p>
@@ -125,7 +131,10 @@ function SystemQuizzesContent() {
         {isLoading && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-36 animate-pulse bg-card/40 border border-border/30" />
+              <div
+                key={i}
+                className="h-36 animate-pulse bg-card/40 border border-border/30"
+              />
             ))}
           </div>
         )}
@@ -148,7 +157,7 @@ function SystemQuizzesContent() {
               <GraduationCap className="size-6 text-primary/60" />
             </div>
             <p className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground/50">
-                {search || tagFilter
+              {search || tagFilter
                 ? "No quizzes match your filters"
                 : "No quizzes available yet."}
             </p>

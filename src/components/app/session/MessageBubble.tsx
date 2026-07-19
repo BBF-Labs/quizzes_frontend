@@ -127,7 +127,7 @@ function UserMessage({
               if (e.key === "Escape") cancelEdit();
             }}
             rows={3}
-            className="w-full resize-none border border-primary/50 bg-secondary px-4 py-3 text-sm font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary rounded-(--radius)"
+            className="w-full resize-none border border-primary/50 bg-secondary px-4 py-3 text-sm font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary rounded-lg"
           />
           <div className="flex justify-end gap-2">
             <button
@@ -147,7 +147,7 @@ function UserMessage({
       ) : (
         <div
           className={cn(
-            "max-w-[55%] border px-4 py-3 text-sm font-mono rounded-(--radius)",
+            "max-w-[55%] border px-4 py-3 text-sm font-mono rounded-lg",
             isErrorMessage
               ? "border-destructive/50 bg-destructive/10 text-destructive-foreground"
               : "border-border/50 bg-secondary text-foreground",
@@ -254,7 +254,7 @@ function ZMessage({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <div className="mt-0.5 flex size-6 shrink-0 items-center justify-center border border-border/50 bg-card text-foreground rounded-(--radius)">
+      <div className="mt-0.5 flex size-6 shrink-0 items-center justify-center border border-border/50 bg-card text-foreground rounded-lg">
         <MessageSquare className="size-3 text-muted-foreground" />
       </div>
 
@@ -281,7 +281,7 @@ function ZMessage({
           )}
         </div>
 
-        <div className="border border-border/50 bg-card px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap wrap-break-word text-foreground rounded-(--radius)">
+        <div className="border border-border/50 bg-card px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap wrap-break-word text-foreground rounded-lg">
           {message.content}
           {message.isStreaming && (
             <span className="inline-block w-0.5 h-[1em] bg-primary/70 ml-0.5 align-middle animate-pulse" />

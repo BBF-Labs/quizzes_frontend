@@ -2,7 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Brain, Copy, Check, RotateCcw, Pencil, FileText, ThumbsUp, ThumbsDown } from "lucide-react";
+import {
+  Brain,
+  Copy,
+  Check,
+  RotateCcw,
+  Pencil,
+  FileText,
+  ThumbsUp,
+  ThumbsDown,
+} from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -62,7 +71,7 @@ export function MessageFeed({
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.4 }}
-          className="flex size-16 items-center justify-center border border-primary/30 bg-primary/10 rounded-(--radius)"
+          className="flex size-16 items-center justify-center border border-primary/30 bg-primary/10 rounded-lg"
         >
           <Brain className="size-8 text-primary" />
         </motion.div>
@@ -202,7 +211,7 @@ function UserBubble({
               if (e.key === "Escape") cancelEdit();
             }}
             rows={3}
-            className="w-full resize-none border border-primary/50 bg-secondary px-4 py-3 text-sm font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary rounded-(--radius)"
+            className="w-full resize-none border border-primary/50 bg-secondary px-4 py-3 text-sm font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary rounded-lg"
           />
           <div className="flex justify-end gap-2">
             <button
@@ -222,7 +231,7 @@ function UserBubble({
       ) : (
         <div
           className={cn(
-            "max-w-[55%] border px-4 py-3 text-sm font-mono rounded-(--radius)",
+            "max-w-[55%] border px-4 py-3 text-sm font-mono rounded-lg",
             isErrorMessage
               ? "border-destructive/50 bg-destructive/10 text-destructive-foreground"
               : "border-border/50 bg-secondary text-foreground",
@@ -260,7 +269,10 @@ function UserBubble({
           >
             {onEdit && (
               <button
-                onClick={() => { setDraft(message.content); setEditing(true); }}
+                onClick={() => {
+                  setDraft(message.content);
+                  setEditing(true);
+                }}
                 className="flex items-center gap-1 text-[9px] font-mono uppercase text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Pencil className="size-2.5" />
@@ -350,7 +362,9 @@ function MessageContent({
             key={i}
             remarkPlugins={[remarkGfm, remarkMath]}
             rehypePlugins={[rehypeRaw, rehypeKatex]}
-            components={{ p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p> }}
+            components={{
+              p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+            }}
           >
             {part}
           </ReactMarkdown>
@@ -376,7 +390,8 @@ function ZMessageBubble({
   const isStreaming = !!message.isStreaming;
   const [hovered, setHovered] = useState(false);
   const [copied, setCopied] = useState(false);
-  const replyToId = (message as ZAppMessage & { replyToMessageId?: string }).replyToMessageId;
+  const replyToId = (message as ZAppMessage & { replyToMessageId?: string })
+    .replyToMessageId;
 
   function copyContent() {
     navigator.clipboard.writeText(message.content).then(() => {
@@ -396,7 +411,7 @@ function ZMessageBubble({
     >
       <div
         className={cn(
-          "mt-0.5 flex size-6 shrink-0 items-center justify-center border rounded-(--radius)",
+          "mt-0.5 flex size-6 shrink-0 items-center justify-center border rounded-lg",
           "border-border/50 bg-card text-foreground",
         )}
       >
@@ -427,7 +442,7 @@ function ZMessageBubble({
         </div>
         <div
           className={cn(
-            "border px-4 py-3 text-sm leading-relaxed wrap-break-word rounded-(--radius)",
+            "border px-4 py-3 text-sm leading-relaxed wrap-break-word rounded-lg",
             "border-border/50 bg-card text-foreground",
             "prose prose-sm dark:prose-invert max-w-none",
           )}
@@ -452,7 +467,11 @@ function ZMessageBubble({
                 onClick={copyContent}
                 className="flex items-center gap-1 text-[9px] font-mono uppercase text-muted-foreground hover:text-foreground transition-colors"
               >
-                {copied ? <Check className="size-2.5" /> : <Copy className="size-2.5" />}
+                {copied ? (
+                  <Check className="size-2.5" />
+                ) : (
+                  <Copy className="size-2.5" />
+                )}
                 {copied ? "Copied" : "Copy"}
               </button>
               {onRetry && replyToId && (
@@ -470,9 +489,10 @@ function ZMessageBubble({
                     onClick={() => onRate(message.messageId || message.id, 1)}
                     className={cn(
                       "flex items-center gap-1 text-[9px] font-mono uppercase transition-colors",
-                      (message as ZAppMessage & { rating?: number }).rating === 1
+                      (message as ZAppMessage & { rating?: number }).rating ===
+                        1
                         ? "text-emerald-500"
-                        : "text-muted-foreground hover:text-emerald-500"
+                        : "text-muted-foreground hover:text-emerald-500",
                     )}
                   >
                     <ThumbsUp className="size-2.5" />
@@ -481,9 +501,10 @@ function ZMessageBubble({
                     onClick={() => onRate(message.messageId || message.id, -1)}
                     className={cn(
                       "flex items-center gap-1 text-[9px] font-mono uppercase transition-colors",
-                      (message as ZAppMessage & { rating?: number }).rating === -1
+                      (message as ZAppMessage & { rating?: number }).rating ===
+                        -1
                         ? "text-destructive"
-                        : "text-muted-foreground hover:text-destructive"
+                        : "text-muted-foreground hover:text-destructive",
                     )}
                   >
                     <ThumbsDown className="size-2.5" />

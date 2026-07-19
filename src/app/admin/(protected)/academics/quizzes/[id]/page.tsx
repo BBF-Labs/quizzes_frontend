@@ -1186,15 +1186,15 @@ function JsonImportPanel({
                 setTopicIndex(0);
               }}
             >
-              <SelectTrigger className="w-auto min-w-40 rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+              <SelectTrigger className="w-auto min-w-40 rounded-lg bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
+              <SelectContent className="rounded-lg border-border/40 bg-card/95 font-mono text-xs uppercase">
                 {lectures.map((l, i) => (
                   <SelectItem
                     key={i}
                     value={String(i)}
-                    className="rounded-(--radius) font-mono text-xs uppercase"
+                    className="rounded-lg font-mono text-xs uppercase"
                   >
                     {l.title || l.lectureTitle || `Lecture ${i + 1}`}
                   </SelectItem>
@@ -1210,15 +1210,15 @@ function JsonImportPanel({
               value={String(topicIndex)}
               onValueChange={(v) => setTopicIndex(Number(v))}
             >
-              <SelectTrigger className="w-auto min-w-40 rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+              <SelectTrigger className="w-auto min-w-40 rounded-lg bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
+              <SelectContent className="rounded-lg border-border/40 bg-card/95 font-mono text-xs uppercase">
                 {topics.map((t, i) => (
                   <SelectItem
                     key={i}
                     value={String(i)}
-                    className="rounded-(--radius) font-mono text-xs uppercase"
+                    className="rounded-lg font-mono text-xs uppercase"
                   >
                     {t.title || t.topicTitle || `Topic ${i + 1}`}
                   </SelectItem>
@@ -1852,15 +1852,15 @@ function EmptyContentState({
                   setTopicIndex(0);
                 }}
               >
-                <SelectTrigger className="w-auto min-w-40 rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+                <SelectTrigger className="w-auto min-w-40 rounded-lg bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
+                <SelectContent className="rounded-lg border-border/40 bg-card/95 font-mono text-xs uppercase">
                   {lectures.map((l, i) => (
                     <SelectItem
                       key={i}
                       value={String(i)}
-                      className="rounded-(--radius) font-mono text-xs uppercase"
+                      className="rounded-lg font-mono text-xs uppercase"
                     >
                       {l.title || l.lectureTitle || `Lecture ${i + 1}`}
                     </SelectItem>
@@ -1876,15 +1876,15 @@ function EmptyContentState({
                 value={String(topicIndex)}
                 onValueChange={(v) => setTopicIndex(Number(v))}
               >
-                <SelectTrigger className="w-auto min-w-40 rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+                <SelectTrigger className="w-auto min-w-40 rounded-lg bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
+                <SelectContent className="rounded-lg border-border/40 bg-card/95 font-mono text-xs uppercase">
                   {topics.map((t, i) => (
                     <SelectItem
                       key={i}
                       value={String(i)}
-                      className="rounded-(--radius) font-mono text-xs uppercase"
+                      className="rounded-lg font-mono text-xs uppercase"
                     >
                       {t.title || t.topicTitle || `Topic ${i + 1}`}
                     </SelectItem>

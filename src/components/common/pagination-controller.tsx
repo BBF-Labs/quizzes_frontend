@@ -52,7 +52,7 @@ export function PaginationController({
         disabled={page <= 1}
         onClick={() => onPageChange(Math.max(1, page - 1))}
         className={cn(
-          "rounded-(--radius) font-mono tracking-widest uppercase gap-2",
+          "rounded-lg font-mono tracking-widest uppercase gap-2",
           buttonClasses,
         )}
         aria-label="Previous page"
@@ -65,7 +65,7 @@ export function PaginationController({
         disabled={page >= totalPages}
         onClick={() => onPageChange(Math.min(totalPages, page + 1))}
         className={cn(
-          "rounded-(--radius) font-mono tracking-widest uppercase gap-2",
+          "rounded-lg font-mono tracking-widest uppercase gap-2",
           buttonClasses,
         )}
         aria-label="Next page"
@@ -78,7 +78,7 @@ export function PaginationController({
   return (
     <div
       className={cn(
-        "flex items-center justify-between px-6 py-4 border-t border-border/10 bg-secondary/5 rounded-(--radius)",
+        "flex items-center justify-between px-6 py-4 border-t border-border/10 bg-secondary/5 rounded-lg",
         className,
       )}
     >

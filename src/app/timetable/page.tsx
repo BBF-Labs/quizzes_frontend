@@ -166,7 +166,7 @@ function PublicExamsContent() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-(--radius) border border-primary/20 bg-primary/5"
+            className="inline-flex items-center gap-2 px-3 py-1 rounded-lg border border-primary/20 bg-primary/5"
           >
             <div className="size-1.5 rounded-full bg-primary animate-pulse" />
             <span className="text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-primary/80">
@@ -200,7 +200,7 @@ function PublicExamsContent() {
           transition={{ delay: 0.3 }}
           className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-10"
         >
-          <div className="flex items-center bg-card border border-border/50 rounded-(--radius) overflow-hidden focus-within:border-primary/40 transition-colors">
+          <div className="flex items-center bg-card border border-border/50 rounded-lg overflow-hidden focus-within:border-primary/40 transition-colors">
             <Search className="ml-4 size-4 text-muted-foreground" />
             <Input
               type="text"
@@ -211,7 +211,7 @@ function PublicExamsContent() {
             />
           </div>
 
-          <div className="flex items-center bg-card border border-border/50 rounded-(--radius) overflow-hidden focus-within:border-primary/40 transition-colors">
+          <div className="flex items-center bg-card border border-border/50 rounded-lg overflow-hidden focus-within:border-primary/40 transition-colors">
             <MapPin className="ml-4 size-4 text-muted-foreground" />
             <Input
               type="text"
@@ -233,7 +233,7 @@ function PublicExamsContent() {
               initial="hidden"
               animate="visible"
               className={cn(
-                "grid grid-cols-1 lg:grid-cols-3 gap-0 border border-border/50 rounded-(--radius) overflow-hidden transition-opacity duration-300",
+                "grid grid-cols-1 lg:grid-cols-3 gap-0 border border-border/50 rounded-lg overflow-hidden transition-opacity duration-300",
                 isFetching && "opacity-60 pointer-events-none",
               )}
             >
@@ -303,7 +303,7 @@ function PublicExamsContent() {
 
               <div className="col-span-1 lg:col-span-2 lg:max-h-160 flex flex-col">
                 <div className="p-4 border-b border-border/50 bg-background/80 flex items-center gap-4 font-mono text-xs">
-                  <div className="w-6 h-6 border border-primary/40 bg-primary/20 flex items-center justify-center text-primary font-bold shrink-0 rounded-(--radius)">
+                  <div className="w-6 h-6 border border-primary/40 bg-primary/20 flex items-center justify-center text-primary font-bold shrink-0 rounded-lg">
                     Z
                   </div>
                   <div className="font-bold text-foreground uppercase tracking-widest flex items-center gap-3">
@@ -333,7 +333,7 @@ function PublicExamsContent() {
                             {entry.label && (
                               <Badge
                                 variant="secondary"
-                                className="rounded-(--radius) border-primary/20 bg-primary/10 text-primary font-mono text-[10px] uppercase tracking-widest px-2 py-0.5"
+                                className="rounded-lg border-primary/20 bg-primary/10 text-primary font-mono text-[10px] uppercase tracking-widest px-2 py-0.5"
                               >
                                 {entry.label}
                               </Badge>
@@ -357,7 +357,7 @@ function PublicExamsContent() {
                           </div>
 
                           {entry.assignedVenue && (
-                            <div className="bg-primary/5 p-3 flex items-center gap-3 border border-primary/10 rounded-(--radius) mb-4">
+                            <div className="bg-primary/5 p-3 flex items-center gap-3 border border-primary/10 rounded-lg mb-4">
                               <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
                               <span className="text-xs font-mono text-primary uppercase tracking-wider">
                                 Your venue: {entry.assignedVenue}
@@ -375,7 +375,7 @@ function PublicExamsContent() {
                                 <Badge
                                   key={vIdx}
                                   variant="outline"
-                                  className="rounded-(--radius) border-border/50 bg-background font-mono text-[10px] py-1 px-3"
+                                  className="rounded-lg border-border/50 bg-background font-mono text-[10px] py-1 px-3"
                                 >
                                   {v.venue}
                                   {v.indexStart && (
@@ -438,7 +438,7 @@ function PublicExamsContent() {
               key="searching"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center py-20 border border-dashed border-border/50 rounded-(--radius) bg-card"
+              className="text-center py-20 border border-dashed border-border/50 rounded-lg bg-card"
             >
               <div className="mx-auto mb-4 size-12 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
               <h3 className="text-lg font-mono font-bold uppercase text-foreground">
@@ -453,7 +453,7 @@ function PublicExamsContent() {
               key="empty"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center py-20 border border-dashed border-border/50 rounded-(--radius) bg-card"
+              className="text-center py-20 border border-dashed border-border/50 rounded-lg bg-card"
             >
               <AlertCircle className="size-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-mono font-bold uppercase text-muted-foreground">
@@ -498,7 +498,7 @@ export default function PublicExamsPage() {
               {[...Array(3)].map((_, i) => (
                 <div
                   key={i}
-                  className="h-28 rounded-(--radius) bg-card border border-border/50 animate-pulse"
+                  className="h-28 rounded-lg bg-card border border-border/50 animate-pulse"
                 />
               ))}
             </div>

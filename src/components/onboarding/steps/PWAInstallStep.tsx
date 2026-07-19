@@ -96,7 +96,6 @@ export default function PWAInstallStep({ onComplete }: PWAInstallStepProps) {
               Qz.
             </span>
           </motion.div>
-
         </div>
 
         {platform === "ios" ? (
@@ -125,7 +124,7 @@ export default function PWAInstallStep({ onComplete }: PWAInstallStepProps) {
           <div className="space-y-4">
             <Button
               onClick={handleInstall}
-              className="w-full rounded-(--radius) font-mono text-xs tracking-[0.2em] uppercase h-14 bg-secondary hover:bg-secondary/80 border border-border group"
+              className="w-full rounded-lg font-mono text-xs tracking-[0.2em] uppercase h-14 bg-secondary hover:bg-secondary/80 border border-border group"
             >
               <Download className="size-4 mr-2 group-hover:translate-y-0.5 transition-transform" />
               {deferredPrompt ? "Install Web App" : "View Instructions"}

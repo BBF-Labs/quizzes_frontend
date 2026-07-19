@@ -81,7 +81,7 @@ export default function SystemQuizDetailPage({
         )}
 
         {!isLoading && error && (
-          <div className="border border-destructive/20 bg-destructive/5 px-6 py-8 rounded-(--radius) text-center">
+          <div className="border border-destructive/20 bg-destructive/5 px-6 py-8 rounded-lg text-center">
             <AlertCircle className="size-8 text-destructive/40 mx-auto mb-3" />
             <p className="text-sm font-mono font-bold uppercase tracking-widest text-destructive mb-2">
               {error instanceof Error && error.message === "UNAUTHENTICATED"

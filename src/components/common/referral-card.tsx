@@ -31,7 +31,7 @@ export function ReferralCard() {
 
   if (isLoading) {
     return (
-      <div className="p-6 border border-border/50 bg-card rounded-(--radius) animate-pulse h-50" />
+      <div className="p-6 border border-border/50 bg-card rounded-lg animate-pulse h-50" />
     );
   }
 
@@ -41,7 +41,7 @@ export function ReferralCard() {
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="relative overflow-hidden p-6 border border-border/10 bg-linear-to-br from-card/80 to-card/40 backdrop-blur-xl rounded-(--radius) shadow-2xl group"
+      className="relative overflow-hidden p-6 border border-border/10 bg-linear-to-br from-card/80 to-card/40 backdrop-blur-xl rounded-lg shadow-2xl group"
     >
       {/* Background decoration */}
       <div className="absolute top-0 right-0 -mr-12 -mt-12 size-48 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-colors duration-500" />
@@ -68,7 +68,7 @@ export function ReferralCard() {
           <div className="flex flex-col gap-2 w-full md:w-48">
             <button
               onClick={handleCopyCode}
-              className="relative w-full h-12 bg-background border border-border/40 hover:border-primary/50 flex items-center justify-between px-4 transition-all duration-300 group/btn rounded-(--radius)"
+              className="relative w-full h-12 bg-background border border-border/40 hover:border-primary/50 flex items-center justify-between px-4 transition-all duration-300 group/btn rounded-lg"
             >
               <span className="text-sm font-mono font-bold tracking-widest text-primary">
                 {status.code}
@@ -87,7 +87,7 @@ export function ReferralCard() {
 
             <button
               onClick={handleCopyLink}
-              className="relative w-full h-10 bg-primary/5 border border-primary/20 hover:bg-primary/10 flex items-center justify-center gap-2 transition-all duration-300 rounded-(--radius)"
+              className="relative w-full h-10 bg-primary/5 border border-primary/20 hover:bg-primary/10 flex items-center justify-center gap-2 transition-all duration-300 rounded-lg"
             >
               <Link2 className="size-3 text-primary" />
               <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-primary">

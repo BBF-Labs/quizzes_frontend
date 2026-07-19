@@ -312,7 +312,7 @@ export default function PricingPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.15 + i * 0.06 }}
                   className={cn(
-                    "relative flex flex-col border bg-card/30 p-6 transition-colors duration-300 rounded-(--radius)",
+                    "relative flex flex-col border bg-card/30 p-6 transition-colors duration-300 rounded-lg",
                     tier.popular
                       ? "border-sky-400/30 bg-sky-400/3"
                       : "border-border/50",
@@ -382,14 +382,14 @@ export default function PricingPage() {
                   </ul>
 
                   {isSuperAdmin ? (
-                    <div className="w-full py-2.5 text-[10px] font-mono uppercase tracking-[0.15em] border border-border/40 text-muted-foreground text-center rounded-(--radius) opacity-50 cursor-default">
+                    <div className="w-full py-2.5 text-[10px] font-mono uppercase tracking-[0.15em] border border-border/40 text-muted-foreground text-center rounded-lg opacity-50 cursor-default">
                       Admin Access
                     </div>
                   ) : (
                     <Link
                       href={ctaHref}
                       className={cn(
-                        "w-full py-2.5 text-[10px] font-mono uppercase tracking-[0.15em] border transition-colors text-center block rounded-(--radius)",
+                        "w-full py-2.5 text-[10px] font-mono uppercase tracking-[0.15em] border transition-colors text-center block rounded-lg",
                         tier.id === "locked_in"
                           ? "border-primary bg-primary text-primary-foreground hover:bg-primary/90"
                           : tier.id === "cruising"

@@ -768,7 +768,7 @@ export default function AdminQuizzesPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
             placeholder="Search quizzes…"
-            className="pl-9 rounded-(--radius) bg-background/50 font-mono text-xs uppercase tracking-widest"
+            className="pl-9 rounded-lg bg-background/50 font-mono text-xs uppercase tracking-widest"
             value={search}
             onChange={(e) => {
               updateQueryParams({ search: e.target.value || null, page: "1" });
@@ -794,31 +794,31 @@ export default function AdminQuizzesPage() {
             });
           }}
         >
-          <SelectTrigger className="w-full sm:w-auto sm:min-w-40 rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+          <SelectTrigger className="w-full sm:w-auto sm:min-w-40 rounded-lg bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
             <SelectValue placeholder="All Statuses" />
           </SelectTrigger>
-          <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
+          <SelectContent className="rounded-lg border-border/40 bg-card/95 font-mono text-xs uppercase">
             <SelectItem
               value="all"
-              className="rounded-(--radius) font-mono text-xs uppercase"
+              className="rounded-lg font-mono text-xs uppercase"
             >
               All Statuses
             </SelectItem>
             <SelectItem
               value="draft"
-              className="rounded-(--radius) font-mono text-xs uppercase"
+              className="rounded-lg font-mono text-xs uppercase"
             >
               Draft
             </SelectItem>
             <SelectItem
               value="published"
-              className="rounded-(--radius) font-mono text-xs uppercase"
+              className="rounded-lg font-mono text-xs uppercase"
             >
               Published
             </SelectItem>
             <SelectItem
               value="archived"
-              className="rounded-(--radius) font-mono text-xs uppercase"
+              className="rounded-lg font-mono text-xs uppercase"
             >
               Archived
             </SelectItem>

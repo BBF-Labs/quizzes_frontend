@@ -58,7 +58,7 @@ export function SocialProof() {
           className="grid grid-cols-1 md:grid-cols-3 gap-6"
         >
           <motion.div variants={itemVariants}>
-            <Card className="h-full border border-border/50 bg-card/60 rounded-(--radius) hover:border-primary hover:bg-card hover:shadow-[0_0_20px_rgba(var(--navbar-border),0.05)] transition-all duration-300 flex flex-col relative pt-6 group">
+            <Card className="h-full border border-border/50 bg-card/60 rounded-lg hover:border-primary hover:bg-card hover:shadow-[0_0_20px_rgba(var(--navbar-border),0.05)] transition-all duration-300 flex flex-col relative pt-6 group">
               <div className="absolute top-0 left-0 w-full h-0.5 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300" />
               <CardContent className="p-8 flex flex-col h-full relative z-10">
                 <div className="flex justify-between items-center mb-6">
@@ -74,13 +74,14 @@ export function SocialProof() {
                   </span>
                 </div>
                 <blockquote className="flex-1 text-[15px] text-muted-foreground mb-8 leading-relaxed font-light">
-                  &quot;Z caught that I always struggled with recursion before I even
-                  knew it. The curriculum framework stripped all the noise away.
-                  It taught me that my edge isn&apos;t in guessing, it&apos;s in my
-                  discipline. I&apos;m finally mastering my courses.&quot;
+                  &quot;Z caught that I always struggled with recursion before I
+                  even knew it. The curriculum framework stripped all the noise
+                  away. It taught me that my edge isn&apos;t in guessing,
+                  it&apos;s in my discipline. I&apos;m finally mastering my
+                  courses.&quot;
                 </blockquote>
                 <div className="pt-6 border-t border-border/50 flex items-center gap-4 mt-auto">
-                  <div className="w-8 h-8 rounded-(--radius) border border-border/80 bg-secondary flex items-center justify-center text-[10px] font-mono font-bold text-foreground">
+                  <div className="w-8 h-8 rounded-lg border border-border/80 bg-secondary flex items-center justify-center text-[10px] font-mono font-bold text-foreground">
                     JD
                   </div>
                   <div>
@@ -97,7 +98,7 @@ export function SocialProof() {
           </motion.div>
 
           <motion.div variants={itemVariants}>
-            <Card className="h-full border border-border/50 bg-card/60 rounded-(--radius) hover:border-primary hover:bg-card hover:shadow-[0_0_20px_rgba(var(--navbar-border),0.05)] transition-all duration-300 flex flex-col relative pt-6 group">
+            <Card className="h-full border border-border/50 bg-card/60 rounded-lg hover:border-primary hover:bg-card hover:shadow-[0_0_20px_rgba(var(--navbar-border),0.05)] transition-all duration-300 flex flex-col relative pt-6 group">
               <div className="absolute top-0 left-0 w-full h-0.5 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300" />
               <CardContent className="p-8 flex flex-col h-full relative z-10">
                 <div className="flex justify-between items-center mb-6">
@@ -113,12 +114,12 @@ export function SocialProof() {
                   </span>
                 </div>
                 <blockquote className="flex-1 text-[15px] text-muted-foreground mb-8 leading-relaxed font-light">
-                  &quot;The community here is different. No hype, no shortcuts. Just
-                  serious people refining a craft. The focus on stewardship of
-                  my study time changed my entire life perspective.&quot;
+                  &quot;The community here is different. No hype, no shortcuts.
+                  Just serious people refining a craft. The focus on stewardship
+                  of my study time changed my entire life perspective.&quot;
                 </blockquote>
                 <div className="pt-6 border-t border-border/50 flex items-center gap-4 mt-auto">
-                  <div className="w-8 h-8 rounded-(--radius) border border-border/80 bg-secondary flex items-center justify-center text-[10px] font-mono font-bold text-foreground">
+                  <div className="w-8 h-8 rounded-lg border border-border/80 bg-secondary flex items-center justify-center text-[10px] font-mono font-bold text-foreground">
                     MR
                   </div>
                   <div>
@@ -135,7 +136,7 @@ export function SocialProof() {
           </motion.div>
 
           <motion.div variants={itemVariants}>
-            <Card className="h-full border border-border/50 bg-card/60 rounded-(--radius) hover:border-primary hover:bg-card hover:shadow-[0_0_20px_rgba(var(--navbar-border),0.05)] transition-all duration-300 flex flex-col relative pt-6 group">
+            <Card className="h-full border border-border/50 bg-card/60 rounded-lg hover:border-primary hover:bg-card hover:shadow-[0_0_20px_rgba(var(--navbar-border),0.05)] transition-all duration-300 flex flex-col relative pt-6 group">
               <div className="absolute top-0 left-0 w-full h-0.5 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300" />
               <CardContent className="p-8 flex flex-col h-full relative z-10">
                 <div className="flex justify-between items-center mb-6">
@@ -151,13 +152,13 @@ export function SocialProof() {
                   </span>
                 </div>
                 <blockquote className="flex-1 text-[15px] text-muted-foreground mb-8 leading-relaxed font-light">
-                  &quot;Structured. Authoritative. Necessary. If you need someone to
-                  hold your hand, go elsewhere. If you want a platform that
-                  systematically forces you to understand your curriculum, this
-                  is it.&quot;
+                  &quot;Structured. Authoritative. Necessary. If you need
+                  someone to hold your hand, go elsewhere. If you want a
+                  platform that systematically forces you to understand your
+                  curriculum, this is it.&quot;
                 </blockquote>
                 <div className="pt-6 border-t border-border/50 flex items-center gap-4 mt-auto">
-                  <div className="w-8 h-8 rounded-(--radius) border border-border/80 bg-secondary flex items-center justify-center text-[10px] font-mono font-bold text-foreground">
+                  <div className="w-8 h-8 rounded-lg border border-border/80 bg-secondary flex items-center justify-center text-[10px] font-mono font-bold text-foreground">
                     SK
                   </div>
                   <div>

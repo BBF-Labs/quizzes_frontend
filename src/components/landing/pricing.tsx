@@ -111,7 +111,7 @@ function PlanCard({
     <motion.div
       variants={itemVariants}
       className={cn(
-        "relative flex flex-col border bg-card/30 p-6 transition-colors duration-300 rounded-(--radius)",
+        "relative flex flex-col border bg-card/30 p-6 transition-colors duration-300 rounded-lg",
         tier.popular ? "border-sky-400/30 bg-sky-400/3" : "border-border/50",
         tier.borderHover,
       )}
@@ -179,7 +179,7 @@ function PlanCard({
       {isSuperAdmin ? (
         <div
           className={cn(
-            "w-full py-2.5 text-[10px] font-mono uppercase tracking-[0.15em] border text-center rounded-(--radius) opacity-50 cursor-default",
+            "w-full py-2.5 text-[10px] font-mono uppercase tracking-[0.15em] border text-center rounded-lg opacity-50 cursor-default",
             "border-border/40 text-muted-foreground",
           )}
         >
@@ -189,7 +189,7 @@ function PlanCard({
         <Link
           href={ctaHref}
           className={cn(
-            "w-full py-2.5 text-[10px] font-mono uppercase tracking-[0.15em] border transition-colors text-center block rounded-(--radius)",
+            "w-full py-2.5 text-[10px] font-mono uppercase tracking-[0.15em] border transition-colors text-center block rounded-lg",
             tier.id === "locked_in"
               ? "border-primary bg-primary text-primary-foreground hover:bg-primary/90"
               : tier.id === "cruising"

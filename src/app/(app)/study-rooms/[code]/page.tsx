@@ -473,7 +473,7 @@ export default function StudyRoomDetailPage() {
   if (isLoading || !room)
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
-        <Skeleton className="h-20 w-80 rounded-(--radius)" />
+        <Skeleton className="h-20 w-80 rounded-lg" />
       </div>
     );
 
@@ -517,7 +517,7 @@ export default function StudyRoomDetailPage() {
             initial={{ opacity: 0, y: 20, scale: 0.8 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -30, scale: 0.8 }}
-            className="pointer-events-none fixed bottom-28 right-8 z-200 flex items-center gap-2 rounded-(--radius) border border-primary/30 bg-primary/10 px-4 py-2 font-mono text-sm font-bold text-primary shadow-lg"
+            className="pointer-events-none fixed bottom-28 right-8 z-200 flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/10 px-4 py-2 font-mono text-sm font-bold text-primary shadow-lg"
           >
             <Zap className="size-4" />
             {xpFx.delta > 0 ? `+${xpFx.delta}` : xpFx.delta} XP
@@ -530,7 +530,7 @@ export default function StudyRoomDetailPage() {
         {/* ── LEFT SIDEBAR ── */}
         <aside className="hidden w-72 shrink-0 flex-col gap-4 lg:flex overflow-y-auto no-scrollbar">
           {/* Room identity */}
-          <Card className="rounded-(--radius) border-border/50">
+          <Card className="rounded-lg border-border/50">
             <CardContent className="p-5">
               <div className="flex items-center justify-between gap-2 border-b border-border/50 pb-4">
                 <div className="min-w-0">
@@ -540,19 +540,19 @@ export default function StudyRoomDetailPage() {
                   <div className="mt-1 flex items-center gap-2">
                     <Badge
                       variant="outline"
-                      className="rounded-(--radius) px-2 py-0 font-mono text-[9px] border-border/50"
+                      className="rounded-lg px-2 py-0 font-mono text-[9px] border-border/50"
                     >
                       {room.roomCode}
                     </Badge>
                     {room.isLocked ? (
                       <Badge
                         variant="destructive"
-                        className="rounded-(--radius) text-[9px] font-mono gap-1"
+                        className="rounded-lg text-[9px] font-mono gap-1"
                       >
                         <Lock className="size-2.5" /> Locked
                       </Badge>
                     ) : (
-                      <Badge className="rounded-(--radius) bg-emerald-500 text-[9px] font-mono text-white">
+                      <Badge className="rounded-lg bg-emerald-500 text-[9px] font-mono text-white">
                         <Unlock className="size-2.5 mr-1" />
                         Open
                       </Badge>
@@ -564,19 +564,19 @@ export default function StudyRoomDetailPage() {
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="rounded-(--radius) shrink-0 text-muted-foreground hover:bg-accent"
+                      className="rounded-lg shrink-0 text-muted-foreground hover:bg-accent"
                     >
                       <Settings className="size-4" />
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="rounded-(--radius) border-border/50 bg-background sm:max-w-md">
+                  <DialogContent className="rounded-lg border-border/50 bg-background sm:max-w-md">
                     <DialogHeader>
                       <DialogTitle className="font-mono italic tracking-tighter">
                         Room Settings
                       </DialogTitle>
                     </DialogHeader>
                     <div className="grid gap-5 py-4">
-                      <div className="flex items-center justify-between rounded-(--radius) border border-border/50 p-4 bg-muted/20">
+                      <div className="flex items-center justify-between rounded-lg border border-border/50 p-4 bg-muted/20">
                         <div className="space-y-0.5">
                           <Label className="text-xs font-mono font-bold uppercase tracking-tight">
                             Immersive Mode
@@ -590,7 +590,7 @@ export default function StudyRoomDetailPage() {
                           onCheckedChange={setIsImmersive}
                         />
                       </div>
-                      <div className="flex items-center justify-between rounded-(--radius) border border-border/50 p-4 bg-muted/20">
+                      <div className="flex items-center justify-between rounded-lg border border-border/50 p-4 bg-muted/20">
                         <div className="space-y-0.5">
                           <Label className="text-xs font-mono font-bold uppercase tracking-tight">
                             Media Follow Mode
@@ -617,13 +617,13 @@ export default function StudyRoomDetailPage() {
                         <div className="flex gap-2">
                           <Input
                             placeholder="Username or email…"
-                            className="rounded-(--radius) border-border/50 font-mono text-xs"
+                            className="rounded-lg border-border/50 font-mono text-xs"
                             value={inviteValue}
                             onChange={(e) => setInviteValue(e.target.value)}
                           />
                           <Button
                             variant="outline"
-                            className="rounded-(--radius) text-xs font-mono uppercase shrink-0"
+                            className="rounded-lg text-xs font-mono uppercase shrink-0"
                             disabled={
                               inviteByUsername.isPending ||
                               inviteByEmail.isPending
@@ -663,7 +663,7 @@ export default function StudyRoomDetailPage() {
                       </div>
                       <Button
                         variant="outline"
-                        className="rounded-(--radius) gap-2 w-full"
+                        className="rounded-lg gap-2 w-full"
                         onClick={() => {
                           navigator.clipboard.writeText(window.location.href);
                           toast.success("Link copied!");
@@ -688,7 +688,7 @@ export default function StudyRoomDetailPage() {
                 </div>
                 <Progress
                   value={(participants.length / room.maxParticipants) * 100}
-                  className="h-1 rounded-(--radius)"
+                  className="h-1 rounded-lg"
                 />
                 <div className="flex -space-x-2 pt-1">
                   <AnimatePresence>
@@ -717,7 +717,7 @@ export default function StudyRoomDetailPage() {
 
           {/* AI Game controls (host only) */}
           {isHost && (
-            <Card className="rounded-(--radius) border-border/50">
+            <Card className="rounded-lg border-border/50">
               <CardContent className="p-5 space-y-3">
                 <p className="text-[9px] font-mono font-bold uppercase tracking-widest text-muted-foreground">
                   AI Challenge Generator
@@ -726,7 +726,7 @@ export default function StudyRoomDetailPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="rounded-(--radius) font-mono text-[9px] uppercase tracking-wider h-9"
+                    className="rounded-lg font-mono text-[9px] uppercase tracking-wider h-9"
                     disabled={generateAiGame.isPending}
                     onClick={() =>
                       generateAiGame.mutate(
@@ -748,7 +748,7 @@ export default function StudyRoomDetailPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="rounded-(--radius) font-mono text-[9px] uppercase tracking-wider h-9"
+                    className="rounded-lg font-mono text-[9px] uppercase tracking-wider h-9"
                     disabled={generateAiGame.isPending}
                     onClick={() =>
                       generateAiGame.mutate(
@@ -772,7 +772,7 @@ export default function StudyRoomDetailPage() {
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="w-full rounded-(--radius) font-mono text-[9px] uppercase tracking-wider h-9"
+                    className="w-full rounded-lg font-mono text-[9px] uppercase tracking-wider h-9"
                     onClick={() =>
                       openReadyCheck.mutate(
                         { code },
@@ -791,7 +791,7 @@ export default function StudyRoomDetailPage() {
           )}
 
           {/* Leaderboard */}
-          <Card className="flex flex-1 flex-col rounded-(--radius) border-border/50 overflow-hidden">
+          <Card className="flex flex-1 flex-col rounded-lg border-border/50 overflow-hidden">
             <div className="flex items-center gap-2 border-b border-border/50 px-5 py-4">
               <Trophy className="size-4 text-primary" />
               <h3 className="font-mono text-[10px] font-bold uppercase tracking-widest">
@@ -859,14 +859,14 @@ export default function StudyRoomDetailPage() {
                               <Button
                                 size="icon"
                                 variant="ghost"
-                                className="size-6 rounded-(--radius) text-muted-foreground shrink-0"
+                                className="size-6 rounded-lg text-muted-foreground shrink-0"
                               >
                                 <MoreVertical className="size-3" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent
                               align="end"
-                              className="w-44 rounded-(--radius) font-mono text-[10px]"
+                              className="w-44 rounded-lg font-mono text-[10px]"
                             >
                               <DropdownMenuLabel className="text-[9px] uppercase tracking-widest">
                                 Moderation
@@ -949,7 +949,7 @@ export default function StudyRoomDetailPage() {
                         ) : isSelf ? (
                           <Badge
                             variant="outline"
-                            className="rounded-(--radius) text-[8px] font-mono border-primary/30 text-primary shrink-0"
+                            className="rounded-lg text-[8px] font-mono border-primary/30 text-primary shrink-0"
                           >
                             You
                           </Badge>
@@ -966,7 +966,7 @@ export default function StudyRoomDetailPage() {
         {/* ── CENTER STAGE ── */}
         <section className="flex flex-1 flex-col gap-5 overflow-y-auto no-scrollbar">
           {/* Timer card */}
-          <Card className="rounded-(--radius) border-border/50 shadow-sm overflow-hidden">
+          <Card className="rounded-lg border-border/50 shadow-sm overflow-hidden">
             {/* Amber accent strip — pulses when running */}
             <div
               className={cn(
@@ -980,14 +980,14 @@ export default function StudyRoomDetailPage() {
                 {/* Status badge */}
                 <div className="flex items-center gap-2">
                   {room.timer?.isRunning ? (
-                    <Badge className="rounded-(--radius) bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 font-mono text-[9px] font-bold uppercase tracking-widest px-3 py-1 flex items-center gap-1.5">
+                    <Badge className="rounded-lg bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 font-mono text-[9px] font-bold uppercase tracking-widest px-3 py-1 flex items-center gap-1.5">
                       <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />
                       Focus Session Active
                     </Badge>
                   ) : (
                     <Badge
                       variant="outline"
-                      className="rounded-(--radius) border-border/40 text-muted-foreground font-mono text-[9px] font-bold uppercase tracking-widest px-3 py-1 flex items-center gap-1.5"
+                      className="rounded-lg border-border/40 text-muted-foreground font-mono text-[9px] font-bold uppercase tracking-widest px-3 py-1 flex items-center gap-1.5"
                     >
                       <Timer className="size-3" />
                       {localRemaining === 0
@@ -997,7 +997,7 @@ export default function StudyRoomDetailPage() {
                   )}
                   <Badge
                     variant="outline"
-                    className="rounded-(--radius) border-amber-500/30 text-amber-500 font-mono text-[9px] font-bold uppercase tracking-widest px-3 py-1"
+                    className="rounded-lg border-amber-500/30 text-amber-500 font-mono text-[9px] font-bold uppercase tracking-widest px-3 py-1"
                   >
                     Sprint {room.timer?.cycle ?? 0}
                   </Badge>
@@ -1115,7 +1115,7 @@ export default function StudyRoomDetailPage() {
                   )}
                   {!myParticipant && (
                     <Button
-                      className="rounded-(--radius) h-11 px-10 text-sm font-bold uppercase tracking-widest"
+                      className="rounded-lg h-11 px-10 text-sm font-bold uppercase tracking-widest"
                       onClick={() => join.mutate({ code })}
                     >
                       Join Room
@@ -1135,7 +1135,7 @@ export default function StudyRoomDetailPage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
               >
-                <Card className="rounded-(--radius) border-primary/30 bg-card shadow-sm overflow-hidden">
+                <Card className="rounded-lg border-primary/30 bg-card shadow-sm overflow-hidden">
                   {/* Header strip */}
                   <div
                     className={cn(
@@ -1167,12 +1167,12 @@ export default function StudyRoomDetailPage() {
                     {game.status === "ready" && (
                       <div className="flex flex-col gap-4">
                         <div className="flex items-center gap-2">
-                          <Badge className="rounded-(--radius) bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 text-[9px] font-mono uppercase">
+                          <Badge className="rounded-lg bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 text-[9px] font-mono uppercase">
                             Draft Ready
                           </Badge>
                           <Badge
                             variant="outline"
-                            className="rounded-(--radius) text-[9px] font-mono uppercase border-border/50"
+                            className="rounded-lg text-[9px] font-mono uppercase border-border/50"
                           >
                             {game.type === "qa" ? "Q&A Battle" : "Word Guess"}
                           </Badge>
@@ -1188,7 +1188,7 @@ export default function StudyRoomDetailPage() {
                         {isHost && (
                           <div className="flex gap-3">
                             <Button
-                              className="flex-1 rounded-(--radius) h-12 font-mono font-bold uppercase tracking-widest"
+                              className="flex-1 rounded-lg h-12 font-mono font-bold uppercase tracking-widest"
                               disabled={startGame.isPending}
                               onClick={() =>
                                 startGame.mutate(
@@ -1223,7 +1223,7 @@ export default function StudyRoomDetailPage() {
                     {game.status === "running" && isWordGuess && (
                       <div className="flex flex-col gap-5">
                         <div className="flex items-center gap-2">
-                          <Badge className="rounded-(--radius) bg-primary/10 text-primary border border-primary/30 text-[9px] font-mono uppercase">
+                          <Badge className="rounded-lg bg-primary/10 text-primary border border-primary/30 text-[9px] font-mono uppercase">
                             Word Guess
                           </Badge>
                           <span className="font-mono text-[10px] text-muted-foreground uppercase">
@@ -1255,7 +1255,7 @@ export default function StudyRoomDetailPage() {
                               <Badge
                                 key={l}
                                 variant="outline"
-                                className="rounded-(--radius) border-destructive/30 text-destructive bg-destructive/5 font-mono text-xs"
+                                className="rounded-lg border-destructive/30 text-destructive bg-destructive/5 font-mono text-xs"
                               >
                                 {l}
                               </Badge>
@@ -1267,7 +1267,7 @@ export default function StudyRoomDetailPage() {
                         <div className="flex gap-2">
                           <Input
                             placeholder="Type a letter or full word…"
-                            className="rounded-(--radius) h-11 font-mono text-xs uppercase"
+                            className="rounded-lg h-11 font-mono text-xs uppercase"
                             value={gameInput}
                             onChange={(e) =>
                               setGameInput(e.target.value.toUpperCase())
@@ -1278,7 +1278,7 @@ export default function StudyRoomDetailPage() {
                             maxLength={30}
                           />
                           <Button
-                            className="rounded-(--radius) h-11 px-6 font-mono uppercase font-bold"
+                            className="rounded-lg h-11 px-6 font-mono uppercase font-bold"
                             disabled={
                               submitGameAnswer.isPending || !gameInput.trim()
                             }
@@ -1298,7 +1298,7 @@ export default function StudyRoomDetailPage() {
                     {game.status === "running" && isQa && (
                       <div className="flex flex-col gap-5">
                         <div className="flex items-center gap-2">
-                          <Badge className="rounded-(--radius) bg-primary/10 text-primary border border-primary/30 text-[9px] font-mono uppercase">
+                          <Badge className="rounded-lg bg-primary/10 text-primary border border-primary/30 text-[9px] font-mono uppercase">
                             Q&A Battle
                           </Badge>
                         </div>
@@ -1307,7 +1307,7 @@ export default function StudyRoomDetailPage() {
                         </p>
 
                         {myQaResponse ? (
-                          <div className="rounded-(--radius) border border-border/50 bg-muted/30 p-4 text-center">
+                          <div className="rounded-lg border border-border/50 bg-muted/30 p-4 text-center">
                             <Check className="mx-auto mb-2 size-6 text-emerald-500" />
                             <p className="font-mono text-[10px] font-bold uppercase text-muted-foreground">
                               Answer submitted — waiting for others…
@@ -1320,7 +1320,7 @@ export default function StudyRoomDetailPage() {
                                 key={idx}
                                 onClick={() => setSelectedOption(idx)}
                                 className={cn(
-                                  "flex items-center gap-3 rounded-(--radius) border p-3 text-left font-mono text-xs font-bold transition-all hover:border-primary/50",
+                                  "flex items-center gap-3 rounded-lg border p-3 text-left font-mono text-xs font-bold transition-all hover:border-primary/50",
                                   selectedOption === idx
                                     ? "border-primary bg-primary/10 text-primary"
                                     : "border-border/50 bg-muted/20 text-foreground hover:bg-muted/40",
@@ -1328,7 +1328,7 @@ export default function StudyRoomDetailPage() {
                               >
                                 <span
                                   className={cn(
-                                    "flex size-6 shrink-0 items-center justify-center rounded-(--radius) text-[10px] font-black",
+                                    "flex size-6 shrink-0 items-center justify-center rounded-lg text-[10px] font-black",
                                     selectedOption === idx
                                       ? "bg-primary text-primary-foreground"
                                       : "bg-muted text-muted-foreground",
@@ -1344,7 +1344,7 @@ export default function StudyRoomDetailPage() {
 
                         {!myQaResponse && (
                           <Button
-                            className="rounded-(--radius) h-11 font-mono font-bold uppercase tracking-widest"
+                            className="rounded-lg h-11 font-mono font-bold uppercase tracking-widest"
                             disabled={
                               submitGameAnswer.isPending ||
                               selectedOption === null
@@ -1365,7 +1365,7 @@ export default function StudyRoomDetailPage() {
                     {game.status === "reveal" && isQa && (
                       <div className="flex flex-col gap-4">
                         <div className="flex items-center gap-2">
-                          <Badge className="rounded-(--radius) bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 text-[9px] font-mono uppercase">
+                          <Badge className="rounded-lg bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 text-[9px] font-mono uppercase">
                             Round Over
                           </Badge>
                         </div>
@@ -1384,7 +1384,7 @@ export default function StudyRoomDetailPage() {
                               <div
                                 key={idx}
                                 className={cn(
-                                  "rounded-(--radius) border p-3 font-mono text-xs",
+                                  "rounded-lg border p-3 font-mono text-xs",
                                   isCorrect
                                     ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
                                     : "border-border/50 bg-muted/20 text-muted-foreground",
@@ -1394,7 +1394,7 @@ export default function StudyRoomDetailPage() {
                                   <div className="flex items-center gap-2">
                                     <span
                                       className={cn(
-                                        "flex size-5 items-center justify-center rounded-(--radius) text-[9px] font-black",
+                                        "flex size-5 items-center justify-center rounded-lg text-[9px] font-black",
                                         isCorrect
                                           ? "bg-emerald-500 text-white"
                                           : "bg-muted text-muted-foreground",
@@ -1416,7 +1416,7 @@ export default function StudyRoomDetailPage() {
                                 <Progress
                                   value={pct}
                                   className={cn(
-                                    "h-1 rounded-(--radius)",
+                                    "h-1 rounded-lg",
                                     isCorrect
                                       ? "bg-emerald-500/20"
                                       : "bg-muted",
@@ -1442,13 +1442,13 @@ export default function StudyRoomDetailPage() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.96 }}
               >
-                <Card className="rounded-(--radius) border-primary/40 overflow-hidden shadow-lg">
+                <Card className="rounded-lg border-primary/40 overflow-hidden shadow-lg">
                   <div className="h-1 bg-primary animate-pulse" />
                   <CardContent className="p-6 text-center space-y-5">
                     <div>
                       <Badge
                         variant="outline"
-                        className="rounded-(--radius) border-primary/50 text-primary font-mono text-[9px] uppercase"
+                        className="rounded-lg border-primary/50 text-primary font-mono text-[9px] uppercase"
                       >
                         Cycle {room.timer?.cycle} Check-in
                       </Badge>
@@ -1477,7 +1477,7 @@ export default function StudyRoomDetailPage() {
                         <Button
                           key={status}
                           variant="outline"
-                          className="rounded-(--radius) h-11 justify-start border-border/50 font-mono text-[10px] font-bold uppercase gap-3"
+                          className="rounded-lg h-11 justify-start border-border/50 font-mono text-[10px] font-bold uppercase gap-3"
                           onClick={() => submitCheckIn.mutate({ code, status })}
                         >
                           <span className={cn("size-2 rounded-full", color)} />
@@ -1492,7 +1492,7 @@ export default function StudyRoomDetailPage() {
           </AnimatePresence>
 
           {/* Media player */}
-          <Card className="rounded-(--radius) border-border/50 shadow-sm overflow-hidden">
+          <Card className="rounded-lg border-border/50 shadow-sm overflow-hidden">
             <div className="flex items-center justify-between border-b border-border/50 px-5 py-3">
               <div className="flex items-center gap-2">
                 <Music className="size-4 text-primary" />
@@ -1509,7 +1509,7 @@ export default function StudyRoomDetailPage() {
                 <div className="flex items-center gap-2">
                   <Input
                     placeholder="YouTube URL…"
-                    className="h-8 w-52 rounded-(--radius) border-border/50 bg-muted/20 font-mono text-[10px]"
+                    className="h-8 w-52 rounded-lg border-border/50 bg-muted/20 font-mono text-[10px]"
                     value={mediaUrl}
                     onChange={(e) => setMediaUrl(e.target.value)}
                     onKeyDown={(e) => {
@@ -1523,7 +1523,7 @@ export default function StudyRoomDetailPage() {
                   <Button
                     size="sm"
                     variant="secondary"
-                    className="h-8 rounded-(--radius) font-mono text-[9px] uppercase"
+                    className="h-8 rounded-lg font-mono text-[9px] uppercase"
                     disabled={!mediaUrl || postMedia.isPending}
                     onClick={() =>
                       postMedia
@@ -1552,7 +1552,7 @@ export default function StudyRoomDetailPage() {
           </Card>
 
           {/* Tasks */}
-          <Card className="rounded-(--radius) border-border/50 shadow-sm">
+          <Card className="rounded-lg border-border/50 shadow-sm">
             <div className="flex items-center justify-between border-b border-border/50 px-5 py-4">
               <div className="flex items-center gap-2">
                 <Target className="size-4 text-primary" />
@@ -1566,12 +1566,12 @@ export default function StudyRoomDetailPage() {
                     <Button
                       size="icon"
                       variant="outline"
-                      className="rounded-(--radius) border-border/50 size-7"
+                      className="rounded-lg border-border/50 size-7"
                     >
                       <Plus className="size-3" />
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="bg-background rounded-(--radius) border-border/50">
+                  <DialogContent className="bg-background rounded-lg border-border/50">
                     <DialogHeader>
                       <DialogTitle className="font-mono italic tracking-tighter">
                         New Objective
@@ -1580,7 +1580,7 @@ export default function StudyRoomDetailPage() {
                     <div className="space-y-4 py-4">
                       <Input
                         placeholder="Objective description…"
-                        className="rounded-(--radius) font-mono text-xs"
+                        className="rounded-lg font-mono text-xs"
                         value={taskTitle}
                         onChange={(e) => setTaskTitle(e.target.value)}
                         onKeyDown={(e) => {
@@ -1595,7 +1595,7 @@ export default function StudyRoomDetailPage() {
                         }}
                       />
                       <Button
-                        className="w-full rounded-(--radius) font-mono text-xs uppercase font-bold"
+                        className="w-full rounded-lg font-mono text-xs uppercase font-bold"
                         disabled={!taskTitle || createTask.isPending}
                         onClick={() =>
                           createTask.mutate(
@@ -1634,7 +1634,7 @@ export default function StudyRoomDetailPage() {
                           initial={{ opacity: 0, y: 8 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, scale: 0.95 }}
-                          className="flex items-center gap-3 rounded-(--radius) border border-border/50 bg-muted/20 p-3"
+                          className="flex items-center gap-3 rounded-lg border border-border/50 bg-muted/20 p-3"
                         >
                           <div className="flex-1 min-w-0">
                             <p
@@ -1653,7 +1653,7 @@ export default function StudyRoomDetailPage() {
                           <Button
                             size="icon"
                             variant={alreadyDone ? "secondary" : "ghost"}
-                            className="size-7 rounded-(--radius) shrink-0"
+                            className="size-7 rounded-lg shrink-0"
                             disabled={completeTask.isPending || alreadyDone}
                             onClick={() =>
                               completeTask.mutate({ code, taskId: t.id })
@@ -1675,7 +1675,7 @@ export default function StudyRoomDetailPage() {
           </Card>
 
           {/* My stats + avatar */}
-          <Card className="rounded-(--radius) border-border/50 shadow-sm pb-20">
+          <Card className="rounded-lg border-border/50 shadow-sm pb-20">
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -1709,12 +1709,12 @@ export default function StudyRoomDetailPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="rounded-(--radius) font-mono text-[9px] uppercase border-border/50"
+                      className="rounded-lg font-mono text-[9px] uppercase border-border/50"
                     >
                       Edit Avatar
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="w-full max-w-[95vw] rounded-(--radius) border-border/50 bg-background shadow-2xl p-0 sm:max-w-xl">
+                  <DialogContent className="w-full max-w-[95vw] rounded-lg border-border/50 bg-background shadow-2xl p-0 sm:max-w-xl">
                     <div className="border-b border-border/50 px-4 py-4 sm:px-5">
                       <h2 className="font-mono text-base font-bold italic tracking-tighter">
                         Avatar Builder
@@ -1770,7 +1770,7 @@ export default function StudyRoomDetailPage() {
         {/* Chat */}
         <Button
           size="icon"
-          className="relative size-13 rounded-(--radius) shadow-xl"
+          className="relative size-13 rounded-lg shadow-xl"
           onClick={() => setIsChatOpen((v) => !v)}
         >
           <MessageSquare className="size-5" />
@@ -1787,7 +1787,7 @@ export default function StudyRoomDetailPage() {
             size="icon"
             variant={amIReady ? "default" : "outline"}
             className={cn(
-              "size-13 rounded-(--radius) shadow-xl border-2",
+              "size-13 rounded-lg shadow-xl border-2",
               amIReady
                 ? "border-emerald-500 bg-emerald-500 hover:bg-emerald-600"
                 : "border-border",

@@ -93,7 +93,7 @@ export function MeetZ() {
         </div>
 
         <motion.div variants={itemVariants} className="w-full mx-auto">
-          <div className="border border-border/50 bg-card rounded-(--radius) overflow-hidden font-mono text-xs">
+          <div className="border border-border/50 bg-card rounded-lg overflow-hidden font-mono text-xs">
             <div className="p-4 border-b border-border/50 bg-background/80 flex flex-row items-center gap-4">
               <div className="w-6 h-6 border border-primary/40 bg-primary/20 flex items-center justify-center text-primary font-bold shadow-sm shrink-0">
                 Z
@@ -125,12 +125,12 @@ export function MeetZ() {
               </div>
 
               <div className="flex flex-wrap gap-4 mt-8">
-                <Button className="rounded-(--radius) font-mono text-xs font-bold tracking-widest uppercase bg-primary text-primary-foreground hover:bg-primary/90 transition-all h-12 px-6">
+                <Button className="rounded-lg font-mono text-xs font-bold tracking-widest uppercase bg-primary text-primary-foreground hover:bg-primary/90 transition-all h-12 px-6">
                   Initiate Sequence
                 </Button>
                 <Button
                   variant="outline"
-                  className="rounded-(--radius) border-border/80 font-mono text-xs font-bold tracking-widest uppercase hover:bg-secondary/50 hover:text-foreground transition-all h-12 px-6"
+                  className="rounded-lg border-border/80 font-mono text-xs font-bold tracking-widest uppercase hover:bg-secondary/50 hover:text-foreground transition-all h-12 px-6"
                 >
                   Adjust Parameters
                 </Button>

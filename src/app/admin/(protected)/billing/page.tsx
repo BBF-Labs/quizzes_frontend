@@ -464,7 +464,9 @@ function EligibilityFields({
               >
                 <Checkbox
                   checked={!!eligibility.includeDurations?.includes(duration)}
-                  onCheckedChange={() => toggleList("includeDurations", duration)}
+                  onCheckedChange={() =>
+                    toggleList("includeDurations", duration)
+                  }
                 />
                 {duration}
               </label>
@@ -485,7 +487,9 @@ function EligibilityFields({
             onChange={(e) =>
               onChange({
                 ...eligibility,
-                minOrderAmountGHS: e.target.value ? Number(e.target.value) : null,
+                minOrderAmountGHS: e.target.value
+                  ? Number(e.target.value)
+                  : null,
               })
             }
             className={fieldCls}
@@ -502,7 +506,9 @@ function EligibilityFields({
             onChange={(e) =>
               onChange({
                 ...eligibility,
-                maxOrderAmountGHS: e.target.value ? Number(e.target.value) : null,
+                maxOrderAmountGHS: e.target.value
+                  ? Number(e.target.value)
+                  : null,
               })
             }
             className={fieldCls}
@@ -680,19 +686,19 @@ function CreatePromoCodeForm({ onClose }: { onClose: () => void }) {
               setForm((f) => ({ ...f, type: v as "percentage" | "flat" }))
             }
           >
-            <SelectTrigger className="w-full rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+            <SelectTrigger className="w-full rounded-lg bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
+            <SelectContent className="rounded-lg border-border/40 bg-card/95 font-mono text-xs uppercase">
               <SelectItem
                 value="percentage"
-                className="rounded-(--radius) font-mono text-xs uppercase"
+                className="rounded-lg font-mono text-xs uppercase"
               >
                 Percentage (%)
               </SelectItem>
               <SelectItem
                 value="flat"
-                className="rounded-(--radius) font-mono text-xs uppercase"
+                className="rounded-lg font-mono text-xs uppercase"
               >
                 Flat (GHS)
               </SelectItem>
@@ -892,19 +898,19 @@ function EditPromoCodeForm({
             setForm((f) => ({ ...f, type: v as "percentage" | "flat" }))
           }
         >
-          <SelectTrigger className="w-full rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+          <SelectTrigger className="w-full rounded-lg bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
+          <SelectContent className="rounded-lg border-border/40 bg-card/95 font-mono text-xs uppercase">
             <SelectItem
               value="percentage"
-              className="rounded-(--radius) font-mono text-xs uppercase"
+              className="rounded-lg font-mono text-xs uppercase"
             >
               Percentage (%)
             </SelectItem>
             <SelectItem
               value="flat"
-              className="rounded-(--radius) font-mono text-xs uppercase"
+              className="rounded-lg font-mono text-xs uppercase"
             >
               Flat (GHS)
             </SelectItem>
@@ -1091,49 +1097,49 @@ function PaymentsTab() {
           value={statusFilter || "all"}
           onValueChange={(v) => handleFilterChange("status", v)}
         >
-          <SelectTrigger className="w-auto min-w-35 rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+          <SelectTrigger className="w-auto min-w-35 rounded-lg bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
             <SelectValue placeholder="All Statuses" />
           </SelectTrigger>
-          <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
+          <SelectContent className="rounded-lg border-border/40 bg-card/95 font-mono text-xs uppercase">
             <SelectItem
               value="all"
-              className="rounded-(--radius) font-mono text-xs uppercase"
+              className="rounded-lg font-mono text-xs uppercase"
             >
               All Statuses
             </SelectItem>
             <SelectItem
               value="success"
-              className="rounded-(--radius) font-mono text-xs uppercase"
+              className="rounded-lg font-mono text-xs uppercase"
             >
               Success
             </SelectItem>
             <SelectItem
               value="failed"
-              className="rounded-(--radius) font-mono text-xs uppercase"
+              className="rounded-lg font-mono text-xs uppercase"
             >
               Failed
             </SelectItem>
             <SelectItem
               value="pending"
-              className="rounded-(--radius) font-mono text-xs uppercase"
+              className="rounded-lg font-mono text-xs uppercase"
             >
               Pending
             </SelectItem>
             <SelectItem
               value="processing"
-              className="rounded-(--radius) font-mono text-xs uppercase"
+              className="rounded-lg font-mono text-xs uppercase"
             >
               Processing
             </SelectItem>
             <SelectItem
               value="abandoned"
-              className="rounded-(--radius) font-mono text-xs uppercase"
+              className="rounded-lg font-mono text-xs uppercase"
             >
               Abandoned
             </SelectItem>
             <SelectItem
               value="reversed"
-              className="rounded-(--radius) font-mono text-xs uppercase"
+              className="rounded-lg font-mono text-xs uppercase"
             >
               Reversed
             </SelectItem>
@@ -1143,37 +1149,37 @@ function PaymentsTab() {
           value={typeFilter || "all"}
           onValueChange={(v) => handleFilterChange("type", v)}
         >
-          <SelectTrigger className="w-auto min-w-30 rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+          <SelectTrigger className="w-auto min-w-30 rounded-lg bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
             <SelectValue placeholder="All Types" />
           </SelectTrigger>
-          <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
+          <SelectContent className="rounded-lg border-border/40 bg-card/95 font-mono text-xs uppercase">
             <SelectItem
               value="all"
-              className="rounded-(--radius) font-mono text-xs uppercase"
+              className="rounded-lg font-mono text-xs uppercase"
             >
               All Types
             </SelectItem>
             <SelectItem
               value="plan"
-              className="rounded-(--radius) font-mono text-xs uppercase"
+              className="rounded-lg font-mono text-xs uppercase"
             >
               Plan
             </SelectItem>
             <SelectItem
               value="credits"
-              className="rounded-(--radius) font-mono text-xs uppercase"
+              className="rounded-lg font-mono text-xs uppercase"
             >
               Credits
             </SelectItem>
             <SelectItem
               value="course"
-              className="rounded-(--radius) font-mono text-xs uppercase"
+              className="rounded-lg font-mono text-xs uppercase"
             >
               Course
             </SelectItem>
             <SelectItem
               value="quiz"
-              className="rounded-(--radius) font-mono text-xs uppercase"
+              className="rounded-lg font-mono text-xs uppercase"
             >
               Quiz
             </SelectItem>
@@ -1244,7 +1250,7 @@ function PaymentsTab() {
                 </span>
                 <span
                   className={cn(
-                    "text-[9px] font-mono uppercase tracking-widest px-1.5 py-0.5 border rounded-(--radius) w-24 text-center",
+                    "text-[9px] font-mono uppercase tracking-widest px-1.5 py-0.5 border rounded-lg w-24 text-center",
                     PAYMENT_STATUS_COLORS[p.status] ??
                       "text-muted-foreground border-border/30",
                   )}

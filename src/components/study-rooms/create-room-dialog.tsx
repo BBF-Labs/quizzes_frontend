@@ -64,12 +64,12 @@ export function CreateRoomDialog({ children }: { children?: React.ReactNode }) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {children || (
-          <Button className="rounded-(--radius) gap-2 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg">
+          <Button className="rounded-lg gap-2 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg">
             <Plus className="size-4" /> Create Room
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="rounded-(--radius) sm:max-w-125 border border-border/50 bg-background shadow-xl">
+      <DialogContent className="rounded-lg sm:max-w-125 border border-border/50 bg-background shadow-xl">
         <DialogHeader>
           <DialogTitle className="text-xl font-mono font-bold uppercase tracking-tight text-primary italic">
             Start a Study Sprint
@@ -93,7 +93,7 @@ export function CreateRoomDialog({ children }: { children?: React.ReactNode }) {
               placeholder="e.g. Physics Final Review"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="rounded-(--radius) border-border/50 focus-visible:ring-primary text-base h-11"
+              className="rounded-lg border-border/50 focus-visible:ring-primary text-base h-11"
             />
           </div>
 
@@ -109,7 +109,7 @@ export function CreateRoomDialog({ children }: { children?: React.ReactNode }) {
               placeholder="Session objective..."
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
-              className="rounded-(--radius) border-border/50 resize-none min-h-15 text-xs"
+              className="rounded-lg border-border/50 resize-none min-h-15 text-xs"
             />
           </div>
 
@@ -122,14 +122,14 @@ export function CreateRoomDialog({ children }: { children?: React.ReactNode }) {
                 value={visibility}
                 onValueChange={(v: "open" | "closed") => setVisibility(v)}
               >
-                <SelectTrigger className="rounded-(--radius) border-border/50">
+                <SelectTrigger className="rounded-lg border-border/50">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="rounded-(--radius)">
-                  <SelectItem value="open" className="rounded-(--radius)">
+                <SelectContent className="rounded-lg">
+                  <SelectItem value="open" className="rounded-lg">
                     Open (Public)
                   </SelectItem>
-                  <SelectItem value="closed" className="rounded-(--radius)">
+                  <SelectItem value="closed" className="rounded-lg">
                     Closed (Private)
                   </SelectItem>
                 </SelectContent>
@@ -144,15 +144,15 @@ export function CreateRoomDialog({ children }: { children?: React.ReactNode }) {
                 value={String(maxParticipants)}
                 onValueChange={(v) => setMaxParticipants(Number(v))}
               >
-                <SelectTrigger className="rounded-(--radius) border-border/50">
+                <SelectTrigger className="rounded-lg border-border/50">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="rounded-(--radius)">
+                <SelectContent className="rounded-lg">
                   {CAPACITY_PRESETS.map((p) => (
                     <SelectItem
                       key={p}
                       value={String(p)}
-                      className="rounded-(--radius)"
+                      className="rounded-lg"
                     >
                       {p} People
                     </SelectItem>
@@ -173,7 +173,7 @@ export function CreateRoomDialog({ children }: { children?: React.ReactNode }) {
                   type="button"
                   onClick={() => setTimerMinutes(t)}
                   className={cn(
-                    "px-4 py-2 rounded-(--radius) border text-xs font-mono font-bold transition-all",
+                    "px-4 py-2 rounded-lg border text-xs font-mono font-bold transition-all",
                     timerMinutes === t
                       ? "bg-primary border-primary text-primary-foreground shadow-md scale-105"
                       : "bg-background border-border/50 hover:border-primary/50",
@@ -188,7 +188,7 @@ export function CreateRoomDialog({ children }: { children?: React.ReactNode }) {
                   placeholder="Custom"
                   value={timerMinutes}
                   onChange={(e) => setTimerMinutes(Number(e.target.value))}
-                  className="rounded-(--radius) border-border/50 h-9 font-mono text-xs"
+                  className="rounded-lg border-border/50 h-9 font-mono text-xs"
                 />
               </div>
             </div>
@@ -199,13 +199,13 @@ export function CreateRoomDialog({ children }: { children?: React.ReactNode }) {
           <div className="hidden sm:flex items-center gap-2">
             <Badge
               variant="outline"
-              className="rounded-(--radius) border-border/50 text-[10px] font-mono"
+              className="rounded-lg border-border/50 text-[10px] font-mono"
             >
               {maxParticipants} capacity
             </Badge>
             <Badge
               variant="outline"
-              className="rounded-(--radius) border-border/50 text-[10px] font-mono"
+              className="rounded-lg border-border/50 text-[10px] font-mono"
             >
               {timerMinutes} minutes
             </Badge>
@@ -213,7 +213,7 @@ export function CreateRoomDialog({ children }: { children?: React.ReactNode }) {
           <Button
             onClick={onCreate}
             disabled={!canSubmit || createRoom.isPending}
-            className="rounded-(--radius) px-6 font-bold tracking-wider transition-all active:translate-y-0.5"
+            className="rounded-lg px-6 font-bold tracking-wider transition-all active:translate-y-0.5"
           >
             {createRoom.isPending ? "Starting..." : "Start Sprint"}
           </Button>

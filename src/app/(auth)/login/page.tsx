@@ -107,7 +107,7 @@ function LoginForm() {
               onChange={(e) => setIdentifier(e.target.value)}
               required
               autoComplete="username"
-              className="rounded-(--radius) font-mono bg-secondary/40 dark:bg-input/30 border-border focus-visible:ring-ring/50"
+              className="rounded-lg font-mono bg-secondary/40 dark:bg-input/30 border-border focus-visible:ring-ring/50"
               placeholder="email@example.com or username"
             />
           </div>
@@ -122,7 +122,7 @@ function LoginForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="rounded-(--radius) font-mono bg-secondary/40 dark:bg-input/30 border-border pr-10"
+                className="rounded-lg font-mono bg-secondary/40 dark:bg-input/30 border-border pr-10"
                 placeholder="••••••••"
               />
               <button
@@ -143,7 +143,7 @@ function LoginForm() {
           <div className="flex items-center gap-2">
             <Checkbox
               id="remember-me"
-              className="rounded-(--radius) border-border/50"
+              className="rounded-lg border-border/50"
               checked={rememberMe}
               onCheckedChange={(checked) => setRememberMe(Boolean(checked))}
             />
@@ -161,7 +161,7 @@ function LoginForm() {
           <Button
             type="submit"
             disabled={loading}
-            className="w-full rounded-(--radius) font-mono text-[10px] tracking-[0.2em] uppercase h-11 bg-primary text-primary-foreground shadow-[0_0_20px_rgba(0,110,255,0.15)] hover:shadow-[0_0_30px_rgba(0,110,255,0.25)] transition-all"
+            className="w-full rounded-lg font-mono text-[10px] tracking-[0.2em] uppercase h-11 bg-primary text-primary-foreground shadow-[0_0_20px_rgba(0,110,255,0.15)] hover:shadow-[0_0_30px_rgba(0,110,255,0.25)] transition-all"
           >
             {loading ? "Authenticating…" : "Login"}
           </Button>

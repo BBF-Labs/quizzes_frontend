@@ -68,7 +68,7 @@ export function RoomOverlays({
           animate={{ scale: 1, opacity: 1, y: 0 }}
           transition={{ type: "spring", damping: 25 }}
           className={cn(
-            "relative flex w-full max-w-xl flex-col items-center gap-8 rounded-(--radius) border border-border/50 bg-card p-12 text-center text-foreground shadow-2xl backdrop-blur-3xl",
+            "relative flex w-full max-w-xl flex-col items-center gap-8 rounded-lg border border-border/50 bg-card p-12 text-center text-foreground shadow-2xl backdrop-blur-3xl",
             content.accent,
           )}
         >
@@ -106,7 +106,7 @@ export function RoomOverlays({
 
             <Badge
               variant="outline"
-              className="rounded-(--radius) border-border/50 px-6 py-2 text-[10px] font-mono font-bold tracking-[0.2em] text-muted-foreground"
+              className="rounded-lg border-border/50 px-6 py-2 text-[10px] font-mono font-bold tracking-[0.2em] text-muted-foreground"
             >
               Active Operation
             </Badge>

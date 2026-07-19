@@ -45,7 +45,7 @@ function MobileExploreSection() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between px-4 py-2 rounded-(--radius) font-mono tracking-widest uppercase text-sm text-foreground hover:bg-accent transition-colors"
+        className="w-full flex items-center justify-between px-4 py-2 rounded-lg font-mono tracking-widest uppercase text-sm text-foreground hover:bg-accent transition-colors"
       >
         Explore
         <ChevronDown
@@ -59,7 +59,7 @@ function MobileExploreSection() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full justify-start rounded-(--radius) font-mono tracking-widest uppercase text-muted-foreground h-8 text-xs"
+                className="w-full justify-start rounded-lg font-mono tracking-widest uppercase text-muted-foreground h-8 text-xs"
               >
                 {label}
               </Button>
@@ -237,7 +237,7 @@ export function Navbar() {
               <Button
                 onClick={scrollToHero}
                 variant="outline"
-                className="rounded-(--radius) border-primary/40 bg-primary/5 text-primary text-xs font-mono font-bold tracking-[0.15em] uppercase hover:bg-primary hover:text-primary-foreground transition-all duration-300 shadow-[0_0_15px_rgba(0,110,255,0.1)]"
+                className="rounded-lg border-primary/40 bg-primary/5 text-primary text-xs font-mono font-bold tracking-[0.15em] uppercase hover:bg-primary hover:text-primary-foreground transition-all duration-300 shadow-[0_0_15px_rgba(0,110,255,0.1)]"
               >
                 WAITLIST
               </Button>
@@ -249,7 +249,7 @@ export function Navbar() {
                 <Link href="/login">
                   <Button
                     variant="ghost"
-                    className="rounded-(--radius) text-muted-foreground hover:bg-primary hover:text-white hover:shadow-[0_0_20px_rgba(0,110,255,0.3)] text-xs font-mono font-bold tracking-[0.15em] uppercase transition-all duration-500 px-6 border border-border/50 hover:border-primary"
+                    className="rounded-lg text-muted-foreground hover:bg-primary hover:text-white hover:shadow-[0_0_20px_rgba(0,110,255,0.3)] text-xs font-mono font-bold tracking-[0.15em] uppercase transition-all duration-500 px-6 border border-border/50 hover:border-primary"
                   >
                     LOGIN
                   </Button>
@@ -295,7 +295,7 @@ export function Navbar() {
             >
               <Button
                 variant="ghost"
-                className="w-full justify-start rounded-(--radius) font-mono tracking-widest uppercase"
+                className="w-full justify-start rounded-lg font-mono tracking-widest uppercase"
               >
                 Features
               </Button>
@@ -303,21 +303,21 @@ export function Navbar() {
               <Link href="/pricing" className="w-full">
                 <Button
                   variant="ghost"
-                  className="w-full justify-start rounded-(--radius) font-mono tracking-widest uppercase"
+                  className="w-full justify-start rounded-lg font-mono tracking-widest uppercase"
                 >
                   Pricing
                 </Button>
               </Link>
               <Button
                 variant="ghost"
-                className="w-full justify-start rounded-(--radius) font-mono tracking-widest uppercase"
+                className="w-full justify-start rounded-lg font-mono tracking-widest uppercase"
                 onClick={scrollToDonate}
               >
                 Donate
               </Button>
               <Button
                 variant="outline"
-                className="w-full rounded-(--radius) border-primary/40 bg-primary/5 text-primary font-mono tracking-widest uppercase hover:bg-primary hover:text-primary-foreground transition-all duration-300"
+                className="w-full rounded-lg border-primary/40 bg-primary/5 text-primary font-mono tracking-widest uppercase hover:bg-primary hover:text-primary-foreground transition-all duration-300"
                 onClick={scrollToHero}
               >
                 WAITLIST
@@ -326,7 +326,7 @@ export function Navbar() {
                 <Link href="/login" className="w-full pt-2">
                   <Button
                     variant="ghost"
-                    className="w-full justify-start rounded-(--radius) font-mono font-bold tracking-widest uppercase hover:bg-primary hover:text-white transition-all h-12"
+                    className="w-full justify-start rounded-lg font-mono font-bold tracking-widest uppercase hover:bg-primary hover:text-white transition-all h-12"
                   >
                     LOGIN
                   </Button>
