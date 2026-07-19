@@ -119,7 +119,7 @@ export default function OnboardingBanner() {
         </motion.div>
 
         <Dialog open={showDismissModal} onOpenChange={setShowDismissModal}>
-          <DialogContent className="sm:max-w-sm rounded-(--radius) bg-background/95 backdrop-blur-md border-primary/20">
+          <DialogContent className="sm:max-w-sm rounded-lg bg-background/95 backdrop-blur-md border-primary/20">
             <DialogHeader className="mb-2">
               <DialogTitle className="font-mono text-base uppercase tracking-widest text-foreground">
                 Hide Reminder
@@ -131,7 +131,7 @@ export default function OnboardingBanner() {
             <div className="flex flex-col gap-2.5 mt-2">
               <Button
                 type="button"
-                className="w-full rounded-(--radius) text-[11px] font-mono uppercase tracking-widest bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                className="w-full rounded-lg text-[11px] font-mono uppercase tracking-widest bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                 onClick={() => setShowDismissModal(false)}
               >
                 Keep Showing
@@ -140,7 +140,7 @@ export default function OnboardingBanner() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full rounded-(--radius) text-[10px] font-mono uppercase tracking-widest border-border/50 text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
+                  className="w-full rounded-lg text-[10px] font-mono uppercase tracking-widest border-border/50 text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
                   onClick={hideToday}
                 >
                   Hide Today
@@ -148,7 +148,7 @@ export default function OnboardingBanner() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full rounded-(--radius) text-[10px] font-mono uppercase tracking-widest border-border/50 text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
+                  className="w-full rounded-lg text-[10px] font-mono uppercase tracking-widest border-border/50 text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
                   onClick={() => remindInDays(3)}
                 >
                   In 3 Days

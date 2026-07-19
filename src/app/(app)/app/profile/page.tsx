@@ -638,7 +638,7 @@ function PreferenceToggle({
       <div className="flex items-center gap-3 mb-2">
         <div
           className={cn(
-            "size-6 flex items-center justify-center border transition-colors duration-200 rounded-(--radius)",
+            "size-6 flex items-center justify-center border transition-colors duration-200 rounded-lg",
             enabled
               ? "border-primary bg-primary text-white"
               : "border-border bg-background text-muted-foreground",

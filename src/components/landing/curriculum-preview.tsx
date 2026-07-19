@@ -70,8 +70,8 @@ export function CurriculumPreview() {
                 Curriculum Mapping
               </h2>
               <p className="text-muted-foreground text-sm font-mono uppercase tracking-widest text-[10px] md:text-xs">
-                Qz maps to your university&apos;s program structure. Nothing goes
-                untracked.
+                Qz maps to your university&apos;s program structure. Nothing
+                goes untracked.
               </p>
             </div>
             <div className="text-primary font-mono text-xs font-bold uppercase tracking-widest flex items-center gap-2">
@@ -91,9 +91,9 @@ export function CurriculumPreview() {
           viewport={{ once: true }}
           className="w-full mx-auto"
         >
-          <div className="border border-border/50 bg-card rounded-(--radius) overflow-hidden font-mono text-xs">
+          <div className="border border-border/50 bg-card rounded-lg overflow-hidden font-mono text-xs">
             <div className="p-4 border-b border-border/50 bg-background/80 flex flex-row items-center gap-4">
-              <div className="w-6 h-6 border border-primary/40 bg-primary/20 flex items-center justify-center text-primary font-bold shadow-sm shrink-0 rounded-(--radius)">
+              <div className="w-6 h-6 border border-primary/40 bg-primary/20 flex items-center justify-center text-primary font-bold shadow-sm shrink-0 rounded-lg">
                 Z
               </div>
               <div className="font-bold text-foreground uppercase tracking-widest flex items-center gap-3">
@@ -120,7 +120,7 @@ export function CurriculumPreview() {
                     >
                       <div className="flex items-center gap-3">
                         {course.status === "complete" && (
-                          <div className="w-5 h-5 border border-primary bg-primary/20 flex items-center justify-center shrink-0 rounded-(--radius)">
+                          <div className="w-5 h-5 border border-primary bg-primary/20 flex items-center justify-center shrink-0 rounded-lg">
                             <Check className="w-3 h-3 text-primary" />
                           </div>
                         )}
@@ -128,7 +128,7 @@ export function CurriculumPreview() {
                           <SquareLoader size={20} strokeWidth={2} />
                         )}
                         {course.status === "pending" && (
-                          <div className="w-5 h-5 border border-muted-foreground/40 shrink-0 rounded-(--radius)" />
+                          <div className="w-5 h-5 border border-muted-foreground/40 shrink-0 rounded-lg" />
                         )}
 
                         <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
@@ -171,12 +171,12 @@ export function CurriculumPreview() {
                     >
                       <div className="flex items-center gap-3">
                         {course.status === "complete" && (
-                          <div className="w-5 h-5 border border-primary bg-primary/20 flex items-center justify-center shrink-0 rounded-(--radius)">
+                          <div className="w-5 h-5 border border-primary bg-primary/20 flex items-center justify-center shrink-0 rounded-lg">
                             <Check className="w-3 h-3 text-primary" />
                           </div>
                         )}
                         {course.status === "pending" && (
-                          <div className="w-5 h-5 border border-muted-foreground/40 shrink-0 rounded-(--radius)" />
+                          <div className="w-5 h-5 border border-muted-foreground/40 shrink-0 rounded-lg" />
                         )}
 
                         <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
@@ -204,7 +204,7 @@ export function CurriculumPreview() {
                     <span>12 / 18 credits complete</span>
                     <span className="text-primary font-medium">GPA 3.4</span>
                   </div>
-                  <div className="h-2 bg-secondary overflow-hidden rounded-(--radius)">
+                  <div className="h-2 bg-secondary overflow-hidden rounded-lg">
                     <motion.div
                       className="h-full bg-primary"
                       initial={{ width: "0%" }}

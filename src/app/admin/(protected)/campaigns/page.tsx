@@ -177,14 +177,14 @@ export default function AdminPage() {
             onClick={() => refetch()}
             variant="outline"
             size="icon"
-            className="rounded-(--radius) h-9 w-9"
+            className="rounded-lg h-9 w-9"
           >
             <RefreshCw className="size-4" />
           </Button>
           <Button
             id="new-campaign-btn"
             onClick={() => setShowNewForm(true)}
-            className="flex-1 sm:flex-initial rounded-(--radius) font-mono text-xs h-9 tracking-[0.15em] uppercase shadow-[0_0_15px_rgba(0,110,255,0.1)] hover:shadow-[0_0_25px_rgba(0,110,255,0.2)] transition-all"
+            className="flex-1 sm:flex-initial rounded-lg font-mono text-xs h-9 tracking-[0.15em] uppercase shadow-[0_0_15px_rgba(0,110,255,0.1)] hover:shadow-[0_0_25px_rgba(0,110,255,0.2)] transition-all"
           >
             <Plus className="size-3.5" />
             New Campaign
@@ -249,7 +249,7 @@ export default function AdminPage() {
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                   required
-                  className="rounded-(--radius) font-mono"
+                  className="rounded-lg font-mono"
                   placeholder="March 2026 Update"
                 />
               </div>
@@ -263,7 +263,7 @@ export default function AdminPage() {
                     setForm({ ...form, subjectLine: e.target.value })
                   }
                   required
-                  className="rounded-(--radius) font-mono"
+                  className="rounded-lg font-mono"
                   placeholder="What's new at Qz this month"
                 />
               </div>
@@ -277,7 +277,7 @@ export default function AdminPage() {
                 onChange={(e) =>
                   setForm({ ...form, previewText: e.target.value })
                 }
-                className="rounded-(--radius) font-mono"
+                className="rounded-lg font-mono"
                 placeholder="Inbox preview snippet…"
               />
             </div>
@@ -291,7 +291,7 @@ export default function AdminPage() {
                   setForm({ ...form, promptInstruction: e.target.value })
                 }
                 rows={4}
-                className="w-full rounded-(--radius) font-mono text-sm border border-input bg-transparent px-3 py-2 text-foreground shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 resize-none dark:bg-input/30"
+                className="w-full rounded-lg font-mono text-sm border border-input bg-transparent px-3 py-2 text-foreground shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 resize-none dark:bg-input/30"
                 placeholder="Write a newsletter announcing our new exam timetable feature…"
               />
             </div>
@@ -315,37 +315,37 @@ export default function AdminPage() {
                     setForm({ ...form, campaignType: value as CampaignType })
                   }
                 >
-                  <SelectTrigger className="w-full rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+                  <SelectTrigger className="w-full rounded-lg bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
-                  <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
+                  <SelectContent className="rounded-lg border-border/40 bg-card/95 font-mono text-xs uppercase">
                     <SelectItem
                       value="newsletter"
-                      className="rounded-(--radius) font-mono text-xs uppercase"
+                      className="rounded-lg font-mono text-xs uppercase"
                     >
                       Newsletter
                     </SelectItem>
                     <SelectItem
                       value="announcement"
-                      className="rounded-(--radius) font-mono text-xs uppercase"
+                      className="rounded-lg font-mono text-xs uppercase"
                     >
                       Announcement
                     </SelectItem>
                     <SelectItem
                       value="product_update"
-                      className="rounded-(--radius) font-mono text-xs uppercase"
+                      className="rounded-lg font-mono text-xs uppercase"
                     >
                       Product Update
                     </SelectItem>
                     <SelectItem
                       value="waitlist_update"
-                      className="rounded-(--radius) font-mono text-xs uppercase"
+                      className="rounded-lg font-mono text-xs uppercase"
                     >
                       Waitlist Update
                     </SelectItem>
                     <SelectItem
                       value="system_update"
-                      className="rounded-(--radius) font-mono text-xs uppercase"
+                      className="rounded-lg font-mono text-xs uppercase"
                     >
                       System Update
                     </SelectItem>
@@ -368,7 +368,7 @@ export default function AdminPage() {
                           audience: opt as "single" | "broadcast",
                         })
                       }
-                      className="flex-1 rounded-(--radius) font-mono text-[10px] uppercase h-10"
+                      className="flex-1 rounded-lg font-mono text-[10px] uppercase h-10"
                     >
                       {opt}
                     </Button>
@@ -401,7 +401,7 @@ export default function AdminPage() {
               <Button
                 type="submit"
                 disabled={createMutation.isPending}
-                className="rounded-(--radius) font-mono text-xs tracking-[0.15em] uppercase"
+                className="rounded-lg font-mono text-xs tracking-[0.15em] uppercase"
               >
                 {createMutation.isPending ? "Creating…" : "Create Draft"}
               </Button>
@@ -409,7 +409,7 @@ export default function AdminPage() {
                 type="button"
                 onClick={() => setShowNewForm(false)}
                 variant="outline"
-                className="rounded-(--radius) font-mono text-xs tracking-[0.15em] uppercase"
+                className="rounded-lg font-mono text-xs tracking-[0.15em] uppercase"
               >
                 Cancel
               </Button>
@@ -450,12 +450,12 @@ export default function AdminPage() {
                       {c.title}
                     </h3>
                     <div className="flex items-center gap-2">
-                      <span className="text-[8px] font-mono tracking-widest uppercase border border-primary/30 px-1.5 py-0.5 rounded-(--radius) text-primary/70">
+                      <span className="text-[8px] font-mono tracking-widest uppercase border border-primary/30 px-1.5 py-0.5 rounded-lg text-primary/70">
                         {TYPE_LABELS[c.campaignType] || c.campaignType}
                       </span>
                       <span
                         className={cn(
-                          "text-[8px] font-mono tracking-widest uppercase border px-1.5 py-0.5 rounded-(--radius)",
+                          "text-[8px] font-mono tracking-widest uppercase border px-1.5 py-0.5 rounded-lg",
                           STATUS_CLASS[c.status],
                         )}
                       >

@@ -72,7 +72,10 @@ const STATUS_CONFIG = {
     icon: XCircle,
     className: "text-destructive border-destructive/30 bg-destructive/5",
   },
-} satisfies Record<LibraryStatus, { label: string; icon: React.ElementType; className: string }>;
+} satisfies Record<
+  LibraryStatus,
+  { label: string; icon: React.ElementType; className: string }
+>;
 
 // ─── Reject Dialog ────────────────────────────────────────────────────────────
 
@@ -94,16 +97,21 @@ function RejectDialog({
       <motion.div
         initial={{ opacity: 0, scale: 0.97 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-md border border-destructive/40 bg-card p-6 shadow-xl rounded-(--radius)"
+        className="w-full max-w-md border border-destructive/40 bg-card p-6 shadow-xl rounded-lg"
       >
         <div className="flex items-start justify-between mb-4">
           <div>
             <p className="text-[10px] font-mono uppercase tracking-widest text-destructive mb-1">
               Reject Submission
             </p>
-            <p className="font-mono font-bold text-sm truncate max-w-xs">{item.title}</p>
+            <p className="font-mono font-bold text-sm truncate max-w-xs">
+              {item.title}
+            </p>
           </div>
-          <button onClick={onCancel} className="text-muted-foreground/40 hover:text-muted-foreground">
+          <button
+            onClick={onCancel}
+            className="text-muted-foreground/40 hover:text-muted-foreground"
+          >
             <X className="size-4" />
           </button>
         </div>
@@ -148,7 +156,13 @@ function RejectDialog({
 
 // ─── Generation Panel ─────────────────────────────────────────────────────────
 
-function GenerationPanel({ state, onDismiss }: { state: MaterialGenState; onDismiss: () => void }) {
+function GenerationPanel({
+  state,
+  onDismiss,
+}: {
+  state: MaterialGenState;
+  onDismiss: () => void;
+}) {
   const isDone = state.status === "completed" || state.status === "failed";
 
   return (
@@ -163,7 +177,8 @@ function GenerationPanel({ state, onDismiss }: { state: MaterialGenState; onDism
           <p className="text-[9px] font-mono uppercase tracking-widest text-primary/70">
             {state.status === "queued" && "Waiting for worker…"}
             {state.status === "processing" && "Generation in progress"}
-            {state.status === "completed" && `Done — ${state.questionsGenerated ?? 0} questions`}
+            {state.status === "completed" &&
+              `Done — ${state.questionsGenerated ?? 0} questions`}
             {state.status === "failed" && "Generation failed"}
           </p>
           {isDone && (
@@ -205,10 +220,13 @@ function GenerationPanel({ state, onDismiss }: { state: MaterialGenState; onDism
                   <p
                     className={cn(
                       "text-[9px] font-mono uppercase tracking-wider truncate",
-                      step.status === "pending" ? "text-muted-foreground/40" :
-                      step.status === "processing" ? "text-primary font-bold" :
-                      step.status === "failed" ? "text-destructive font-bold" :
-                      "text-foreground",
+                      step.status === "pending"
+                        ? "text-muted-foreground/40"
+                        : step.status === "processing"
+                          ? "text-primary font-bold"
+                          : step.status === "failed"
+                            ? "text-destructive font-bold"
+                            : "text-foreground",
                     )}
                   >
                     {step.label}
@@ -257,7 +275,7 @@ function LibraryRow({
     <motion.div
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      className="border border-border/30 bg-card/20 p-4 rounded-(--radius)"
+      className="border border-border/30 bg-card/20 p-4 rounded-lg"
     >
       <div className="flex flex-col sm:flex-row sm:items-center gap-4">
         {/* Left: Info */}
@@ -266,7 +284,12 @@ function LibraryRow({
             <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-primary/60 border border-primary/20 px-1.5 py-0.5">
               {mimeLabel(item.materialId.mimeType)}
             </span>
-            <span className={cn("flex items-center gap-1 text-[9px] font-mono uppercase tracking-widest border px-1.5 py-0.5", cfg.className)}>
+            <span
+              className={cn(
+                "flex items-center gap-1 text-[9px] font-mono uppercase tracking-widest border px-1.5 py-0.5",
+                cfg.className,
+              )}
+            >
               <StatusIcon className="size-2.5" />
               {cfg.label}
             </span>
@@ -284,7 +307,9 @@ function LibraryRow({
             )}
           </div>
 
-          <p className="font-bold text-sm leading-snug truncate">{item.title}</p>
+          <p className="font-bold text-sm leading-snug truncate">
+            {item.title}
+          </p>
 
           {item.description && (
             <p className="text-[11px] font-mono text-muted-foreground/50 line-clamp-1 mt-0.5">
@@ -313,7 +338,8 @@ function LibraryRow({
             )}
             <span className="text-[10px] font-mono text-muted-foreground/30">
               {fileSize(item.materialId.size)}
-              {item.materialId.pageCount > 0 && ` · ${item.materialId.pageCount}p`}
+              {item.materialId.pageCount > 0 &&
+                ` · ${item.materialId.pageCount}p`}
             </span>
             {item.useCount > 0 && (
               <span className="text-[10px] font-mono text-muted-foreground/30">
@@ -355,22 +381,24 @@ function LibraryRow({
             </>
           )}
 
-          {item.status === "published" && !item.quizGenerated && !activeGenState && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-8 text-[10px] font-mono gap-1.5 border-primary/30 text-primary hover:bg-primary/10"
-              onClick={() => onGenerateQuiz(item._id)}
-              disabled={isGenerating}
-            >
-              {isGenerating ? (
-                <Loader2 className="size-3 animate-spin" />
-              ) : (
-                <Zap className="size-3" />
-              )}
-              {isGenerating ? "Queuing…" : "Generate Quiz"}
-            </Button>
-          )}
+          {item.status === "published" &&
+            !item.quizGenerated &&
+            !activeGenState && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 text-[10px] font-mono gap-1.5 border-primary/30 text-primary hover:bg-primary/10"
+                onClick={() => onGenerateQuiz(item._id)}
+                disabled={isGenerating}
+              >
+                {isGenerating ? (
+                  <Loader2 className="size-3 animate-spin" />
+                ) : (
+                  <Zap className="size-3" />
+                )}
+                {isGenerating ? "Queuing…" : "Generate Quiz"}
+              </Button>
+            )}
 
           {item.status === "published" && activeGenState && (
             <span className="text-[9px] font-mono text-primary/60 flex items-center gap-1.5 border border-primary/20 px-2 h-8">
@@ -403,11 +431,17 @@ function LibraryRow({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminLibraryPage() {
-  const [statusFilter, setStatusFilter] = useState<LibraryStatus | "all">("pending_review");
+  const [statusFilter, setStatusFilter] = useState<LibraryStatus | "all">(
+    "pending_review",
+  );
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [rejectTarget, setRejectTarget] = useState<AdminLibraryItem | null>(null);
-  const [activeGeneratingId, setActiveGeneratingId] = useState<string | null>(null);
+  const [rejectTarget, setRejectTarget] = useState<AdminLibraryItem | null>(
+    null,
+  );
+  const [activeGeneratingId, setActiveGeneratingId] = useState<string | null>(
+    null,
+  );
 
   const [debouncedSearch, setDebouncedSearch] = useState("");
   useEffect(() => {
@@ -444,7 +478,11 @@ export default function AdminLibraryPage() {
   const handleRejectConfirm = async (reason: string) => {
     if (!rejectTarget) return;
     try {
-      await review.mutateAsync({ id: rejectTarget._id, action: "reject", rejectionReason: reason });
+      await review.mutateAsync({
+        id: rejectTarget._id,
+        action: "reject",
+        rejectionReason: reason,
+      });
       toast.success("Item rejected");
       setRejectTarget(null);
     } catch {
@@ -472,9 +510,11 @@ export default function AdminLibraryPage() {
 
   return (
     <div className="space-y-8">
-
       {/* Header */}
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
         <div className="inline-block border border-primary/60 px-2 py-1 mb-2 bg-primary/5">
           <span className="text-[10px] font-mono tracking-widest uppercase text-primary">
             Content
@@ -494,7 +534,7 @@ export default function AdminLibraryPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
             placeholder="Search library items..."
-            className="pl-9 rounded-(--radius) bg-background/50 font-mono text-xs uppercase tracking-widest"
+            className="pl-9 rounded-lg bg-background/50 font-mono text-xs uppercase tracking-widest"
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -520,14 +560,34 @@ export default function AdminLibraryPage() {
             setPage(1);
           }}
         >
-          <SelectTrigger className="w-full sm:w-auto sm:min-w-[160px] rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+          <SelectTrigger className="w-full sm:w-auto sm:min-w-40 rounded-lg bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
-          <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
-            <SelectItem value="pending_review" className="rounded-(--radius) font-mono text-xs uppercase">Pending Review</SelectItem>
-            <SelectItem value="published" className="rounded-(--radius) font-mono text-xs uppercase">Published</SelectItem>
-            <SelectItem value="rejected" className="rounded-(--radius) font-mono text-xs uppercase">Rejected</SelectItem>
-            <SelectItem value="all" className="rounded-(--radius) font-mono text-xs uppercase">All Statuses</SelectItem>
+          <SelectContent className="rounded-lg border-border/40 bg-card/95 font-mono text-xs uppercase">
+            <SelectItem
+              value="pending_review"
+              className="rounded-lg font-mono text-xs uppercase"
+            >
+              Pending Review
+            </SelectItem>
+            <SelectItem
+              value="published"
+              className="rounded-lg font-mono text-xs uppercase"
+            >
+              Published
+            </SelectItem>
+            <SelectItem
+              value="rejected"
+              className="rounded-lg font-mono text-xs uppercase"
+            >
+              Rejected
+            </SelectItem>
+            <SelectItem
+              value="all"
+              className="rounded-lg font-mono text-xs uppercase"
+            >
+              All Statuses
+            </SelectItem>
           </SelectContent>
         </Select>
         {pagination && (
@@ -548,7 +608,10 @@ export default function AdminLibraryPage() {
         {isLoading ? (
           <div className="space-y-3">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-20 animate-pulse bg-card/40 border border-border/30" />
+              <div
+                key={i}
+                className="h-20 animate-pulse bg-card/40 border border-border/30"
+              />
             ))}
           </div>
         ) : items.length === 0 ? (
@@ -569,7 +632,9 @@ export default function AdminLibraryPage() {
                 onGenerateQuiz={handleGenerateQuiz}
                 isPending={review.isPending}
                 isGenerating={isQuizGenPending}
-                activeGenState={activeGeneratingId === item._id ? genState : null}
+                activeGenState={
+                  activeGeneratingId === item._id ? genState : null
+                }
                 onDismissGen={handleDismissGen}
               />
             ))}

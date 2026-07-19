@@ -123,7 +123,7 @@ export default function AllSessionsPage() {
                     </div>
                     <span
                       className={cn(
-                        "text-[9px] font-mono font-bold uppercase tracking-widest px-2 py-0.5 border shrink-0 rounded-(--radius)",
+                        "text-[9px] font-mono font-bold uppercase tracking-widest px-2 py-0.5 border shrink-0 rounded-lg",
                         session.status === "active"
                           ? "border-green-500/40 bg-green-500/10 text-green-500"
                           : "border-border/50 bg-muted/30 text-muted-foreground",

@@ -54,7 +54,7 @@ export function ConnectionStatus({
   return (
     <div
       className={cn(
-        "flex items-center justify-center w-9 h-9 border border-border bg-transparent transition-colors rounded-(--radius)",
+        "flex items-center justify-center w-9 h-9 border border-border bg-transparent transition-colors rounded-lg",
         className,
       )}
       title={`${cfg.label} Connection`}
@@ -63,7 +63,7 @@ export function ConnectionStatus({
         <Icon className={cn("size-4", cfg.text)} />
         <span
           className={cn(
-            "absolute -top-1 -right-1 size-1.5 rounded-(--radius)",
+            "absolute -top-1 -right-1 size-1.5 rounded-lg",
             cfg.dot,
           )}
         />

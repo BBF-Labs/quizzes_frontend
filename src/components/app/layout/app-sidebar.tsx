@@ -51,7 +51,10 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r border-border/50">
       <SidebarHeader className="h-14 flex items-center px-4">
         <div className="flex items-center gap-3 w-full">
-          <Link href="/" className="flex items-end space-x-1.5 px-0.5 hover:opacity-80 transition-opacity">
+          <Link
+            href="/"
+            className="flex items-end space-x-1.5 px-0.5 hover:opacity-80 transition-opacity"
+          >
             <span className="text-lg font-bold tracking-widest text-foreground leading-none">
               Qz.
             </span>
@@ -77,7 +80,7 @@ export function AppSidebar() {
                   isActive={pathname === "/app"}
                   tooltip="New Session"
                   className={cn(
-                    "h-9 px-4 rounded-(--radius) transition-all duration-200",
+                    "h-9 px-4 rounded-lg transition-all duration-200",
                     pathname === "/app"
                       ? "bg-primary/5 text-primary border-r-2 border-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
@@ -98,7 +101,7 @@ export function AppSidebar() {
                   isActive={pathname === "/app/all"}
                   tooltip="All Sessions"
                   className={cn(
-                    "h-9 px-4 rounded-(--radius) transition-all duration-200",
+                    "h-9 px-4 rounded-lg transition-all duration-200",
                     pathname === "/app/all"
                       ? "bg-primary/5 text-primary border-r-2 border-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
@@ -119,7 +122,7 @@ export function AppSidebar() {
                   isActive={pathname === "/app/library"}
                   tooltip="Library"
                   className={cn(
-                    "h-9 px-4 rounded-(--radius) transition-all duration-200",
+                    "h-9 px-4 rounded-lg transition-all duration-200",
                     pathname === "/app/library"
                       ? "bg-primary/5 text-primary border-r-2 border-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
@@ -149,7 +152,7 @@ export function AppSidebar() {
                   isActive={pathname === "/app/courses"}
                   tooltip="My Courses"
                   className={cn(
-                    "h-9 px-4 rounded-(--radius) transition-all duration-200",
+                    "h-9 px-4 rounded-lg transition-all duration-200",
                     pathname === "/app/courses"
                       ? "bg-primary/5 text-primary border-r-2 border-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
@@ -170,7 +173,7 @@ export function AppSidebar() {
                   isActive={pathname === "/app/timetable"}
                   tooltip="Exam Timetable"
                   className={cn(
-                    "h-9 px-4 rounded-(--radius) transition-all duration-200",
+                    "h-9 px-4 rounded-lg transition-all duration-200",
                     pathname === "/app/timetable"
                       ? "bg-primary/5 text-primary border-r-2 border-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
@@ -200,7 +203,7 @@ export function AppSidebar() {
                   isActive={pathname === "/app/flashcards"}
                   tooltip="Flashcards"
                   className={cn(
-                    "h-9 px-4 rounded-(--radius) transition-all duration-200",
+                    "h-9 px-4 rounded-lg transition-all duration-200",
                     pathname === "/app/flashcards"
                       ? "bg-primary/5 text-primary border-r-2 border-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
@@ -221,7 +224,7 @@ export function AppSidebar() {
                   isActive={pathname === "/app/quizzes"}
                   tooltip="Quizzes"
                   className={cn(
-                    "h-9 px-4 rounded-(--radius) transition-all duration-200",
+                    "h-9 px-4 rounded-lg transition-all duration-200",
                     pathname === "/app/quizzes"
                       ? "bg-primary/5 text-primary border-r-2 border-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
@@ -242,7 +245,7 @@ export function AppSidebar() {
                   isActive={pathname.startsWith("/quizzes")}
                   tooltip="Qz Quizzes"
                   className={cn(
-                    "h-9 px-4 rounded-(--radius) transition-all duration-200",
+                    "h-9 px-4 rounded-lg transition-all duration-200",
                     pathname.startsWith("/quizzes")
                       ? "bg-primary/5 text-primary border-r-2 border-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
@@ -263,7 +266,7 @@ export function AppSidebar() {
                   isActive={pathname === "/app/mindmaps"}
                   tooltip="Mind Maps"
                   className={cn(
-                    "h-9 px-4 rounded-(--radius) transition-all duration-200",
+                    "h-9 px-4 rounded-lg transition-all duration-200",
                     pathname === "/app/mindmaps"
                       ? "bg-primary/5 text-primary border-r-2 border-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
@@ -293,7 +296,7 @@ export function AppSidebar() {
                   isActive={pathname === "/app/settings"}
                   tooltip="Account"
                   className={cn(
-                    "h-9 px-4 rounded-(--radius) transition-all duration-200",
+                    "h-9 px-4 rounded-lg transition-all duration-200",
                     pathname === "/app/settings"
                       ? "bg-primary/5 text-primary border-r-2 border-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
@@ -314,7 +317,7 @@ export function AppSidebar() {
                   isActive={pathname === "/app/usage"}
                   tooltip="Usage"
                   className={cn(
-                    "h-9 px-4 rounded-(--radius) transition-all duration-200",
+                    "h-9 px-4 rounded-lg transition-all duration-200",
                     pathname === "/app/usage"
                       ? "bg-primary/5 text-primary border-r-2 border-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
@@ -335,7 +338,7 @@ export function AppSidebar() {
                   isActive={pathname.startsWith("/app/billing")}
                   tooltip="Billing"
                   className={cn(
-                    "h-9 px-4 rounded-(--radius) transition-all duration-200",
+                    "h-9 px-4 rounded-lg transition-all duration-200",
                     pathname.startsWith("/app/billing")
                       ? "bg-primary/5 text-primary border-r-2 border-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
@@ -379,7 +382,7 @@ export function AppSidebar() {
                         isActive={isActive}
                         tooltip={title}
                         className={cn(
-                          "h-8 px-4 rounded-(--radius) transition-all duration-200",
+                          "h-8 px-4 rounded-lg transition-all duration-200",
                           isActive
                             ? "bg-primary/5 text-primary border-r-2 border-primary"
                             : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
@@ -427,12 +430,12 @@ export function AppSidebar() {
                 "bg-primary/5 border-l-2 border-primary",
             )}
           >
-            <Avatar className="size-8 rounded-(--radius) border border-border/50 bg-secondary/20 shrink-0">
+            <Avatar className="size-8 rounded-lg border border-border/50 bg-secondary/20 shrink-0">
               <AvatarImage
                 src={user?.profilePicture}
                 className="object-cover"
               />
-              <AvatarFallback className="rounded-(--radius) bg-zinc-800 font-mono text-[10px] font-bold text-zinc-400">
+              <AvatarFallback className="rounded-lg bg-zinc-800 font-mono text-[10px] font-bold text-zinc-400">
                 {user?.username?.[0]?.toUpperCase() || "U"}
               </AvatarFallback>
             </Avatar>

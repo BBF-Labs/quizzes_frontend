@@ -17,7 +17,10 @@ import {
   Unlock,
 } from "lucide-react";
 import { SquareLoader } from "@/components/ui/square-loader";
-import { QuestionMarkdown, QuizOptionBtn } from "@/components/app/quizzes/question-renderer";
+import {
+  QuestionMarkdown,
+  QuizOptionBtn,
+} from "@/components/app/quizzes/question-renderer";
 
 import { cn } from "@/lib/utils";
 import type {
@@ -53,7 +56,7 @@ function ActionButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "rounded-(--radius) text-[10px] font-mono uppercase tracking-widest px-3 py-1.5 border transition-colors",
+        "rounded-lg text-[10px] font-mono uppercase tracking-widest px-3 py-1.5 border transition-colors",
         variant === "primary" &&
           "border-primary/60 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground",
         variant === "secondary" &&
@@ -82,7 +85,7 @@ function CardWrapper({ resolved, icon, label, children }: CardWrapperProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
       className={cn(
-        "rounded-(--radius) border border-amber-500/40 bg-amber-500/5 px-4 py-3 space-y-3 transition-opacity",
+        "rounded-lg border border-amber-500/40 bg-amber-500/5 px-4 py-3 space-y-3 transition-opacity",
         resolved && "opacity-50",
       )}
     >
@@ -110,7 +113,7 @@ function QAResolvedCard({ entries }: { entries: QAEntryProps[] }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.2 }}
-      className="rounded-(--radius) border border-border/25 bg-muted/10 px-4 py-3 font-mono text-xs divide-y divide-border/20"
+      className="rounded-lg border border-border/25 bg-muted/10 px-4 py-3 font-mono text-xs divide-y divide-border/20"
     >
       {entries.map((e, i) => (
         <div key={i} className="py-3 first:pt-0 last:pb-0 space-y-2">
@@ -167,7 +170,12 @@ function AskQuestionCard({
   if (resolved) {
     return (
       <QAResolvedCard
-        entries={[{ question: payload.question, answer: submittedAnswerRef.current || "—" }]}
+        entries={[
+          {
+            question: payload.question,
+            answer: submittedAnswerRef.current || "—",
+          },
+        ]}
       />
     );
   }
@@ -201,7 +209,7 @@ function AskQuestionCard({
           onChange={(e) => setTextAnswer(e.target.value)}
           placeholder="Type your answer…"
           rows={3}
-          className="rounded-(--radius) w-full resize-none border border-border/50 bg-background/50 px-3 py-2 font-mono text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:outline-none"
+          className="rounded-lg w-full resize-none border border-border/50 bg-background/50 px-3 py-2 font-mono text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:outline-none"
         />
       )}
 
@@ -247,7 +255,10 @@ function AskQuestionsCard({
     const all = payload.questions.map((q) => answers[q.id] ?? "");
     if (all.some((a) => a.trim())) {
       submittedAnswersRef.current = all;
-      onSubmitAnswer(all, payload.questions.map((q) => q.question));
+      onSubmitAnswer(
+        all,
+        payload.questions.map((q) => q.question),
+      );
     }
   };
 
@@ -298,7 +309,7 @@ function AskQuestionsCard({
                 value={answers[q.id] ?? ""}
                 onChange={(e) => setAnswer(q.id, e.target.value)}
                 placeholder="Your answer…"
-                className="rounded-(--radius) w-full border border-border/50 bg-background/50 px-3 py-1.5 font-mono text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:outline-none"
+                className="rounded-lg w-full border border-border/50 bg-background/50 px-3 py-1.5 font-mono text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:outline-none"
               />
             )}
           </div>
@@ -340,7 +351,10 @@ function ShowQuizCard({
     const answers = payload.questions.map((q) => selected[q.id] ?? "");
     if (answers.some((a) => a)) {
       submittedRef.current = selected;
-      onSubmitAnswer(answers, payload.questions.map((q) => q.question));
+      onSubmitAnswer(
+        answers,
+        payload.questions.map((q) => q.question),
+      );
     }
   };
 
@@ -380,7 +394,9 @@ function ShowQuizCard({
                   feedbackState={null}
                   isCorrectOption={false}
                   disabled={false}
-                  onClick={() => setSelected((prev) => ({ ...prev, [q.id]: opt }))}
+                  onClick={() =>
+                    setSelected((prev) => ({ ...prev, [q.id]: opt }))
+                  }
                 />
               ))}
             </div>
@@ -419,7 +435,8 @@ function ShowPlanCard({
   const steps = payload.steps ?? [];
   const total = steps.length;
   const completedCount = steps.filter((s) => s.status === "completed").length;
-  const progressPct = total > 0 ? Math.round((completedCount / total) * 100) : 0;
+  const progressPct =
+    total > 0 ? Math.round((completedCount / total) * 100) : 0;
   // True once Z starts populating statuses (implementation phase re-emissions)
   const hasStatuses = steps.some((s) => s.status !== undefined);
 
@@ -430,10 +447,10 @@ function ShowPlanCard({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.2 }}
-        className="rounded-(--radius) border border-border/25 bg-card/10 overflow-hidden font-mono text-xs"
+        className="rounded-lg border border-border/25 bg-card/10 overflow-hidden font-mono text-xs"
       >
         <div className="px-4 py-2.5 flex items-center gap-3">
-          <div className="w-5 h-5 border border-primary/25 bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0 rounded-(--radius) text-[9px]">
+          <div className="w-5 h-5 border border-primary/25 bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0 rounded-lg text-[9px]">
             Z
           </div>
           <span className="text-[10px] uppercase tracking-widest text-muted-foreground/60 flex-1 truncate">
@@ -464,11 +481,11 @@ function ShowPlanCard({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className="rounded-(--radius) border border-border/50 overflow-hidden font-mono text-xs"
+      className="rounded-lg border border-border/50 overflow-hidden font-mono text-xs"
     >
       {/* Header bar */}
       <div className="px-4 py-3 border-b border-border/50 bg-background/80 flex items-center gap-3">
-        <div className="w-6 h-6 border border-primary/40 bg-primary/20 flex items-center justify-center text-primary font-bold shrink-0 rounded-(--radius)">
+        <div className="w-6 h-6 border border-primary/40 bg-primary/20 flex items-center justify-center text-primary font-bold shrink-0 rounded-lg">
           Z
         </div>
         <div className="font-bold text-foreground uppercase tracking-widest flex items-center gap-2 flex-1">
@@ -495,7 +512,7 @@ function ShowPlanCard({
             >
               <div
                 className={cn(
-                  "mt-0.5 w-4 h-4 border shrink-0 rounded-(--radius) flex items-center justify-center",
+                  "mt-0.5 w-4 h-4 border shrink-0 rounded-lg flex items-center justify-center",
                   isDone
                     ? "border-primary/60 bg-primary/20"
                     : isActive
@@ -537,7 +554,11 @@ function ShowPlanCard({
       <div className="px-5 py-3 border-t border-border/50 bg-background/50">
         <div className="flex justify-between text-[10px] text-muted-foreground mb-2 font-bold uppercase tracking-widest">
           <span>System Progress</span>
-          <span className={completedCount > 0 ? "text-primary" : "text-muted-foreground/40"}>
+          <span
+            className={
+              completedCount > 0 ? "text-primary" : "text-muted-foreground/40"
+            }
+          >
             {progressPct}% Complete
           </span>
         </div>
@@ -573,10 +594,7 @@ interface UnlockTopicCardProps {
   resolved: boolean;
 }
 
-function UnlockTopicCard({
-  payload,
-  resolved,
-}: UnlockTopicCardProps) {
+function UnlockTopicCard({ payload, resolved }: UnlockTopicCardProps) {
   return (
     <CardWrapper
       resolved={resolved}
@@ -601,10 +619,7 @@ interface ShowResultCardProps {
   resolved: boolean;
 }
 
-function ShowResultCard({
-  payload,
-  resolved,
-}: ShowResultCardProps) {
+function ShowResultCard({ payload, resolved }: ShowResultCardProps) {
   const hasScore =
     typeof payload.score === "number" && typeof payload.total === "number";
 
@@ -616,8 +631,12 @@ function ShowResultCard({
     >
       {hasScore && (
         <div className="flex items-center gap-2">
-          <span className="text-3xl font-black text-primary">{payload.score}</span>
-          <span className="text-muted-foreground font-mono text-sm">/ {payload.total}</span>
+          <span className="text-3xl font-black text-primary">
+            {payload.score}
+          </span>
+          <span className="text-muted-foreground font-mono text-sm">
+            / {payload.total}
+          </span>
         </div>
       )}
       {payload.topicTitle && (
@@ -661,7 +680,9 @@ function ShowSuggestionCard({
       label="Suggestion"
     >
       {payload.topicTitle && (
-        <p className="text-sm font-bold text-foreground">{payload.topicTitle}</p>
+        <p className="text-sm font-bold text-foreground">
+          {payload.topicTitle}
+        </p>
       )}
       {payload.description && (
         <QuestionMarkdown
@@ -703,14 +724,16 @@ function ShowSuggestionCard({
               {s.label}
             </ActionButton>
           ))}
-          {!payload.topicTitle && !payload.suggestions?.length && payload.actionType && (
-            <ActionButton
-              onClick={() => onAction(payload.actionType!)}
-              variant="primary"
-            >
-              {payload.label ?? payload.actionType}
-            </ActionButton>
-          )}
+          {!payload.topicTitle &&
+            !payload.suggestions?.length &&
+            payload.actionType && (
+              <ActionButton
+                onClick={() => onAction(payload.actionType!)}
+                variant="primary"
+              >
+                {payload.label ?? payload.actionType}
+              </ActionButton>
+            )}
         </div>
       )}
     </CardWrapper>
@@ -724,10 +747,7 @@ interface ShowSummaryCardProps {
   resolved: boolean;
 }
 
-function ShowSummaryCard({
-  payload,
-  resolved,
-}: ShowSummaryCardProps) {
+function ShowSummaryCard({ payload, resolved }: ShowSummaryCardProps) {
   return (
     <CardWrapper
       resolved={resolved}
@@ -735,7 +755,9 @@ function ShowSummaryCard({
       label="Summary"
     >
       {payload.topicTitle && (
-        <p className="text-sm font-bold text-foreground">{payload.topicTitle}</p>
+        <p className="text-sm font-bold text-foreground">
+          {payload.topicTitle}
+        </p>
       )}
       {payload.content && (
         <QuestionMarkdown
@@ -746,7 +768,10 @@ function ShowSummaryCard({
       {payload.keyPoints && payload.keyPoints.length > 0 && (
         <ul className="space-y-1">
           {payload.keyPoints.map((point, i) => (
-            <li key={i} className="flex items-start gap-2 text-sm text-foreground">
+            <li
+              key={i}
+              className="flex items-start gap-2 text-sm text-foreground"
+            >
               <ChevronRight className="mt-0.5 size-3 shrink-0 text-primary" />
               <QuestionMarkdown content={point} className="flex-1" />
             </li>
@@ -780,7 +805,7 @@ function UnknownDirectiveCard({
         <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest italic">
           New system action received. Some controls may be limited.
         </p>
-        <div className="rounded-(--radius) border border-border/40 bg-muted/20 p-2 overflow-auto max-h-40">
+        <div className="rounded-lg border border-border/40 bg-muted/20 p-2 overflow-auto max-h-40">
           <pre className="text-[10px] font-mono text-muted-foreground leading-tight">
             {JSON.stringify(payload, null, 2)}
           </pre>
@@ -863,7 +888,15 @@ function PomodoroCard({ payload, resolved, onResume }: PomodoroCardProps) {
     return () => {
       if (tickRef.current) clearInterval(tickRef.current);
     };
-  }, [running, phase, interval, workMinutes, shortBreakMinutes, longBreakMinutes, intervalsBeforeLongBreak]);
+  }, [
+    running,
+    phase,
+    interval,
+    workMinutes,
+    shortBreakMinutes,
+    longBreakMinutes,
+    intervalsBeforeLongBreak,
+  ]);
 
   const mm = String(Math.floor(secondsLeft / 60)).padStart(2, "0");
   const ss = String(secondsLeft % 60).padStart(2, "0");
@@ -884,7 +917,7 @@ function PomodoroCard({ payload, resolved, onResume }: PomodoroCardProps) {
 
   if (resolved) {
     return (
-      <div className="rounded-(--radius) border border-border/25 bg-card/10 px-4 py-2.5 flex items-center gap-3 font-mono text-xs opacity-50">
+      <div className="rounded-lg border border-border/25 bg-card/10 px-4 py-2.5 flex items-center gap-3 font-mono text-xs opacity-50">
         <Timer className="size-3 text-muted-foreground/50 shrink-0" />
         <span className="text-muted-foreground/60 uppercase tracking-widest truncate flex-1">
           Pomodoro · {topicTitle}
@@ -899,7 +932,7 @@ function PomodoroCard({ payload, resolved, onResume }: PomodoroCardProps) {
   return (
     <div
       className={cn(
-        "rounded-(--radius) border font-mono text-xs",
+        "rounded-lg border font-mono text-xs",
         isBreak
           ? "border-emerald-500/30 bg-emerald-500/5"
           : "border-primary/30 bg-primary/5",
@@ -955,7 +988,9 @@ function PomodoroCard({ payload, resolved, onResume }: PomodoroCardProps) {
               className={cn(
                 "w-2 h-2 rounded-full transition-colors duration-300",
                 i < interval
-                  ? isBreak ? "bg-emerald-400" : "bg-primary"
+                  ? isBreak
+                    ? "bg-emerald-400"
+                    : "bg-primary"
                   : "bg-border/50",
               )}
             />
@@ -969,7 +1004,9 @@ function PomodoroCard({ payload, resolved, onResume }: PomodoroCardProps) {
       {/* Note */}
       {note && (
         <div className="px-4 pb-4">
-          <p className="text-[10px] italic text-muted-foreground/50 leading-relaxed">{note}</p>
+          <p className="text-[10px] italic text-muted-foreground/50 leading-relaxed">
+            {note}
+          </p>
         </div>
       )}
 
@@ -1063,18 +1100,10 @@ export function DirectiveCard({
       );
     case "UNLOCK_TOPIC":
       return (
-        <UnlockTopicCard
-          payload={directive.payload}
-          resolved={resolved}
-        />
+        <UnlockTopicCard payload={directive.payload} resolved={resolved} />
       );
     case "SHOW_RESULT":
-      return (
-        <ShowResultCard
-          payload={directive.payload}
-          resolved={resolved}
-        />
-      );
+      return <ShowResultCard payload={directive.payload} resolved={resolved} />;
     case "SHOW_SUGGESTION":
       return (
         <ShowSuggestionCard
@@ -1088,10 +1117,7 @@ export function DirectiveCard({
       );
     case "SHOW_SUMMARY":
       return (
-        <ShowSummaryCard
-          payload={directive.payload}
-          resolved={resolved}
-        />
+        <ShowSummaryCard payload={directive.payload} resolved={resolved} />
       );
     case "POMODORO":
       return (

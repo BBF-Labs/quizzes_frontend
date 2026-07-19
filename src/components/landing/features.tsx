@@ -111,12 +111,12 @@ export function Features() {
         >
           {features.map((feature, index) => (
             <motion.div key={index} variants={itemVariants}>
-              <div className="h-full border border-border/50 bg-card rounded-(--radius) p-6 hover:border-primary transition-colors flex flex-col group relative overflow-hidden">
+              <div className="h-full border border-border/50 bg-card rounded-lg p-6 hover:border-primary transition-colors flex flex-col group relative overflow-hidden">
                 {/* Top accent line on hover */}
                 <div className="absolute top-0 left-0 w-full h-0.5 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300" />
 
                 <div className="flex items-center justify-between mb-6">
-                  <div className="w-10 h-10 border border-primary/20 bg-primary/5 flex items-center justify-center rounded-(--radius)">
+                  <div className="w-10 h-10 border border-primary/20 bg-primary/5 flex items-center justify-center rounded-lg">
                     {feature.icon}
                   </div>
                   <span className="font-mono text-[9px] md:text-[10px] text-muted-foreground uppercase tracking-widest">

@@ -12,7 +12,6 @@ import {
 import { PaginationController } from "@/components/common/pagination-controller";
 import { Input } from "@/components/ui/input";
 
-
 // ─── Create form ──────────────────────────────────────────────────────────────
 
 function CreateCourseForm({ onClose }: { onClose: () => void }) {
@@ -44,12 +43,20 @@ function CreateCourseForm({ onClose }: { onClose: () => void }) {
       className="border border-primary/30 bg-primary/5 p-4 mb-6"
     >
       <div className="flex items-center justify-between mb-4">
-        <p className="text-[11px] font-mono uppercase tracking-widest font-bold">New Course</p>
-        <button onClick={onClose} className="text-muted-foreground/40 hover:text-muted-foreground">
+        <p className="text-[11px] font-mono uppercase tracking-widest font-bold">
+          New Course
+        </p>
+        <button
+          onClick={onClose}
+          className="text-muted-foreground/40 hover:text-muted-foreground"
+        >
           <X className="size-3.5" />
         </button>
       </div>
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <form
+        onSubmit={handleSubmit}
+        className="grid grid-cols-1 sm:grid-cols-2 gap-3"
+      >
         <div>
           <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1">
             Code *
@@ -94,7 +101,9 @@ function CreateCourseForm({ onClose }: { onClose: () => void }) {
             type="number"
             min={1}
             value={form.semester}
-            onChange={(e) => setForm((f) => ({ ...f, semester: +e.target.value }))}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, semester: +e.target.value }))
+            }
             className="w-full border border-border/50 bg-background/40 px-3 py-2 text-[12px] font-mono focus:outline-none focus:border-primary/50 transition-colors"
           />
         </div>
@@ -106,7 +115,9 @@ function CreateCourseForm({ onClose }: { onClose: () => void }) {
             type="number"
             min={1}
             value={form.creditHours}
-            onChange={(e) => setForm((f) => ({ ...f, creditHours: +e.target.value }))}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, creditHours: +e.target.value }))
+            }
             className="w-full border border-border/50 bg-background/40 px-3 py-2 text-[12px] font-mono focus:outline-none focus:border-primary/50 transition-colors"
           />
         </div>
@@ -163,21 +174,22 @@ export default function AdminCoursesPage() {
     return () => clearTimeout(t);
   }, [search]);
 
-
-
-  const { data: result, isLoading } = useAdminCourses({ page, limit: pageSize, search: debouncedSearch });
+  const { data: result, isLoading } = useAdminCourses({
+    page,
+    limit: pageSize,
+    search: debouncedSearch,
+  });
   const courses = result?.data ?? [];
   const totalPages = result?.pagination.totalPages ?? 1;
   const totalCount = result?.pagination.total ?? 0;
 
-
-
-
-
   return (
     <div className="space-y-6">
       {/* Header */}
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
         <div className="flex items-center justify-between">
           <div>
             <div className="inline-block border border-primary/60 px-2 py-1 mb-2 bg-primary/5">
@@ -185,7 +197,9 @@ export default function AdminCoursesPage() {
                 Academics
               </span>
             </div>
-            <h1 className="text-2xl font-mono font-bold tracking-widest uppercase">Courses</h1>
+            <h1 className="text-2xl font-mono font-bold tracking-widest uppercase">
+              Courses
+            </h1>
           </div>
           <button
             onClick={() => setShowCreate((v) => !v)}
@@ -205,7 +219,7 @@ export default function AdminCoursesPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
             placeholder="Search courses…"
-            className="pl-9 rounded-(--radius) bg-background/50 font-mono text-xs uppercase tracking-widest"
+            className="pl-9 rounded-lg bg-background/50 font-mono text-xs uppercase tracking-widest"
             value={search}
             onChange={(e) => {
               updateQueryParams({ search: e.target.value || null, page: "1" });
@@ -228,7 +242,10 @@ export default function AdminCoursesPage() {
       {isLoading && (
         <div className="space-y-2">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-14 animate-pulse bg-card/40 border border-border/30" />
+            <div
+              key={i}
+              className="h-14 animate-pulse bg-card/40 border border-border/30"
+            />
           ))}
         </div>
       )}

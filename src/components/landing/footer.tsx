@@ -129,7 +129,7 @@ export function Footer() {
               onSubmit={handleSubscribe}
               className="flex flex-col w-full mt-2"
             >
-              <div className="flex w-full bg-secondary/80 rounded-(--radius) focus-within:ring-1 focus-within:ring-primary items-stretch overflow-hidden">
+              <div className="flex w-full bg-secondary/80 rounded-lg focus-within:ring-1 focus-within:ring-primary items-stretch overflow-hidden">
                 <input
                   type="email"
                   placeholder={

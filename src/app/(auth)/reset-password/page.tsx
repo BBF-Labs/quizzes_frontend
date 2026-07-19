@@ -83,7 +83,7 @@ function ResetPasswordContent() {
             This reset link is missing or broken.
           </p>
           <Link href="/forgot-password">
-            <Button className="rounded-(--radius) font-mono text-xs uppercase tracking-widest h-11 px-8">
+            <Button className="rounded-lg font-mono text-xs uppercase tracking-widest h-11 px-8">
               Request New Link
             </Button>
           </Link>
@@ -158,7 +158,7 @@ function ResetPasswordContent() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
-                        className="rounded-(--radius) font-mono bg-secondary/40 dark:bg-input/30 border-border pr-10 h-11"
+                        className="rounded-lg font-mono bg-secondary/40 dark:bg-input/30 border-border pr-10 h-11"
                         placeholder="••••••••"
                       />
                       <button
@@ -224,7 +224,7 @@ function ResetPasswordContent() {
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         required
-                        className={`rounded-(--radius) font-mono bg-secondary/40 dark:bg-input/30 border-border pr-10 h-11 ${
+                        className={`rounded-lg font-mono bg-secondary/40 dark:bg-input/30 border-border pr-10 h-11 ${
                           confirmPassword && password !== confirmPassword
                             ? "border-destructive/50"
                             : ""
@@ -265,7 +265,7 @@ function ResetPasswordContent() {
                 <Button
                   type="submit"
                   disabled={mutation.isPending}
-                  className="w-full rounded-(--radius) font-mono text-[10px] tracking-[0.2em] uppercase h-11 bg-primary text-primary-foreground shadow-[0_0_20px_rgba(0,110,255,0.15)] hover:shadow-[0_0_30px_rgba(0,110,255,0.25)] transition-all"
+                  className="w-full rounded-lg font-mono text-[10px] tracking-[0.2em] uppercase h-11 bg-primary text-primary-foreground shadow-[0_0_20px_rgba(0,110,255,0.15)] hover:shadow-[0_0_30px_rgba(0,110,255,0.25)] transition-all"
                 >
                   {mutation.isPending ? "Updating..." : "Reset Password"}
                 </Button>
@@ -307,7 +307,7 @@ function ResetPasswordContent() {
               </p>
 
               <Link href="/login" className="block w-full">
-                <Button className="w-full rounded-(--radius) bg-primary px-8 py-6 text-primary-foreground font-mono text-xs font-bold uppercase tracking-[0.2em] hover:bg-white hover:text-primary hover:ring-1 hover:ring-inset hover:ring-primary transition-all duration-300 group shadow-[0_0_20px_rgba(0,110,255,0.15)] rounded(--radius)">
+                <Button className="w-full rounded-lg bg-primary px-8 py-6 text-primary-foreground font-mono text-xs font-bold uppercase tracking-[0.2em] hover:bg-white hover:text-primary hover:ring-1 hover:ring-inset hover:ring-primary transition-all duration-300 group shadow-[0_0_20px_rgba(0,110,255,0.15)] rounded(--radius)">
                   <span>RETURN TO BASE</span>
                 </Button>
               </Link>

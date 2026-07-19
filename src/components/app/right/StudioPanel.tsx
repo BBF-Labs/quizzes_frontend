@@ -124,7 +124,7 @@ export function StudioPanel({
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "flex items-center flex-col gap-3 rounded-(--radius) border p-4 transition-all duration-200 text-left group relative",
+                  "flex items-center flex-col gap-3 rounded-lg border p-4 transition-all duration-200 text-left group relative",
                   isActive
                     ? "bg-muted/70 border-primary/20 shadow-sm"
                     : "bg-muted/30 border-transparent hover:bg-muted/60 hover:border-border/50",
@@ -134,7 +134,7 @@ export function StudioPanel({
                 <div className="flex w-full items-start justify-between">
                   <div
                     className={cn(
-                      "p-2.5 rounded-(--radius) flex items-center justify-center shrink-0",
+                      "p-2.5 rounded-lg flex items-center justify-center shrink-0",
                       iconBgClass,
                     )}
                   >
@@ -215,9 +215,7 @@ export function StudioPanel({
                 onSendMessage={onSendMessage}
               />
             )}
-            {activeTab === "mindmap" && (
-              <MindMapTab mindMap={app.mindMap} />
-            )}
+            {activeTab === "mindmap" && <MindMapTab mindMap={app.mindMap} />}
             {activeTab === "export" && (
               <ExportTab
                 sessionId={sessionId}

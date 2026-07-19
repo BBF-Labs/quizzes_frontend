@@ -975,17 +975,29 @@ function JsonImportPanel({
         const structuredLectures: StructuredImportLecture[] = [];
         const flatQuestions: ParsedImportQuestion[] = [];
 
-        for (const [li, lec] of (obj.lectures as Array<{title: string; topics: Array<{title: string; questions: ParsedImportQuestion[]}>}>).entries()) {
+        for (const [li, lec] of (
+          obj.lectures as Array<{
+            title: string;
+            topics: Array<{ title: string; questions: ParsedImportQuestion[] }>;
+          }>
+        ).entries()) {
           if (!lec.title) throw new Error(`Lecture ${li + 1} missing "title"`);
           const topics: StructuredImportLecture["topics"] = [];
 
-          for (const [ti, top] of ((lec.topics ?? []) as Array<{title: string; questions: ParsedImportQuestion[]}>).entries()) {
+          for (const [ti, top] of (
+            (lec.topics ?? []) as Array<{
+              title: string;
+              questions: ParsedImportQuestion[];
+            }>
+          ).entries()) {
             if (!top.title)
               throw new Error(
                 `Lecture ${li + 1} → Topic ${ti + 1} missing "title"`,
               );
             const qs: ParsedImportQuestion[] = [];
-            for (const [qi, q] of ((top.questions ?? []) as ParsedImportQuestion[]).entries()) {
+            for (const [qi, q] of (
+              (top.questions ?? []) as ParsedImportQuestion[]
+            ).entries()) {
               validateQuestion(
                 q,
                 `Lecture "${lec.title}" → Topic "${top.title}" → Q${qi + 1}`,
@@ -1026,7 +1038,9 @@ function JsonImportPanel({
       }
       setParsed({ kind: "flat", questions });
     } catch (err: unknown) {
-      setParseError((err instanceof Error ? err.message : String(err)) ?? "Invalid JSON");
+      setParseError(
+        (err instanceof Error ? err.message : String(err)) ?? "Invalid JSON",
+      );
     }
   };
 
@@ -1121,7 +1135,9 @@ function JsonImportPanel({
       );
       onDone();
     } catch (err: unknown) {
-      const message = ((err as Record<string, unknown>)?.response as Record<string, unknown>)?.data as Record<string, unknown> | undefined;
+      const message = (
+        (err as Record<string, unknown>)?.response as Record<string, unknown>
+      )?.data as Record<string, unknown> | undefined;
       toast.error((message?.message as string) ?? "Import failed");
     }
   };
@@ -1170,15 +1186,15 @@ function JsonImportPanel({
                 setTopicIndex(0);
               }}
             >
-              <SelectTrigger className="w-auto min-w-40 rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+              <SelectTrigger className="w-auto min-w-40 rounded-lg bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
+              <SelectContent className="rounded-lg border-border/40 bg-card/95 font-mono text-xs uppercase">
                 {lectures.map((l, i) => (
                   <SelectItem
                     key={i}
                     value={String(i)}
-                    className="rounded-(--radius) font-mono text-xs uppercase"
+                    className="rounded-lg font-mono text-xs uppercase"
                   >
                     {l.title || l.lectureTitle || `Lecture ${i + 1}`}
                   </SelectItem>
@@ -1194,15 +1210,15 @@ function JsonImportPanel({
               value={String(topicIndex)}
               onValueChange={(v) => setTopicIndex(Number(v))}
             >
-              <SelectTrigger className="w-auto min-w-40 rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+              <SelectTrigger className="w-auto min-w-40 rounded-lg bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
+              <SelectContent className="rounded-lg border-border/40 bg-card/95 font-mono text-xs uppercase">
                 {topics.map((t, i) => (
                   <SelectItem
                     key={i}
                     value={String(i)}
-                    className="rounded-(--radius) font-mono text-xs uppercase"
+                    className="rounded-lg font-mono text-xs uppercase"
                   >
                     {t.title || t.topicTitle || `Topic ${i + 1}`}
                   </SelectItem>
@@ -1524,7 +1540,7 @@ function ExecutionFlowPanel({
         </div>
       </div>
 
-      <div className="space-y-2 max-h-96 overflow-y-auto [scrollbar-width:thin]">
+      <div className="space-y-2 max-h-96 overflow-y-auto scrollbar-thin">
         {!(quiz.lectures ?? []).length ? (
           <p className="text-[10px] font-mono text-muted-foreground/40 text-center py-4">
             No lectures yet
@@ -1538,8 +1554,7 @@ function ExecutionFlowPanel({
                 ((t.questionTypes ?? []).reduce(
                   (ss, qt) => ss + (qt.questions ?? []).length,
                   0,
-                ) ||
-                  (t.questions ?? []).length),
+                ) || (t.questions ?? []).length),
               0,
             );
 
@@ -1600,34 +1615,27 @@ function ExecutionFlowPanel({
                           {openTopics.has(topicKey) && (
                             <div className="pl-5 space-y-0.5 border-l border-primary/10">
                               {(topic.questionTypes ?? []).length > 0 ? (
-                                (topic.questionTypes ?? []).map(
-                                  (qt, qtIdx) => (
-                                    <div
-                                      key={qtIdx}
-                                      className="space-y-0.5"
-                                    >
-                                      {(qt.questions ?? []).map(
-                                        (q, qIdx) => (
-                                          <div
-                                            key={qIdx}
-                                            className="flex items-start gap-2 py-1 px-2 text-[8px] font-mono text-muted-foreground/60 hover:bg-primary/5 rounded-sm transition-colors"
-                                          >
-                                            <span className="shrink-0 text-[7px] text-muted-foreground/40">
-                                              {qIdx + 1}.
-                                            </span>
-                                            <span className="inline-block px-1 py-0.5 border border-primary/20 bg-primary/5 text-[7px] uppercase shrink-0">
-                                              {TYPE_LABELS[q.type] ||
-                                                q.type.replace("_", " ")}
-                                            </span>
-                                            <span className="flex-1 line-clamp-1">
-                                              {q.question}
-                                            </span>
-                                          </div>
-                                        ),
-                                      )}
-                                    </div>
-                                  ),
-                                )
+                                (topic.questionTypes ?? []).map((qt, qtIdx) => (
+                                  <div key={qtIdx} className="space-y-0.5">
+                                    {(qt.questions ?? []).map((q, qIdx) => (
+                                      <div
+                                        key={qIdx}
+                                        className="flex items-start gap-2 py-1 px-2 text-[8px] font-mono text-muted-foreground/60 hover:bg-primary/5 rounded-sm transition-colors"
+                                      >
+                                        <span className="shrink-0 text-[7px] text-muted-foreground/40">
+                                          {qIdx + 1}.
+                                        </span>
+                                        <span className="inline-block px-1 py-0.5 border border-primary/20 bg-primary/5 text-[7px] uppercase shrink-0">
+                                          {TYPE_LABELS[q.type] ||
+                                            q.type.replace("_", " ")}
+                                        </span>
+                                        <span className="flex-1 line-clamp-1">
+                                          {q.question}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ))
                               ) : (
                                 <p className="text-[8px] text-muted-foreground/30 px-2 py-1">
                                   No questions
@@ -1844,15 +1852,15 @@ function EmptyContentState({
                   setTopicIndex(0);
                 }}
               >
-                <SelectTrigger className="w-auto min-w-40 rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+                <SelectTrigger className="w-auto min-w-40 rounded-lg bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
+                <SelectContent className="rounded-lg border-border/40 bg-card/95 font-mono text-xs uppercase">
                   {lectures.map((l, i) => (
                     <SelectItem
                       key={i}
                       value={String(i)}
-                      className="rounded-(--radius) font-mono text-xs uppercase"
+                      className="rounded-lg font-mono text-xs uppercase"
                     >
                       {l.title || l.lectureTitle || `Lecture ${i + 1}`}
                     </SelectItem>
@@ -1868,15 +1876,15 @@ function EmptyContentState({
                 value={String(topicIndex)}
                 onValueChange={(v) => setTopicIndex(Number(v))}
               >
-                <SelectTrigger className="w-auto min-w-40 rounded-(--radius) bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
+                <SelectTrigger className="w-auto min-w-40 rounded-lg bg-background/50 border border-input font-mono text-xs uppercase focus-visible:ring-0">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="rounded-(--radius) border-border/40 bg-card/95 font-mono text-xs uppercase">
+                <SelectContent className="rounded-lg border-border/40 bg-card/95 font-mono text-xs uppercase">
                   {topics.map((t, i) => (
                     <SelectItem
                       key={i}
                       value={String(i)}
-                      className="rounded-(--radius) font-mono text-xs uppercase"
+                      className="rounded-lg font-mono text-xs uppercase"
                     >
                       {t.title || t.topicTitle || `Topic ${i + 1}`}
                     </SelectItem>
@@ -1954,7 +1962,10 @@ export default function AdminQuizDetailPage({
   };
 
   const handleUnpublish = async () => {
-    if (!confirm("Unpublish this quiz? It will become unavailable to students.")) return;
+    if (
+      !confirm("Unpublish this quiz? It will become unavailable to students.")
+    )
+      return;
     try {
       await unpublishMutation.mutateAsync(id);
       toast.success("Quiz unpublished");

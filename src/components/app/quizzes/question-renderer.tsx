@@ -80,7 +80,10 @@ const TYPE_LABELS: Record<string, string> = {
 
 export function QuestionTypeBadge({ type }: { type: string }) {
   return (
-    <Badge variant="outline" className="text-[9px] font-mono h-4 px-1.5 uppercase">
+    <Badge
+      variant="outline"
+      className="text-[9px] font-mono h-4 px-1.5 uppercase"
+    >
       {TYPE_LABELS[type] ?? type}
     </Badge>
   );
@@ -137,10 +140,10 @@ export function QuizOptionBtn({
     <button
       type="button"
       onClick={disabled ? undefined : onClick}
-      className={`rounded-(--radius) w-full text-left px-4 py-3 border font-mono text-[11px] transition-all flex items-start gap-3 ${containerClass}`}
+      className={`rounded-lg w-full text-left px-4 py-3 border font-mono text-[11px] transition-all flex items-start gap-3 ${containerClass}`}
     >
       <span
-        className={`rounded-(--radius) shrink-0 size-5 border flex items-center justify-center text-[9px] font-bold mt-0.5 ${letterClass}`}
+        className={`rounded-lg shrink-0 size-5 border flex items-center justify-center text-[9px] font-bold mt-0.5 ${letterClass}`}
       >
         {letter}
       </span>
@@ -198,7 +201,10 @@ export function QuizQuestionCard({
   const isRevealed = !!feedbackState;
   const isAnswered = !!answer;
   const showExplanation =
-    isRevealed && mode === "immediate" && isAnswered && feedbackState === "wrong";
+    isRevealed &&
+    mode === "immediate" &&
+    isAnswered &&
+    feedbackState === "wrong";
   const showHintUI = hintsRevealed[q.id];
 
   const isFreeForm =
@@ -224,7 +230,9 @@ export function QuizQuestionCard({
 
   return (
     <motion.div animate={controls}>
-      <div className={`rounded-(--radius) px-5 py-5 border transition-colors ${borderClass}`}>
+      <div
+        className={`rounded-lg px-5 py-5 border transition-colors ${borderClass}`}
+      >
         {/* Badge + counter on the same row — badge left, counter right */}
         <div className="flex items-center justify-between mb-3">
           <QuestionTypeBadge type={q.type} />
@@ -293,7 +301,7 @@ export function QuizQuestionCard({
             }
             rows={q.type === "essay" ? 6 : 4}
             disabled={disabled}
-            className="rounded-(--radius) w-full border border-border/50 bg-card/30 px-4 py-3 font-mono text-[12px] placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 resize-none transition-colors disabled:opacity-40"
+            className="rounded-lg w-full border border-border/50 bg-card/30 px-4 py-3 font-mono text-[12px] placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/60 resize-none transition-colors disabled:opacity-40"
           />
         )}
 
@@ -311,7 +319,7 @@ export function QuizQuestionCard({
               content={
                 showHintUI
                   ? (q.hint ?? "")
-                  : (q.explanation || `The correct answer is ${q.correctAnswer}`)
+                  : q.explanation || `The correct answer is ${q.correctAnswer}`
               }
               className="text-[11px] italic"
             />

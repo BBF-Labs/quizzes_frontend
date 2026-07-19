@@ -412,7 +412,7 @@ export default function LibraryPage() {
           </p>
         </div>
 
-        <label className="group relative flex items-center justify-center gap-2 bg-primary px-4 py-2 cursor-pointer hover:bg-primary/90 transition-all rounded-(--radius)">
+        <label className="group relative flex items-center justify-center gap-2 bg-primary px-4 py-2 cursor-pointer hover:bg-primary/90 transition-all rounded-lg">
           <Plus className="size-4 text-primary-foreground" />
           <span className="font-mono text-[11px] uppercase tracking-widest text-primary-foreground">
             {isUploading ? "Uploading..." : "Add Material"}
