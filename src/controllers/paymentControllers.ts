@@ -5,14 +5,15 @@ import { sessionSet, update } from "@/lib/reducers";
 
 const getUserInfo = async (accessToken: string) => {
   try {
-    const response = await axios.get(`${Config.API_URL}/user/profile`, {
+    const response = await axios.get(`${Config.API_URL}/users/profile`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
     });
 
-    return response.data.user;
+    // sendSuccess wraps the payload as { success, message, data } — not .user.
+    return response.data.data;
   } catch (error: any) {
     throw new Error(error.message);
   }

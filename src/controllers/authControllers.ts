@@ -8,14 +8,17 @@ const url = Config.API_URL;
 
 const getUserInfo = async (accessToken: string) => {
   try {
-    const response = await axios.get(`${url}/user/profile`, {
+    const response = await axios.get(`${url}/users/profile`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
     });
 
-    return response.data.user;
+    // This route responds via sendSuccess ({ success, message, data }), unlike
+    // /auth/login which returns flat top-level fields — so the user is under
+    // response.data.data here, not response.data.user.
+    return response.data.data;
   } catch (error: any) {
     throw new Error(error.message);
   }
