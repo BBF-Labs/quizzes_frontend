@@ -1,0 +1,232 @@
+/*
+  Scoped design system for /admin — deliberately distinct from the student-facing
+  app per issue #75: oklch color tokens, zero border-radius, rem-based spacing only
+  (no px). Everything here is namespaced under .admin-shell so it never leaks into
+  the rest of the app, which keeps its own hsl()/rounded-corner tokens in globals.css.
+*/
+
+.admin-shell {
+  --adm-bg: oklch(97% 0.006 250);
+  --adm-surface: oklch(100% 0 0);
+  --adm-border: oklch(85% 0.008 250);
+  --adm-text: oklch(24% 0.02 255);
+  --adm-text-muted: oklch(52% 0.02 255);
+  --adm-accent: oklch(47% 0.15 262);
+  --adm-accent-contrast: oklch(98% 0 0);
+  --adm-danger: oklch(55% 0.19 25);
+  --adm-danger-soft: oklch(94% 0.05 25);
+  --adm-success: oklch(58% 0.14 150);
+
+  background: var(--adm-bg);
+  color: var(--adm-text);
+  min-height: 100vh;
+  font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+.dark .admin-shell {
+  --adm-bg: oklch(20% 0.01 255);
+  --adm-surface: oklch(25% 0.012 255);
+  --adm-border: oklch(34% 0.014 255);
+  --adm-text: oklch(94% 0.005 255);
+  --adm-text-muted: oklch(70% 0.012 255);
+  --adm-accent: oklch(72% 0.14 250);
+  --adm-accent-contrast: oklch(16% 0 0);
+  --adm-danger: oklch(70% 0.16 22);
+  --adm-danger-soft: oklch(30% 0.05 25);
+  --adm-success: oklch(72% 0.13 150);
+}
+
+.admin-shell,
+.admin-shell * {
+  border-radius: 0 !important;
+}
+
+.admin-shell .adm-container {
+  max-width: 75rem;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+.admin-shell .adm-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--adm-border);
+}
+
+.admin-shell .adm-title {
+  font-size: 1.375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.admin-shell .adm-subtitle {
+  color: var(--adm-text-muted);
+  font-size: 0.875rem;
+}
+
+.admin-shell .adm-back {
+  color: var(--adm-text-muted);
+  font-size: 0.8125rem;
+  text-decoration: none;
+  display: inline-block;
+  margin-bottom: 1rem;
+}
+
+.admin-shell .adm-back:hover {
+  color: var(--adm-accent);
+}
+
+.admin-shell table.adm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+}
+
+.admin-shell table.adm-table th,
+.admin-shell table.adm-table td {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--adm-border);
+}
+
+.admin-shell table.adm-table th {
+  font-weight: 600;
+  color: var(--adm-text-muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.admin-shell table.adm-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-shell table.adm-table tbody tr:hover {
+  background: color-mix(in oklch, var(--adm-accent) 6%, transparent);
+}
+
+.admin-shell .adm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--adm-border);
+  background: var(--adm-surface);
+  color: var(--adm-text);
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    filter 0.15s ease;
+}
+
+.admin-shell .adm-btn:hover {
+  border-color: var(--adm-accent);
+}
+
+.admin-shell .adm-btn-primary {
+  background: var(--adm-accent);
+  border-color: var(--adm-accent);
+  color: var(--adm-accent-contrast);
+}
+
+.admin-shell .adm-btn-primary:hover {
+  filter: brightness(1.08);
+}
+
+.admin-shell .adm-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.admin-shell .adm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  margin-bottom: 1.25rem;
+}
+
+.admin-shell .adm-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--adm-text-muted);
+}
+
+.admin-shell .adm-input,
+.admin-shell .adm-textarea {
+  font: inherit;
+  font-size: 0.9375rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--adm-border);
+  background: var(--adm-surface);
+  color: var(--adm-text);
+  width: 100%;
+}
+
+.admin-shell .adm-input:focus,
+.admin-shell .adm-textarea:focus {
+  outline: 2px solid var(--adm-accent);
+  outline-offset: 1px;
+}
+
+.admin-shell .adm-input.adm-input-error,
+.admin-shell .adm-textarea.adm-input-error {
+  border-color: var(--adm-danger);
+}
+
+.admin-shell .adm-textarea {
+  resize: vertical;
+  min-height: 6rem;
+}
+
+.admin-shell .adm-hint {
+  color: var(--adm-text-muted);
+  font-size: 0.75rem;
+}
+
+.admin-shell .adm-error {
+  color: var(--adm-danger);
+  font-size: 0.8125rem;
+}
+
+.admin-shell .adm-error-banner {
+  background: var(--adm-danger-soft);
+  color: var(--adm-danger);
+  border: 1px solid var(--adm-danger);
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  margin-bottom: 1.5rem;
+}
+
+.admin-shell .adm-card {
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+  padding: 1.5rem;
+  max-width: 32rem;
+}
+
+.admin-shell .adm-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.admin-shell .adm-empty,
+.admin-shell .adm-loading {
+  color: var(--adm-text-muted);
+  padding: 3rem 1rem;
+  text-align: center;
+  font-size: 0.875rem;
+}

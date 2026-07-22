@@ -7,6 +7,11 @@ import {
   verifyPayment,
 } from "./paymentControllers";
 import { getQuizzes } from "./quizControllers";
+import {
+  getAdminCourses,
+  getAdminCourse,
+  updateAdminCourse,
+} from "./adminCourseControllers";
 
 export {
   loginUser,
@@ -19,4 +24,7 @@ export {
   getQuizzes,
   getAllPayments,
   verifyPayment,
+  getAdminCourses,
+  getAdminCourse,
+  updateAdminCourse,
 };
