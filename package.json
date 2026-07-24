@@ -65,7 +65,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/tinycolor2": "^1.4.6",
-    "eslint": "^9",
+    "eslint": "^10",
     "eslint-config-next": "16.1.6",
     "shadcn": "^3.8.5",
     "tailwindcss": "^4",
