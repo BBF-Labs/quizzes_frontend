@@ -109,6 +109,9 @@ export interface ICampaign {
   };
   dispatchTotal?: number;
   dispatchedAt?: string;
+  // May come back as a raw ObjectId string, or populated with a title
+  // if the backend expands the reference. Both are handled by CopyOfLabel.
+  copiedFromCampaignId?: string | { _id: string; title: string } | null;
   createdAt: string;
   updatedAt: string;
 }
