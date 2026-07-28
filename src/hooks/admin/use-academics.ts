@@ -183,23 +183,6 @@ export const useAdminCreateQuiz = () => {
   });
 };
 
-export const useAdminUpdateQuiz = (id: string) => {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: Partial<AdminQuiz>) => {
-      const res = await api.put<ApiData<AdminQuizDetail>>(
-        `/admin/learning/quizzes/${id}`,
-        data,
-      );
-      return res.data?.data;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["admin", "quizzes"] });
-      qc.invalidateQueries({ queryKey: ["admin", "quizzes", id] });
-    },
-  });
-};
-
 export const useAdminDeleteQuiz = () => {
   const qc = useQueryClient();
   return useMutation({
