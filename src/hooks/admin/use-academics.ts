@@ -373,7 +373,7 @@ export const useAdminUpdateQuizQuestion = (quizId: string) => {
       questionId: string;
       data: Partial<AdminQuestion> & { type?: string };
     }) => {
-      const res = await api.put<ApiData<AdminQuestion>>(
+      const res = await api.patch<ApiData<AdminQuestion>>(
         `/admin/learning/quizzes/${quizId}/questions/${questionId}`,
         data,
       );
