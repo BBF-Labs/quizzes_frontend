@@ -158,7 +158,7 @@ export function useUpdateUser() {
       id: string;
       data: Partial<IAudienceEntry>;
     }) => {
-      const response = await api.put(`/admin/users/users/${id}`, data);
+      const response = await api.patch(`/admin/users/users/${id}`, data);
       return response.data.data;
     },
     onSuccess: () => {
