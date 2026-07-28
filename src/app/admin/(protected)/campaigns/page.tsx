@@ -27,6 +27,7 @@ import { PaginationController } from "@/components/common";
 import { LinkBuilder } from "@/components/newsletter/LinkBuilder";
 import { ImageManager } from "@/components/newsletter/ImageManager";
 import { AudienceSelector } from "@/components/newsletter/AudienceSelector";
+import { CopyOfLabel } from "@/components/newsletter/CopyOfLabel";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -446,9 +447,12 @@ export default function AdminPage() {
                 >
                   {/* Simple Mono Title */}
                   <div className="flex items-center gap-2 p-2 border-b border-border/25 bg-secondary/10">
-                    <h3 className="text-lg font-mono font-bold tracking-[0.2em] uppercase text-foreground group-hover:text-primary transition-colors truncate flex-1">
-                      {c.title}
-                    </h3>
+                    <div className="flex-1 min-w-0 truncate">
+                      <h3 className="text-lg font-mono font-bold tracking-[0.2em] uppercase text-foreground group-hover:text-primary transition-colors truncate">
+                        {c.title}
+                      </h3>
+                      <CopyOfLabel copiedFrom={c.copiedFromCampaignId} />
+                    </div>
                     <div className="flex items-center gap-2">
                       <span className="text-[8px] font-mono tracking-widest uppercase border border-primary/30 px-1.5 py-0.5 rounded-lg text-primary/70">
                         {TYPE_LABELS[c.campaignType] || c.campaignType}
