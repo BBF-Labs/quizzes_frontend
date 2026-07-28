@@ -536,7 +536,7 @@ export const useAdminUpdateTimetableEntry = (timetableId: string) => {
       entryId: string;
       data: Partial<AdminExamEntry>;
     }) => {
-      const res = await api.put<ApiData<AdminTimetable>>(
+      const res = await api.patch<ApiData<AdminTimetable>>(
         `/admin/learning/timetables/${timetableId}/entries/${entryId}`,
         data,
       );
