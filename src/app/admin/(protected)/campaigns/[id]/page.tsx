@@ -42,6 +42,7 @@ import { EmailPreview } from "@/components/newsletter/EmailPreview";
 import { LinkBuilder } from "@/components/newsletter/LinkBuilder";
 import { ImageManager } from "@/components/newsletter/ImageManager";
 import { AudienceSelector } from "@/components/newsletter/AudienceSelector";
+import { CopyOfLabel } from "@/components/newsletter/CopyOfLabel";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
@@ -535,6 +536,7 @@ export default function CampaignDetailPage() {
                 />
               )}
             </div>
+            <CopyOfLabel copiedFrom={campaign.copiedFromCampaignId} />
           </div>
 
           {/* Action bar */}
