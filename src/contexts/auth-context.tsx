@@ -53,9 +53,18 @@ interface AuthContextValue {
     password: string,
     referralCode?: string,
   ) => Promise<void>;
+  oauthLogin: (
+    provider: "google",
+    payload: { idToken: string; referralCode?: string },
+  ) => Promise<OAuthLoginResult>;
   logout: () => Promise<void>;
   updateSession: () => void;
 }
+
+export type OAuthLoginResult =
+  | { status: "logged_in" }
+  | { status: "merge_required" };
+
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
@@ -241,6 +250,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [signupMutation],
   );
 
+  const oauthLoginMutation = useMutation({
+    mutationFn: async ({
+      provider,
+      idToken,
+      referralCode,
+    }: {
+      provider: "google";
+      idToken: string;
+      referralCode?: string;
+    }) => {
+      const res = await api.post<{
+        data?: {
+          user?: User;
+          accessToken?: string;
+          refreshToken?: string;
+          status?: "logged_in" | "merge_required";
+        };
+      }>(`/auth/oauth/${provider}`, { idToken, referralCode });
+
+      const body = res.data?.data;
+      if (!body) throw new Error("OAuth login failed");
+      return body;
+    },
+    onSuccess: async (body) => {
+      if (body.status === "logged_in" && body.user && body.accessToken && body.refreshToken) {
+        setSession(body.user, body.accessToken, body.refreshToken);
+        signalSessionActive();
+        qc.setQueryData(queryKeys.authSession, body.user);
+        await qc.invalidateQueries({
+          queryKey: [...queryKeys.authSession, "validation"],
+        });
+      }
+    },
+  });
+
+  const oauthLogin = useCallback(
+    (
+      provider: "google",
+      payload: { idToken: string; referralCode?: string },
+    ): Promise<OAuthLoginResult> => {
+      return oauthLoginMutation
+        .mutateAsync({ provider, ...payload })
+        .then((body) => {
+          if (body.status === "merge_required") {
+            return { status: "merge_required" } as const;
+          }
+          return { status: "logged_in" } as const;
+        });
+    },
+    [oauthLoginMutation],
+  );
+
   const logout = useCallback(async () => {
     try {
       await api.post("/auth/logout");
@@ -275,6 +336,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         hasAdminAccess,
         login,
         signup,
+        oauthLogin,
         logout,
         updateSession,
       }}
