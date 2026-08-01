@@ -34,8 +34,19 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 | Variable | Required | Description |
 |---|---|---|
 | `NEXT_PUBLIC_API_URL` | Yes | The base URL of the backend API (e.g. `https://your-backend.herokuapp.com/api/v1`) |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Yes (Phase A) | The public OAuth client ID used by the Google Identity Services script for the in-page consent popup. NOT a secret — register once in Google Cloud Console (see `quizzes_backend/README.md` → "OAuth Setup"). Must match `GOOGLE_CLIENT_ID` in the backend. |
 | `NEXT_PUBLIC_SOCKET_URL` | No | Explicit Socket.IO server URL. Defaults to the origin extracted from `NEXT_PUBLIC_API_URL`. Set this if the Socket.IO server is on a different host than the REST API. |
 | `NEXT_PUBLIC_SOCKET_PATH` | No | Custom Socket.IO endpoint path. Defaults to `/socket.io`. Set this if the backend mounts Socket.IO at a non-standard path (e.g. `/api/socket.io`). |
+
+OAuth uses the **in-page popup** flow via Google Identity Services (GIS). The
+frontend loads `https://accounts.google.com/gsi/client`, calls
+`accounts.id.prompt()` to surface Google's consent modal over the page, and
+POSTs the resulting `id_token` to `POST /api/v1/auth/oauth/google`. The backend
+verifies the `id_token` against Google's JWKS and either logs the user in,
+auto-links the provider by email (sending a notification email to the original
+account owner), or creates a fresh account. The
+`NEXT_PUBLIC_GOOGLE_CLIENT_ID` is the only OAuth value on the frontend; the
+client secret (when one is needed) lives only on the backend.
 
 ## Deploy on Vercel
 

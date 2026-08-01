@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { SocialLoginButtons } from "@/components/auth/SocialLoginButtons";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -183,6 +184,8 @@ function LoginForm() {
             </span>
           </div>
         </form>
+
+        <SocialLoginButtons redirectOnLogin={redirectTarget} />
       </motion.div>
     </div>
   );

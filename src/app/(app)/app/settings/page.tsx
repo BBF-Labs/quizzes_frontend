@@ -252,7 +252,7 @@ function useWeeklyDigest() {
 
   const { mutate: setDigest, isPending } = useMutation({
     mutationFn: async (value: boolean) => {
-      await api.put("/users/notifications", { weeklyDigest: value });
+      await api.patch("/users/notifications", { weeklyDigest: value });
     },
     onMutate: async (value) => {
       await queryClient.cancelQueries({

@@ -183,23 +183,6 @@ export const useAdminCreateQuiz = () => {
   });
 };
 
-export const useAdminUpdateQuiz = (id: string) => {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: Partial<AdminQuiz>) => {
-      const res = await api.put<ApiData<AdminQuizDetail>>(
-        `/admin/learning/quizzes/${id}`,
-        data,
-      );
-      return res.data?.data;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["admin", "quizzes"] });
-      qc.invalidateQueries({ queryKey: ["admin", "quizzes", id] });
-    },
-  });
-};
-
 export const useAdminDeleteQuiz = () => {
   const qc = useQueryClient();
   return useMutation({
@@ -373,7 +356,7 @@ export const useAdminUpdateQuizQuestion = (quizId: string) => {
       questionId: string;
       data: Partial<AdminQuestion> & { type?: string };
     }) => {
-      const res = await api.put<ApiData<AdminQuestion>>(
+      const res = await api.patch<ApiData<AdminQuestion>>(
         `/admin/learning/quizzes/${quizId}/questions/${questionId}`,
         data,
       );
@@ -536,7 +519,7 @@ export const useAdminUpdateTimetableEntry = (timetableId: string) => {
       entryId: string;
       data: Partial<AdminExamEntry>;
     }) => {
-      const res = await api.put<ApiData<AdminTimetable>>(
+      const res = await api.patch<ApiData<AdminTimetable>>(
         `/admin/learning/timetables/${timetableId}/entries/${entryId}`,
         data,
       );

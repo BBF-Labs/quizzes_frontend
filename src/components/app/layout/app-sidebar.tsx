@@ -37,7 +37,7 @@ import {
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { cn } from "@/lib/utils";
+import { cn, resolveAvatarUrl } from "@/lib/utils";
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -432,7 +432,7 @@ export function AppSidebar() {
           >
             <Avatar className="size-8 rounded-lg border border-border/50 bg-secondary/20 shrink-0">
               <AvatarImage
-                src={user?.profilePicture}
+                src={resolveAvatarUrl(user)}
                 className="object-cover"
               />
               <AvatarFallback className="rounded-lg bg-zinc-800 font-mono text-[10px] font-bold text-zinc-400">

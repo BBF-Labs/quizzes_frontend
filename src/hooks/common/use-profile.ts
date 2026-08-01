@@ -24,7 +24,7 @@ export function useProfileUpdate() {
       profilePicture?: string | IUpload;
       notificationSettings?: any;
     }) => {
-      const response = await api.put("/users/profile", data);
+      const response = await api.patch("/users/profile", data);
       return response.data.data;
     },
   });

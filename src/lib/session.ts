@@ -20,6 +20,9 @@ export type SessionUser = {
   role?: "student" | "creator" | "moderator" | "super_admin";
   isSubscribed?: boolean;
   profilePicture?: string;
+  /** Foreign URL of the user's OAuth profile picture. Renderer precedence:
+   * custom upload (profilePicture) > OAuth picture (oauthPicture) > initials. */
+  oauthPicture?: string;
   studentId?: string;
   bio?: string;
   notificationSettings?: any;

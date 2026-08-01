@@ -16,6 +16,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SocialLoginButtons } from "@/components/auth/SocialLoginButtons";
 import Link from "next/link";
 
 import { Suspense } from "react";
@@ -399,6 +400,15 @@ function SignupForm() {
             </span>
           </div>
         </form>
+
+        <SocialLoginButtons
+          referralCode={referralCode || undefined}
+          redirectOnLogin={
+            redirectUrl
+              ? `/onboarding?redirectUrl=${encodeURIComponent(redirectUrl)}`
+              : "/onboarding"
+          }
+        />
       </motion.div>
     </div>
   );
