@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
+import { manrope, spaceGrotesk, caveat } from "./fonts";
 import { constructMetadata } from "@/lib/metadata";
 import "./globals.css";
 import "katex/dist/katex.min.css";
@@ -18,9 +19,6 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = constructMetadata();
 
-// We still keep specific static icon/manifest info here if not in constructMetadata
-// though constructMetadata covers the heavy lifting. 
-// Adding icon info back just to be safe as it was specific.
 metadata.icons = {
   icon: [
     { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
@@ -51,9 +49,8 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className="scroll-smooth"
+      className={`scroll-smooth ${manrope.variable} ${spaceGrotesk.variable} ${caveat.variable}`}
       suppressHydrationWarning
-      data-ui-customized="true"
     >
       <head>
         {/* Synchronously set theme-color before first paint to avoid flash */}
@@ -64,7 +61,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}
+        className={`${GeistSans.variable} ${GeistMono.variable} ${manrope.variable} ${spaceGrotesk.variable} ${caveat.variable} antialiased`}
         suppressHydrationWarning
       >
         <Providers>
