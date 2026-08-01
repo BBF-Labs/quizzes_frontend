@@ -37,6 +37,14 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 | `NEXT_PUBLIC_SOCKET_URL` | No | Explicit Socket.IO server URL. Defaults to the origin extracted from `NEXT_PUBLIC_API_URL`. Set this if the Socket.IO server is on a different host than the REST API. |
 | `NEXT_PUBLIC_SOCKET_PATH` | No | Custom Socket.IO endpoint path. Defaults to `/socket.io`. Set this if the backend mounts Socket.IO at a non-standard path (e.g. `/api/socket.io`). |
 
+**No OAuth env vars are required on the frontend.** OAuth (Google, GitHub) is
+handled entirely by the backend using the authorization-code flow — the browser
+bounces through the provider's consent UI and lands back on a backend callback
+that does the `code` → token exchange server-side. Configure the OAuth client
+once in Google Cloud Console / GitHub Developer Settings per the instructions in
+`quizzes_backend/README.md` → "OAuth Setup" (Authorized JavaScript origins +
+redirect URIs per environment).
+
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
