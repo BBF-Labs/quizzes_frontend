@@ -1,341 +1,200 @@
 "use client";
 
-import React from "react";
-import { motion, Variants } from "framer-motion";
-import {
-  ArrowRight,
-  Brain,
-  Zap,
-  Globe,
-  Target,
-  Shield,
-  BookOpen,
-  ArrowLeft,
-} from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Navbar } from "@/components/common";
-import { Footer } from "@/components/landing";
-
-// ─── Animation helpers ────────────────────────────────────────────────────────
-
-const containerVariants: Variants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.12 } },
-};
-
-const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 24 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { ease: "easeOut", duration: 0.55 },
-  },
-};
-
-// ─── Data ─────────────────────────────────────────────────────────────────────
-
-const PRINCIPLES = [
-  {
-    icon: Brain,
-    title: "Intelligence over repetition",
-    body: "Rote memorisation is a losing strategy. Z analyses your weaknesses, builds a targeted plan, and won't let you advance until you've actually understood the material.",
-  },
-  {
-    icon: Target,
-    title: "Radical personalisation",
-    body: "No two students share the same curriculum, pace, or gaps. Qz adapts to your exact programme, your exact lecturer's syllabus, and your exact exam schedule.",
-  },
-  {
-    icon: Globe,
-    title: "Built for African universities",
-    body: "We didn't port a Western product and call it localised. Qz was designed from the ground up around Ghanaian and broader African university structures.",
-  },
-  {
-    icon: Shield,
-    title: "Your data stays yours",
-    body: "The notes and materials you upload are your intellectual property. We use them only to serve you, and never to train third-party models without your explicit consent.",
-  },
-  {
-    icon: Zap,
-    title: "Speed without compromise",
-    body: "Study sessions, quizzes, flashcards, and mind maps are generated in seconds — not because we cut corners, but because we obsess over the pipeline.",
-  },
-  {
-    icon: BookOpen,
-    title: "Education as infrastructure",
-    body: "Access to quality learning tools shouldn't depend on geography or income. Affordable plans and student-verified pricing are a core part of how we operate.",
-  },
-];
-
-const TIMELINE = [
-  {
-    year: "2023",
-    event: "The frustration begins",
-    detail:
-      "Two Computer Science students at a Ghanaian university notice that every study tool available was designed for a student in California — not for them.",
-  },
-  {
-    year: "2024",
-    event: "BetaForge Labs founded",
-    detail:
-      "The first internal prototype of Qz is built: a chatbot that could read a PDF and generate quiz questions. It was rough. It was promising.",
-  },
-  {
-    year: "Early 2025",
-    event: "Z comes to life",
-    detail:
-      "The simple quiz bot evolves into a full AI study agent with phase-based sessions, syllabus awareness, memory, and verification gating.",
-  },
-  {
-    year: "2025",
-    event: "Public launch",
-    detail:
-      "Qz opens to students across Ghana, with curriculum support for over 14 universities, 200+ departments, and 1,200+ courses.",
-  },
-  {
-    year: "2026 →",
-    event: "Expanding the map",
-    detail:
-      "Partnerships with institutions, expansion into West Africa, and continued investment in the Z agent's reasoning capabilities.",
-  },
-];
-
-// ─── Section components ───────────────────────────────────────────────────────
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="inline-block border border-primary/40 bg-primary/5 px-2 py-1 mb-6">
-      <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-primary">
-        {children}
-      </span>
-    </div>
-  );
-}
-
-function Divider() {
-  return <div className="h-px w-full bg-border/50 my-20" />;
-}
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
+import { LandingHeader, LandingFooter, MobileNav } from "@/components/landing";
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <Navbar />
+    <div className="overflow-x-hidden bg-white text-slate-900 antialiased selection:bg-[#0C60FC] selection:text-white">
+      <LandingHeader />
 
-      <main className="pt-32 pb-20 px-4">
-        <div className="max-w-5xl mx-auto">
-          {/* ── Hero ─────────────────────────────────────────────────────── */}
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="mb-24 border-l-4 border-primary pl-8 py-4"
-          >
-            <motion.div variants={itemVariants}>
-              <SectionLabel>About / BetaForge Labs</SectionLabel>
-            </motion.div>
-            <motion.h1
-              variants={itemVariants}
-              className="text-5xl md:text-7xl font-black tracking-tighter mb-6 uppercase leading-none"
-            >
-              We built the
-              <br />
-              <span className="text-primary">tool we needed.</span>
-            </motion.h1>
-            <motion.p
-              variants={itemVariants}
-              className="max-w-2xl text-muted-foreground font-mono text-sm leading-relaxed"
-            >
-              Qz is built by BetaForge Labs — a small team of developers and
-              educators who were once students frustrated by the gap between
-              what study tools promised and what African universities actually
-              needed. So we stopped waiting and built it ourselves.
-            </motion.p>
-          </motion.div>
+      <main>
+        {/* Hero Section */}
+        <section className="soft-grid relative overflow-hidden px-5 pb-24 pt-36 lg:pb-32 lg:pt-44">
+          <div className="pointer-events-none absolute -left-20 top-24 h-80 w-80 rounded-full bg-blue-100 blur-3xl" />
+          <div className="relative mx-auto max-w-7xl">
+            <p className="text-xs font-extrabold uppercase tracking-[.24em] text-[#0C60FC]">
+              About / BetaForge Labs
+            </p>
+            <h1 className="display mt-6 max-w-5xl text-5xl font-bold leading-[1.02] tracking-[-.05em] text-slate-950 sm:text-7xl">
+              We built the tool<br />
+              <span className="text-[#0C60FC]">we needed.</span>
+            </h1>
+            <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-600">
+              Qz is built by a small team of developers and educators who were once students frustrated by the gap between what study tools promised and what African universities actually needed. So we stopped waiting and built it ourselves.
+            </p>
+          </div>
+        </section>
 
-          {/* ── Mission ──────────────────────────────────────────────────── */}
-          <motion.section
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            className="mb-24"
-          >
-            <motion.div variants={itemVariants}>
-              <SectionLabel>Our Mission</SectionLabel>
-            </motion.div>
-            <motion.div
-              variants={itemVariants}
-              className="grid grid-cols-1 md:grid-cols-2 gap-0 border border-border/40"
-            >
-              <div className="p-10 border-r border-border/40 bg-primary/5">
-                <p className="text-3xl md:text-4xl font-black tracking-tighter uppercase leading-tight text-foreground">
-                  Make every African student
-                  <br />
-                  <span className="text-primary">examination-ready.</span>
-                </p>
-              </div>
-              <div className="p-10 flex flex-col justify-center space-y-4 font-mono text-sm text-muted-foreground leading-relaxed">
-                <p>
-                  University in Ghana — and across Africa — is high-stakes and
-                  high-pressure. Syllabi are dense, resources are scarce, and
-                  the gap between in-class instruction and exam performance is
-                  wide.
-                </p>
-                <p>
-                  We believe an AI study partner that actually knows your
-                  curriculum, remembers your weaknesses, and forces mastery
-                  before moving on can close that gap at scale.
-                </p>
-              </div>
-            </motion.div>
-          </motion.section>
-
-          <Divider />
-
-          {/* ── Principles ───────────────────────────────────────────────── */}
-          <motion.section
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            className="mb-24"
-          >
-            <motion.div variants={itemVariants}>
-              <SectionLabel>What We Believe</SectionLabel>
-            </motion.div>
-            <motion.h2
-              variants={itemVariants}
-              className="text-3xl md:text-4xl font-black tracking-tighter uppercase mb-10"
-            >
-              Six principles
-              <br />
-              that shape every decision.
-            </motion.h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-px bg-border/30">
-              {PRINCIPLES.map((p, i) => (
-                <motion.div
-                  key={i}
-                  variants={itemVariants}
-                  className="bg-background p-6 flex flex-col gap-4"
-                >
-                  <div className="p-2 border border-primary/20 bg-primary/5 w-fit">
-                    <p.icon className="size-4 text-primary" />
-                  </div>
-                  <p className="text-[13px] font-black uppercase tracking-tight text-foreground leading-snug">
-                    {p.title}
-                  </p>
-                  <p className="text-[12px] font-mono text-muted-foreground/70 leading-relaxed">
-                    {p.body}
-                  </p>
-                </motion.div>
-              ))}
-            </div>
-          </motion.section>
-
-          <Divider />
-
-          {/* ── Timeline ─────────────────────────────────────────────────── */}
-          <motion.section
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            className="mb-24"
-          >
-            <motion.div variants={itemVariants}>
-              <SectionLabel>Our Journey</SectionLabel>
-            </motion.div>
-            <motion.h2
-              variants={itemVariants}
-              className="text-3xl md:text-4xl font-black tracking-tighter uppercase mb-10"
-            >
-              From frustration
-              <br />
-              to infrastructure.
-            </motion.h2>
-
-            <div className="relative pl-8 border-l border-border/40 space-y-10">
-              {TIMELINE.map((t, i) => (
-                <motion.div
-                  key={i}
-                  variants={itemVariants}
-                  className="relative"
-                >
-                  {/* dot */}
-                  <div className="absolute left-[-2.15rem] top-1 size-3.5 border-2 border-primary bg-background" />
-                  <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 mb-1">
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-[0.3em] text-primary shrink-0">
-                      {t.year}
-                    </span>
-                    <span className="text-[13px] font-black uppercase tracking-tight text-foreground">
-                      {t.event}
-                    </span>
-                  </div>
-                  <p className="text-[12px] font-mono text-muted-foreground/60 leading-relaxed">
-                    {t.detail}
-                  </p>
-                </motion.div>
-              ))}
-            </div>
-          </motion.section>
-
-          <Divider />
-
-          {/* ── Z Callout ────────────────────────────────────────────────── */}
-          <motion.section
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            className="mb-24"
-          >
-            <motion.div
-              variants={itemVariants}
-              className="border border-primary/30 bg-primary/5 p-10 md:p-14"
-            >
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-8 h-8 border border-primary/40 bg-primary/20 flex items-center justify-center text-primary font-black text-lg">
-                  Z
-                </div>
-                <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-primary">
-                  The AI Tutor
-                </span>
-              </div>
-              <h2 className="text-3xl md:text-5xl font-black tracking-tighter uppercase leading-tight mb-6">
-                Z isn&apos;t a chatbot.
-                <br />
-                <span className="text-primary">Z is a study system.</span>
-              </h2>
-              <p className="max-w-2xl font-mono text-sm text-muted-foreground/80 leading-relaxed mb-8">
-                Z reads your curriculum, identifies your knowledge gaps, builds
-                a structured study plan, generates lessons, quizzes, flashcards,
-                and mind maps tailored to your material, and won&apos;t sign you
-                off until you can prove mastery. No hand-holding. No shortcuts.
+        {/* Mission Statement */}
+        <section className="bg-slate-950 px-5 py-24 text-white">
+          <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[.65fr_1.35fr]">
+            <div>
+              <p className="text-xs font-extrabold uppercase tracking-[.2em] text-blue-300">
+                Our mission
               </p>
-              <Link href="/app">
-                <Button className="font-mono text-[10px] uppercase tracking-[0.2em] h-11 px-6 bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
-                  Start a session
-                  <ArrowRight className="size-3.5" />
-                </Button>
-              </Link>
-            </motion.div>
-          </motion.section>
+              <p className="mt-4 text-sm leading-6 text-slate-400">
+                One clear ambition keeps the work focused.
+              </p>
+            </div>
+            <h2 className="text-balance text-4xl font-bold leading-tight sm:text-6xl">
+              Make every African student <span className="text-[#DFFF61]">examination-ready.</span>
+            </h2>
+          </div>
+        </section>
 
-          {/* ── Back link ────────────────────────────────────────────────── */}
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-[10px] font-mono uppercase text-muted-foreground hover:text-foreground transition-colors group"
-          >
-            <ArrowLeft className="size-3 group-hover:-translate-x-1 transition-transform" />
-            Back to Home
-          </Link>
-        </div>
+        {/* What We Believe (Six Principles) */}
+        <section className="px-5 py-24">
+          <div className="mx-auto max-w-7xl">
+            <div className="max-w-2xl">
+              <p className="text-xs font-extrabold uppercase tracking-[.2em] text-[#0C60FC]">
+                What we believe
+              </p>
+              <h2 className="mt-3 text-4xl font-bold tracking-tight">
+                Six principles shape every decision.
+              </h2>
+            </div>
+            <div className="mt-12 grid gap-px overflow-hidden rounded-[28px] border border-slate-200 bg-slate-200 md:grid-cols-2 lg:grid-cols-3" style={{ borderRadius: "28px" }}>
+              <article className="bg-white p-7">
+                <span className="text-xs font-extrabold text-blue-500">01</span>
+                <h3 className="mt-8 text-xl font-bold">Intelligence over repetition</h3>
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                  Qz analyses weak spots, builds a targeted plan and keeps going until the material is understood.
+                </p>
+              </article>
+              <article className="bg-white p-7">
+                <span className="text-xs font-extrabold text-violet-500">02</span>
+                <h3 className="mt-8 text-xl font-bold">Radical personalisation</h3>
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                  Qz adapts to your programme, syllabus, pace and exam schedule—not an imaginary average student.
+                </p>
+              </article>
+              <article className="bg-white p-7">
+                <span className="text-xs font-extrabold text-emerald-500">03</span>
+                <h3 className="mt-8 text-xl font-bold">Built for African universities</h3>
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                  Designed from the ground up around Ghanaian and broader African university structures.
+                </p>
+              </article>
+              <article className="bg-white p-7">
+                <span className="text-xs font-extrabold text-rose-500">04</span>
+                <h3 className="mt-8 text-xl font-bold">Your data stays yours</h3>
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                  Your notes remain your intellectual property and are used only to serve your study experience.
+                </p>
+              </article>
+              <article className="bg-white p-7">
+                <span className="text-xs font-extrabold text-amber-500">05</span>
+                <h3 className="mt-8 text-xl font-bold">Speed without compromise</h3>
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                  Study sessions, quizzes, flashcards and mind maps generated in seconds through a carefully built pipeline.
+                </p>
+              </article>
+              <article className="bg-white p-7">
+                <span className="text-xs font-extrabold text-cyan-500">06</span>
+                <h3 className="mt-8 text-xl font-bold">Education as infrastructure</h3>
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                  Quality learning tools should not depend on geography or income. Affordability is part of the product.
+                </p>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        {/* Our Journey Timeline */}
+        <section className="bg-[#F7F9FC] px-5 py-24">
+          <div className="mx-auto max-w-7xl">
+            <p className="text-xs font-extrabold uppercase tracking-[.2em] text-[#0C60FC]">
+              Our journey
+            </p>
+            <h2 className="mt-3 text-4xl font-bold tracking-tight">
+              From frustration to infrastructure.
+            </h2>
+            <div className="mt-12 grid gap-4 lg:grid-cols-5">
+              <div className="rounded-2xl bg-white p-5 ring-1 ring-slate-200">
+                <b className="text-[#0C60FC]">2023</b>
+                <h3 className="mt-5 font-bold">The frustration begins</h3>
+                <p className="mt-2 text-xs leading-5 text-slate-500">
+                  Two Computer Science students notice every study tool was built for somewhere else.
+                </p>
+              </div>
+              <div className="rounded-2xl bg-white p-5 ring-1 ring-slate-200">
+                <b className="text-[#0C60FC]">2024</b>
+                <h3 className="mt-5 font-bold">BetaForge Labs founded</h3>
+                <p className="mt-2 text-xs leading-5 text-slate-500">
+                  The first prototype reads a PDF and turns it into useful questions.
+                </p>
+              </div>
+              <div className="rounded-2xl bg-white p-5 ring-1 ring-slate-200">
+                <b className="text-[#0C60FC]">Early 2025</b>
+                <h3 className="mt-5 font-bold">Qubi comes to life</h3>
+                <p className="mt-2 text-xs leading-5 text-slate-500">
+                  The quiz bot becomes a syllabus-aware study agent with memory and mastery gates.
+                </p>
+              </div>
+              <div className="rounded-2xl bg-[#0C60FC] p-5 text-white shadow-lg">
+                <b className="text-blue-200">2025</b>
+                <h3 className="mt-5 font-bold">Public launch</h3>
+                <p className="mt-2 text-xs leading-5 text-blue-100">
+                  Qz opens with curriculum support across Ghanaian universities and departments.
+                </p>
+              </div>
+              <div className="rounded-2xl bg-[#DFFF61] p-5 text-slate-950">
+                <b>2026 →</b>
+                <h3 className="mt-5 font-bold">Expanding the map</h3>
+                <p className="mt-2 text-xs leading-5 text-slate-700">
+                  Institutional partnerships, West African expansion and stronger reasoning.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Qubi System Section */}
+        <section className="px-5 py-24">
+          <div className="mx-auto grid max-w-7xl overflow-hidden rounded-[36px] bg-slate-950 text-white lg:grid-cols-2" style={{ borderRadius: "36px" }}>
+            <div className="p-8 sm:p-12">
+              <p className="text-xs font-extrabold uppercase tracking-[.2em] text-[#DFFF61]">
+                Qubi / The AI tutor
+              </p>
+              <h2 className="mt-5 text-4xl font-bold">
+                Qubi isn&apos;t a chatbot.<br />
+                Qubi is a study system.
+              </h2>
+              <p className="mt-5 text-sm leading-7 text-slate-400">
+                Qubi reads your curriculum, identifies knowledge gaps, builds a structured study plan, and creates lessons, quizzes, flashcards and mind maps tailored to your material.
+              </p>
+              <Link
+                href="/signup"
+                className="squishy mt-8 inline-flex rounded-2xl bg-[#DFFF61] px-6 py-4 text-sm font-extrabold text-slate-950"
+              >
+                Start a session →
+              </Link>
+            </div>
+            <div className="flex min-h-80 items-center justify-center bg-[#0C60FC] p-8">
+              <div className="w-full max-w-sm rounded-[28px] bg-white p-5 text-slate-900 shadow-2xl">
+                <p className="text-[10px] font-bold uppercase text-slate-400">Your next best move</p>
+                <h3 className="mt-3 text-xl font-bold">Master graph traversal</h3>
+                <p className="mt-2 text-xs leading-5 text-slate-500">
+                  You understand BFS. Let&apos;s close the gap on DFS with a 12-minute focused session.
+                </p>
+                <div className="mt-5 h-2 rounded-full bg-slate-100">
+                  <div className="h-full w-2/3 rounded-full bg-[#0C60FC]" />
+                </div>
+                <Link
+                  href="/signup"
+                  className="mt-5 block w-full rounded-xl bg-slate-950 py-3 text-center text-xs font-extrabold text-white"
+                >
+                  Continue with Qubi →
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
 
-      <Footer />
+      <LandingFooter />
+      <MobileNav />
     </div>
   );
 }
