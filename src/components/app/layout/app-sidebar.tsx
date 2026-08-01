@@ -191,12 +191,12 @@ export function AppSidebar() {
       </SidebarHeader>
 
       {/* Main Navigation Scroll Area */}
-      <SidebarContent className="p-3 gap-4">
+      <SidebarContent className="p-3 gap-4 no-scrollbar">
         {/* New Session CTA */}
         <button
           onClick={handleNewSession}
           disabled={createSession.isPending}
-          className="mb-4 w-full flex items-center justify-between rounded-xl bg-slate-950 px-3.5 py-3 text-xs font-extrabold text-white hover:bg-[#0C60FC] transition shadow-sm"
+          className="mb-4 w-full flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-xs font-extrabold text-slate-700 hover:border-[#0C60FC] hover:bg-blue-50 hover:text-[#0C60FC] transition shadow-2xs"
         >
           <span>＋ New study session</span>
           <span className="text-[10px] text-slate-400 font-mono">⌘N</span>
