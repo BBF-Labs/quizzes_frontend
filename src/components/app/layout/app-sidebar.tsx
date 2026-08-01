@@ -148,9 +148,9 @@ export function AppSidebar() {
     >
       {/* Brand & Animated Qubi Mascot Header */}
       <SidebarHeader className="h-18 border-b border-slate-100 bg-gradient-to-br from-blue-50/60 via-white to-indigo-50/30 relative overflow-hidden shrink-0 p-3">
-        {/* Qubi Mascot — links to the app's home route (/app) */}
+        {/* Qubi Mascot — links to the landing page (/) */}
         <Link
-          href="/app"
+          href="/"
           aria-label="Qz home"
           className="group cursor-pointer w-full h-full flex items-center gap-2.5 rounded-2xl border border-slate-200/90 bg-white px-3 py-1.5 shadow-2xs hover:border-[#0C60FC]/40 transition"
         >
@@ -191,12 +191,12 @@ export function AppSidebar() {
       </SidebarHeader>
 
       {/* Main Navigation Scroll Area */}
-      <SidebarContent className="p-3 gap-4">
+      <SidebarContent className="p-3 gap-4 no-scrollbar">
         {/* New Session CTA */}
         <button
           onClick={handleNewSession}
           disabled={createSession.isPending}
-          className="mb-4 w-full flex items-center justify-between rounded-xl bg-slate-950 px-3.5 py-3 text-xs font-extrabold text-white hover:bg-[#0C60FC] transition shadow-sm"
+          className="mb-4 w-full flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-xs font-extrabold text-slate-700 hover:border-[#0C60FC] hover:bg-blue-50 hover:text-[#0C60FC] transition shadow-2xs"
         >
           <span>＋ New study session</span>
           <span className="text-[10px] text-slate-400 font-mono">⌘N</span>
