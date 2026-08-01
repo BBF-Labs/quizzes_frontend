@@ -2,721 +2,480 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import {
-  Check,
-  Minus,
-  Zap,
-  ArrowRight,
-  Flame,
-  GraduationCap,
-} from "lucide-react";
-import { Navbar } from "@/components/common";
-import { Footer } from "@/components/landing";
-import { Donations } from "@/components/landing";
-import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
+import { LandingHeader, LandingFooter, MobileNav, DonationSection } from "@/components/landing";
+import { Check, Minus, Zap, Flame, Plus, GraduationCap, Loader2, CreditCard } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
+import {
+  usePackages,
+  useCreditBundles,
+  useBillingStatus,
+  useInitiatePlanPayment,
+  useInitiateCreditPayment,
+  type PlanTier,
+  type PlanDuration,
+} from "@/hooks/common/use-billing";
+import { toast } from "sonner";
 
-// ─── Static data ──────────────────────────────────────────────────────────────
-
-type Duration = "daily" | "weekly" | "semester";
-
-const PRICES: Record<string, Record<Duration, string>> = {
+const PRICES: Record<string, Record<PlanDuration, string>> = {
   cooked: { daily: "2.99", weekly: "4.99", semester: "14.99" },
-  cruising: { daily: "3.99", weekly: "6.99", semester: "19.99" },
-  locked_in: { daily: "4.99", weekly: "9.99", semester: "29.99" },
+  cruising: { daily: "3.99", weekly: "6.99", semester: "22.99" },
+  locked_in: { daily: "5.99", weekly: "9.99", semester: "34.99" },
 };
 
-const DURATION_LABELS: Record<Duration, string> = {
-  daily: "Daily",
-  weekly: "Weekly",
-  semester: "Semester",
+const DURATION_LABELS: Record<PlanDuration, string> = {
+  daily: "/ day",
+  weekly: "/ weekly",
+  semester: "/ semester",
 };
 
-const TIERS = [
+const FAQ_ITEMS = [
   {
-    id: "cooked",
-    name: "Cooked",
-    tagline: "All-nighter mode. One shot.",
-    color: "text-amber-400",
-    borderHover: "hover:border-amber-400/30",
-    popular: false,
-    features: [
-      "1 Z session / day",
-      "2 quiz generations / day",
-      "2 flashcard sets / day",
-      "1 mind map / day",
-      "1 upload / day",
-      "Basic analytics",
-    ],
-    notIncluded: ["PDF export", "Priority processing"],
+    q: "Can I use Qz for free?",
+    a: "Yes. Our Free tier includes 1 Z session, 2 quizzes, 2 flashcard sets and 1 mind map per day. No credit card required.",
   },
   {
-    id: "cruising",
-    name: "Cruising",
-    tagline: "Steady grind. Mid-semester flow.",
-    color: "text-sky-400",
-    borderHover: "hover:border-sky-400/40",
-    popular: true,
-    features: [
-      "3 Z sessions / day",
-      "5 quiz generations / day",
-      "5 flashcard sets / day",
-      "3 mind maps / day",
-      "3 uploads / day",
-      "Full analytics",
-      "PDF export",
-      "10 bonus credits",
-    ],
-    notIncluded: ["Priority processing"],
+    q: "How do credit top-ups work?",
+    a: "Credits let you run extra actions on any plan. 1 credit = 1 quiz, flashcard set or mind map generation. Credits never expire.",
   },
   {
-    id: "locked_in",
-    name: "Locked In",
-    tagline: "Unlimited. Zero excuses.",
-    color: "text-primary",
-    borderHover: "hover:border-primary/40",
-    popular: false,
-    features: [
-      "Unlimited Z sessions",
-      "Unlimited quizzes",
-      "Unlimited flashcard sets",
-      "Unlimited mind maps",
-      "Unlimited uploads",
-      "Full analytics",
-      "PDF export",
-      "Priority processing",
-      "Early feature access",
-      "25 bonus credits",
-    ],
-    notIncluded: [],
+    q: "What payment methods do you support?",
+    a: "We accept Mobile Money (MTN, Telecel, AT), Debit & Credit cards, and Apple Pay powered by Paystack.",
+  },
+  {
+    q: "Can I cancel my subscription any time?",
+    a: "Yes, you can cancel or change your plan at any time from your account settings with zero cancellation fees.",
   },
 ];
-
-// Comparison table rows: [label, cooked, cruising, locked_in]
-type FeatureRow = {
-  label: string;
-  cooked: string | boolean;
-  cruising: string | boolean;
-  locked_in: string | boolean;
-};
-type SectionDef = { heading: string; rows: FeatureRow[] };
-
-const COMPARISON: SectionDef[] = [
-  {
-    heading: "Daily Limits",
-    rows: [
-      {
-        label: "Z Tutor sessions",
-        cooked: "1 / day",
-        cruising: "3 / day",
-        locked_in: "Unlimited",
-      },
-      {
-        label: "Quiz generations",
-        cooked: "2 / day",
-        cruising: "5 / day",
-        locked_in: "Unlimited",
-      },
-      {
-        label: "Flashcard sets",
-        cooked: "2 / day",
-        cruising: "5 / day",
-        locked_in: "Unlimited",
-      },
-      {
-        label: "Mind maps",
-        cooked: "1 / day",
-        cruising: "3 / day",
-        locked_in: "Unlimited",
-      },
-      {
-        label: "Material uploads",
-        cooked: "1 / day",
-        cruising: "3 / day",
-        locked_in: "Unlimited",
-      },
-    ],
-  },
-  {
-    heading: "Features",
-    rows: [
-      { label: "PDF export", cooked: false, cruising: true, locked_in: true },
-      {
-        label: "Analytics",
-        cooked: "Basic",
-        cruising: "Full",
-        locked_in: "Full",
-      },
-      {
-        label: "Priority processing",
-        cooked: false,
-        cruising: false,
-        locked_in: true,
-      },
-      {
-        label: "Early feature access",
-        cooked: false,
-        cruising: false,
-        locked_in: true,
-      },
-    ],
-  },
-  {
-    heading: "Bonuses",
-    rows: [
-      {
-        label: "Bonus credits on signup",
-        cooked: "—",
-        cruising: "+10 credits",
-        locked_in: "+25 credits",
-      },
-      {
-        label: "Streak freeze slots",
-        cooked: "0",
-        cruising: "1",
-        locked_in: "2",
-      },
-    ],
-  },
-];
-
-const CREDIT_BUNDLES = [
-  { name: "Starter", price: "3", credits: 30, perCredit: "0.10" },
-  { name: "Standard", price: "9", credits: 100, perCredit: "0.09" },
-  {
-    name: "Max",
-    price: "25",
-    credits: 250,
-    perCredit: "0.10",
-    tag: "Best value",
-  },
-];
-
-const CREDIT_COSTS = [
-  { feature: "Z Tutor session", credits: 25 },
-  { feature: "Quiz generation", credits: 10 },
-  { feature: "Flashcard set", credits: 10 },
-  { feature: "Mind map", credits: 5 },
-];
-
-const DISCOUNTS = [
-  { type: "Student", value: "10% off", note: "Verify your university email" },
-  { type: "Referral", value: "15% off", note: "Earn when a friend subscribes" },
-  { type: "7-day streak", value: "10% off", note: "Keep your streak going" },
-  { type: "30-day streak", value: "20% off", note: "On your next renewal" },
-  {
-    type: "60-day streak",
-    value: "30% off or free week",
-    note: "Loyalty milestone",
-  },
-  {
-    type: "90-day streak",
-    value: "15% permanent",
-    note: "Lifetime loyalty discount",
-  },
-];
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function CellValue({ val, tierId }: { val: string | boolean; tierId: string }) {
-  const color =
-    tierId === "locked_in"
-      ? "text-primary"
-      : tierId === "cruising"
-        ? "text-sky-400"
-        : "text-amber-400";
-
-  if (val === true) return <Check className={cn("size-4 mx-auto", color)} />;
-  if (val === false)
-    return <Minus className="size-4 mx-auto text-muted-foreground/20" />;
-  if (val === "Unlimited")
-    return (
-      <span className={cn("text-sm font-semibold font-mono", color)}>∞</span>
-    );
-  return <span className="text-xs font-mono text-foreground/80">{val}</span>;
-}
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function PricingPage() {
-  const [duration, setDuration] = useState<Duration>("weekly");
+  const router = useRouter();
   const { user } = useAuth();
-  const isSuperAdmin = user?.role === "super_admin";
-  const ctaHref = user ? "/app/billing" : "/login";
+  const [cycle, setCycle] = useState<PlanDuration>("weekly");
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
+
+  // Billing Hooks
+  const { data: apiPackages = [] } = usePackages();
+  const { data: creditBundles = [] } = useCreditBundles();
+  const { data: billingStatus } = useBillingStatus();
+  const initiatePlan = useInitiatePlanPayment();
+  const initiateCredit = useInitiateCreditPayment();
+
+  const [loadingTier, setLoadingTier] = useState<string | null>(null);
+
+  const handleSelectPlan = async (tier: PlanTier) => {
+    if (!user) {
+      toast.info("Please log in to upgrade your plan.");
+      router.push(`/login?redirect=${encodeURIComponent("/pricing")}`);
+      return;
+    }
+
+    setLoadingTier(tier);
+    try {
+      const matchedPkg = apiPackages.find(
+        (p) => p.tier === tier && p.durationType === cycle
+      );
+      const packageId = matchedPkg?._id || tier;
+
+      const res = await initiatePlan.mutateAsync({
+        packageId,
+        email: user.email,
+      });
+
+      if (res?.authorizationUrl) {
+        toast.success("Redirecting to Paystack checkout…");
+        window.location.href = res.authorizationUrl;
+      } else {
+        toast.error("Could not obtain checkout URL.");
+      }
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to initiate payment checkout.");
+    } finally {
+      setLoadingTier(null);
+    }
+  };
+
+  const handleBuyCreditBundle = async (bundleId: string) => {
+    if (!user) {
+      toast.info("Please log in to buy credit top-ups.");
+      router.push(`/login?redirect=${encodeURIComponent("/pricing")}`);
+      return;
+    }
+
+    try {
+      const res = await initiateCredit.mutateAsync({
+        bundleId,
+        email: user.email,
+      });
+      if (res?.authorizationUrl) {
+        toast.success("Redirecting to Paystack checkout…");
+        window.location.href = res.authorizationUrl;
+      } else {
+        toast.error("Could not obtain checkout URL.");
+      }
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to initiate credit checkout.");
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <Navbar />
-      <main className="flex-1 pt-24">
-        {/* ── Hero ── */}
-        <section className="py-16 md:py-24 border-b border-border/50">
-          <div className="container mx-auto px-4 max-w-5xl">
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ ease: "easeOut", duration: 0.5 }}
-            >
-              <p className="text-[10px] font-mono uppercase tracking-[0.25em] text-primary mb-4">
-                Pricing
-              </p>
-              <h1 className="text-4xl md:text-5xl font-black tracking-[-0.04em] uppercase leading-[1.05] mb-4">
-                Simple, honest pricing.
-                <br />
-                <span className="text-primary">No surprises.</span>
-              </h1>
-              <p className="text-base text-muted-foreground font-mono max-w-lg leading-relaxed">
-                Start free. Upgrade to unlock more daily actions. Pay-as-you-go
-                credits if you just need a top-up.
-              </p>
-            </motion.div>
-          </div>
-        </section>
+    <div className="overflow-x-hidden bg-white text-slate-900 antialiased selection:bg-[#0C60FC] selection:text-white min-h-screen">
+      <LandingHeader />
 
-        {/* ── Plan cards ── */}
-        <section className="py-16 md:py-20 border-b border-border/50">
-          <div className="container mx-auto px-4 max-w-5xl">
-            {/* Duration toggle */}
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="mb-8 flex gap-0 border border-border/50 w-fit"
-            >
-              {(["daily", "weekly", "semester"] as Duration[]).map((d) => (
+      <main>
+        {/* Header Hero */}
+        <section className="soft-grid relative overflow-hidden px-5 pb-10 pt-32 lg:pt-40">
+          <div className="pointer-events-none absolute -right-32 top-24 h-96 w-96 rounded-full bg-blue-100/70 blur-3xl" />
+          <div className="relative mx-auto max-w-3xl text-center">
+            {billingStatus?.isSubscribed ? (
+              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-extrabold text-emerald-700 shadow-sm">
+                ✦ Current Active Plan: {billingStatus.planTier?.toUpperCase() ?? "ACTIVE"}
+              </div>
+            ) : (
+              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-white px-3.5 py-2 text-xs font-bold text-blue-700 shadow-sm">
+                ✦ Free tier always available
+              </div>
+            )}
+
+            <h1 className="display text-balance text-4xl font-bold leading-[1.06] tracking-[-.04em] sm:text-6xl text-slate-950">
+              Simple, honest pricing.<br />
+              <span className="text-[#0C60FC]">No surprises.</span>
+            </h1>
+            <p className="hand mt-3 text-2xl text-[#0C60FC]">student prices, student honesty ↓</p>
+            <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-slate-600 sm:text-lg">
+              Start free. Upgrade to unlock more daily actions. Pay-as-you-go credits if you just need a top-up.
+            </p>
+
+            {/* Cycle Selector */}
+            <div className="mt-8 inline-flex flex-wrap items-center justify-center gap-1 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm">
+              {(["daily", "weekly", "semester"] as PlanDuration[]).map((d) => (
                 <button
                   key={d}
-                  onClick={() => setDuration(d)}
-                  className={cn(
-                    "px-5 py-2 text-[10px] font-mono uppercase tracking-[0.15em] transition-colors border-r border-border/50 last:border-r-0",
-                    duration === d
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
+                  type="button"
+                  onClick={() => setCycle(d)}
+                  className={`rounded-xl px-4 py-2.5 text-xs font-extrabold capitalize transition ${
+                    cycle === d
+                      ? "bg-[#0C60FC] text-white"
+                      : "text-slate-600 hover:bg-slate-50"
+                  }`}
                 >
-                  {DURATION_LABELS[d]}
+                  {d}
                   {d === "semester" && (
-                    <span className="ml-1.5 text-[8px] text-amber-400/80">
+                    <span className="ml-1 rounded-full bg-[#DFFF61] px-2 py-0.5 text-[9px] text-slate-900 font-extrabold">
                       Best value
                     </span>
                   )}
                 </button>
               ))}
-            </motion.div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-              {TIERS.map((tier, i) => (
-                <motion.div
-                  key={tier.id}
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.15 + i * 0.06 }}
-                  className={cn(
-                    "relative flex flex-col border bg-card/30 p-6 transition-colors duration-300 rounded-lg",
-                    tier.popular
-                      ? "border-sky-400/30 bg-sky-400/3"
-                      : "border-border/50",
-                    tier.borderHover,
-                  )}
-                >
-                  {tier.popular && (
-                    <div className="absolute -top-3 left-6">
-                      <div className="border border-sky-400/50 bg-background px-2 py-0.5">
-                        <span className="text-[9px] font-mono uppercase tracking-[0.2em] text-sky-400">
-                          Most popular
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  <p
-                    className={cn(
-                      "text-[10px] font-mono uppercase tracking-[0.2em] mb-1",
-                      tier.color,
-                    )}
-                  >
-                    {tier.name}
-                  </p>
-                  <p className="text-xs text-muted-foreground font-mono mb-4">
-                    {tier.tagline}
-                  </p>
-
-                  <div className="flex items-baseline gap-1 mb-5">
-                    <span className="text-4xl font-black tracking-tighter">
-                      {PRICES[tier.id][duration]}
-                    </span>
-                    <div className="flex items-center gap-1">
-                      <span className="text-[10px] font-mono text-muted-foreground/60 uppercase">
-                        GHS
-                      </span>
-                      <span className="text-[10px] font-mono text-muted-foreground/60 uppercase">
-                        / {DURATION_LABELS[duration].toLowerCase()}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="h-px w-full bg-border/40 mb-5" />
-
-                  <ul className="flex flex-col gap-2 flex-1 mb-6">
-                    {tier.features.map((f) => (
-                      <li key={f} className="flex items-center gap-2">
-                        <Check className={cn("size-3 shrink-0", tier.color)} />
-                        <span className="text-xs font-mono text-foreground/80">
-                          {f}
-                        </span>
-                      </li>
-                    ))}
-                    {tier.notIncluded.map((f) => (
-                      <li
-                        key={f}
-                        className="flex items-center gap-2 opacity-30"
-                      >
-                        <span className="size-3 shrink-0 flex items-center justify-center text-[10px] text-muted-foreground">
-                          —
-                        </span>
-                        <span className="text-xs font-mono text-muted-foreground line-through">
-                          {f}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  {isSuperAdmin ? (
-                    <div className="w-full py-2.5 text-[10px] font-mono uppercase tracking-[0.15em] border border-border/40 text-muted-foreground text-center rounded-lg opacity-50 cursor-default">
-                      Admin Access
-                    </div>
-                  ) : (
-                    <Link
-                      href={ctaHref}
-                      className={cn(
-                        "w-full py-2.5 text-[10px] font-mono uppercase tracking-[0.15em] border transition-colors text-center block rounded-lg",
-                        tier.id === "locked_in"
-                          ? "border-primary bg-primary text-primary-foreground hover:bg-primary/90"
-                          : tier.id === "cruising"
-                            ? "border-sky-400/50 text-sky-400 hover:bg-sky-400/10"
-                            : "border-border/60 text-foreground hover:border-amber-400/50 hover:text-amber-400",
-                      )}
-                    >
-                      Get started
-                    </Link>
-                  )}
-                </motion.div>
-              ))}
             </div>
-
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4 }}
-              className="border border-border/30 bg-card/20 px-4 py-3"
-            >
-              <p className="text-xs font-mono text-muted-foreground">
-                <span className="text-foreground font-semibold">Free tier</span>{" "}
-                — always available. 1 Z session / day, 2 quizzes / day, 2
-                flashcard sets / day, 1 mind map / day. No card required.
-              </p>
-            </motion.div>
           </div>
         </section>
 
-        {/* ── Full comparison table ── */}
-        <section className="py-16 md:py-20 border-b border-border/50">
-          <div className="container mx-auto px-4 max-w-5xl">
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{
-                opacity: 1,
-                y: 0,
-                transition: { ease: "easeOut", duration: 0.5 },
-              }}
-              viewport={{ once: true }}
-              className="mb-8"
-            >
-              <h2 className="text-2xl font-black tracking-[-0.04em] uppercase mb-2">
-                Full comparison
-              </h2>
-              <p className="text-xs font-mono text-muted-foreground">
-                Everything that comes with each plan.
+        {/* Pricing Cards */}
+        <section className="px-5 pb-16">
+          <div className="mx-auto grid max-w-7xl gap-5 lg:grid-cols-3">
+            {/* Cooked Plan */}
+            <article className="play-card flex flex-col rounded-[28px] border border-slate-200 bg-white p-7" style={{ borderRadius: "28px" }}>
+              <h2 className="display text-xl font-bold text-slate-950">Cooked</h2>
+              <p className="mt-1 text-sm text-slate-500">All-nighter mode. One shot.</p>
+              <p className="mt-6 flex items-end gap-1">
+                <span className="text-xs font-bold text-slate-400">GHS</span>
+                <span className="display text-4xl font-bold text-slate-950">{PRICES.cooked[cycle]}</span>
+                <span className="mb-1 text-xs font-bold text-slate-400">{DURATION_LABELS[cycle]}</span>
               </p>
-            </motion.div>
+              <ul className="mt-6 space-y-2.5 text-sm text-slate-600">
+                <li className="flex gap-2"><b className="text-emerald-500">✓</b> 1 Z session / day</li>
+                <li className="flex gap-2"><b className="text-emerald-500">✓</b> 2 quiz generations / day</li>
+                <li className="flex gap-2"><b className="text-emerald-500">✓</b> 2 flashcard sets / day</li>
+                <li className="flex gap-2"><b className="text-emerald-500">✓</b> 1 mind map / day</li>
+                <li className="flex gap-2"><b className="text-emerald-500">✓</b> 1 upload / day</li>
+                <li className="flex gap-2"><b className="text-emerald-500">✓</b> Basic analytics</li>
+                <li className="flex gap-2 text-slate-300"><b>—</b> PDF export</li>
+                <li className="flex gap-2 text-slate-300"><b>—</b> Priority processing</li>
+              </ul>
+              <div className="mt-auto pt-7">
+                <button
+                  type="button"
+                  onClick={() => handleSelectPlan("cooked")}
+                  disabled={loadingTier === "cooked"}
+                  className="w-full rounded-2xl border border-slate-200 py-3.5 text-center text-sm font-extrabold text-slate-700 hover:bg-slate-50 transition flex items-center justify-center gap-2"
+                >
+                  {loadingTier === "cooked" ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-slate-700" />
+                  ) : billingStatus?.planTier === "cooked" ? (
+                    "Current Plan"
+                  ) : user ? (
+                    "Upgrade to Cooked"
+                  ) : (
+                    "Get started"
+                  )}
+                </button>
+              </div>
+            </article>
 
-            <motion.div
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1, transition: { delay: 0.1 } }}
-              viewport={{ once: true }}
-              className="border border-border/50 overflow-hidden"
-            >
-              {/* Table header */}
-              <div className="grid grid-cols-4 border-b border-border/50 bg-card/30">
-                <div className="px-4 py-3 text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground/60">
-                  Feature
-                </div>
-                {TIERS.map((t) => (
-                  <div key={t.id} className="px-4 py-3 text-center">
-                    <span
-                      className={cn(
-                        "text-[10px] font-mono uppercase tracking-[0.15em] font-semibold",
-                        t.color,
-                      )}
+            {/* Cruising Plan */}
+            <article className="play-card relative flex flex-col rounded-[28px] bg-[#0C60FC] p-7 text-white shadow-2xl shadow-blue-200" style={{ borderRadius: "28px" }}>
+              <span className="absolute -top-3 left-7 rounded-full bg-[#DFFF61] px-3 py-1 text-[10px] font-extrabold text-slate-900">
+                Most popular
+              </span>
+              <h2 className="display text-xl font-bold">Cruising</h2>
+              <p className="mt-1 text-sm text-blue-100">Steady grind. Mid-semester flow.</p>
+              <p className="mt-6 flex items-end gap-1">
+                <span className="text-xs font-bold text-blue-200">GHS</span>
+                <span className="display text-4xl font-bold">{PRICES.cruising[cycle]}</span>
+                <span className="mb-1 text-xs font-bold text-blue-200">{DURATION_LABELS[cycle]}</span>
+              </p>
+              <ul className="mt-6 space-y-2.5 text-sm text-blue-50">
+                <li className="flex gap-2"><b className="text-[#DFFF61]">✓</b> 3 Z sessions / day</li>
+                <li className="flex gap-2"><b className="text-[#DFFF61]">✓</b> 5 quiz generations / day</li>
+                <li className="flex gap-2"><b className="text-[#DFFF61]">✓</b> 5 flashcard sets / day</li>
+                <li className="flex gap-2"><b className="text-[#DFFF61]">✓</b> 3 mind maps / day</li>
+                <li className="flex gap-2"><b className="text-[#DFFF61]">✓</b> 3 uploads / day</li>
+                <li className="flex gap-2"><b className="text-[#DFFF61]">✓</b> Full analytics</li>
+                <li className="flex gap-2"><b className="text-[#DFFF61]">✓</b> PDF export</li>
+                <li className="flex gap-2"><b className="text-[#DFFF61]">✓</b> 10 bonus credits</li>
+                <li className="flex gap-2 text-blue-200/70"><b>—</b> Priority processing</li>
+              </ul>
+              <div className="mt-auto pt-7">
+                <button
+                  type="button"
+                  onClick={() => handleSelectPlan("cruising")}
+                  disabled={loadingTier === "cruising"}
+                  className="squishy w-full rounded-2xl bg-white py-3.5 text-center text-sm font-extrabold text-blue-700 transition flex items-center justify-center gap-2"
+                >
+                  {loadingTier === "cruising" ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-blue-700" />
+                  ) : billingStatus?.planTier === "cruising" ? (
+                    "Current Plan"
+                  ) : user ? (
+                    "Upgrade to Cruising"
+                  ) : (
+                    "Get started"
+                  )}
+                </button>
+              </div>
+            </article>
+
+            {/* Locked In Plan */}
+            <article className="play-card flex flex-col rounded-[28px] border border-slate-200 bg-white p-7" style={{ borderRadius: "28px" }}>
+              <h2 className="display text-xl font-bold text-slate-950">Locked In</h2>
+              <p className="mt-1 text-sm text-slate-500">Unlimited. Zero excuses.</p>
+              <p className="mt-6 flex items-end gap-1">
+                <span className="text-xs font-bold text-slate-400">GHS</span>
+                <span className="display text-4xl font-bold text-slate-950">{PRICES.locked_in[cycle]}</span>
+                <span className="mb-1 text-xs font-bold text-slate-400">{DURATION_LABELS[cycle]}</span>
+              </p>
+              <ul className="mt-6 space-y-2.5 text-sm text-slate-600">
+                <li className="flex gap-2"><b className="text-emerald-500">✓</b> Unlimited Z sessions</li>
+                <li className="flex gap-2"><b className="text-emerald-500">✓</b> Unlimited quizzes</li>
+                <li className="flex gap-2"><b className="text-emerald-500">✓</b> Unlimited flashcard sets</li>
+                <li className="flex gap-2"><b className="text-emerald-500">✓</b> Unlimited mind maps</li>
+                <li className="flex gap-2"><b className="text-emerald-500">✓</b> Unlimited uploads</li>
+                <li className="flex gap-2"><b className="text-emerald-500">✓</b> Full analytics + PDF export</li>
+                <li className="flex gap-2"><b className="text-emerald-500">✓</b> Priority processing</li>
+                <li className="flex gap-2"><b className="text-emerald-500">✓</b> Early feature access</li>
+                <li className="flex gap-2"><b className="text-emerald-500">✓</b> 25 bonus credits</li>
+              </ul>
+              <div className="mt-auto pt-7">
+                <button
+                  type="button"
+                  onClick={() => handleSelectPlan("locked_in")}
+                  disabled={loadingTier === "locked_in"}
+                  className="w-full rounded-2xl bg-slate-950 py-3.5 text-center text-sm font-extrabold text-white hover:bg-[#0C60FC] transition flex items-center justify-center gap-2"
+                >
+                  {loadingTier === "locked_in" ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-white" />
+                  ) : billingStatus?.planTier === "locked_in" ? (
+                    "Current Plan"
+                  ) : user ? (
+                    "Upgrade to Locked In"
+                  ) : (
+                    "Get started"
+                  )}
+                </button>
+              </div>
+            </article>
+          </div>
+
+          <p className="mx-auto mt-6 max-w-3xl rounded-2xl bg-[#F7F9FC] px-5 py-4 text-center text-xs font-semibold text-slate-500">
+            Free tier — always available. 1 Z session / day, 2 quizzes / day, 2 flashcard sets / day, 1 mind map / day. No card required.
+          </p>
+        </section>
+
+        {/* Pay-as-you-go Credit Bundles */}
+        {creditBundles.length > 0 && (
+          <section className="bg-[#F7F9FC] px-5 py-16">
+            <div className="mx-auto max-w-7xl">
+              <div className="text-center">
+                <p className="hand text-2xl text-[#0C60FC]">need extra generations? ✦</p>
+                <h2 className="mt-1 text-3xl font-bold text-slate-950">Pay-as-you-go Credits</h2>
+                <p className="mt-2 text-sm text-slate-600">Credits never expire. Top up anytime for extra quizzes and flashcards.</p>
+              </div>
+
+              <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {creditBundles.map((bundle) => (
+                  <article key={bundle._id} className="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm flex flex-col justify-between">
+                    <div>
+                      <span className="flex h-10 w-10 mx-auto items-center justify-center rounded-xl bg-blue-50 text-blue-700 text-lg font-bold">
+                        ⚡
+                      </span>
+                      <h3 className="mt-3 text-base font-extrabold text-slate-950">{bundle.name}</h3>
+                      <p className="mt-2 text-2xl font-extrabold text-slate-950">GHS {bundle.priceGHS}</p>
+                      <p className="mt-1 text-xs text-slate-500">{bundle.credits} extra generation credits</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleBuyCreditBundle(bundle._id)}
+                      className="mt-5 w-full rounded-xl bg-slate-950 py-2.5 text-xs font-extrabold text-white hover:bg-[#0C60FC] transition"
                     >
-                      {t.name}
-                    </span>
-                  </div>
+                      Buy {bundle.credits} Credits
+                    </button>
+                  </article>
                 ))}
               </div>
-
-              {COMPARISON.map((section) => (
-                <div key={section.heading}>
-                  <div className="grid grid-cols-4 bg-card/20 border-b border-border/30">
-                    <div className="px-4 py-2 col-span-4">
-                      <span className="text-[9px] font-mono uppercase tracking-[0.2em] text-muted-foreground/40">
-                        {section.heading}
-                      </span>
-                    </div>
-                  </div>
-                  {section.rows.map((row, ri) => (
-                    <div
-                      key={row.label}
-                      className={cn(
-                        "grid grid-cols-4 border-b border-border/20 last:border-b-0",
-                        ri % 2 === 0 ? "bg-transparent" : "bg-card/10",
-                      )}
-                    >
-                      <div className="px-4 py-3 text-xs font-mono text-muted-foreground">
-                        {row.label}
-                      </div>
-                      <div className="px-4 py-3 text-center">
-                        <CellValue val={row.cooked} tierId="cooked" />
-                      </div>
-                      <div className="px-4 py-3 text-center">
-                        <CellValue val={row.cruising} tierId="cruising" />
-                      </div>
-                      <div className="px-4 py-3 text-center">
-                        <CellValue val={row.locked_in} tierId="locked_in" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </motion.div>
-          </div>
-        </section>
-
-        {/* ── Credits ── */}
-        <section
-          id="credits"
-          className="py-16 md:py-20 border-b border-border/50"
-        >
-          <div className="container mx-auto px-4 max-w-5xl">
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{
-                opacity: 1,
-                y: 0,
-                transition: { ease: "easeOut", duration: 0.5 },
-              }}
-              viewport={{ once: true }}
-              className="mb-8"
-            >
-              <div className="flex items-center gap-3 mb-2">
-                <Zap className="size-4 text-amber-400" />
-                <h2 className="text-2xl font-black tracking-[-0.04em] uppercase">
-                  Pay-as-you-go credits
-                </h2>
-              </div>
-              <p className="text-xs font-mono text-muted-foreground max-w-md">
-                No subscription? Top up credits and use features on demand.
-                Credits never expire. Always cheaper per feature to subscribe —
-                credits are a convenience top-up.
-              </p>
-            </motion.div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Bundles */}
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                whileInView={{ opacity: 1, y: 0, transition: { delay: 0.1 } }}
-                viewport={{ once: true }}
-              >
-                <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground/60 mb-4">
-                  Credit bundles
-                </p>
-                <div className="flex flex-col gap-3">
-                  {CREDIT_BUNDLES.map((b) => (
-                    <div
-                      key={b.name}
-                      className="flex items-center justify-between border border-border/50 bg-card/30 px-4 py-4"
-                    >
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-semibold">
-                            {b.name}
-                          </span>
-                          {b.tag && (
-                            <span className="text-[9px] font-mono uppercase tracking-widest text-amber-400 border border-amber-400/30 px-1.5 py-0.5">
-                              {b.tag}
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-xs font-mono text-muted-foreground">
-                          {b.credits} credits
-                        </span>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-lg font-black tracking-tighter">
-                          GHS {b.price}
-                        </p>
-                        <p className="text-[10px] font-mono text-muted-foreground/50">
-                          {b.perCredit} / credit
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-
-              {/* Credit costs */}
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                whileInView={{ opacity: 1, y: 0, transition: { delay: 0.15 } }}
-                viewport={{ once: true }}
-              >
-                <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground/60 mb-4">
-                  Feature costs
-                </p>
-                <div className="border border-border/50 overflow-hidden">
-                  {CREDIT_COSTS.map((c, i) => (
-                    <div
-                      key={c.feature}
-                      className={cn(
-                        "flex items-center justify-between px-4 py-3 border-b border-border/30 last:border-b-0",
-                        i % 2 === 0 ? "bg-transparent" : "bg-card/10",
-                      )}
-                    >
-                      <span className="text-xs font-mono text-muted-foreground">
-                        {c.feature}
-                      </span>
-                      <div className="flex items-center gap-1.5">
-                        <Zap className="size-3 text-amber-400" />
-                        <span className="text-xs font-mono font-semibold text-amber-400">
-                          {c.credits}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <p className="mt-3 text-[10px] font-mono text-muted-foreground/50">
-                  Credits are deducted only when your daily plan limit is
-                  reached. Material uploads cannot be unlocked with credits.
-                </p>
-              </motion.div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
-        {/* ── Discounts ── */}
-        <section className="py-16 md:py-20 border-b border-border/50">
-          <div className="container mx-auto px-4 max-w-5xl">
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{
-                opacity: 1,
-                y: 0,
-                transition: { ease: "easeOut", duration: 0.5 },
-              }}
-              viewport={{ once: true }}
-              className="mb-8"
-            >
-              <div className="flex items-center gap-3 mb-2">
-                <Flame className="size-4 text-amber-400" />
-                <h2 className="text-2xl font-black tracking-[-0.04em] uppercase">
-                  Discounts & rewards
-                </h2>
-              </div>
-              <p className="text-xs font-mono text-muted-foreground">
-                Stack discounts up to 30% off. Stay consistent and Qz rewards
-                you.
-              </p>
-            </motion.div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              {DISCOUNTS.map((d, i) => (
-                <motion.div
-                  key={d.type}
-                  initial={{ opacity: 0, y: 12 }}
-                  whileInView={{
-                    opacity: 1,
-                    y: 0,
-                    transition: { delay: i * 0.05 },
-                  }}
-                  viewport={{ once: true }}
-                  className="border border-border/40 bg-card/20 px-4 py-4"
-                >
-                  <p className="text-[10px] font-mono uppercase tracking-[0.15em] text-muted-foreground/60 mb-1">
-                    {d.type}
-                  </p>
-                  <p className="text-base font-black tracking-tight text-primary mb-1">
-                    {d.value}
-                  </p>
-                  <p className="text-xs font-mono text-muted-foreground/70">
-                    {d.note}
-                  </p>
-                </motion.div>
-              ))}
-            </div>
-
-            <motion.div
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1, transition: { delay: 0.3 } }}
-              viewport={{ once: true }}
-              className="mt-6 flex items-start gap-2 border border-border/20 bg-card/10 px-4 py-3"
-            >
-              <GraduationCap className="size-3.5 text-muted-foreground/50 shrink-0 mt-0.5" />
-              <p className="text-xs font-mono text-muted-foreground">
-                <span className="text-foreground font-semibold">
-                  Student discount
-                </span>{" "}
-                — verify your university email in settings after signing up.
-                Works with any recognized Ghanaian university domain (ug.edu.gh,
-                knust.edu.gh, ucc.edu.gh, and more).
-              </p>
-            </motion.div>
-          </div>
-        </section>
-
-        {/* ── Donation ── */}
-        <Donations />
-
-        {/* ── FAQ / CTA ── */}
-        <section className="py-16 md:py-24">
-          <div className="container mx-auto px-4 max-w-5xl text-center">
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{
-                opacity: 1,
-                y: 0,
-                transition: { ease: "easeOut", duration: 0.5 },
-              }}
-              viewport={{ once: true }}
-            >
-              <h2 className="text-2xl md:text-3xl font-black tracking-[-0.04em] uppercase mb-4">
-                Start free. Upgrade when ready.
+        {/* Discounts & Rewards */}
+        <section className="relative overflow-hidden bg-slate-950 px-5 py-24 text-white">
+          <div className="pointer-events-none absolute -left-32 top-10 h-80 w-80 rounded-full bg-blue-500/20 blur-3xl" />
+          <div className="pointer-events-none absolute -right-32 bottom-10 h-80 w-80 rounded-full bg-[#DFFF61]/10 blur-3xl" />
+          <div className="relative mx-auto max-w-7xl">
+            <div className="text-center">
+              <p className="hand text-3xl text-[#DFFF61]">consistency literally pays ✦</p>
+              <h2 className="mt-1 text-3xl font-bold tracking-tight sm:text-4xl">
+                Discounts &amp; rewards
               </h2>
-              <p className="text-sm text-muted-foreground font-mono max-w-md mx-auto mb-8">
-                No credit card required to get started. Free tier limits reset
-                daily.
+              <p className="mt-3 text-sm text-slate-400">
+                Stack discounts up to 30% off. Stay consistent and Qz rewards you.
               </p>
-              <Link
-                href={ctaHref}
-                className="inline-flex items-center gap-2 border border-primary bg-primary text-primary-foreground px-8 py-3 text-xs font-mono uppercase tracking-[0.2em] hover:bg-primary/90 transition-colors"
-              >
-                Get started free <ArrowRight className="size-3" />
-              </Link>
-            </motion.div>
+            </div>
+
+            <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {/* Student */}
+              <article className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+                <p className="text-3xl font-extrabold text-[#DFFF61]">10% off</p>
+                <p className="mt-3 text-sm font-bold text-white">Student</p>
+                <p className="mt-1 text-xs text-slate-400">Verify your university email</p>
+              </article>
+
+              {/* Referral */}
+              <article className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+                <p className="text-3xl font-extrabold text-[#DFFF61]">15% off</p>
+                <p className="mt-3 text-sm font-bold text-white">Referral</p>
+                <p className="mt-1 text-xs text-slate-400">Earn when a friend subscribes</p>
+              </article>
+
+              {/* 7-day streak */}
+              <article className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+                <p className="text-3xl font-extrabold text-[#DFFF61]">10% off</p>
+                <p className="mt-3 text-sm font-bold text-white">7-day streak</p>
+                <p className="mt-1 text-xs text-slate-400">Keep your streak going</p>
+              </article>
+
+              {/* 30-day streak */}
+              <article className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+                <p className="text-3xl font-extrabold text-[#DFFF61]">20% off</p>
+                <p className="mt-3 text-sm font-bold text-white">30-day streak</p>
+                <p className="mt-1 text-xs text-slate-400">On your next renewal</p>
+              </article>
+
+              {/* 60-day streak */}
+              <article className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+                <p className="text-3xl font-extrabold text-[#DFFF61]">30% off</p>
+                <p className="mt-3 text-sm font-bold text-white">60-day streak</p>
+                <p className="mt-1 text-xs text-slate-400">Or a free week — loyalty milestone</p>
+              </article>
+
+              {/* 90-day streak — highlighted */}
+              <article className="rounded-2xl bg-[#0C60FC] p-6 shadow-2xl shadow-blue-500/30">
+                <p className="text-3xl font-extrabold text-white">15% forever</p>
+                <p className="mt-3 text-sm font-bold text-white">90-day streak</p>
+                <p className="mt-1 text-xs text-blue-100">Lifetime loyalty discount</p>
+              </article>
+            </div>
+
+            <p className="mx-auto mt-10 max-w-3xl text-center text-xs font-semibold text-slate-400">
+              Student discount — verify your university email in settings after signing up. Works with any recognised Ghanaian university domain (ug.edu.gh, knust.edu.gh, ucc.edu.gh, and more).
+            </p>
           </div>
         </section>
+
+        {/* Feature Comparison Table */}
+        <section className="bg-[#F7F9FC] px-5 py-20">
+          <div className="mx-auto max-w-7xl">
+            <div className="text-center">
+              <p className="hand text-3xl text-[#0C60FC]">no asterisks, promise ✦</p>
+              <h2 className="mt-1 text-3xl font-bold tracking-tight sm:text-4xl text-slate-950">Full comparison</h2>
+              <p className="mt-3 text-sm text-slate-600">Everything that comes with each plan.</p>
+            </div>
+            <div className="mt-8 overflow-x-auto rounded-[24px] border border-slate-200 bg-white">
+              <table className="w-full min-w-[620px] text-left text-xs">
+                <thead className="bg-white text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                  <tr className="border-b border-slate-100">
+                    <th className="p-4">Feature</th>
+                    <th className="p-4 text-center">Cooked</th>
+                    <th className="p-4 text-center bg-blue-50/60 text-[#0C60FC]">Cruising</th>
+                    <th className="p-4 text-center">Locked In</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                  <tr><td className="p-4 font-bold">Z Sessions / day</td><td className="p-4 text-center">1</td><td className="p-4 text-center bg-blue-50/30">3</td><td className="p-4 text-center font-extrabold text-emerald-600">Unlimited</td></tr>
+                  <tr><td className="p-4 font-bold">Quiz generations / day</td><td className="p-4 text-center">2</td><td className="p-4 text-center bg-blue-50/30">5</td><td className="p-4 text-center font-extrabold text-emerald-600">Unlimited</td></tr>
+                  <tr><td className="p-4 font-bold">Flashcard sets / day</td><td className="p-4 text-center">2</td><td className="p-4 text-center bg-blue-50/30">5</td><td className="p-4 text-center font-extrabold text-emerald-600">Unlimited</td></tr>
+                  <tr><td className="p-4 font-bold">Mind maps / day</td><td className="p-4 text-center">1</td><td className="p-4 text-center bg-blue-50/30">3</td><td className="p-4 text-center font-extrabold text-emerald-600">Unlimited</td></tr>
+                  <tr><td className="p-4 font-bold">Analytics</td><td className="p-4 text-center">Basic</td><td className="p-4 text-center bg-blue-50/30">Full</td><td className="p-4 text-center">Full</td></tr>
+                  <tr><td className="p-4 font-bold">PDF Export</td><td className="p-4 text-center text-slate-300">—</td><td className="p-4 text-center bg-blue-50/30 text-emerald-600">✓</td><td className="p-4 text-center text-emerald-600">✓</td></tr>
+                  <tr><td className="p-4 font-bold">Priority AI Queue</td><td className="p-4 text-center text-slate-300">—</td><td className="p-4 text-center bg-blue-50/30 text-slate-300">—</td><td className="p-4 text-center text-emerald-600">✓</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        {/* FAQ Accordion */}
+        <section className="px-5 py-24">
+          <div className="mx-auto max-w-4xl">
+            <div className="text-center">
+              <p className="hand text-3xl text-[#0C60FC]">got questions? ✦</p>
+              <h2 className="mt-1 text-3xl font-bold tracking-tight sm:text-4xl text-slate-950">
+                Frequently asked questions
+              </h2>
+            </div>
+            <div className="mt-10 space-y-4">
+              {FAQ_ITEMS.map((item, idx) => {
+                const isOpen = openFaq === idx;
+                return (
+                  <div
+                    key={item.q}
+                    className="rounded-2xl border border-slate-200 bg-white p-5 transition"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setOpenFaq(isOpen ? null : idx)}
+                      className="flex w-full items-center justify-between text-left text-base font-bold text-slate-900"
+                    >
+                      <span>{item.q}</span>
+                      <Plus className={`h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200 ${isOpen ? "rotate-45 text-[#0C60FC]" : ""}`} />
+                    </button>
+                    {isOpen && (
+                      <p className="mt-3 text-sm leading-6 text-slate-600 animate-in fade-in">
+                        {item.a}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        <DonationSection />
       </main>
-      <Footer />
+
+      <LandingFooter />
+      <MobileNav />
     </div>
   );
 }

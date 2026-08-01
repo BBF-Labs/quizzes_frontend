@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
   Accordion,
@@ -10,19 +11,46 @@ import {
 import { QuizLecture, QuizTopic, QuizQuestion } from "@/types/session";
 import { BookOpen, Target, HelpCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { QuestionMarkdown, QuestionTypeBadge } from "@/components/app/quizzes/question-renderer";
+import {
+  QuestionMarkdown,
+  QuestionTypeBadge,
+} from "@/components/app/quizzes/question-renderer";
 
 interface QuestionRowProps {
   q: QuizQuestion;
+  showHints?: boolean;
 }
 
-export function QuestionRow({ q }: QuestionRowProps) {
+export function QuestionRow({ q, showHints = false }: QuestionRowProps) {
+  const [hintVisible, setHintVisible] = useState(false);
+
   return (
     <div className="border border-border/30 bg-card/20 px-4 py-3">
       <div className="flex flex-col gap-1.5">
         <QuestionTypeBadge type={q.type} />
         <QuestionMarkdown content={q.question} className="text-[12px]" />
       </div>
+
+      {showHints && q.hint && (
+        <div className="mt-2">
+          <button
+            type="button"
+            onClick={() => setHintVisible((prev) => !prev)}
+            className="rounded-full border border-primary/20 bg-primary/5 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-widest text-primary transition hover:bg-primary/10"
+          >
+            {hintVisible ? "Hide hint" : "Show hint"}
+          </button>
+        </div>
+      )}
+
+      {showHints && q.hint && hintVisible && (
+        <div className="mt-2 rounded-lg border border-blue-200 bg-blue-50/60 p-3 text-[10px] text-slate-700">
+          <p className="mb-1 font-extrabold uppercase tracking-widest text-[#0C60FC]">
+            Hint
+          </p>
+          <QuestionMarkdown content={q.hint} className="text-[10px] italic" />
+        </div>
+      )}
 
       {/* Options */}
       {q.options && q.options.length > 0 && (
@@ -31,10 +59,14 @@ export function QuestionRow({ q }: QuestionRowProps) {
             <li
               key={i}
               className={`text-[10px] font-mono flex items-baseline gap-1 ${
-                opt === q.correctAnswer ? "text-green-500 font-bold" : "text-muted-foreground/60"
+                opt === q.correctAnswer
+                  ? "text-green-500 font-bold"
+                  : "text-muted-foreground/60"
               }`}
             >
-              <span className="opacity-40 shrink-0">{String.fromCharCode(65 + i)}.</span>
+              <span className="opacity-40 shrink-0">
+                {String.fromCharCode(65 + i)}.
+              </span>
               <QuestionMarkdown content={opt} className="text-[10px] flex-1" />
             </li>
           ))}
@@ -44,7 +76,11 @@ export function QuestionRow({ q }: QuestionRowProps) {
       {/* Correct answer fallback for non-MCQ */}
       {q.correctAnswer && (!q.options || q.options.length === 0) && (
         <p className="mt-2 text-[10px] font-mono text-muted-foreground/50 flex gap-1">
-          Answer: <QuestionMarkdown content={q.correctAnswer} className="text-[10px] text-green-500 font-bold flex-1" />
+          Answer:{" "}
+          <QuestionMarkdown
+            content={q.correctAnswer}
+            className="text-[10px] text-green-500 font-bold flex-1"
+          />
         </p>
       )}
     </div>
@@ -53,9 +89,10 @@ export function QuestionRow({ q }: QuestionRowProps) {
 
 interface TopicSectionProps {
   topic: QuizTopic;
+  showHints?: boolean;
 }
 
-export function TopicSection({ topic }: TopicSectionProps) {
+export function TopicSection({ topic, showHints = false }: TopicSectionProps) {
   const rawQuestions = topic.questions || [];
   const hasFullQuestions =
     rawQuestions.length > 0 &&
@@ -80,6 +117,7 @@ export function TopicSection({ topic }: TopicSectionProps) {
             <QuestionRow
               key={(q as any).id || (q as any)._id || `q-${idx}`}
               q={q as QuizQuestion}
+              showHints={showHints}
             />
           ))}
         </div>
@@ -91,12 +129,17 @@ export function TopicSection({ topic }: TopicSectionProps) {
 interface LectureSectionProps {
   lecture: QuizLecture;
   index: number;
+  showHints?: boolean;
 }
 
-export function LectureSection({ lecture, index }: LectureSectionProps) {
+export function LectureSection({
+  lecture,
+  index,
+  showHints = false,
+}: LectureSectionProps) {
   const totalQuestions = (lecture.topics || []).reduce(
     (acc, t) => acc + (t.questionCount ?? t.questions?.length ?? 0),
-    0
+    0,
   );
 
   return (
@@ -114,7 +157,10 @@ export function LectureSection({ lecture, index }: LectureSectionProps) {
               <span className="text-[10px] font-mono text-primary font-bold uppercase tracking-tighter">
                 Section {index + 1}
               </span>
-              <Badge variant="outline" className="text-[9px] h-4 px-1 opacity-60">
+              <Badge
+                variant="outline"
+                className="text-[9px] h-4 px-1 opacity-60"
+              >
                 {totalQuestions} Qs
               </Badge>
             </div>
@@ -134,9 +180,10 @@ export function LectureSection({ lecture, index }: LectureSectionProps) {
             className="space-y-6 pt-2"
           >
             {lecture.topics.map((topic, tIdx) => (
-              <TopicSection 
-                key={`${topic.topicTitle}-${tIdx}`} 
-                topic={topic} 
+              <TopicSection
+                key={`${topic.topicTitle}-${tIdx}`}
+                topic={topic}
+                showHints={showHints}
               />
             ))}
           </motion.div>
@@ -146,12 +193,20 @@ export function LectureSection({ lecture, index }: LectureSectionProps) {
   );
 }
 
-export function QuizContent({ lectures }: { lectures: QuizLecture[] }) {
+export function QuizContent({
+  lectures,
+  showHints = false,
+}: {
+  lectures: QuizLecture[];
+  showHints?: boolean;
+}) {
   if (!lectures?.length) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center opacity-30">
         <HelpCircle className="w-12 h-12 mb-4" />
-        <p className="font-mono text-sm uppercase tracking-widest">No curriculum data available</p>
+        <p className="font-mono text-sm uppercase tracking-widest">
+          No curriculum data available
+        </p>
       </div>
     );
   }
@@ -159,10 +214,11 @@ export function QuizContent({ lectures }: { lectures: QuizLecture[] }) {
   return (
     <Accordion type="multiple" className="grid gap-3">
       {lectures.map((lecture, idx) => (
-        <LectureSection 
-          key={`${lecture.lectureTitle}-${idx}`} 
-          lecture={lecture} 
-          index={idx} 
+        <LectureSection
+          key={`${lecture.lectureTitle}-${idx}`}
+          lecture={lecture}
+          index={idx}
+          showHints={showHints}
         />
       ))}
     </Accordion>
@@ -185,8 +241,12 @@ export function QuizStatsBar({
   const stats = [
     { label: "Questions", value: questionCount },
     { label: "Sections", value: lectureCount },
-    ...(passingScore !== undefined ? [{ label: "Pass Score", value: `${passingScore}%` }] : []),
-    ...(settings?.timeLimit ? [{ label: "Time Limit", value: `${settings.timeLimit}m` }] : []),
+    ...(passingScore !== undefined
+      ? [{ label: "Pass Score", value: `${passingScore}%` }]
+      : []),
+    ...(settings?.timeLimit
+      ? [{ label: "Time Limit", value: `${settings.timeLimit}m` }]
+      : []),
   ];
 
   return (

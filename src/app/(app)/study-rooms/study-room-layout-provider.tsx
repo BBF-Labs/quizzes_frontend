@@ -1,8 +1,6 @@
 "use client";
 
 import { createContext, useContext, useState, type ReactNode, useEffect } from "react";
-import { Navbar } from "@/components/common";
-import { Footer } from "@/components/landing";
 import { cn } from "@/lib/utils";
 
 interface StudyRoomLayoutContextType {
@@ -36,10 +34,8 @@ export function StudyRoomLayoutProvider({
 
   return (
     <StudyRoomLayoutContext.Provider value={{ isImmersive, setIsImmersive }}>
-      <div className="min-h-screen bg-background text-foreground flex flex-col">
-        {!isImmersive && <Navbar />}
-        <main className={cn("flex-1", !isImmersive && "pt-16")}>{children}</main>
-        {!isImmersive && <Footer />}
+      <div className="min-h-screen bg-[#F7F9FC] text-slate-900 flex flex-col">
+        <main className="flex-1">{children}</main>
       </div>
     </StudyRoomLayoutContext.Provider>
   );

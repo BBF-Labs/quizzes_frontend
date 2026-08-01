@@ -8,7 +8,6 @@ import {
   Tag,
   Users,
   Search,
-  Calendar,
   Download,
   Plus,
   Check,
@@ -220,7 +219,7 @@ function LibraryCard({
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function PublicLibraryPage() {
+export default function CommunityLibraryPage() {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<LibraryFilters>({});
@@ -250,7 +249,6 @@ export default function PublicLibraryPage() {
     Object.keys(filters).some((k) => filters[k as keyof LibraryFilters]);
 
   const handleStudy = (id: string) => {
-    // Route to app, passing the library item id as a material to load
     router.push(`/app?libraryMaterialId=${id}`);
   };
 
@@ -264,7 +262,7 @@ export default function PublicLibraryPage() {
           className="mb-8"
         >
           <p className="text-[10px] font-mono uppercase tracking-[0.25em] text-primary/70 mb-1">
-            Public Library
+            Community Library
           </p>
           <h1 className="text-2xl font-black tracking-tight mb-1">
             Study Materials
