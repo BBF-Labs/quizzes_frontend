@@ -280,43 +280,25 @@ export default function QuizTakePage({
   }, [screen, config?.timerMode, config?.timerSeconds, stopTimer]);
 
   const startQuiz = useCallback(
-    (cfg: QuizConfig, resumeData?: SavedProgress) => {
+    (cfg: QuizConfig) => {
       setConfig(cfg);
 
       const quizWithQuestions: QuizDetail = quiz!;
 
-      if (resumeData) {
-        const allQs = buildQuestions(quizWithQuestions, cfg);
-        const ordered = resumeData.questionIds
-          .map((qid) => allQs.find((q) => q.id === qid))
-          .filter(Boolean) as QuizQuestion[];
-        setQuestions(ordered);
-        setCurrent(
-          Math.max(
+      const qs = buildQuestions(quizWithQuestions, cfg);
+      setQuestions(qs);
+      const qFromUrl = Number(currentParam || "1");
+      const nextCurrent = Number.isFinite(qFromUrl)
+        ? Math.max(
             0,
-            Math.min(resumeData.current, Math.max(ordered.length - 1, 0)),
-          ),
-        );
-        setAnswers(resumeData.answers);
-        setImmediateResults(resumeData.immediateResults);
-        setStreak(resumeData.streak);
-        setMaxStreak(resumeData.maxStreak);
-      } else {
-        const qs = buildQuestions(quizWithQuestions, cfg);
-        setQuestions(qs);
-        const qFromUrl = Number(currentParam || "1");
-        const nextCurrent = Number.isFinite(qFromUrl)
-          ? Math.max(
-              0,
-              Math.min(Math.floor(qFromUrl) - 1, Math.max(qs.length - 1, 0)),
-            )
-          : 0;
-        setCurrent(nextCurrent);
-        setAnswers({});
-        setImmediateResults({});
-        setStreak(0);
-        setMaxStreak(0);
-      }
+            Math.min(Math.floor(qFromUrl) - 1, Math.max(qs.length - 1, 0)),
+          )
+        : 0;
+      setCurrent(nextCurrent);
+      setAnswers({});
+      setImmediateResults({});
+      setStreak(0);
+      setMaxStreak(0);
 
       setTimerRemaining(cfg.timerSeconds);
       setScreen("quiz");
@@ -326,7 +308,6 @@ export default function QuizTakePage({
 
   const handleRetake = useCallback(() => {
     stopTimer();
-    clearProgress(id);
     setAnswers({});
     setImmediateResults({});
     setSelfMarks({});
@@ -334,7 +315,7 @@ export default function QuizTakePage({
     setStreak(0);
     setMaxStreak(0);
     setScreen("config");
-  }, [id, stopTimer]);
+  }, [stopTimer]);
 
   const handleGradeWithZ = useCallback(async () => {
     if (!quiz || !config) return;
@@ -408,26 +389,6 @@ export default function QuizTakePage({
           quiz={quiz}
           showZGrading
           onStart={(cfg) => startQuiz(cfg)}
-        />
-      </div>
-    );
-  }
-
-  if (screen === "resume" && savedProgress) {
-    return (
-      <div className="min-h-full bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] bg-size-[16px_16px] bg-[#F7F9FC] py-8 px-4 sm:px-6 lg:px-8">
-        <ResumePrompt
-          savedAt={savedProgress.savedAt}
-          answered={Object.keys(savedProgress.answers).length}
-          total={savedProgress.questionIds.length}
-          onResume={() => {
-            startQuiz(savedProgress.config, savedProgress);
-          }}
-          onRestart={() => {
-            clearProgress(id);
-            setSavedProgress(null);
-            setScreen("config");
-          }}
         />
       </div>
     );
