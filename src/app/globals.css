@@ -2,14 +2,18 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "md-editor-rt/lib/style.css";
-@import url("https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap");
 
 /* -------------------------------------------------------------------------
  * Revamp design tokens + utilities
- * Sourced from revamp/css/theme.css. Used by the /login + /signup surfaces.
+ * Sourced from revamp/css/theme.css.
+ * Powered by next/font/google variable fonts in src/app/fonts.ts.
  * ------------------------------------------------------------------------- */
 
 :root {
+  --qz-manrope: var(--font-manrope), sans-serif;
+  --qz-space: var(--font-space), sans-serif;
+  --qz-caveat: var(--font-caveat), cursive;
+
   --qz-blue: #0c60fc;
   --qz-ink: #101828;
   --qz-muted: #5d6675;
@@ -35,25 +39,62 @@
 }
 
 html,
+body,
+input,
+button,
+textarea,
+select {
+  font-family: var(--font-manrope), sans-serif !important;
+}
+
 body {
-  font-family: var(--font-sans);
+  color: var(--qz-ink);
+  background: #ffffff;
 }
 
-.display {
-  font-family: "Space Grotesk", sans-serif;
+/* Fix browser autofill blue/gray background overlay */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  -webkit-text-fill-color: #0f172a !important;
+  caret-color: #0f172a;
+  transition: background-color 5000s ease-in-out 0s;
 }
 
-.hand {
-  font-family: "Caveat", cursive;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.display,
+.font-display {
+  font-family: var(--font-space), sans-serif !important;
+}
+
+.hand,
+.font-hand {
+  font-family: var(--font-caveat), cursive !important;
   font-weight: 700;
   letter-spacing: 0.01em;
 }
 
-/* Used by auth pages to switch the body typeface to Manrope. */
 body.qz-auth,
 .qz-auth {
-  font-family: "Manrope", sans-serif;
+  font-family: var(--font-manrope), sans-serif !important;
 }
+
+/* Explicit Revamp Border Radii Overrides */
+.rounded-22, .rounded-\[22px\] { border-radius: 22px !important; }
+.rounded-24, .rounded-\[24px\] { border-radius: 24px !important; }
+.rounded-26, .rounded-\[26px\] { border-radius: 26px !important; }
+.rounded-28, .rounded-\[28px\] { border-radius: 28px !important; }
+.rounded-30, .rounded-\[30px\] { border-radius: 30px !important; }
+.rounded-32, .rounded-\[32px\] { border-radius: 32px !important; }
+.rounded-36, .rounded-\[36px\] { border-radius: 36px !important; }
+
 
 .text-balance {
   text-wrap: balance;
@@ -118,7 +159,12 @@ body.qz-auth,
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-manrope), 'Manrope', ui-sans-serif, sans-serif;
+  --font-manrope: var(--font-manrope), 'Manrope', ui-sans-serif, sans-serif;
+  --font-display: var(--font-space), 'Space Grotesk', ui-sans-serif, sans-serif;
+  --font-space: var(--font-space), 'Space Grotesk', ui-sans-serif, sans-serif;
+  --font-hand: var(--font-caveat), 'Caveat', cursive, sans-serif;
+  --font-caveat: var(--font-caveat), 'Caveat', cursive, sans-serif;
   --font-mono: var(--font-geist-mono);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -390,3 +436,84 @@ html[data-ui-customized="true"] .prose code {
 html[data-ui-customized="true"] .toaster {
   --border-radius: var(--radius) !important;
 }
+
+/* Campus Marquee Animation */
+.campus-marquee {
+  mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+}
+.campus-track {
+  animation: marquee 28s linear infinite;
+}
+.campus-track:hover {
+  animation-play-state: paused;
+}
+.campus-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 1rem;
+  border-radius: 1rem;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  white-space: nowrap;
+}
+.campus-logo span {
+  display: flex;
+  height: 1.75rem;
+  width: 1.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  font-size: 0.65rem;
+  font-weight: 800;
+}
+.campus-logo b {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* Revamp Interactive Animations */
+.qubi-bob {
+  animation: float 8s ease-in-out infinite;
+}
+.hand-wiggle {
+  display: inline-block;
+  animation: wiggle 4s ease-in-out infinite;
+}
+@keyframes wiggle {
+  0%, 100% {
+    transform: rotate(-2deg);
+  }
+  50% {
+    transform: rotate(2deg);
+  }
+}
+.motion-reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.motion-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.play-card {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.squishy {
+  transition: transform 0.15s ease;
+}
+.squishy:active {
+  transform: scale(0.96);
+}
+
