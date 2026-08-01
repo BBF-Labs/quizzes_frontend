@@ -2,12 +2,12 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "md-editor-rt/lib/style.css";
+@import url("https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap");
 
 /* -------------------------------------------------------------------------
  * Revamp design tokens + utilities
  * Sourced from revamp/css/theme.css. Used by the /login + /signup surfaces.
  * ------------------------------------------------------------------------- */
-@import url("https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap");
 
 :root {
   --qz-blue: #0c60fc;
