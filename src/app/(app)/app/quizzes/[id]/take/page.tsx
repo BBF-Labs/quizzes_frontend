@@ -25,43 +25,7 @@ import type {
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface SavedProgress {
-  config: QuizConfig;
-  current: number;
-  answers: Record<string, string>;
-  immediateResults: Record<string, "correct" | "wrong" | null>;
-  streak: number;
-  maxStreak: number;
-  questionIds: string[];
-  savedAt: string;
-}
-
-type Screen = "resume" | "config" | "quiz" | "results";
-
-// ─── Storage helpers ──────────────────────────────────────────────────────────
-
-const storageKey = (id: string) => `qz-quiz-${id}`;
-
-function saveProgress(id: string, data: SavedProgress) {
-  try {
-    localStorage.setItem(storageKey(id), JSON.stringify(data));
-  } catch {}
-}
-
-function loadProgress(id: string): SavedProgress | null {
-  try {
-    const raw = localStorage.getItem(storageKey(id));
-    return raw ? (JSON.parse(raw) as SavedProgress) : null;
-  } catch {
-    return null;
-  }
-}
-
-function clearProgress(id: string) {
-  try {
-    localStorage.removeItem(storageKey(id));
-  } catch {}
-}
+type Screen = "config" | "quiz" | "results";
 
 // ─── Misc helpers ─────────────────────────────────────────────────────────────
 
@@ -106,77 +70,6 @@ function isFreeResponseType(type: QuizQuestion["type"]): boolean {
   );
 }
 
-// ─── Resume prompt ─────────────────────────────────────────────────────────────
-
-function ResumePrompt({
-  savedAt,
-  answered,
-  total,
-  onResume,
-  onRestart,
-}: {
-  savedAt: string;
-  answered: number;
-  total: number;
-  onResume: () => void;
-  onRestart: () => void;
-}) {
-  const [ago, setAgo] = useState("");
-
-  useEffect(() => {
-    const calculate = () => {
-      const diff = Date.now() - new Date(savedAt).getTime();
-      if (diff < 60000) return "just now";
-      if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
-      return `${Math.floor(diff / 3600000)}h ago`;
-    };
-    // Use setTimeout to avoid synchronous state update in effect
-    const timeout = setTimeout(() => setAgo(calculate()), 0);
-    const interval = setInterval(() => setAgo(calculate()), 60000);
-    return () => {
-      clearTimeout(timeout);
-      clearInterval(interval);
-    };
-  }, [savedAt]);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="rounded-lg border border-border/40 bg-card/30 px-6 py-8 text-center max-w-sm mx-auto mt-16"
-    >
-      <div className="flex justify-center mb-4">
-        <div className="rounded-lg size-12 border border-primary/30 bg-primary/5 flex items-center justify-center">
-          <BookOpen className="size-5 text-primary/70" />
-        </div>
-      </div>
-      <p className="font-mono text-sm font-bold text-foreground mb-1">
-        Resume where you left off?
-      </p>
-      <p className="text-[11px] font-mono text-muted-foreground/60 mb-1">
-        {answered} of {total} answered · saved {ago}
-      </p>
-      <div className="flex gap-2 mt-6">
-        <Button
-          variant="outline"
-          size="sm"
-          className="flex-1 h-8 text-[10px] font-mono"
-          onClick={onRestart}
-        >
-          Start over
-        </Button>
-        <Button
-          size="sm"
-          className="flex-1 h-8 text-[10px] font-mono"
-          onClick={onResume}
-        >
-          Continue
-        </Button>
-      </div>
-    </motion.div>
-  );
-}
-
 // QuestionCard and OptionBtn are now QuizQuestionCard / QuizOptionBtn from question-renderer.tsx
 const QuestionCard = QuizQuestionCard;
 
@@ -198,9 +91,6 @@ export default function QuizTakePage({
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const [screen, setScreen] = useState<Screen>("config");
-  const [savedProgress, setSavedProgress] = useState<SavedProgress | null>(
-    null,
-  );
 
   const [config, setConfig] = useState<QuizConfig | null>(null);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
@@ -246,14 +136,13 @@ export default function QuizTakePage({
 
   const handleSubmit = useCallback(() => {
     stopTimer();
-    clearProgress(id);
     const marks: Record<string, boolean | null> = {};
     questions.forEach((q) => {
       if (isFreeResponseType(q.type)) marks[q.id] = null;
     });
     setSelfMarks(marks);
     setScreen("results");
-  }, [id, questions, stopTimer]);
+  }, [questions, stopTimer]);
 
   const handleAnswer = useCallback(
     (val: string) => {
@@ -345,11 +234,6 @@ export default function QuizTakePage({
         setQuiz(q);
         if (q) {
           useBreadcrumbStore.getState().setDynamicTitle(q.title);
-          const saved = loadProgress(id);
-          if (saved && saved.questionIds.length > 0) {
-            setSavedProgress(saved);
-            setScreen("resume");
-          }
         }
       })
       .catch(() => setLoadError("Failed to load quiz."))
@@ -394,30 +278,6 @@ export default function QuizTakePage({
     }, 1000);
     return stopTimer;
   }, [screen, config?.timerMode, config?.timerSeconds, stopTimer]);
-
-  useEffect(() => {
-    if (screen !== "quiz" || !config || questions.length === 0) return;
-    saveProgress(id, {
-      config,
-      current,
-      answers,
-      immediateResults,
-      streak,
-      maxStreak,
-      questionIds: questions.map((q) => q.id),
-      savedAt: new Date().toISOString(),
-    });
-  }, [
-    answers,
-    current,
-    id,
-    config,
-    questions,
-    immediateResults,
-    streak,
-    maxStreak,
-    screen,
-  ]);
 
   const startQuiz = useCallback(
     (cfg: QuizConfig, resumeData?: SavedProgress) => {
