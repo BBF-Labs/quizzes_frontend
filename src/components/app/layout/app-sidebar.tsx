@@ -84,10 +84,6 @@ export function AppSidebar() {
 
   const currentPose = QUBI_POSES[poseIndex];
 
-  const handleNextPose = () => {
-    setPoseIndex((prev) => (prev + 1) % QUBI_POSES.length);
-  };
-
   const handleNewSession = async () => {
     try {
       const session = await createSession.mutateAsync({ mode: "structured" });
@@ -141,11 +137,11 @@ export function AppSidebar() {
     <aside className="hidden border-r border-slate-200 bg-white lg:flex lg:h-screen lg:w-[248px] lg:flex-col lg:sticky lg:top-0 shrink-0">
       {/* Brand & Animated Qubi Mascot Header */}
       <div className="flex h-18 items-center border-b border-slate-100 px-3 py-2 bg-gradient-to-br from-blue-50/60 via-white to-indigo-50/30 relative overflow-hidden shrink-0">
-        {/* Interactive Rotating Qubi Header Card */}
-        <div
-          onClick={handleNextPose}
+        {/* Qubi Mascot — links to the app's home route (/app) */}
+        <Link
+          href="/app"
+          aria-label="Qz home"
           className="group cursor-pointer w-full h-full flex items-center gap-2.5 rounded-2xl border border-slate-200/90 bg-white px-3 py-1.5 shadow-2xs hover:border-[#0C60FC]/40 transition"
-          title="Click to cycle Qubi postures"
         >
           <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-[#F7F9FC] flex items-center justify-center">
             <AnimatePresence mode="wait">
@@ -180,7 +176,7 @@ export function AppSidebar() {
               </motion.div>
             </AnimatePresence>
           </div>
-        </div>
+        </Link>
       </div>
 
       {/* Main Navigation Scroll Area */}
