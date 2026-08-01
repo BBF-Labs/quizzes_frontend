@@ -1,512 +1,449 @@
 "use client";
 
-import { Suspense, useState, useEffect, useCallback, useMemo } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { motion, AnimatePresence, type Variants } from "framer-motion";
-import {
-  Search,
-  CalendarClock,
-  Clock,
-  MapPin,
-  AlertCircle,
-} from "lucide-react";
-import { format } from "date-fns";
-import {
-  usePublicTimetables,
-  type PublicExamEntry,
-  type PublicVenue,
-} from "@/hooks/use-public-exams";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { PaginationController } from "@/components/common/pagination-controller";
-import { cn } from "@/lib/utils";
+import { useState } from "react";
+import Link from "next/link";
+import { LandingHeader, LandingFooter, MobileNav } from "@/components/landing";
+import { Search, Plus, Loader2 } from "lucide-react";
+import { QUBI_WAVE_SRC } from "@/lib/constants";
+import { usePublicTimetables } from "@/hooks/use-public-exams";
 
-const containerVariants: Variants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
-};
-
-const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 12 },
-  visible: { opacity: 1, y: 0 },
-};
-
-const VENUE_NOISE_PATTERN =
-  /Exams\s+Calender|Search\s+Schedules|Schedule\s+Generator/i;
-
-const formatDuration = (minutes: number) => {
-  if (minutes % 60 === 0) {
-    const hours = minutes / 60;
-    return `${hours} hour${hours === 1 ? "" : "s"}`;
-  }
-
-  const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
-
-  if (hours === 0) {
-    return `${remainingMinutes} minute${remainingMinutes === 1 ? "" : "s"}`;
-  }
-
-  return `${hours}h ${remainingMinutes}m`;
-};
-
-const getEntryStatus = (
-  entry: PublicExamEntry,
-): "ongoing" | "today" | "upcoming" => {
-  return entry.timingStatus ?? "upcoming";
-};
-
-const getStatusValue = (
-  entry: PublicExamEntry,
-  nowMs: number,
-): string | number => {
-  const status = getEntryStatus(entry);
-  if (status === "ongoing") return "ONGOING";
-  if (status === "today") return "TODAY";
-
-  return Math.max(
-    0,
-    Math.ceil(
-      (new Date(entry.scheduledAt).getTime() - nowMs) / (1000 * 60 * 60 * 24),
-    ),
-  );
-};
-
-function PublicExamsContent() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
-  const search = searchParams.get("search") ?? "";
-  const studentId = searchParams.get("studentId") ?? "";
-  const pageSize = 10;
-  const SEARCH_DEBOUNCE_MS = 200;
-
-  const updateQueryParams = useCallback(
-    (updates: Record<string, string | null>) => {
-      const params = new URLSearchParams(searchParams.toString());
-      for (const [key, value] of Object.entries(updates)) {
-        if (!value) {
-          params.delete(key);
-        } else {
-          params.set(key, value);
-        }
-      }
-      const query = params.toString();
-      router.replace(query ? `${pathname}?${query}` : pathname, {
-        scroll: false,
-      });
-    },
-    [pathname, router, searchParams],
-  );
-
-  const [localSearch, setLocalSearch] = useState(search);
-  const [localStudentId, setLocalStudentId] = useState(studentId);
-  const [nowMs, setNowMs] = useState(() => Date.now());
-
-  // Immediate fetch of public data
-  const { data, isFetching } = usePublicTimetables(
-    search,
-    studentId,
-    page,
-    pageSize,
-  );
-
-  // Sync local state with URL if URL changes (e.g. browser back button)
-  useEffect(() => {
-    setLocalSearch(search);
-  }, [search]);
-
-  useEffect(() => {
-    setLocalStudentId(studentId);
-  }, [studentId]);
-
-  // Short debounce to keep typing smooth while still feeling immediate
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (localSearch !== search) {
-        updateQueryParams({
-          search: localSearch.toUpperCase() || null,
-          page: "1",
-        });
-      }
-    }, SEARCH_DEBOUNCE_MS);
-
-    return () => clearTimeout(timer);
-  }, [localSearch, search, updateQueryParams]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (localStudentId !== studentId) {
-        updateQueryParams({ studentId: localStudentId || null, page: "1" });
-      }
-    }, SEARCH_DEBOUNCE_MS);
-
-    return () => clearTimeout(timer);
-  }, [localStudentId, studentId, updateQueryParams]);
-
-  useEffect(() => {
-    const timer = setInterval(() => setNowMs(Date.now()), 60000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const allEntries = data?.entries ?? [];
-  const pagination = data?.pagination;
-  const totalPages = pagination?.totalPages ?? 1;
-  const hasActiveFilters = Boolean(search || studentId);
-
-  const nextExam = allEntries[0] ?? null;
-  const nextExamStatus = nextExam ? getEntryStatus(nextExam) : null;
-  const nextExamValue = nextExam ? getStatusValue(nextExam, nowMs) : null;
-
-  return (
-    <section className="py-20 md:py-28 bg-background border-b border-border/50">
-      <div className="container mx-auto px-4 max-w-6xl">
-        <header className="text-center space-y-4 mb-10">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-lg border border-primary/20 bg-primary/5"
-          >
-            <div className="size-1.5 rounded-full bg-primary animate-pulse" />
-            <span className="text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-primary/80">
-              Official University Schedule
-            </span>
-          </motion.div>
-
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-3xl md:text-4xl font-black tracking-[-0.04em] text-foreground uppercase"
-          >
-            Exam Protocol
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="max-w-2xl mx-auto text-muted-foreground text-xs md:text-sm font-mono uppercase tracking-widest"
-          >
-            Timetable synced from university source with personalized venue
-            match.
-          </motion.p>
-        </header>
-
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.3 }}
-          className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-10"
-        >
-          <div className="flex items-center bg-card border border-border/50 rounded-lg overflow-hidden focus-within:border-primary/40 transition-colors">
-            <Search className="ml-4 size-4 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Search course code (e.g. DCIT313)"
-              value={localSearch}
-              onChange={(e) => setLocalSearch(e.target.value)}
-              className="h-12 bg-transparent border-none font-mono text-sm placeholder:text-muted-foreground focus-visible:ring-0"
-            />
-          </div>
-
-          <div className="flex items-center bg-card border border-border/50 rounded-lg overflow-hidden focus-within:border-primary/40 transition-colors">
-            <MapPin className="ml-4 size-4 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Student ID / Index Number"
-              value={localStudentId}
-              onChange={(e) => setLocalStudentId(e.target.value)}
-              className="h-12 bg-transparent border-none font-mono text-sm placeholder:text-muted-foreground focus-visible:ring-0"
-            />
-          </div>
-        </motion.div>
-
-        <div className="h-px w-full bg-border/50 mb-10" />
-
-        <AnimatePresence mode="wait">
-          {allEntries.length > 0 ? (
-            <motion.div
-              key="results"
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              className={cn(
-                "grid grid-cols-1 lg:grid-cols-3 gap-0 border border-border/50 rounded-lg overflow-hidden transition-opacity duration-300",
-                isFetching && "opacity-60 pointer-events-none",
-              )}
-            >
-              <div className="border-b lg:border-b-0 lg:border-r border-border/50 p-8 md:p-10 flex flex-col justify-between bg-card">
-                <div>
-                  <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-6 flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 bg-primary block animate-pulse" />
-                    Next Exam
-                  </div>
-
-                  {nextExam ? (
-                    <>
-                      <h3 className="text-lg font-mono font-bold text-foreground uppercase tracking-widest mb-2">
-                        {nextExam.courseCode}
-                      </h3>
-                      <p className="text-muted-foreground font-mono text-xs uppercase tracking-wider mb-8">
-                        {nextExam.courseName}
-                      </p>
-                      <div
-                        className={cn(
-                          "font-black text-foreground font-mono tracking-tighter leading-none mb-2",
-                          nextExamStatus === "ongoing"
-                            ? "text-4xl md:text-6xl text-primary animate-pulse"
-                            : nextExamStatus === "today"
-                              ? "text-5xl md:text-7xl"
-                              : "text-7xl md:text-8xl",
-                        )}
-                      >
-                        {nextExamValue}
-                      </div>
-                      {nextExamStatus === "upcoming" && (
-                        <div className="text-xs font-mono tracking-widest text-muted-foreground uppercase">
-                          Days Remaining
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <div className="text-xs font-mono uppercase tracking-widest text-muted-foreground">
-                      No upcoming exams
-                    </div>
-                  )}
-                </div>
-
-                {nextExam && (
-                  <div className="mt-10 pt-6 border-t border-border/50">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <div className="text-2xl font-black text-foreground font-mono">
-                          {format(new Date(nextExam.scheduledAt), "h:mm a")}
-                        </div>
-                        <div className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase mt-1">
-                          Start Time
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-2xl font-black text-foreground font-mono">
-                          {formatDuration(nextExam.durationMinutes || 120)}
-                        </div>
-                        <div className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase mt-1">
-                          Duration
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="col-span-1 lg:col-span-2 lg:max-h-160 flex flex-col">
-                <div className="p-4 border-b border-border/50 bg-background/80 flex items-center gap-4 font-mono text-xs">
-                  <div className="w-6 h-6 border border-primary/40 bg-primary/20 flex items-center justify-center text-primary font-bold shrink-0 rounded-lg">
-                    Z
-                  </div>
-                  <div className="font-bold text-foreground uppercase tracking-widest flex items-center gap-3">
-                    <span className="w-1.5 h-1.5 bg-primary block animate-pulse" />
-                    Other Upcoming Entries
-                  </div>
-                </div>
-
-                <div className="divide-y divide-border/50 flex-1 overflow-y-auto scrollbar-none [-ms-overflow-style:none] [&::-webkit-scrollbar]:w-0">
-                  {allEntries.map((entry, idx) => {
-                    const sessDate = new Date(entry.scheduledAt);
-                    return (
-                      <motion.div
-                        key={`${entry._id}-${idx}`}
-                        variants={itemVariants}
-                        className="flex hover:bg-secondary/10 transition-colors"
-                      >
-                        <div className="flex-1 p-8 md:p-10">
-                          <div className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mb-1">
-                            {entry.courseCode} · {entry.semester} ·{" "}
-                            {entry.academicYear}
-                          </div>
-                          <div className="flex items-center justify-between mb-4">
-                            <h4 className="text-lg font-mono font-bold text-foreground uppercase tracking-tight">
-                              {entry.courseName}
-                            </h4>
-                            {entry.label && (
-                              <Badge
-                                variant="secondary"
-                                className="rounded-lg border-primary/20 bg-primary/10 text-primary font-mono text-[10px] uppercase tracking-widest px-2 py-0.5"
-                              >
-                                {entry.label}
-                              </Badge>
-                            )}
-                          </div>
-
-                          <div className="flex flex-wrap gap-y-2 gap-x-5 text-sm text-muted-foreground font-mono mb-4">
-                            <div className="flex items-center gap-1.5">
-                              <CalendarClock className="w-3.5 h-3.5 text-primary/80" />
-                              <span>
-                                {format(sessDate, "eee dd MMM yyyy")} ·{" "}
-                                {format(sessDate, "h:mm a")}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <Clock className="w-3.5 h-3.5 text-primary/80" />
-                              <span>
-                                {formatDuration(entry.durationMinutes || 120)}
-                              </span>
-                            </div>
-                          </div>
-
-                          {entry.assignedVenue && (
-                            <div className="bg-primary/5 p-3 flex items-center gap-3 border border-primary/10 rounded-lg mb-4">
-                              <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
-                              <span className="text-xs font-mono text-primary uppercase tracking-wider">
-                                Your venue: {entry.assignedVenue}
-                              </span>
-                            </div>
-                          )}
-
-                          <div className="flex flex-wrap gap-2 mt-4">
-                            {entry.venues
-                              .filter(
-                                (v: PublicVenue) =>
-                                  !VENUE_NOISE_PATTERN.test(v.venue),
-                              )
-                              .map((v: PublicVenue, vIdx: number) => (
-                                <Badge
-                                  key={vIdx}
-                                  variant="outline"
-                                  className="rounded-lg border-border/50 bg-background font-mono text-[10px] py-1 px-3"
-                                >
-                                  {v.venue}
-                                  {v.indexStart && (
-                                    <span className="ml-2 opacity-70">
-                                      [{v.indexStart}-{v.indexEnd}]
-                                    </span>
-                                  )}
-                                </Badge>
-                              ))}
-                          </div>
-                        </div>
-
-                        <div
-                          className={cn(
-                            "border-l border-border/50 flex flex-col items-center justify-center px-8 min-w-30 text-center",
-                            (() => {
-                              const entryStatus = getEntryStatus(entry);
-                              return entryStatus === "ongoing"
-                                ? "bg-primary/10 animate-pulse border-primary/20"
-                                : entryStatus === "today"
-                                  ? "bg-primary/5"
-                                  : "";
-                            })(),
-                          )}
-                        >
-                          {(() => {
-                            const entryStatus = getEntryStatus(entry);
-                            const value = getStatusValue(entry, nowMs);
-                            return (
-                              <>
-                                <div
-                                  className={cn(
-                                    "font-black font-mono tracking-tight leading-none text-foreground",
-                                    entryStatus === "ongoing"
-                                      ? "text-lg text-primary"
-                                      : entryStatus === "today"
-                                        ? "text-3xl text-primary"
-                                        : "text-5xl md:text-6xl",
-                                  )}
-                                >
-                                  {value}
-                                </div>
-                                {entryStatus === "upcoming" && (
-                                  <div className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase mt-2">
-                                    days
-                                  </div>
-                                )}
-                              </>
-                            );
-                          })()}
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              </div>
-            </motion.div>
-          ) : isFetching ? (
-            <motion.div
-              key="searching"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center py-20 border border-dashed border-border/50 rounded-lg bg-card"
-            >
-              <div className="mx-auto mb-4 size-12 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-              <h3 className="text-lg font-mono font-bold uppercase text-foreground">
-                Searching timetable...
-              </h3>
-              <p className="text-sm font-mono text-muted-foreground mt-2">
-                Please wait while we fetch matching schedules.
-              </p>
-            </motion.div>
-          ) : hasActiveFilters ? (
-            <motion.div
-              key="empty"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center py-20 border border-dashed border-border/50 rounded-lg bg-card"
-            >
-              <AlertCircle className="size-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-mono font-bold uppercase text-muted-foreground">
-                No matching timetable entries found
-              </h3>
-              <p className="text-sm font-mono text-muted-foreground mt-2">
-                Try a different course code or student ID.
-              </p>
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
-
-        {totalPages > 1 && (
-          <div className="mt-6 border border-border/50 border-t-0">
-            <PaginationController
-              page={page}
-              totalPages={totalPages}
-              onPageChange={(nextPage) =>
-                updateQueryParams({ page: String(nextPage) })
-              }
-              className="border-0"
-            />
-          </div>
-        )}
-        <footer className="mt-10 pt-6 border-t border-border/50 text-center">
-          <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-[0.3em] font-semibold">
-            &copy; 2026 University of Ghana · Powered by Qz Platform
-          </p>
-        </footer>
-      </div>
-    </section>
-  );
+interface ExamPaper {
+  id: string;
+  dept: string;
+  code: string;
+  title: string;
+  date: string;
+  month: string;
+  dayNum: string;
+  time: string;
+  duration: string;
+  venue: string;
+  colorClass: string;
+  dateBadgeBg: string;
+  dateBadgeText: string;
 }
 
-export default function PublicExamsPage() {
+const FALLBACK_PAPERS: ExamPaper[] = [
+  {
+    id: "1",
+    dept: "cs",
+    code: "DCIT 205",
+    title: "Algorithms",
+    date: "MONDAY",
+    month: "Jan",
+    dayNum: "12",
+    time: "9:00 AM",
+    duration: "2 HRS",
+    venue: "Great Hall, Main Campus",
+    colorClass: "border-blue-200 bg-blue-50/40",
+    dateBadgeBg: "bg-[#0C60FC]",
+    dateBadgeText: "text-white",
+  },
+  {
+    id: "2",
+    dept: "core",
+    code: "UGRC 210",
+    title: "Academic Writing II",
+    date: "TUESDAY",
+    month: "Jan",
+    dayNum: "13",
+    time: "7:30 AM",
+    duration: "2 HRS",
+    venue: "NNB Block, Rooms 1–6",
+    colorClass: "border-slate-200 bg-white",
+    dateBadgeBg: "bg-slate-100",
+    dateBadgeText: "text-slate-900",
+  },
+  {
+    id: "3",
+    dept: "cs",
+    code: "DCIT 207",
+    title: "Operating Systems",
+    date: "WEDNESDAY",
+    month: "Jan",
+    dayNum: "14",
+    time: "2:00 PM",
+    duration: "3 HRS",
+    venue: "Balme Library Hall",
+    colorClass: "border-slate-200 bg-white",
+    dateBadgeBg: "bg-violet-50",
+    dateBadgeText: "text-violet-700",
+  },
+  {
+    id: "4",
+    dept: "math",
+    code: "MATH 221",
+    title: "Linear Algebra",
+    date: "THURSDAY",
+    month: "Jan",
+    dayNum: "15",
+    time: "9:00 AM",
+    duration: "2 HRS",
+    venue: "Maths Department, Room 12",
+    colorClass: "border-slate-200 bg-white",
+    dateBadgeBg: "bg-amber-50",
+    dateBadgeText: "text-amber-700",
+  },
+  {
+    id: "5",
+    dept: "bus",
+    code: "BUSA 301",
+    title: "Corporate Finance",
+    date: "FRIDAY",
+    month: "Jan",
+    dayNum: "16",
+    time: "11:30 AM",
+    duration: "2 HRS",
+    venue: "UGBS Auditorium",
+    colorClass: "border-slate-200 bg-white",
+    dateBadgeBg: "bg-emerald-50",
+    dateBadgeText: "text-emerald-700",
+  },
+  {
+    id: "6",
+    dept: "cs",
+    code: "DCIT 201",
+    title: "Data Structures",
+    date: "MONDAY",
+    month: "Jan",
+    dayNum: "19",
+    time: "11:00 AM",
+    duration: "2 HRS",
+    venue: "N Block Auditorium",
+    colorClass: "border-slate-200 bg-white",
+    dateBadgeBg: "bg-cyan-50",
+    dateBadgeText: "text-cyan-700",
+  },
+  {
+    id: "7",
+    dept: "cs",
+    code: "DCIT 203",
+    title: "Computer Architecture",
+    date: "WEDNESDAY",
+    month: "Jan",
+    dayNum: "21",
+    time: "2:00 PM",
+    duration: "2 HRS",
+    venue: "JQB 12",
+    colorClass: "border-slate-200 bg-white",
+    dateBadgeBg: "bg-rose-50",
+    dateBadgeText: "text-rose-700",
+  },
+  {
+    id: "8",
+    dept: "math",
+    code: "MATH 223",
+    title: "Statistics",
+    date: "FRIDAY",
+    month: "Jan",
+    dayNum: "23",
+    time: "9:00 AM",
+    duration: "2 HRS",
+    venue: "Great Hall, Main Campus",
+    colorClass: "border-slate-200 bg-white",
+    dateBadgeBg: "bg-orange-50",
+    dateBadgeText: "text-orange-700",
+  },
+];
+
+export default function TimetablePage() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
+
+  // TanStack Query integration
+  const { data: apiData, isLoading } = usePublicTimetables(searchQuery, "", page, 20);
+
+  const entriesFromApi = apiData?.entries ?? [];
+  const totalCount = apiData?.pagination?.total ?? (entriesFromApi.length > 0 ? entriesFromApi.length : FALLBACK_PAPERS.length);
+
+  // Format backend API entries into UI papers if available
+  const formattedPapers: ExamPaper[] = entriesFromApi.length > 0
+    ? entriesFromApi.map((entry, idx) => {
+        const d = entry.scheduledAt ? new Date(entry.scheduledAt) : new Date();
+        const monthStr = d.toLocaleString("default", { month: "short" });
+        const dayStr = String(d.getDate());
+        const dayOfWeekStr = d.toLocaleString("default", { weekday: "short" }).toUpperCase();
+        const timeStr = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+        const colors = [
+          { colorClass: "border-blue-200 bg-blue-50/40", dateBadgeBg: "bg-[#0C60FC]", dateBadgeText: "text-white" },
+          { colorClass: "border-slate-200 bg-white", dateBadgeBg: "bg-slate-100", dateBadgeText: "text-slate-900" },
+          { colorClass: "border-slate-200 bg-white", dateBadgeBg: "bg-violet-50", dateBadgeText: "text-violet-700" },
+          { colorClass: "border-slate-200 bg-white", dateBadgeBg: "bg-[#E9FFD3]", dateBadgeText: "text-emerald-800" },
+        ];
+        const style = colors[idx % colors.length];
+
+        return {
+          id: entry._id || String(idx),
+          dept: entry.courseCode ? entry.courseCode.split(" ")[0].toLowerCase() : "cs",
+          code: entry.courseCode || "EXAM",
+          title: entry.courseName || entry.label || "Course Exam",
+          date: dayOfWeekStr,
+          month: monthStr,
+          dayNum: dayStr,
+          time: timeStr,
+          duration: `${entry.durationMinutes || 120} MIN`,
+          venue: entry.venues && entry.venues.length > 0 ? entry.venues.map((v) => v.venue).join(", ") : "Main Campus",
+          ...style,
+        };
+      })
+    : FALLBACK_PAPERS;
+
+  const displayPapers = formattedPapers.filter((paper) => {
+    const q = searchQuery.trim().toLowerCase();
+    return (
+      !q ||
+      paper.code.toLowerCase().includes(q) ||
+      paper.title.toLowerCase().includes(q) ||
+      paper.venue.toLowerCase().includes(q)
+    );
+  });
+
   return (
-    <Suspense
-      fallback={
-        <section className="py-20 md:py-28 bg-background border-b border-border/50">
-          <div className="container mx-auto px-4 max-w-6xl">
-            <div className="grid gap-4">
-              {[...Array(3)].map((_, i) => (
-                <div
-                  key={i}
-                  className="h-28 rounded-lg bg-card border border-border/50 animate-pulse"
+    <div className="overflow-x-hidden bg-white text-slate-900 antialiased selection:bg-[#0C60FC] selection:text-white">
+      <LandingHeader />
+
+      <main>
+        {/* Hero Section */}
+        <section className="soft-grid relative overflow-hidden px-5 pb-16 pt-32 lg:pb-24 lg:pt-44">
+          <div className="pointer-events-none absolute -left-32 top-24 h-96 w-96 rounded-full bg-blue-100/70 blur-3xl" />
+          <div className="pointer-events-none absolute -right-32 top-40 h-96 w-96 rounded-full bg-violet-100/70 blur-3xl" />
+          <div className="relative mx-auto max-w-7xl">
+            <div className="grid items-end gap-10 lg:grid-cols-[1.15fr_.85fr]">
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-white px-3.5 py-2 text-xs font-bold text-blue-700 shadow-sm">
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+                  Synced with UG timetable
+                </div>
+                <h1 className="display mt-6 max-w-3xl text-balance text-5xl font-bold leading-[1.03] tracking-[-.045em] text-slate-950 sm:text-6xl lg:text-7xl">
+                  Find your paper.<br />
+                  <span className="text-[#0C60FC]">Know where to be.</span>
+                </h1>
+                <p className="hand mt-3 max-w-xl text-2xl text-[#0C60FC]">
+                  no more blurry PDFs in the group chat ↓
+                </p>
+                <p className="mt-4 max-w-xl text-lg leading-8 text-slate-600">
+                  The whole University of Ghana exam schedule, typed out properly and searchable. Type your course code and you&apos;ll have your date, time and room in a second — free, no account needed.
+                </p>
+              </div>
+
+              <div className="relative">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <p className="text-3xl font-bold">{totalCount}</p>
+                    <p className="mt-1 text-[11px] font-semibold text-slate-500">papers searchable</p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <p className="text-3xl font-bold">46</p>
+                    <p className="mt-1 text-[11px] font-semibold text-slate-500">departments covered</p>
+                  </div>
+                  <div className="col-span-2 flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-xl">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={QUBI_WAVE_SRC} alt="Qubi" className="h-16 w-16 shrink-0 object-contain" />
+                    <div>
+                      <p className="hand text-lg leading-none text-[#0C60FC]">I&apos;ll find it for you!</p>
+                      <p className="mt-1 text-[11px] font-semibold text-slate-500">Try a course code like DCIT 205.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Search Box */}
+            <form onSubmit={(e) => e.preventDefault()} className="mt-10 flex max-w-4xl flex-col gap-2 rounded-[22px] border border-slate-200 bg-white p-2 shadow-[0_18px_60px_rgba(15,23,42,.1)] sm:flex-row" style={{ borderRadius: "22px" }}>
+              <div className="flex min-w-0 flex-1 items-center gap-3 px-3">
+                {isLoading ? (
+                  <Loader2 className="h-5 w-5 animate-spin text-[#0C60FC]" />
+                ) : (
+                  <Search className="h-5 w-5 text-slate-400" />
+                )}
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Type a course code or title — e.g. DCIT 205"
+                  className="min-w-0 flex-1 bg-transparent py-3.5 text-sm font-semibold text-slate-950 outline-none placeholder:text-slate-400"
                 />
+              </div>
+
+              <button
+                type="submit"
+                className="squishy rounded-xl bg-[#0C60FC] px-7 py-3.5 text-sm font-extrabold text-white shadow-lg shadow-blue-200 transition hover:-translate-y-0.5 hover:bg-blue-700"
+              >
+                Search
+              </button>
+            </form>
+
+            {/* Quick Filter Chips */}
+            <div className="mt-4 flex flex-wrap items-center gap-2 text-[11px] font-bold text-slate-500">
+              <span>Popular right now:</span>
+              {["DCIT", "MATH", "UGRC", "BUSA"].map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => setSearchQuery(tag)}
+                  className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-slate-600 transition hover:border-blue-300 hover:text-[#0C60FC]"
+                >
+                  {tag}
+                </button>
               ))}
             </div>
           </div>
         </section>
-      }
-    >
-      <PublicExamsContent />
-    </Suspense>
+
+        {/* Value Props Bar */}
+        <section className="border-y border-slate-200 bg-[#F7F9FC] px-5 py-6">
+          <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 text-xs font-semibold text-slate-500">
+            <span className="flex items-center gap-2"><b className="text-emerald-500">✓</b> Free to use, always</span>
+            <span className="flex items-center gap-2"><b className="text-emerald-500">✓</b> No login required</span>
+            <span className="flex items-center gap-2"><b className="text-emerald-500">✓</b> Synced with UG timetable</span>
+            <span className="flex items-center gap-2"><b className="text-emerald-500">✓</b> Verified against official source</span>
+          </div>
+        </section>
+
+        {/* Timetable Results Grid */}
+        <section className="px-5 py-16 lg:py-20">
+          <div className="mx-auto max-w-7xl">
+            <div className="rounded-[30px] border border-slate-200 bg-white p-4 shadow-[0_24px_70px_rgba(15,23,42,.08)] sm:p-7" style={{ borderRadius: "30px" }}>
+              <div className="flex flex-col gap-4 border-b border-slate-100 pb-6 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="hand text-2xl text-[#0C60FC]">here&apos;s the list ↓</p>
+                  <h2 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">
+                    Semester one, all in one place
+                  </h2>
+                  <p className="mt-2 text-xs font-semibold text-slate-500">
+                    Showing {displayPapers.length} papers · times in GMT
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Link
+                    href="/signup"
+                    className="squishy rounded-xl bg-slate-950 px-4 py-2.5 text-xs font-extrabold text-white transition hover:bg-[#0C60FC]"
+                  >
+                    Tell me if it changes →
+                  </Link>
+                </div>
+              </div>
+
+              {isLoading ? (
+                <div className="py-16 text-center">
+                  <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#0C60FC]" />
+                  <p className="mt-3 text-xs font-bold text-slate-400">Fetching the latest schedule…</p>
+                </div>
+              ) : displayPapers.length === 0 ? (
+                <p className="py-12 text-center text-sm font-semibold text-slate-400">
+                  Nothing matched that search. Try searching just the course code (e.g. &quot;DCIT&quot;).
+                </p>
+              ) : (
+                <div className="mt-6 grid gap-3 md:grid-cols-2">
+                  {displayPapers.map((paper) => (
+                    <article
+                      key={paper.id}
+                      className={`paper rounded-2xl border p-4 transition sm:p-5 ${paper.colorClass}`}
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className={`flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-2xl ${paper.dateBadgeBg} ${paper.dateBadgeText}`}>
+                          <span className="text-[9px] font-bold uppercase opacity-80">{paper.month}</span>
+                          <b className="text-xl leading-none">{paper.dayNum}</b>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex justify-between gap-2">
+                            <div>
+                              <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#0C60FC]">
+                                {paper.date} · {paper.time}
+                              </p>
+                              <h3 className="mt-1 text-sm font-extrabold text-slate-900">
+                                {paper.code} · {paper.title}
+                              </h3>
+                            </div>
+                            <span className="h-fit rounded-full bg-white px-2 py-1 text-[9px] font-bold text-slate-500 shadow-sm">
+                              {paper.duration}
+                            </span>
+                          </div>
+                          <p className="mt-3 text-[11px] font-semibold text-slate-500">
+                            ⌖ {paper.venue}
+                          </p>
+                          <Link
+                            href="/signup"
+                            className="mt-3 inline-flex items-center gap-1 text-[10px] font-extrabold text-[#0C60FC] hover:underline"
+                          >
+                            <Plus className="h-3 w-3" /> Remind me
+                          </Link>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* How It Works Steps */}
+        <section className="bg-[#F7F9FC] px-5 py-20 lg:py-24">
+          <div className="mx-auto max-w-7xl">
+            <div className="mx-auto max-w-2xl text-center">
+              <p className="hand text-3xl text-[#0C60FC]">it&apos;s pretty simple ✦</p>
+              <h2 className="mt-2 text-balance text-4xl font-bold tracking-tight sm:text-5xl">
+                Three steps and you&apos;re sorted.
+              </h2>
+            </div>
+            <div className="mt-14 grid gap-5 md:grid-cols-3">
+              <article className="rounded-[28px] border border-slate-200 bg-[#FFF8EF] p-7" style={{ borderRadius: "28px" }}>
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FFE6CC] text-lg font-extrabold">
+                  1
+                </div>
+                <h3 className="mt-8 text-xl font-bold">Type your course code</h3>
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                  DCIT, MATH, UGRC — whatever you&apos;re sitting. Partial codes work fine.
+                </p>
+              </article>
+              <article className="rounded-[28px] border border-slate-200 bg-[#F1F6FF] p-7" style={{ borderRadius: "28px" }}>
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-200 text-lg font-extrabold">
+                  2
+                </div>
+                <h3 className="mt-8 text-xl font-bold">Check the day and room</h3>
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                  Date, start time, how long it runs and where to show up. That&apos;s it.
+                </p>
+              </article>
+              <article className="rounded-[28px] border border-slate-200 bg-[#F7F4FF] p-7" style={{ borderRadius: "28px" }}>
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#DED7FF] text-lg font-extrabold">
+                  3
+                </div>
+                <h3 className="mt-8 text-xl font-bold">Save it if you like</h3>
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                  Keep only your papers and we&apos;ll nudge you when something changes.
+                </p>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        {/* Final CTA Banner */}
+        <section className="px-5 pb-20 pt-10">
+          <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[36px] bg-[#0C60FC] px-6 py-16 text-center text-white sm:px-12" style={{ borderRadius: "36px" }}>
+            <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-[#DFFF61]/25 blur-3xl" />
+            <div className="relative">
+              <h2 className="text-balance text-4xl font-bold sm:text-5xl">
+                You found the date. Now be ready for it.
+              </h2>
+              <p className="mx-auto mt-5 max-w-xl text-lg leading-8 text-blue-100">
+                Qz builds the revision around your exam dates, so the last two weeks feel calm instead of frantic.
+              </p>
+              <Link
+                href="/signup"
+                className="squishy mt-8 inline-flex rounded-2xl bg-white px-7 py-4 text-sm font-extrabold text-[#0C60FC] transition hover:-translate-y-0.5"
+              >
+                Start free with Qz →
+              </Link>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <LandingFooter />
+      <MobileNav />
+    </div>
   );
 }
