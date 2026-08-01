@@ -2,8 +2,16 @@
 
 import Link from "next/link";
 import { LOGO_SRC, QUBI_RUN_SRC } from "@/lib/constants";
+import { useAuth } from "@/contexts/auth-context";
 
 export function LandingFooter() {
+  const { user, isLoading } = useAuth();
+  // Show the CTA block only to logged-out visitors; hide it once we know
+  // the user is signed in (no point pitching "Start studying free" to
+  // someone already in the app). While auth state is hydrating we
+  // default to hidden to avoid flashing the CTA on, then off.
+  const showCta = !isLoading && !user;
+
   return (
     <footer className="px-3 pb-3">
       <div
@@ -13,40 +21,58 @@ export function LandingFooter() {
         <div className="pointer-events-none absolute -right-32 -top-40 h-96 w-96 rounded-full bg-[#0C60FC]/30 blur-3xl" />
         <div className="relative mx-auto max-w-7xl">
           <div className="grid gap-10 border-b border-white/10 pb-12 lg:grid-cols-[1.25fr_.75fr] lg:items-end">
-            <div>
-              <p className="hand text-3xl text-[#DFFF61]">your comeback starts here</p>
-              <h2 className="mt-2 max-w-3xl text-balance text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl">
-                Tired of feeling behind?
-              </h2>
-              <p className="mt-4 max-w-xl text-sm leading-6 text-slate-400 sm:text-base">
-                Bring your syllabus. Qz will help you turn it into a plan you can actually finish.
-              </p>
-              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-                <Link
-                  href="/signup"
-                  className="squishy rounded-2xl bg-[#DFFF61] px-6 py-4 text-center text-sm font-extrabold text-slate-950"
-                >
-                  Start studying free →
-                </Link>
-                <a
-                  href="#features"
-                  className="rounded-2xl border border-white/15 px-6 py-4 text-center text-sm font-extrabold text-white hover:bg-white/5"
-                >
-                  See what Qz can do
-                </a>
+            {showCta ? (
+              <>
+                <div>
+                  <p className="hand text-3xl text-[#DFFF61]">your comeback starts here</p>
+                  <h2 className="mt-2 max-w-3xl text-balance text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl">
+                    Tired of feeling behind?
+                  </h2>
+                  <p className="mt-4 max-w-xl text-sm leading-6 text-slate-400 sm:text-base">
+                    Bring your syllabus. Qz will help you turn it into a plan you can actually finish.
+                  </p>
+                  <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+                    <Link
+                      href="/signup"
+                      className="squishy rounded-2xl bg-[#DFFF61] px-6 py-4 text-center text-sm font-extrabold text-slate-950"
+                    >
+                      Start studying free →
+                    </Link>
+                    <a
+                      href="#features"
+                      className="rounded-2xl border border-white/15 px-6 py-4 text-center text-sm font-extrabold text-white hover:bg-white/5"
+                    >
+                      See what Qz can do
+                    </a>
+                  </div>
+                </div>
+                <div className="relative hidden h-52 lg:block">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={QUBI_RUN_SRC}
+                    alt="Qubi running toward the next study session"
+                    className="qubi-run absolute -bottom-12 right-8 h-64 w-64 object-contain"
+                  />
+                  <span className="hand absolute right-56 top-3 -rotate-6 text-2xl text-blue-300">
+                    race you inside! ↘
+                  </span>
+                </div>
+              </>
+            ) : (
+              // Logged-in visitors — keep Qubi as a friendly decoration but
+              // skip the pitch copy. Left side collapses so the grid stays balanced.
+              <div className="relative hidden h-52 lg:ml-auto lg:block">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={QUBI_RUN_SRC}
+                  alt="Qubi running toward the next study session"
+                  className="qubi-run absolute -bottom-12 right-8 h-64 w-64 object-contain"
+                />
+                <span className="hand absolute right-56 top-3 -rotate-6 text-2xl text-blue-300">
+                  see you in there! ↘
+                </span>
               </div>
-            </div>
-            <div className="relative hidden h-52 lg:block">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={QUBI_RUN_SRC}
-                alt="Qubi running toward the next study session"
-                className="qubi-run absolute -bottom-12 right-8 h-64 w-64 object-contain"
-              />
-              <span className="hand absolute right-56 top-3 -rotate-6 text-2xl text-blue-300">
-                race you inside! ↘
-              </span>
-            </div>
+            )}
           </div>
           <div className="grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-[1.35fr_repeat(4,1fr)]">
             <div>
