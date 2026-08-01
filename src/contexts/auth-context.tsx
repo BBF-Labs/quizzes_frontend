@@ -56,14 +56,10 @@ interface AuthContextValue {
   oauthLogin: (
     provider: "google",
     payload: { idToken: string; referralCode?: string },
-  ) => Promise<OAuthLoginResult>;
+  ) => Promise<void>;
   logout: () => Promise<void>;
   updateSession: () => void;
 }
-
-export type OAuthLoginResult =
-  | { status: "logged_in" }
-  | { status: "merge_required" };
 
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -265,23 +261,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           user?: User;
           accessToken?: string;
           refreshToken?: string;
-          status?: "logged_in" | "merge_required";
+          status?: "logged_in";
         };
       }>(`/auth/oauth/${provider}`, { idToken, referralCode });
 
       const body = res.data?.data;
-      if (!body) throw new Error("OAuth login failed");
+      if (
+        !body ||
+        !body.user ||
+        !body.accessToken ||
+        !body.refreshToken ||
+        body.status !== "logged_in"
+      ) {
+        throw new Error("OAuth login failed");
+      }
       return body;
     },
     onSuccess: async (body) => {
-      if (body.status === "logged_in" && body.user && body.accessToken && body.refreshToken) {
-        setSession(body.user, body.accessToken, body.refreshToken);
-        signalSessionActive();
-        qc.setQueryData(queryKeys.authSession, body.user);
-        await qc.invalidateQueries({
-          queryKey: [...queryKeys.authSession, "validation"],
-        });
-      }
+      setSession(body.user!, body.accessToken!, body.refreshToken!);
+      signalSessionActive();
+      qc.setQueryData(queryKeys.authSession, body.user!);
+      await qc.invalidateQueries({
+        queryKey: [...queryKeys.authSession, "validation"],
+      });
     },
   });
 
@@ -289,16 +291,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     (
       provider: "google",
       payload: { idToken: string; referralCode?: string },
-    ): Promise<OAuthLoginResult> => {
-      return oauthLoginMutation
-        .mutateAsync({ provider, ...payload })
-        .then((body) => {
-          if (body.status === "merge_required") {
-            return { status: "merge_required" } as const;
-          }
-          return { status: "logged_in" } as const;
-        });
-    },
+    ): Promise<void> =>
+      oauthLoginMutation.mutateAsync({ provider, ...payload }).then(() => undefined),
     [oauthLoginMutation],
   );
 
