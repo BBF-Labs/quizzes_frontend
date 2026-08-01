@@ -1,26 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
-import {
-  CheckCircle2,
-  ChevronLeft,
-  Flame,
-  Loader2,
-  RotateCcw,
-  XCircle,
-  Zap,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  QuestionMarkdown,
-  QuestionTypeBadge,
-} from "@/components/app/quizzes/question-renderer";
+import { CheckCircle2, XCircle, RotateCcw, ArrowRight } from "lucide-react";
+import { QuestionMarkdown, QuestionTypeBadge } from "@/components/app/quizzes/question-renderer";
 import { answersMatch } from "@/lib/quiz-answer";
-import type {
-  QuizConfig,
-  QuizQuestion,
-  ZGradeResultItem,
-} from "@/types/session";
+import type { QuizConfig, QuizQuestion, ZGradeResultItem } from "@/types/session";
 
 function isFreeResponseType(type: QuizQuestion["type"]): boolean {
   return (
@@ -38,14 +23,12 @@ function ReviewItem({
   index,
   zResult,
   selfMark,
-  onSelfMark,
 }: {
   q: QuizQuestion;
   given: string;
   index: number;
   zResult?: ZGradeResultItem;
   selfMark: boolean | null;
-  onSelfMark?: (v: boolean) => void;
 }) {
   const autoGrade =
     (q.type === "mcq" || q.type === "true_false") && q.correctAnswer
@@ -56,146 +39,75 @@ function ReviewItem({
     q.type === "mcq" || q.type === "true_false"
       ? autoGrade
       : zGraded
-        ? zResult!.isCorrect
-        : selfMark;
-  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
-  const borderColor =
-    isCorrect === true
-      ? "border-green-500/30 bg-green-500/5"
-      : isCorrect === false
-        ? "border-red-500/30 bg-red-500/5"
-        : "border-border/30 bg-card/20";
+      ? zResult!.isCorrect
+      : selfMark;
 
   return (
-    <div className={`rounded-lg border px-4 py-3 ${borderColor}`}>
-      <div className="flex items-center justify-between gap-3 mb-2">
-        <QuestionTypeBadge type={q.type} />
-        <div className="flex items-center gap-1.5 shrink-0">
-          <span className="text-[9px] font-mono text-muted-foreground/40">
-            Q{index + 1}
+    <div
+      className={`rounded-[24px] border p-5 shadow-xs transition space-y-3 ${
+        isCorrect === true
+          ? "border-emerald-200 bg-emerald-50/40"
+          : isCorrect === false
+          ? "border-rose-200 bg-rose-50/40"
+          : "border-slate-200 bg-white"
+      }`}
+    >
+      {/* Question Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span
+            className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold text-white ${
+              isCorrect ? "bg-emerald-500" : "bg-rose-500"
+            }`}
+          >
+            {isCorrect ? "✓" : "×"}
           </span>
-          {zGraded && (
-            <span className="text-[9px] font-mono text-primary/60 flex items-center gap-0.5">
-              <Zap className="size-2.5" /> Z: {zResult!.score}%
-            </span>
+          <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500">
+            QUESTION {index + 1} · {q.type.toUpperCase()}
+          </span>
+        </div>
+        <span className="text-xs font-extrabold font-mono text-slate-400">
+          {isCorrect ? "+5 pts" : "0 pts"}
+        </span>
+      </div>
+
+      {/* Question Text */}
+      <h3 className="text-sm font-bold text-slate-950 leading-snug">
+        <QuestionMarkdown content={q.question} />
+      </h3>
+
+      {/* Given vs Correct Answer Cards */}
+        <div className={`grid gap-3 pt-1 ${isCorrect === true ? "sm:grid-cols-1" : "sm:grid-cols-2"}`}>
+          {isCorrect !== true && (
+            <div className="rounded-2xl border border-slate-200 bg-white p-3.5 space-y-1">
+              <p className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400">
+                YOUR ANSWER
+              </p>
+              <p className="text-xs font-bold text-rose-600">
+                {given || "(No answer given)"}
+              </p>
+            </div>
           )}
-          {isCorrect === true && (
-            <CheckCircle2 className="size-4 text-green-500" />
-          )}
-          {isCorrect === false && <XCircle className="size-4 text-red-500" />}
+
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-3.5 space-y-1">
+          <p className="text-[9px] font-extrabold uppercase tracking-widest text-emerald-700">
+            CORRECT ANSWER
+          </p>
+          <p className="text-xs font-bold text-emerald-900">
+            {q.correctAnswer || "See explanation below"}
+          </p>
         </div>
       </div>
 
-      <div className="mb-3">
-        <QuestionMarkdown content={q.question} className="text-[11px]" />
-      </div>
-
-      {(q.type === "mcq" || q.type === "true_false") &&
-        (() => {
-          const opts =
-            q.type === "true_false" && (!q.options || q.options.length === 0)
-              ? ["True", "False"]
-              : (q.options ?? []);
-          return opts.length > 0 ? (
-            <div className="flex flex-col gap-1 mb-1">
-              {opts.map((opt, i) => {
-                const isSelected =
-                  q.type === "true_false"
-                    ? answersMatch("true_false", given, opt)
-                    : given === opt;
-                const isRight =
-                  q.type === "true_false"
-                    ? answersMatch("true_false", opt, q.correctAnswer)
-                    : opt === q.correctAnswer;
-                return (
-                  <div
-                    key={i}
-                    className={`flex items-center gap-2 px-2 py-0.5 text-[10px] font-mono ${
-                      isRight
-                        ? "text-green-500"
-                        : isSelected
-                          ? "text-red-400"
-                          : "text-muted-foreground/30"
-                    }`}
-                  >
-                    <span>{letters[i]}.</span>
-                    <QuestionMarkdown
-                      content={opt}
-                      className="text-[10px] flex-1"
-                    />
-                    {isRight && (
-                      <span className="ml-auto text-[9px] uppercase tracking-widest text-green-500/60">
-                        correct
-                      </span>
-                    )}
-                    {isSelected && !isRight && (
-                      <span className="ml-auto text-[9px] uppercase tracking-widest text-red-400/60">
-                        yours
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ) : null;
-        })()}
-
-      {isFreeResponseType(q.type) && (
-        <div className="space-y-2">
-          <div>
-            <p className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40 mb-0.5">
-              Your answer
-            </p>
-            <p className="text-[11px] font-mono text-foreground/80 leading-relaxed">
-              {given || (
-                <span className="text-muted-foreground/30 italic">
-                  No answer
-                </span>
-              )}
-            </p>
-          </div>
-          {q.correctAnswer && (
-            <div>
-              <p className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40 mb-0.5">
-                Reference answer
-              </p>
-              <QuestionMarkdown
-                content={q.correctAnswer}
-                className="text-[11px] text-green-500"
-              />
-            </div>
-          )}
-          {zGraded && (
-            <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 mt-2">
-              <p className="text-[9px] font-mono uppercase tracking-widest text-primary/60 mb-1 flex items-center gap-1">
-                <Zap className="size-2.5" /> Z Feedback
-              </p>
-              <p className="text-[11px] font-mono text-foreground/80 leading-relaxed">
-                {zResult!.feedback}
-              </p>
-            </div>
-          )}
-          {!zGraded && selfMark === null && onSelfMark && (
-            <div className="flex gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => onSelfMark(true)}
-                className="rounded-lg flex items-center gap-1 text-[10px] font-mono border border-green-500/40 text-green-500 px-2 py-1 hover:bg-green-500/10 transition-colors"
-              >
-                <CheckCircle2 className="size-3" />
-                Correct
-              </button>
-              <button
-                type="button"
-                onClick={() => onSelfMark(false)}
-                className="rounded-lg flex items-center gap-1 text-[10px] font-mono border border-red-500/40 text-red-400 px-2 py-1 hover:bg-red-500/10 transition-colors"
-              >
-                <XCircle className="size-3" />
-                Incorrect
-              </button>
-            </div>
-          )}
+      {/* Explanation Box */}
+      {q.explanation && (
+        <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-4 border-l-4 border-l-[#0C60FC] space-y-1">
+          <p className="text-[9px] font-extrabold uppercase tracking-widest text-[#0C60FC]">
+            WHY
+          </p>
+          <p className="text-xs leading-5 text-slate-700 font-semibold">
+            {q.explanation}
+          </p>
         </div>
       )}
     </div>
@@ -204,203 +116,163 @@ function ReviewItem({
 
 export function QuizReviewResults({
   questions,
-  answers,
-  selfMarks,
-  onSelfMark,
-  zResults,
-  onGradeWithZ,
-  isGrading,
-  onRetake,
-  quizTitle,
-  passingScore,
-  maxStreak,
+  userAnswers,
+  zGradingResults = [],
+  selfMarkings = {},
   config,
-  canUseZGrading = true,
-  onBack,
+  onReset,
+  quizTitle = "Quiz",
 }: {
   questions: QuizQuestion[];
-  answers: Record<string, string>;
-  selfMarks: Record<string, boolean | null>;
-  onSelfMark: (id: string, v: boolean) => void;
-  zResults: Record<string, ZGradeResultItem>;
-  onGradeWithZ: () => void;
-  isGrading: boolean;
-  onRetake: () => void;
-  quizTitle: string;
-  passingScore: number;
-  maxStreak: number;
+  userAnswers: Record<string, string>;
+  zGradingResults?: ZGradeResultItem[];
+  selfMarkings?: Record<string, boolean>;
   config: QuizConfig;
-  canUseZGrading?: boolean;
-  onBack?: () => void;
+  onReset: () => void;
+  quizTitle?: string;
 }) {
-  const seenIds = new Set<string>();
-  const seenTexts = new Set<string>();
-  const uniqueQuestions = questions.filter((q) => {
-    const textKey = q.question?.trim().toLowerCase() ?? "";
-    if ((q.id && seenIds.has(q.id)) || (textKey && seenTexts.has(textKey)))
-      return false;
-    if (q.id) seenIds.add(q.id);
-    if (textKey) seenTexts.add(textKey);
-    return true;
-  });
+  let totalScore = 0;
+  let correctCount = 0;
 
-  const graded = uniqueQuestions.map((q) => {
+  questions.forEach((q) => {
+    const given = userAnswers[q.id] || "";
     if (q.type === "mcq" || q.type === "true_false") {
-      const ans = answers[q.id] ?? "";
-      if (!ans) return null;
-      const correct = q.correctAnswer;
-      return correct ? answersMatch(q.type, ans, String(correct)) : null;
+      if (answersMatch(q.type, given, q.correctAnswer)) {
+        correctCount += 1;
+        totalScore += 5;
+      }
+    } else {
+      const zRes = zGradingResults.find((z) => z.questionId === q.id);
+      if (zRes?.isCorrect || selfMarkings[q.id]) {
+        correctCount += 1;
+        totalScore += 5;
+      }
     }
-    const z = zResults[q.id];
-    if (z) return z.isCorrect;
-    const sm = selfMarks[q.id];
-    return sm ?? null;
   });
 
-  const gradedCount = graded.filter((g) => g !== null).length;
-  const correctCount = graded.filter((g) => g === true).length;
-  const pct =
-    gradedCount > 0 ? Math.round((correctCount / gradedCount) * 100) : 0;
-  const pass = pct >= passingScore;
-
-  const unansweredFreeText = uniqueQuestions.filter(
-    (q) =>
-      isFreeResponseType(q.type) &&
-      answers[q.id] &&
-      !zResults[q.id] &&
-      selfMarks[q.id] == null,
-  );
-  const hasUngradedFreeText = unansweredFreeText.length > 0;
-  const isPctFinal =
-    gradedCount === uniqueQuestions.filter((q) => !!answers[q.id]).length;
-  const allowManualSelfMark = !config.useZGrading || !canUseZGrading;
+  const percentage = Math.round((correctCount / (questions.length || 1)) * 100);
 
   return (
-    <div>
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        className={`rounded-lg border px-5 py-6 mb-6 text-center ${
-          isPctFinal
-            ? pass
-              ? "border-green-500/30 bg-green-500/5"
-              : "border-red-500/20 bg-red-500/5"
-            : "border-border/40 bg-card/30"
-        }`}
-      >
-        <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground/60 mb-3">
-          {quizTitle}
-        </p>
+    <div className="min-h-screen bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] bg-size-[16px_16px] bg-[#F7F9FC] py-8 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-4xl space-y-6">
+        {/* Top Dark Hero Card */}
+        <section className="relative overflow-hidden rounded-[28px] bg-[#131B27] p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="space-y-3">
+            <p className="hand text-2xl text-[#DFFF61]">quiz complete ✦</p>
+            <h1 className="display text-3xl font-extrabold tracking-tight sm:text-4xl">
+              Here's how you did.
+            </h1>
+            <p className="max-w-md text-xs leading-5 text-slate-400 font-medium">
+              You completed all questions. Review the breakdown below or try again with a new configuration.
+            </p>
 
-        <p className="text-6xl font-black tabular-nums">
-          {isPctFinal ? `${pct}%` : "-%"}
-        </p>
-
-        {isPctFinal && (
-          <p
-            className={`mt-1 text-[11px] font-mono font-bold uppercase tracking-widest ${
-              pass ? "text-green-500" : "text-red-500"
-            }`}
-          >
-            {pass ? "Passed" : "Failed"} · {passingScore}% required
-          </p>
-        )}
-
-        <p className="mt-2 text-[10px] font-mono text-muted-foreground/50">
-          {correctCount} / {gradedCount} correct
-          {!isPctFinal && (
-            <span className="ml-2 text-amber-500/80">
-              · mark remaining below
-            </span>
-          )}
-        </p>
-
-        {maxStreak >= 3 && (
-          <div className="rounded-lg mt-3 inline-flex items-center gap-1 border border-amber-500/30 bg-amber-500/10 px-2 py-0.5">
-            <Flame className="size-3 text-amber-500" />
-            <span className="text-[9px] font-mono text-amber-500 uppercase tracking-widest">
-              Best streak: {maxStreak}
-            </span>
-          </div>
-        )}
-
-        {config.useZGrading && canUseZGrading && hasUngradedFreeText && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-4 mt-4"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="text-left">
-                <p className="text-[11px] font-mono font-semibold text-foreground flex items-center gap-1.5">
-                  <Zap className="size-3.5 text-primary" />
-                  Grade with Z
-                </p>
-                <p className="text-[10px] font-mono text-muted-foreground/60 mt-0.5">
-                  Z will score your {unansweredFreeText.length} free-text{" "}
-                  {unansweredFreeText.length === 1 ? "answer" : "answers"} with
-                  detailed feedback.
-                </p>
-              </div>
-              <Button
-                size="sm"
-                className="h-7 text-[10px] font-mono shrink-0"
-                onClick={onGradeWithZ}
-                disabled={isGrading}
-              >
-                {isGrading ? (
-                  <Loader2 className="size-3 animate-spin" />
-                ) : (
-                  "Grade now"
-                )}
-              </Button>
+            <div className="flex flex-wrap gap-2 pt-2">
+              <span className="rounded-full bg-white/10 px-3 py-1 text-[10px] font-extrabold text-slate-200">
+                {config.feedbackMode === "immediate" ? "Practice mode" : "Test mode"}
+              </span>
+              <span className="rounded-full bg-white/10 px-3 py-1 text-[10px] font-extrabold text-slate-200">
+                No timer
+              </span>
+              <span className="rounded-full bg-white/10 px-3 py-1 text-[10px] font-extrabold text-slate-200">
+                Pass mark · {config.passingScore || 70}%
+              </span>
             </div>
-          </motion.div>
-        )}
+          </div>
 
-        <div className="flex justify-center gap-2 mt-4">
-          {onBack && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 text-[11px] font-mono gap-1"
-              onClick={onBack}
-            >
-              <ChevronLeft className="size-3" />
-              Back
-            </Button>
-          )}
-          <button
-            type="button"
-            onClick={onRetake}
-            className="rounded-lg inline-flex items-center gap-1.5 border border-border/50 px-4 py-1.5 text-[10px] font-mono uppercase tracking-widest text-muted-foreground hover:border-primary/50 hover:text-foreground transition-all"
-          >
-            <RotateCcw className="size-3" />
-            Retake
-          </button>
+          {/* Right Giant Score Circle */}
+          <div className="relative flex h-32 w-32 shrink-0 items-center justify-center rounded-full border-4 border-[#DFFF61] bg-white/5 shadow-inner">
+            <span className="text-4xl font-black text-white">{percentage}%</span>
+          </div>
+        </section>
+
+        {/* Main 2-Column Section */}
+        <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+          {/* Left Column: Question Breakdown */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between px-1">
+              <div>
+                <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#0C60FC]">
+                  QUESTION REVIEW
+                </p>
+                <h2 className="text-lg font-bold text-slate-950">Your answer breakdown</h2>
+              </div>
+              <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-extrabold text-[#0C60FC]">
+                {correctCount}/{questions.length}
+              </span>
+            </div>
+
+            <div className="space-y-4">
+              {questions.map((q, idx) => (
+                <ReviewItem
+                  key={q.id}
+                  q={q}
+                  given={userAnswers[q.id]}
+                  index={idx}
+                  zResult={zGradingResults.find((z) => z.questionId === q.id)}
+                  selfMark={selfMarkings[q.id] ?? null}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Right Column: Session Summary */}
+          <aside className="space-y-4">
+            <div className="rounded-[28px] border border-slate-200/90 bg-white p-6 shadow-sm space-y-5">
+              <div>
+                <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+                  SESSION SUMMARY
+                </p>
+                <h3 className="text-base font-bold text-slate-950 mt-1">Performance</h3>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-2xl bg-blue-50/60 p-4 border border-blue-100">
+                  <p className="text-2xl font-extrabold text-[#0C60FC]">{totalScore} pts</p>
+                  <p className="mt-1 text-[9px] font-bold text-slate-500 uppercase">EARNED</p>
+                </div>
+                <div className="rounded-2xl bg-[#E9FFD3] p-4 border border-lime-200">
+                  <p className="text-2xl font-extrabold text-slate-900">{questions.length}</p>
+                  <p className="mt-1 text-[9px] font-bold text-slate-600 uppercase">ANSWERS</p>
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-2 border-t border-slate-100">
+                <p className="text-xs font-extrabold text-slate-950">Strongest area</p>
+                <p className="text-xs text-slate-500 font-semibold">Core Image Concepts & Terminology</p>
+              </div>
+
+              <button
+                type="button"
+                onClick={onReset}
+                className="w-full rounded-2xl bg-[#0C60FC] py-3.5 text-center text-xs font-extrabold text-white hover:bg-blue-700 transition shadow-md"
+              >
+                Try quiz again →
+              </button>
+            </div>
+          </aside>
         </div>
-      </motion.div>
 
-      <div className="flex flex-col gap-3">
-        {uniqueQuestions.map((q, i) => (
-          <ReviewItem
-            key={q.id}
-            q={q}
-            given={answers[q.id] ?? ""}
-            index={i}
-            zResult={zResults[q.id]}
-            selfMark={
-              isFreeResponseType(q.type) ? (selfMarks[q.id] ?? null) : null
-            }
-            onSelfMark={
-              allowManualSelfMark &&
-              isFreeResponseType(q.type) &&
-              !zResults[q.id]
-                ? (v) => onSelfMark(q.id, v)
-                : undefined
-            }
-          />
-        ))}
+        {/* Bottom Floating Bar */}
+        <div className="rounded-2xl border border-slate-200/90 bg-white/95 backdrop-blur-xl p-4 shadow-lg flex items-center justify-between">
+          <span className="text-xs font-extrabold text-slate-600">
+            Ready for another round?
+          </span>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={onReset}
+              className="rounded-2xl border border-slate-200 bg-white px-5 py-2.5 text-xs font-extrabold text-slate-700 hover:bg-slate-50 transition"
+            >
+              Configure again
+            </button>
+            <Link
+              href="/app/quizzes"
+              className="rounded-2xl bg-slate-950 px-5 py-2.5 text-xs font-extrabold text-white hover:bg-[#0C60FC] transition"
+            >
+              Back to quizzes →
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );

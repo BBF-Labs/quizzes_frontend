@@ -4,4 +4,6 @@ export function DonationBanner() {
   return null;
 }
 
-export default DonationBanner;
+export function Donations() {
+  return null;
+}
