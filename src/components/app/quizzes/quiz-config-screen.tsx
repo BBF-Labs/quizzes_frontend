@@ -620,14 +620,16 @@ export function QuizConfigScreen({
                   <Switch checked={autoNext} onCheckedChange={setAutoNext} />
                 </div>
 
-                {showZGrading && hasFreeTextQuestions && (
+                {showZGrading && (
                   <div className="flex items-center justify-between rounded-2xl border border-primary/20 bg-primary/5 p-4 sm:col-span-2">
                     <div>
                       <p className="text-xs font-bold text-slate-950">
                         Autograde with Z
                       </p>
                       <p className="text-[10px] font-semibold text-slate-500 mt-0.5">
-                        Let Z score free-text answers after submission
+                        {hasFreeTextQuestions
+                          ? "Let Z score free-text answers after submission"
+                          : "Let Z review and add feedback to your answers"}
                       </p>
                     </div>
                     <Switch
@@ -750,7 +752,7 @@ export function QuizConfigScreen({
                         {feedbackMode}
                       </b>
                     </div>
-                    {showZGrading && hasFreeTextQuestions && (
+                    {showZGrading && (
                       <div className="flex justify-between pt-2.5">
                         <span>Z grading</span>
                         <b className="text-slate-950 font-bold">
