@@ -101,17 +101,10 @@ export function LandingHeader() {
         <Link href="/" className="flex items-center gap-2" aria-label="Qz home">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={LOGO_SRC} alt="Qz" className="h-9 w-9 object-contain" />
-          <span className="display text-lg font-bold tracking-tight">Qz</span>
-          <span className="hidden rounded-full bg-blue-50 px-2 py-1 text-[9px] font-bold uppercase tracking-widest text-[#0C60FC] sm:inline">
-            Beta
-          </span>
         </Link>
 
         {/* Desktop nav links */}
         <div className="hidden items-center gap-1 md:flex">
-          <Link href="/#features" className="rounded-xl px-3.5 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-100 hover:text-slate-950">
-            Product
-          </Link>
           <Link href="/study-rooms" className="rounded-xl px-3.5 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-100 hover:text-slate-950">
             Study rooms
           </Link>
