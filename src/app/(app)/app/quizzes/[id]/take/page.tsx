@@ -600,7 +600,7 @@ export default function QuizTakePage({
         <div className="flex items-center justify-between">
           <div>
             <p className="text-[10px] font-extrabold uppercase tracking-[.18em] text-[#0C60FC]">
-              SECTION 01 · {quiz.title}
+              SECTION 01
             </p>
             <p className="text-xs font-bold text-slate-500 mt-0.5">
               Question {current + 1} of {questions.length}
