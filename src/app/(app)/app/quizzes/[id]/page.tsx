@@ -2,11 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { use } from "react";
-import Link from "next/link";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import {
-  ArrowLeft,
   BookOpen,
   PlayCircle,
   AlertCircle,
@@ -82,15 +80,6 @@ export default function QuizDetailPage({
   return (
     <div className="min-h-full bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] bg-[#F7F9FC] py-8 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-4xl space-y-6">
-        {/* Back link */}
-        <Link
-          href="/app/quizzes"
-          className="inline-flex items-center gap-2 text-xs font-extrabold text-slate-500 hover:text-[#0C60FC] transition"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          All Quizzes
-        </Link>
-
         {/* ── Loading Skeleton ── */}
         {isLoading && (
           <div className="space-y-4 animate-pulse">
