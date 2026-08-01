@@ -1,17 +1,14 @@
 "use client";
-import { useState, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
-import { useAuth } from "@/contexts/auth-context";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { SocialLoginButtons } from "@/components/auth/SocialLoginButtons";
-import { AuthSplitLayout } from "@/components/auth/AuthSplitLayout";
-import { MarketingPanel } from "@/components/auth/MarketingPanel";
 import Link from "next/link";
-import { Suspense } from "react";
+import { useAuth } from "@/contexts/auth-context";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
+import { Loader2 } from "lucide-react";
+
+const LOGO_SRC = "/images/ba87688d-a946-4230-9f62-be5ec02540cd.png";
+const QUBI_SRC = "/images/4457e603-56be-465d-9540-580081d60737.png";
 
 function LoginForm() {
   const { login, user } = useAuth();
@@ -47,7 +44,7 @@ function LoginForm() {
     }
   };
 
-  // If a user is already authenticated, keep auth pages inaccessible.
+  // Authenticated users skip the auth surface entirely.
   useEffect(() => {
     if (user) {
       router.replace(redirectTarget);
@@ -55,140 +52,235 @@ function LoginForm() {
   }, [user, router, redirectTarget]);
 
   return (
-    <AuthSplitLayout
-      left={<MarketingPanel variant="login" />}
-      right={
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ ease: "easeOut", duration: 0.45 }}
-          className="w-full"
-        >
-          {/* Mobile-only brand row */}
-          <div className="flex md:hidden items-center justify-between mb-8">
-            <Link href="/">
-              <span className="text-2xl font-bold tracking-tight text-foreground hover:text-primary transition-colors">
-                Qz.
-              </span>
-            </Link>
-            <span className="text-xs text-muted-foreground">Sign in</span>
+    <div className="qz-auth min-h-screen bg-[#F7F9FC] antialiased">
+      <main className="grid min-h-screen lg:grid-cols-[1.08fr_0.92fr]">
+        {/* Left brand panel — hidden below lg */}
+        <aside className="relative hidden overflow-hidden bg-[#0C60FC] p-10 text-white lg:flex lg:flex-col lg:justify-between xl:p-14">
+          {/* Decorative circles */}
+          <div className="absolute -left-24 top-1/3 h-80 w-80 rounded-full border-[70px] border-white/5" />
+          <div className="absolute -right-24 -top-20 h-80 w-80 rounded-full bg-[#DFFF61]/15 blur-3xl" />
+
+          {/* Brand block */}
+          <Link
+            href="/"
+            className="relative flex items-center gap-3"
+            aria-label="Qz home"
+          >
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={LOGO_SRC}
+                alt="Qz"
+                className="h-9 w-9 object-contain"
+              />
+            </span>
+            <span className="display text-xl font-bold">Qz</span>
+            <span className="text-xs font-semibold text-blue-200">
+              by BetaForge Labs
+            </span>
+          </Link>
+
+          {/* Hero copy */}
+          <div className="relative max-w-xl">
+            <div className="mb-7 inline-flex items-center gap-2 rounded-full bg-white/12 px-3 py-2 text-xs font-bold">
+              <span aria-hidden="true">🔥</span> 8 day study streak
+            </div>
+            <h1 className="text-balance text-5xl font-bold leading-tight tracking-tight xl:text-6xl">
+              Pick up exactly where you left off.
+            </h1>
+            <p className="mt-6 max-w-lg text-lg leading-8 text-blue-100">
+              Your courses, progress and next best study move are ready when
+              you are.
+            </p>
+
+            {/* Qubi chat row */}
+            <div className="mt-7 flex items-center gap-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={QUBI_SRC}
+                alt="Qubi, your Qz study companion"
+                className="h-24 w-24 object-contain"
+              />
+              <div className="rounded-2xl rounded-bl-sm bg-white px-4 py-3 text-slate-900 shadow-xl">
+                <p className="hand text-xl text-[#0C60FC]">Welcome back!</p>
+                <p className="text-xs font-semibold text-slate-500">
+                  I saved your place.
+                </p>
+              </div>
+            </div>
+
+            {/* Stats grid */}
+            <div className="mt-10 grid grid-cols-3 gap-3">
+              <div className="rounded-2xl bg-white/10 p-4">
+                <p className="text-2xl font-bold">74%</p>
+                <p className="mt-1 text-xs text-blue-200">Avg. mastery</p>
+              </div>
+              <div className="rounded-2xl bg-white/10 p-4">
+                <p className="text-2xl font-bold">#12</p>
+                <p className="mt-1 text-xs text-blue-200">Course rank</p>
+              </div>
+              <div className="rounded-2xl bg-white/10 p-4">
+                <p className="text-2xl font-bold">18</p>
+                <p className="mt-1 text-xs text-blue-200">Days to exam</p>
+              </div>
+            </div>
           </div>
 
-          {/* Card */}
-          <div className="bg-card/60 backdrop-blur-sm border border-border/60 p-8 lg:p-10">
-            <div className="mb-8">
-              <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
+          {/* Footer line */}
+          <p className="relative text-xs text-blue-200">
+            Study smarter. Know your rank. Master it all.
+          </p>
+        </aside>
+
+        {/* Right form panel */}
+        <section className="flex min-h-screen items-center justify-center px-5 py-8 sm:px-10">
+          <div className="w-full max-w-md">
+            {/* Mobile-only brand row */}
+            <div className="mb-10 flex items-center justify-between lg:hidden">
+              <Link href="/" className="flex items-center gap-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={LOGO_SRC}
+                  alt="Qz"
+                  className="h-10 w-10 object-contain"
+                />
+                <span className="display text-lg font-bold">Qz</span>
+              </Link>
+              <Link
+                href="/"
+                className="text-xs font-bold text-slate-500 hover:text-slate-700"
+              >
+                Back home
+              </Link>
+            </div>
+
+            <div>
+              <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-primary">
                 Welcome back
-              </h1>
-              <p className="text-sm text-muted-foreground mt-2">
-                Sign in to continue to your study workspace.
+              </p>
+              <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+                Ready for your next win?
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                Log in to continue your study path.
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="space-y-2">
-                <label
-                  htmlFor="admin-identifier"
-                  className="text-xs font-medium text-foreground/80"
-                >
-                  Email or username
-                </label>
-                <Input
-                  id="admin-identifier"
-                  type="text"
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ ease: "easeOut", duration: 0.45 }}
+            >
+              <GoogleSignInButton
+                redirectOnLogin={redirectTarget}
+                className="mt-8"
+              />
+            </motion.div>
+
+            <div className="my-6 flex items-center gap-3">
+              <span className="h-px flex-1 bg-slate-200" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                or use email
+              </span>
+              <span className="h-px flex-1 bg-slate-200" />
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <label className="block">
+                <span className="mb-2 block text-xs font-bold text-slate-700">
+                  Email address
+                </span>
+                <input
+                  type="email"
+                  required
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
-                  required
-                  autoComplete="username"
-                  className="rounded-lg bg-background/60 border-border/60 focus-visible:ring-primary/40 h-11"
+                  autoComplete="email"
                   placeholder="you@university.edu"
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-sm outline-none transition placeholder:text-slate-400 focus:border-[#0C60FC] focus:ring-4 focus:ring-blue-100"
                 />
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label
-                    htmlFor="admin-password"
-                    className="text-xs font-medium text-foreground/80"
-                  >
-                    Password
-                  </label>
+              </label>
+
+              <label className="block">
+                <span className="mb-2 flex items-center justify-between text-xs font-bold text-slate-700">
+                  <span>Password</span>
                   <Link
                     href="/forgot-password"
-                    className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                    className="text-[#0C60FC] hover:underline"
                   >
-                    Forgot?
+                    Forgot password?
                   </Link>
-                </div>
+                </span>
                 <div className="relative">
-                  <Input
-                    id="admin-password"
+                  <input
                     type={showPassword ? "text" : "password"}
+                    required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="rounded-lg bg-background/60 border-border/60 focus-visible:ring-primary/40 h-11 pr-10"
-                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    placeholder="Enter your password"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 pr-14 text-sm outline-none transition placeholder:text-slate-400 focus:border-[#0C60FC] focus:ring-4 focus:ring-blue-100"
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-500 hover:text-slate-700"
                     tabIndex={-1}
                   >
-                    {showPassword ? (
-                      <EyeOff className="size-4" />
-                    ) : (
-                      <Eye className="size-4" />
-                    )}
+                    {showPassword ? "Hide" : "Show"}
                   </button>
                 </div>
-              </div>
+              </label>
 
-              <div className="flex items-center gap-2 pt-1">
-                <Checkbox
-                  id="remember-me"
-                  className="rounded-md border-border/50"
+              <label className="flex items-center gap-2.5 text-xs font-semibold text-slate-600">
+                <input
+                  type="checkbox"
                   checked={rememberMe}
-                  onCheckedChange={(checked) =>
-                    setRememberMe(Boolean(checked))
-                  }
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="h-4 w-4 rounded border-slate-300 accent-[#0C60FC]"
                 />
-                <label
-                  htmlFor="remember-me"
-                  className="text-xs text-muted-foreground cursor-pointer select-none"
-                >
-                  Keep me signed in
-                </label>
-              </div>
+                Keep me logged in
+              </label>
 
               {error && (
-                <p className="text-xs text-destructive">{error}</p>
+                <p className="text-xs text-destructive" role="alert">
+                  {error}
+                </p>
               )}
 
-              <Button
+              <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-lg text-sm font-medium h-11 bg-primary text-primary-foreground hover:bg-primary/90 transition-all"
+                className="w-full rounded-2xl bg-[#0C60FC] px-5 py-4 text-sm font-extrabold text-white shadow-lg shadow-blue-200 transition hover:-translate-y-0.5 hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
               >
-                {loading ? "Signing in…" : "Sign in"}
-              </Button>
-
-              <p className="text-center text-xs text-muted-foreground pt-2">
-                New to Qz?{" "}
-                <Link
-                  href="/signup"
-                  className="text-primary hover:underline font-medium"
-                >
-                  Create an account
-                </Link>
-              </p>
+                {loading ? "Signing in…" : "Log in to Qz →"}
+              </button>
             </form>
-          </div>
 
-          <SocialLoginButtons redirectOnLogin={redirectTarget} />
-        </motion.div>
-      }
-    />
+            <p className="mt-7 text-center text-sm text-slate-500">
+              New to Qz?{" "}
+              <Link
+                href="/signup"
+                className="font-extrabold text-[#0C60FC] hover:underline"
+              >
+                Create a free account
+              </Link>
+            </p>
+            <p className="mt-10 text-center text-[10px] leading-5 text-slate-400">
+              By continuing, you agree to our{" "}
+              <Link href="/terms" className="underline">
+                Terms
+              </Link>{" "}
+              and{" "}
+              <Link href="/privacy" className="underline">
+                Privacy Policy
+              </Link>
+              .
+            </p>
+          </div>
+        </section>
+      </main>
+    </div>
   );
 }
 
@@ -196,7 +288,7 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="qz-auth min-h-screen bg-[#F7F9FC] flex items-center justify-center">
           <Loader2 className="size-8 animate-spin text-primary" />
         </div>
       }
