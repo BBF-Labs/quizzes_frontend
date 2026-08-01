@@ -148,9 +148,9 @@ export function AppSidebar() {
     >
       {/* Brand & Animated Qubi Mascot Header */}
       <SidebarHeader className="h-18 border-b border-slate-100 bg-gradient-to-br from-blue-50/60 via-white to-indigo-50/30 relative overflow-hidden shrink-0 p-3">
-        {/* Qubi Mascot — links to the app's home route (/app) */}
+        {/* Qubi Mascot — links to the landing page (/) */}
         <Link
-          href="/app"
+          href="/"
           aria-label="Qz home"
           className="group cursor-pointer w-full h-full flex items-center gap-2.5 rounded-2xl border border-slate-200/90 bg-white px-3 py-1.5 shadow-2xs hover:border-[#0C60FC]/40 transition"
         >
