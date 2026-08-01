@@ -7,16 +7,16 @@ import {
   Eye,
   EyeOff,
   Loader2,
-  ShieldCheck,
   XCircle,
   PartyPopper,
-  Link as LinkIcon,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SocialLoginButtons } from "@/components/auth/SocialLoginButtons";
+import { AuthSplitLayout } from "@/components/auth/AuthSplitLayout";
+import { MarketingPanel } from "@/components/auth/MarketingPanel";
 import Link from "next/link";
 
 import { Suspense } from "react";
@@ -131,7 +131,6 @@ function SignupForm() {
     setLoading(true);
     try {
       await signup(name, email, username, password, referralCode || undefined);
-      // Append redirectUrl if it exists so Onboarding page can forward the user along after completion.
       const dest = redirectUrl
         ? `/onboarding?redirectUrl=${encodeURIComponent(redirectUrl)}`
         : "/onboarding";
@@ -153,264 +152,276 @@ function SignupForm() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4 relative overflow-hidden">
-      <div
-        className="absolute inset-0 opacity-[0.12]"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle, hsl(var(--border)) 1px, transparent 1px)",
-          backgroundSize: "28px 28px",
-        }}
-      />
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="w-125 h-75 bg-primary/5 blur-[120px]" />
-      </div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ ease: "easeOut", duration: 0.5 }}
-        className="relative z-10 w-full max-w-sm"
-      >
-        {/* Header */}
-        <div className="mb-10">
-          <div className="inline-block border border-primary/60 px-2 py-1 mb-4 bg-primary/5">
-            <span className="text-[10px] font-mono tracking-widest uppercase text-primary">
-              <ShieldCheck className="inline size-3 mr-1 align-[-1px]" />
-              Portal Access
-            </span>
-          </div>
-          <div className="flex items-end space-x-2 mb-2">
+    <AuthSplitLayout
+      left={<MarketingPanel variant="signup" />}
+      right={
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ ease: "easeOut", duration: 0.45 }}
+          className="w-full"
+        >
+          {/* Mobile-only brand row */}
+          <div className="flex md:hidden items-center justify-between mb-8">
             <Link href="/">
-              <span className="text-xl font-bold tracking-widest text-foreground leading-none hover:text-primary transition-colors cursor-pointer">
+              <span className="text-2xl font-bold tracking-tight text-foreground hover:text-primary transition-colors">
                 Qz.
               </span>
             </Link>
-          </div>
-          <h1 className="text-3xl font-mono font-bold tracking-[0.2em] text-foreground uppercase">
-            Sign Up
-          </h1>
-          <p className="text-[10px] font-mono text-muted-foreground mt-2 tracking-[0.15em] uppercase opacity-70">
-            BetaForge Labs — Quiz Platform
-          </p>
-          <div className="h-px w-12 bg-primary/40 mt-6" />
-
-          {referrerDisplayName && (
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="mt-6 p-3 bg-primary/5 border border-primary/20 flex items-start gap-3"
-            >
-              <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                <PartyPopper className="size-4 text-primary" />
-              </div>
-              <div>
-                <p className="text-[10px] font-mono font-bold text-primary uppercase tracking-wider">
-                  Invite Applied
-                </p>
-                <p className="text-[11px] font-mono text-muted-foreground mt-0.5 leading-relaxed">
-                  You&apos;re using{" "}
-                  <span className="text-foreground font-bold">
-                    {referrerDisplayName}
-                  </span>{" "}
-                  referral code. A{" "}
-                  <span className="text-primary font-bold">15% discount</span>{" "}
-                  is waiting for you!
-                </p>
-              </div>
-            </motion.div>
-          )}
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground">
-              Full Name
-            </label>
-            <Input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              autoComplete="name"
-              className="rounded-lg font-mono bg-secondary/40 dark:bg-input/30 border-border focus-visible:ring-ring/50"
-              placeholder="Jane Doe"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <div className="flex justify-between items-end">
-              <label className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground">
-                Email
-              </label>
-              <div className="flex items-center gap-1.5 h-4">
-                {emailStatus === "checking" && (
-                  <div className="flex items-center gap-1 text-[9px] font-mono text-muted-foreground uppercase">
-                    <Loader2 className="size-2.5 animate-spin" /> Checking
-                  </div>
-                )}
-                {emailStatus === "available" && (
-                  <div className="flex items-center gap-1 text-[9px] font-mono text-primary uppercase">
-                    <CheckCircle2 className="size-2.5" /> Available
-                  </div>
-                )}
-                {emailStatus === "taken" && (
-                  <div className="flex items-center gap-1 text-[9px] font-mono text-destructive uppercase">
-                    <XCircle className="size-2.5" /> Taken
-                  </div>
-                )}
-              </div>
-            </div>
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value.toLowerCase())}
-              required
-              autoComplete="email"
-              className={`rounded-lg font-mono bg-secondary/40 dark:bg-input/30 border-border focus-visible:ring-ring/50 ${
-                emailStatus === "taken" ? "border-destructive/50" : ""
-              }`}
-              placeholder="jane@university.edu"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <div className="flex justify-between items-end">
-              <label className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground">
-                Username
-              </label>
-              <div className="flex items-center gap-1.5 h-4">
-                {usernameStatus === "checking" && (
-                  <div className="flex items-center gap-1 text-[9px] font-mono text-muted-foreground uppercase">
-                    <Loader2 className="size-2.5 animate-spin" /> Checking
-                  </div>
-                )}
-                {usernameStatus === "available" && (
-                  <div className="flex items-center gap-1 text-[9px] font-mono text-primary uppercase">
-                    <CheckCircle2 className="size-2.5" /> Available
-                  </div>
-                )}
-                {usernameStatus === "taken" && (
-                  <div className="flex items-center gap-1 text-[9px] font-mono text-destructive uppercase">
-                    <XCircle className="size-2.5" /> Taken
-                  </div>
-                )}
-              </div>
-            </div>
-            <Input
-              type="text"
-              value={username}
-              onChange={(e) =>
-                setUsername(
-                  e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""),
-                )
-              }
-              required
-              autoComplete="username"
-              className={`rounded-lg font-mono bg-secondary/40 dark:bg-input/30 border-border focus-visible:ring-ring/50 ${
-                usernameStatus === "taken" ? "border-destructive/50" : ""
-              }`}
-              placeholder="janedoe"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground">
-              Password
-            </label>
-            <div className="relative">
-              <Input
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoComplete="new-password"
-                className="rounded-lg font-mono bg-secondary/40 dark:bg-input/30 border-border pr-10"
-                placeholder="••••••••"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                tabIndex={-1}
-              >
-                {showPassword ? (
-                  <EyeOff className="size-3.5" />
-                ) : (
-                  <Eye className="size-3.5" />
-                )}
-              </button>
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground">
-              Confirm Password
-            </label>
-            <Input
-              type={showPassword ? "text" : "password"}
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              autoComplete="new-password"
-              className="rounded-lg font-mono bg-secondary/40 dark:bg-input/30 border-border"
-              placeholder="••••••••"
-            />
-          </div>
-
-          {error && (
-            <p className="text-[11px] font-mono text-destructive tracking-wider">
-              {error}
-            </p>
-          )}
-
-          <p className="text-[10px] font-mono text-muted-foreground/60 leading-relaxed">
-            By creating an account you agree to our{" "}
-            <Link href="/terms" className="text-primary hover:underline">
-              Terms &amp; Conditions
-            </Link>{" "}
-            and{" "}
-            <Link href="/privacy" className="text-primary hover:underline">
-              Privacy Policy
-            </Link>
-            .
-          </p>
-
-          <Button
-            type="submit"
-            disabled={
-              loading ||
-              emailStatus === "checking" ||
-              usernameStatus === "checking" ||
-              emailStatus === "taken" ||
-              usernameStatus === "taken"
-            }
-            className="w-full rounded-lg font-mono text-[10px] tracking-[0.2em] uppercase h-11 bg-primary text-primary-foreground shadow-[0_0_20px_rgba(0,110,255,0.15)] hover:shadow-[0_0_30px_rgba(0,110,255,0.25)] transition-all"
-          >
-            {loading ? "Creating Account…" : "Create Account"}
-          </Button>
-
-          <div className="flex justify-center pt-2">
-            <span className="text-[10px] font-mono text-muted-foreground/60 tracking-widest uppercase">
-              Already have an account?{" "}
-              <Link href="/login" className="text-primary hover:underline">
-                Login
-              </Link>
+            <span className="text-xs text-muted-foreground">
+              Create account
             </span>
           </div>
-        </form>
 
-        <SocialLoginButtons
-          referralCode={referralCode || undefined}
-          redirectOnLogin={
-            redirectUrl
-              ? `/onboarding?redirectUrl=${encodeURIComponent(redirectUrl)}`
-              : "/onboarding"
-          }
-        />
-      </motion.div>
-    </div>
+          {/* Card */}
+          <div className="bg-card/60 backdrop-blur-sm border border-border/60 p-8 lg:p-10">
+            <div className="mb-8">
+              <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
+                Create your account
+              </h1>
+              <p className="text-sm text-muted-foreground mt-2">
+                Start studying smarter — it takes about a minute.
+              </p>
+            </div>
+
+            {referrerDisplayName && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-6 p-3 bg-primary/5 border border-primary/30 flex items-start gap-3"
+              >
+                <div className="size-8 bg-primary/15 flex items-center justify-center shrink-0 rounded-md">
+                  <PartyPopper className="size-4 text-primary" />
+                </div>
+                <div className="text-xs leading-relaxed">
+                  <p className="font-semibold text-primary">
+                    Invite applied
+                  </p>
+                  <p className="text-muted-foreground mt-0.5">
+                    You&apos;re using{" "}
+                    <span className="text-foreground font-semibold">
+                      {referrerDisplayName}
+                    </span>
+                    &apos;s referral — a{" "}
+                    <span className="text-primary font-semibold">
+                      15% discount
+                    </span>{" "}
+                    is waiting.
+                  </p>
+                </div>
+              </motion.div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="space-y-2">
+                <label
+                  htmlFor="signup-name"
+                  className="text-xs font-medium text-foreground/80"
+                >
+                  Full name
+                </label>
+                <Input
+                  id="signup-name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  autoComplete="name"
+                  className="rounded-lg bg-background/60 border-border/60 focus-visible:ring-primary/40 h-11"
+                  placeholder="Jane Doe"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label
+                    htmlFor="signup-email"
+                    className="text-xs font-medium text-foreground/80"
+                  >
+                    Email
+                  </label>
+                  <StatusPill status={emailStatus} />
+                </div>
+                <Input
+                  id="signup-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value.toLowerCase())}
+                  required
+                  autoComplete="email"
+                  className={`rounded-lg bg-background/60 border-border/60 focus-visible:ring-primary/40 h-11 ${
+                    emailStatus === "taken"
+                      ? "border-destructive/60"
+                      : ""
+                  }`}
+                  placeholder="you@university.edu"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label
+                    htmlFor="signup-username"
+                    className="text-xs font-medium text-foreground/80"
+                  >
+                    Username
+                  </label>
+                  <StatusPill status={usernameStatus} />
+                </div>
+                <Input
+                  id="signup-username"
+                  type="text"
+                  value={username}
+                  onChange={(e) =>
+                    setUsername(
+                      e.target.value
+                        .toLowerCase()
+                        .replace(/[^a-z0-9_]/g, ""),
+                    )
+                  }
+                  required
+                  autoComplete="username"
+                  className={`rounded-lg bg-background/60 border-border/60 focus-visible:ring-primary/40 h-11 ${
+                    usernameStatus === "taken"
+                      ? "border-destructive/60"
+                      : ""
+                  }`}
+                  placeholder="janedoe"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label
+                    htmlFor="signup-password"
+                    className="text-xs font-medium text-foreground/80"
+                  >
+                    Password
+                  </label>
+                  <div className="relative">
+                    <Input
+                      id="signup-password"
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      autoComplete="new-password"
+                      className="rounded-lg bg-background/60 border-border/60 focus-visible:ring-primary/40 h-11 pr-10"
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      tabIndex={-1}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="size-4" />
+                      ) : (
+                        <Eye className="size-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label
+                    htmlFor="signup-confirm"
+                    className="text-xs font-medium text-foreground/80"
+                  >
+                    Confirm
+                  </label>
+                  <Input
+                    id="signup-confirm"
+                    type={showPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    autoComplete="new-password"
+                    className="rounded-lg bg-background/60 border-border/60 focus-visible:ring-primary/40 h-11"
+                    placeholder="••••••••"
+                  />
+                </div>
+              </div>
+
+              {error && <p className="text-xs text-destructive">{error}</p>}
+
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                By creating an account you agree to our{" "}
+                <Link href="/terms" className="text-primary hover:underline">
+                  Terms
+                </Link>{" "}
+                and{" "}
+                <Link href="/privacy" className="text-primary hover:underline">
+                  Privacy Policy
+                </Link>
+                .
+              </p>
+
+              <Button
+                type="submit"
+                disabled={
+                  loading ||
+                  emailStatus === "checking" ||
+                  usernameStatus === "checking" ||
+                  emailStatus === "taken" ||
+                  usernameStatus === "taken"
+                }
+                className="w-full rounded-lg text-sm font-medium h-11 bg-primary text-primary-foreground hover:bg-primary/90 transition-all"
+              >
+                {loading ? "Creating account…" : "Create account"}
+              </Button>
+
+              <p className="text-center text-xs text-muted-foreground pt-1">
+                Already have an account?{" "}
+                <Link
+                  href="/login"
+                  className="text-primary hover:underline font-medium"
+                >
+                  Sign in
+                </Link>
+              </p>
+            </form>
+          </div>
+
+          <SocialLoginButtons
+            referralCode={referralCode || undefined}
+            redirectOnLogin={
+              redirectUrl
+                ? `/onboarding?redirectUrl=${encodeURIComponent(redirectUrl)}`
+                : "/onboarding"
+            }
+          />
+        </motion.div>
+      }
+    />
+  );
+}
+
+function StatusPill({ status }: { status: AvailabilityStatus }) {
+  if (status === "idle") return null;
+  const map: Record<Exclude<AvailabilityStatus, "idle">, { Icon: typeof Loader2; label: string; cls: string }> = {
+    checking: {
+      Icon: Loader2,
+      label: "Checking…",
+      cls: "text-muted-foreground",
+    },
+    available: {
+      Icon: CheckCircle2,
+      label: "Available",
+      cls: "text-primary",
+    },
+    taken: {
+      Icon: XCircle,
+      label: "Taken",
+      cls: "text-destructive",
+    },
+  };
+  const { Icon, label, cls } = map[status];
+  return (
+    <span className={`inline-flex items-center gap-1 text-[11px] ${cls}`}>
+      <Icon className={`size-3 ${status === "checking" ? "animate-spin" : ""}`} />
+      {label}
+    </span>
   );
 }
 
