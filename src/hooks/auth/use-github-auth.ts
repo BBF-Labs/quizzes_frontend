@@ -10,14 +10,13 @@
  *      `https://github.com/login/oauth/access_token`.
  *   4. Backend fetches the user's primary email at `/user/emails` and the
  *      profile at `/user`, then routes through the same `oauthCreateUser` /
- *      merge-confirm helpers used for Google.
+ *      auto-link-by-email helpers used for Google.
  *
  * The backend `linkedProviders` schema already accommodates `provider: 'github'`.
  */
 
 export interface UseGithubAuthOptions {
   redirectOnLogin?: string;
-  redirectOnMerge?: string;
   referralCode?: string;
 }
 

@@ -2,29 +2,24 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth, OAuthLoginResult } from "@/contexts/auth-context";
+import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
 
 // ---------------------------------------------------------------------------
 // useGoogleAuth
 //
-// Renders the Google Identity Services button lazily and exposes a hook-side
-// helper that resolves when the user completes/consent flow.
+// Renders the Google Identity Services prompt lazily and exposes a hook-side
+// helper that resolves when the user completes the consent flow.
+//
+// The backend auto-links by email (no magic-link round trip). On success the
+// user is logged in and the hook redirects to `redirectOnLogin`.
 //
 // Returns:
-//   - loginWithGoogle(): renders the GIS prompt; resolves to an `OAuthLoginResult`
-//     (`'logged_in'` or `'merge_required'`). Caller is responsible for redirecting
-//     based on the returned `status`.
+//   - loginWithGoogle(): renders the GIS prompt; resolves once the user lands
+//     on the post-login redirect target.
 //   - isGoogleLoading: true while the GIS prompt or the backend roundtrip is in
 //     flight.
 //   - googleError: last error surfaced by the flow (cleared on next invocation).
-//
-// Implementation notes:
-//   - We load `accounts.google.com/gsi/client` once and reuse the global `google`
-//     object across renders. CSP at `quizzes_backend/src/server.ts:92` already
-//     whitelists `apis.google.com`.
-//   - We use the FedCM-compatible `FedCM` button if the browser exposes it;
-//     otherwise fall back to the classic `prompt()` flow.
 // ---------------------------------------------------------------------------
 
 declare global {
@@ -125,17 +120,14 @@ function loadGisScript(clientId: string): Promise<void> {
 }
 
 export interface UseGoogleAuthOptions {
-  /** Where to redirect on `'logged_in'`. Defaults to `/app`. */
+  /** Where to redirect on successful login. Defaults to `/app`. */
   redirectOnLogin?: string;
-  /** Where to redirect on `'merge_required'` — receives the merge token via email. Defaults to `/auth/merge`. */
-  redirectOnMerge?: string;
   /** Optional referral code forwarded to the backend. */
   referralCode?: string;
 }
 
 export function useGoogleAuth(options: UseGoogleAuthOptions = {}) {
-  const { redirectOnLogin = "/app", redirectOnMerge = "/auth/merge", referralCode } =
-    options;
+  const { redirectOnLogin = "/app", referralCode } = options;
   const { oauthLogin } = useAuth();
   const router = useRouter();
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -153,12 +145,12 @@ export function useGoogleAuth(options: UseGoogleAuthOptions = {}) {
     });
   }, [clientId]);
 
-  const loginWithGoogle = useCallback(async (): Promise<OAuthLoginResult | null> => {
+  const loginWithGoogle = useCallback(async (): Promise<boolean> => {
     if (!clientId) {
       const msg = "Google sign-in is not configured. Please set NEXT_PUBLIC_GOOGLE_CLIENT_ID.";
       setGoogleError(msg);
       toast.error(msg);
-      return null;
+      return false;
     }
 
     setGoogleError(null);
@@ -189,14 +181,9 @@ export function useGoogleAuth(options: UseGoogleAuthOptions = {}) {
         }
       });
 
-      const result = await oauthLogin("google", { idToken, referralCode });
-
-      if (result.status === "logged_in") {
-        router.replace(redirectOnLogin);
-      } else {
-        router.replace(redirectOnMerge);
-      }
-      return result;
+      await oauthLogin("google", { idToken, referralCode });
+      router.replace(redirectOnLogin);
+      return true;
     } catch (err: any) {
       const message =
         err?.response?.data?.message ??
@@ -204,13 +191,13 @@ export function useGoogleAuth(options: UseGoogleAuthOptions = {}) {
         "Google sign-in failed. Please try again.";
       setGoogleError(message);
       toast.error(message);
-      return null;
+      return false;
     } finally {
       setIsGoogleLoading(false);
     }
-    // router/redirectOnLogin/redirectOnMerge/referralCode are intentionally
-    // excluded from deps: they're caller-provided constants and re-running the
-    // callback ref would just trigger another login attempt.
+    // router/redirectOnLogin/referralCode are intentionally excluded from deps:
+    // they're caller-provided constants and re-running the callback ref would
+    // just trigger another login attempt.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clientId, oauthLogin]);
 
