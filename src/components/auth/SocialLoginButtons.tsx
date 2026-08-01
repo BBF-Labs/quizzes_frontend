@@ -9,8 +9,6 @@ interface SocialLoginButtonsProps {
   referralCode?: string;
   /** Where to redirect on successful login. Default `/app`. */
   redirectOnLogin?: string;
-  /** Where to redirect when the backend requests merge confirmation. Default `/auth/merge`. */
-  redirectOnMerge?: string;
   className?: string;
 }
 
@@ -22,12 +20,10 @@ interface SocialLoginButtonsProps {
 export function SocialLoginButtons({
   referralCode,
   redirectOnLogin,
-  redirectOnMerge,
   className,
 }: SocialLoginButtonsProps) {
   const { loginWithGoogle, isGoogleLoading } = useGoogleAuth({
     redirectOnLogin,
-    redirectOnMerge,
     referralCode,
   });
 
