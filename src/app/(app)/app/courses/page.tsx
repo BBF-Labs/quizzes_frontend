@@ -21,35 +21,14 @@ import {
 import { ICourse, useCourseSearch } from "@/hooks/common/use-courses";
 import { useDebounce } from "@/hooks";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 const SEMESTERS = ["Semester 1", "Semester 2", "Summer Session"];
-const ACADEMIC_YEARS = ["2023-2024", "2024-2025", "2025-2026"];
+const ACADEMIC_YEARS = ["2024-2025", "2025-2026", "2026-2027"];
 
 export default function MyCoursesPage() {
   const [selectedSemester, setSelectedSemester] = useState("Semester 1");
@@ -71,8 +50,11 @@ export default function MyCoursesPage() {
   );
   const [selectedCourses, setSelectedCourses] = useState<ICourse[]>([]);
 
+  const totalCount = enrollments.length;
+  const selectedCount = selectedCourseIds.size;
+
   const handleEnroll = async () => {
-    if (selectedCourseIds.size === 0) return;
+    if (selectedCount === 0) return;
     try {
       const enrollmentPromises = Array.from(selectedCourseIds).map((courseId) =>
         enrollMutation.mutateAsync({
@@ -91,394 +73,474 @@ export default function MyCoursesPage() {
     }
   };
 
+  // Current term enrollment count for stat strip
+  const currentTermCount = useMemo(
+    () =>
+      enrollments.filter(
+        (e) =>
+          e.semester === selectedSemester &&
+          e.academicYear === selectedYear,
+      ).length,
+    [enrollments, selectedSemester, selectedYear],
+  );
+
   return (
-    <div className="flex flex-col gap-8 py-8 px-4 md:px-8 max-w-7xl mx-auto min-h-[calc(100dvh-3.5rem)]">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-black tracking-tighter uppercase">
-            My Courses
-          </h1>
-          <p className="text-sm text-muted-foreground font-mono uppercase tracking-widest">
-            Manage your academic enrollments for notifications and timetables.
-          </p>
+    <div className="qz-app min-h-full bg-[#F7F9FC] text-slate-900 antialiased">
+      {/* Header / Hero — mirrors library and quizzes pages */}
+      <header className="border-b border-slate-200 bg-white px-6 pt-8 pb-6 lg:px-8">
+        <div className="mx-auto flex max-w-7xl flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-extrabold uppercase tracking-[.22em] text-[#0C60FC]">
+              My Library
+            </p>
+            <h1 className="display mt-2 text-3xl font-bold leading-tight sm:text-4xl">
+              Your courses.
+            </h1>
+            <p className="hand mt-1 text-xl text-[#0C60FC]">
+              keep your term in sync ✦
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
+            <span className="rounded-full bg-slate-100 px-3 py-1.5">
+              {totalCount} total
+            </span>
+            <span className="rounded-full bg-blue-50 px-3 py-1.5 text-[#0C60FC]">
+              {currentTermCount} this term
+            </span>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Select value={selectedSemester} onValueChange={setSelectedSemester}>
-            <SelectTrigger className="w-40 font-mono text-[11px] uppercase tracking-widest bg-background">
-              <SelectValue placeholder="Semester" />
-            </SelectTrigger>
-            <SelectContent>
+        {/* Term picker + Add Course row */}
+        <div className="mx-auto mt-6 flex max-w-7xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 w-20 shrink-0">
+                Semester
+              </span>
               {SEMESTERS.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {s}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select value={selectedYear} onValueChange={setSelectedYear}>
-            <SelectTrigger className="w-35 font-mono text-[11px] uppercase tracking-widest bg-background">
-              <SelectValue placeholder="Year" />
-            </SelectTrigger>
-            <SelectContent>
-              {ACADEMIC_YEARS.map((y) => (
-                <SelectItem key={y} value={y}>
-                  {y}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button
-                size="sm"
-                className="font-mono text-[10px] uppercase tracking-[0.2em] gap-2"
-              >
-                <Plus className="size-3" />
-                Add Course
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-106.25">
-              <DialogHeader>
-                <DialogTitle className="font-black tracking-tighter uppercase">
-                  Add Course
-                </DialogTitle>
-                <DialogDescription className="font-mono text-[11px] uppercase tracking-widest leading-relaxed">
-                  Search for a course to add to your semester enrollment.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="py-6 space-y-4">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground block">
-                      Select Course
-                    </label>
-                    <div className="space-y-4">
-                      {/* Selection Summary at Top */}
-                      <AnimatePresence>
-                        {selectedCourses.length > 0 && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="overflow-hidden"
-                          >
-                            <div className="flex flex-wrap gap-2 pb-4 border-b border-border/20">
-                              {selectedCourses.map((c) => (
-                                <motion.div
-                                  layout
-                                  key={c._id}
-                                  initial={{ scale: 0.8, opacity: 0 }}
-                                  animate={{ scale: 1, opacity: 1 }}
-                                  exit={{ scale: 0.8, opacity: 0 }}
-                                  className="flex items-center gap-2 px-2 py-1 bg-primary/10 border border-primary/30 rounded text-[10px] font-mono uppercase tracking-widest group/chip"
-                                >
-                                  <span className="text-primary font-bold">
-                                    {c.code}
-                                  </span>
-                                  <button
-                                    onClick={() => {
-                                      setSelectedCourseIds((prev) => {
-                                        const next = new Set(prev);
-                                        next.delete(c._id);
-                                        return next;
-                                      });
-                                      setSelectedCourses((prev) =>
-                                        prev.filter((x) => x._id !== c._id),
-                                      );
-                                    }}
-                                    className="p-0.5 hover:bg-primary/20 rounded-full transition-colors"
-                                  >
-                                    <X className="size-2.5 text-primary" />
-                                  </button>
-                                </motion.div>
-                              ))}
-                              <Button
-                                variant="ghost"
-                                size="xs"
-                                onClick={() => {
-                                  setSelectedCourseIds(new Set());
-                                  setSelectedCourses([]);
-                                }}
-                                className="text-[8px] font-mono uppercase tracking-widest text-muted-foreground hover:text-destructive h-6"
-                              >
-                                Clear All
-                              </Button>
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-
-                      {/* Integrated Search Input */}
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
-                        <Input
-                          placeholder="SEARCH BY COURSE CODE OR TITLE..."
-                          value={courseSearch}
-                          onChange={(e) => setCourseSearch(e.target.value)}
-                          className="pl-9 font-mono text-[10px] uppercase tracking-[0.2em] bg-zinc-900/30 h-10 border-border/40 focus:border-primary/50 transition-colors"
-                          autoFocus
-                        />
-                      </div>
-
-                      {/* Integrated Scrollable List */}
-                      <div className="border border-border/40 rounded-md bg-zinc-950/20 overflow-hidden">
-                        <div className="max-h-80 overflow-y-auto no-scrollbar py-2 px-2 space-y-1">
-                          {isSearching && searchResults.length === 0 ? (
-                            <div className="py-16 text-center space-y-3">
-                              <Loader2 className="size-5 animate-spin mx-auto text-primary" />
-                              <p className="text-[9px] font-mono uppercase tracking-[0.3em] text-muted-foreground animate-pulse">
-                                Indexing Platform...
-                              </p>
-                            </div>
-                          ) : searchResults.length === 0 ? (
-                            <div className="py-16 text-center">
-                              <p className="text-[9px] font-mono uppercase tracking-[0.3em] text-muted-foreground/60">
-                                No Matching Courses Found
-                              </p>
-                            </div>
-                          ) : (
-                            searchResults.map((c) => {
-                              const isAlreadyEnrolled = enrollments.some(
-                                (e) =>
-                                  e.courseId?._id === c._id &&
-                                  e.semester === selectedSemester &&
-                                  e.academicYear === selectedYear,
-                              );
-                              const isSelected = selectedCourseIds.has(c._id);
-
-                              return (
-                                <button
-                                  key={c._id}
-                                  disabled={isAlreadyEnrolled}
-                                  onClick={() => {
-                                    if (isAlreadyEnrolled) return;
-                                    setSelectedCourseIds((prev) => {
-                                      const next = new Set(prev);
-                                      if (isSelected) {
-                                        next.delete(c._id);
-                                      } else {
-                                        next.add(c._id);
-                                      }
-                                      return next;
-                                    });
-                                    setSelectedCourses((prev) => {
-                                      if (isSelected) {
-                                        return prev.filter(
-                                          (x) => x._id !== c._id,
-                                        );
-                                      } else {
-                                        return [...prev, c];
-                                      }
-                                    });
-                                  }}
-                                  className={cn(
-                                    "w-full text-left p-3 rounded transition-all duration-200 group/item relative",
-                                    isAlreadyEnrolled
-                                      ? "opacity-50 cursor-not-allowed bg-zinc-900/20"
-                                      : isSelected
-                                        ? "bg-primary/5 border border-primary/20 shadow-[0_0_15px_-5px_rgba(var(--primary-rgb),0.2)]"
-                                        : "hover:bg-zinc-900/50 border border-transparent",
-                                  )}
-                                >
-                                  <div className="flex items-center justify-between gap-4">
-                                    <div className="flex flex-col gap-0.5 min-w-0">
-                                      <span
-                                        className={cn(
-                                          "font-bold text-[11px] font-mono uppercase tracking-widest transition-colors",
-                                          isAlreadyEnrolled
-                                            ? "text-muted-foreground"
-                                            : isSelected
-                                              ? "text-primary"
-                                              : "text-foreground/90 group-hover/item:text-foreground",
-                                        )}
-                                      >
-                                        {c.code}
-                                      </span>
-                                      <span className="text-[9px] text-muted-foreground/70 truncate font-mono uppercase tracking-tighter group-hover/item:text-muted-foreground transition-colors">
-                                        {c.title}
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center gap-2 shrink-0">
-                                      {isAlreadyEnrolled && (
-                                        <div className="px-1.5 py-0.5 rounded-sm bg-zinc-800 border border-border/20 text-[7px] font-mono font-bold text-muted-foreground uppercase tracking-widest">
-                                          Synced
-                                        </div>
-                                      )}
-                                      {isSelected && !isAlreadyEnrolled && (
-                                        <motion.div
-                                          initial={{ scale: 0.5, opacity: 0 }}
-                                          animate={{ scale: 1, opacity: 1 }}
-                                          className="size-4 rounded-full bg-primary flex items-center justify-center shadow-[0_0_10px_rgba(var(--primary-rgb),0.5)]"
-                                        >
-                                          <Check className="size-2.5 text-black stroke-3" />
-                                        </motion.div>
-                                      )}
-                                    </div>
-                                  </div>
-                                </button>
-                              );
-                            })
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  disabled={
-                    selectedCourseIds.size === 0 || enrollMutation.isPending
-                  }
-                  onClick={handleEnroll}
-                  className="w-full font-mono text-[11px] uppercase tracking-widest"
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setSelectedSemester(s)}
+                  className={cn(
+                    "rounded-full px-4 py-2 text-xs font-bold transition",
+                    selectedSemester === s
+                      ? "bg-slate-950 text-white"
+                      : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50",
+                  )}
                 >
-                  {enrollMutation.isPending
-                    ? "Enrolling..."
-                    : selectedCourseIds.size > 1
-                      ? `Enroll in ${selectedCourseIds.size} Courses`
-                      : "Enroll in Course"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+                  {s}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 w-20 shrink-0">
+                Year
+              </span>
+              {ACADEMIC_YEARS.map((y) => (
+                <button
+                  key={y}
+                  type="button"
+                  onClick={() => setSelectedYear(y)}
+                  className={cn(
+                    "rounded-full px-4 py-2 text-xs font-bold transition",
+                    selectedYear === y
+                      ? "bg-slate-950 text-white"
+                      : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50",
+                  )}
+                >
+                  {y}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setIsAddDialogOpen(true)}
+            className="squishy group inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3.5 text-sm font-extrabold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-[#0C60FC]"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Add Course</span>
+          </button>
         </div>
-      </div>
+      </header>
 
       {/* Grid */}
-      <AnimatePresence mode="wait">
-        {isEnrollmentsLoading ? (
-          <motion.div
-            key="loading"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-          >
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="h-48 border border-border/40 bg-card/20 animate-pulse border-dashed"
-              />
-            ))}
-          </motion.div>
-        ) : enrollments.length > 0 ? (
-          <motion.div
-            key="grid"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-          >
-            {enrollments.map((enrollment) => (
-              <Card
-                key={enrollment._id}
-                className="group overflow-hidden border-border/40 hover:border-primary/40 bg-card/30 transition-all flex flex-col hover:shadow-lg hover:shadow-primary/5"
-              >
-                <CardHeader className="relative pb-0">
-                  <div className="absolute top-4 right-4 translate-x-8 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all">
-                    <button
-                      onClick={() => {
-                        if (!enrollment.courseId?._id) return;
-                        unenrollMutation.mutate({
-                          courseId: enrollment.courseId._id,
-                          semester: enrollment.semester,
-                          academicYear: enrollment.academicYear,
-                        });
-                      }}
-                      className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                      title="Unenroll"
-                    >
-                      <Trash2 className="size-4" />
-                    </button>
-                  </div>
-                  <div className="inline-flex items-center gap-2 mb-2">
-                    <span className="size-1.5 rounded-full bg-primary" />
-                    <span className="text-[9px] font-mono text-primary uppercase tracking-[0.2em]">
-                      Enrolled
-                    </span>
-                  </div>
-                  <CardTitle className="text-lg font-black tracking-tight uppercase line-clamp-2 leading-tight">
-                    {enrollment.courseId?.title || "Unknown Course"}
-                  </CardTitle>
-                  <CardDescription className="font-mono text-[10px] uppercase tracking-widest">
-                    {enrollment.courseId?.code || "N/A"}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex-1 mt-6">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <span className="text-[8px] font-mono uppercase tracking-widest text-muted-foreground/60 block">
-                        Semester
-                      </span>
-                      <span className="text-[10px] font-mono font-bold uppercase">
-                        {enrollment.semester}
-                      </span>
-                    </div>
-                    <div className="space-y-1">
-                      <span className="text-[8px] font-mono uppercase tracking-widest text-muted-foreground/60 block">
-                        Academic Year
-                      </span>
-                      <span className="text-[10px] font-mono font-bold uppercase">
-                        {enrollment.academicYear}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="pt-0 bg-secondary/5 border-t border-border/20 py-3">
-                  <Link
+      <section className="px-6 py-8 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          {isEnrollmentsLoading ? (
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white py-20">
+              <Loader2 className="mb-4 h-8 w-8 animate-spin text-[#0C60FC]" />
+              <p className="text-xs font-extrabold uppercase tracking-widest text-slate-400">
+                Loading your courses…
+              </p>
+            </div>
+          ) : enrollments.length > 0 ? (
+            <motion.div
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+              variants={{
+                hidden: {},
+                visible: { transition: { staggerChildren: 0.06 } },
+              }}
+              initial="hidden"
+              animate="visible"
+            >
+              <AnimatePresence>
+                {enrollments.map((enrollment) => (
+                  <CourseCard
+                    key={enrollment._id}
+                    title={enrollment.courseId?.title || "Unknown Course"}
+                    code={enrollment.courseId?.code || "N/A"}
+                    semester={enrollment.semester}
+                    academicYear={enrollment.academicYear}
                     href={
                       enrollment.courseId?._id
                         ? `/app/courses/${enrollment.courseId._id}`
                         : "#"
                     }
-                    className={cn(
-                      "w-full flex items-center justify-between text-[10px] font-mono uppercase tracking-widest text-muted-foreground transition-colors",
-                      enrollment.courseId?._id
-                        ? "hover:text-primary"
-                        : "cursor-not-allowed opacity-50",
-                    )}
+                    onUnenroll={() => {
+                      if (!enrollment.courseId?._id) return;
+                      unenrollMutation.mutate({
+                        courseId: enrollment.courseId._id,
+                        semester: enrollment.semester,
+                        academicYear: enrollment.academicYear,
+                      });
+                    }}
+                  />
+                ))}
+              </AnimatePresence>
+            </motion.div>
+          ) : (
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white py-20">
+              <BookOpen className="mb-4 h-12 w-12 text-slate-300" />
+              <p className="text-sm font-bold text-slate-700">No courses yet</p>
+              <p className="mt-1 max-w-sm text-center text-xs font-semibold text-slate-500">
+                Stay organized by tracking the courses you're taking this term —
+                we'll wire them into exam reminders and timetables for you.
+              </p>
+              <button
+                type="button"
+                onClick={() => setIsAddDialogOpen(true)}
+                className="squishy mt-5 inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-xs font-extrabold text-white transition hover:bg-[#0C60FC]"
+              >
+                <Plus className="h-4 w-4" />
+                Add your first course
+              </button>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {!isEnrollmentsLoading && enrollments.length > 0 && (
+        <p className="pb-10 text-center text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+          showing {enrollments.length} enrolled{" "}
+          {enrollments.length === 1 ? "course" : "courses"}
+        </p>
+      )}
+
+      {/* Add Course Dialog — matches landing dropdown identity-block styling */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="max-w-lg gap-0 overflow-hidden rounded-2xl border border-slate-200 bg-white p-0 shadow-xl ring-1 ring-black/5">
+          <div className="border-b border-slate-100 px-6 py-4">
+            <DialogTitle className="text-base font-bold text-slate-900">
+              Add Course
+            </DialogTitle>
+            <p className="mt-1 text-[11px] font-semibold text-slate-500">
+              Search the catalog and pick the courses you're taking this{" "}
+              <span className="font-extrabold text-[#0C60FC]">
+                {selectedSemester} · {selectedYear}
+              </span>
+              .
+            </p>
+          </div>
+
+          {/* Selected chips */}
+          {selectedCourses.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 bg-[#F7F9FC] px-6 py-3">
+              {selectedCourses.map((c) => (
+                <motion.span
+                  layout
+                  key={c._id}
+                  initial={{ scale: 0.85, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.85, opacity: 0 }}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-[11px] font-extrabold text-[#0C60FC] ring-1 ring-blue-100"
+                >
+                  {c.code}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedCourseIds((prev) => {
+                        const next = new Set(prev);
+                        next.delete(c._id);
+                        return next;
+                      });
+                      setSelectedCourses((prev) =>
+                        prev.filter((x) => x._id !== c._id),
+                      );
+                    }}
+                    className="rounded-full p-0.5 transition hover:bg-blue-100"
+                    aria-label={`Remove ${c.code}`}
                   >
-                    Course Content
-                    <ChevronRight className="size-3" />
-                  </Link>
-                </CardFooter>
-              </Card>
-            ))}
-          </motion.div>
-        ) : (
-          <motion.div
-            key="empty"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex flex-col items-center justify-center py-24 border-2 border-dashed border-border/40 bg-card/20 gap-6"
-          >
-            <div className="size-16 border border-border/40 bg-muted/10 flex items-center justify-center">
-              <BookOpen className="size-8 text-muted-foreground/40" />
+                    <X className="h-3 w-3" />
+                  </button>
+                </motion.span>
+              ))}
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedCourseIds(new Set());
+                  setSelectedCourses([]);
+                }}
+                className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 hover:text-slate-700 transition"
+              >
+                Clear
+              </button>
             </div>
-            <div className="text-center space-y-2">
-              <p className="text-lg font-black tracking-tighter uppercase">
-                No courses found
-              </p>
-              <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/60 max-w-xs mx-auto">
-                Stay organized by keeping track of your current courses. Declare
-                your enrollment to unlock personalized exam schedules.
-              </p>
+          )}
+
+          {/* Search */}
+          <div className="px-6 pt-4">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={courseSearch}
+                onChange={(e) => setCourseSearch(e.target.value)}
+                placeholder="Search by course code or title…"
+                className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-10 text-sm font-semibold outline-none transition placeholder:text-slate-400 focus:border-[#0C60FC] focus:ring-4 focus:ring-blue-100"
+                autoFocus
+              />
+              {courseSearch && (
+                <button
+                  type="button"
+                  onClick={() => setCourseSearch("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                  aria-label="Clear search"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsAddDialogOpen(true)}
-              className="mt-2 font-mono text-[10px] uppercase tracking-[0.2em]"
+          </div>
+
+          {/* Result list */}
+          <div className="mt-3 max-h-72 overflow-y-auto px-3 pb-3 no-scrollbar">
+            {isSearching && searchResults.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10">
+                <Loader2 className="mb-2 h-6 w-6 animate-spin text-[#0C60FC]" />
+                <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+                  Searching catalog…
+                </p>
+              </div>
+            ) : searchResults.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <BookOpen className="mb-2 h-8 w-8 text-slate-300" />
+                <p className="text-xs font-bold text-slate-600">
+                  No matching courses
+                </p>
+                <p className="mt-1 max-w-xs text-center text-[11px] font-semibold text-slate-500">
+                  Try a different course code or title.
+                </p>
+              </div>
+            ) : (
+              <ul className="space-y-1.5">
+                {searchResults.map((c) => {
+                  const isAlreadyEnrolled = enrollments.some(
+                    (e) =>
+                      e.courseId?._id === c._id &&
+                      e.semester === selectedSemester &&
+                      e.academicYear === selectedYear,
+                  );
+                  const isSelected = selectedCourseIds.has(c._id);
+
+                  return (
+                    <li key={c._id}>
+                      <button
+                        type="button"
+                        disabled={isAlreadyEnrolled}
+                        onClick={() => {
+                          if (isAlreadyEnrolled) return;
+                          setSelectedCourseIds((prev) => {
+                            const next = new Set(prev);
+                            if (isSelected) next.delete(c._id);
+                            else next.add(c._id);
+                            return next;
+                          });
+                          setSelectedCourses((prev) =>
+                            isSelected
+                              ? prev.filter((x) => x._id !== c._id)
+                              : [...prev, c],
+                          );
+                        }}
+                        className={cn(
+                          "group flex w-full items-center justify-between gap-4 rounded-xl px-3 py-2.5 text-left transition",
+                          isAlreadyEnrolled
+                            ? "cursor-not-allowed bg-slate-50 opacity-60"
+                            : isSelected
+                              ? "bg-blue-50 ring-1 ring-blue-200"
+                              : "hover:bg-slate-50",
+                        )}
+                      >
+                        <div className="flex min-w-0 flex-col">
+                          <span
+                            className={cn(
+                              "text-xs font-bold",
+                              isSelected ? "text-[#0C60FC]" : "text-slate-800",
+                            )}
+                          >
+                            {c.code}
+                          </span>
+                          <span className="truncate text-[11px] font-semibold text-slate-500">
+                            {c.title}
+                          </span>
+                        </div>
+                        {isAlreadyEnrolled ? (
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-widest text-slate-400">
+                            Enrolled
+                          </span>
+                        ) : isSelected ? (
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#0C60FC]">
+                            <Check className="h-3 w-3 text-white" strokeWidth={3} />
+                          </span>
+                        ) : null}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-between gap-3 border-t border-slate-100 bg-white px-6 py-4">
+            <p className="text-[11px] font-semibold text-slate-500">
+              {selectedCount === 0 ? (
+                "Pick at least one course to enroll."
+              ) : (
+                <>
+                  {selectedCount}{" "}
+                  {selectedCount === 1 ? "course" : "courses"} selected for{" "}
+                  <span className="font-extrabold text-slate-700">
+                    {selectedSemester}
+                  </span>
+                </>
+              )}
+            </p>
+            <button
+              type="button"
+              disabled={selectedCount === 0 || enrollMutation.isPending}
+              onClick={handleEnroll}
+              className={cn(
+                "squishy inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-xs font-extrabold shadow-sm transition",
+                selectedCount === 0 || enrollMutation.isPending
+                  ? "bg-slate-200 text-slate-400"
+                  : "bg-slate-950 text-white hover:bg-[#0C60FC]",
+              )}
             >
-              + Start Enrollment
-            </Button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              {enrollMutation.isPending ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Enrolling…
+                </>
+              ) : (
+                <>
+                  Enroll
+                  {selectedCount > 1 ? ` (${selectedCount})` : ""}
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </>
+              )}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+}
+
+// ─── Course card ─────────────────────────────────────────────────────────────
+
+function CourseCard({
+  title,
+  code,
+  semester,
+  academicYear,
+  href,
+  onUnenroll,
+}: {
+  title: string;
+  code: string;
+  semester: string;
+  academicYear: string;
+  href: string;
+  onUnenroll: () => void;
+}) {
+  const disabled = href === "#";
+  return (
+    <motion.div
+      layout
+      variants={{
+        hidden: { opacity: 0, y: 8 },
+        visible: { opacity: 1, y: 0 },
+      }}
+      transition={{ duration: 0.25, ease: "easeOut" }}
+      className="group relative flex flex-col rounded-[26px] bg-white p-5 shadow-[0_8px_28px_-12px_rgba(15,23,42,.12)] ring-1 ring-slate-200/70 transition hover:-translate-y-0.5 hover:ring-slate-300"
+    >
+      <button
+        type="button"
+        onClick={onUnenroll}
+        className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-300 transition hover:bg-rose-50 hover:text-rose-600 focus:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+        aria-label={`Unenroll from ${title}`}
+      >
+        <Trash2 className="h-3.5 w-3.5" />
+      </button>
+
+      <div className="flex items-center gap-2">
+        <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-widest text-[#0C60FC]">
+          {code}
+        </span>
+        <span className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-widest text-emerald-600">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+          Enrolled
+        </span>
+      </div>
+
+      <h3 className="mt-3 line-clamp-2 text-lg font-bold leading-tight text-slate-900">
+        {title}
+      </h3>
+
+      <div className="mt-5 grid grid-cols-2 gap-3">
+        <div>
+          <p className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400">
+            Semester
+          </p>
+          <p className="mt-1 text-xs font-bold text-slate-700">{semester}</p>
+        </div>
+        <div>
+          <p className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400">
+            Academic year
+          </p>
+          <p className="mt-1 text-xs font-bold text-slate-700">
+            {academicYear}
+          </p>
+        </div>
+      </div>
+
+      <Link
+        href={href}
+        aria-disabled={disabled}
+        tabIndex={disabled ? -1 : 0}
+        className={cn(
+          "mt-5 flex items-center justify-between rounded-2xl px-4 py-2.5 text-xs font-extrabold transition",
+          disabled
+            ? "pointer-events-none bg-slate-50 text-slate-300"
+            : "bg-slate-50 text-slate-700 hover:bg-[#0C60FC] hover:text-white",
+        )}
+      >
+        Course content
+        <ChevronRight className="h-3.5 w-3.5" />
+      </Link>
+    </motion.div>
   );
 }

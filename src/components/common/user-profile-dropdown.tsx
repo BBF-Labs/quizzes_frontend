@@ -1,17 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { LogOut, LayoutDashboard, Settings } from "lucide-react";
+import {
+  LogOut,
+  LayoutDashboard,
+  Settings,
+  ChevronDown,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { resolveAvatarUrl } from "@/lib/utils";
 
 interface UserProfileDropdownProps {
@@ -19,6 +22,7 @@ interface UserProfileDropdownProps {
     | ({
         username?: string;
         email?: string;
+        name?: string;
         profilePicture?: string;
         oauthPicture?: string;
         role?: "student" | "creator" | "moderator" | "super_admin";
@@ -28,6 +32,19 @@ interface UserProfileDropdownProps {
   align?: "end" | "center" | "start";
 }
 
+function initialsOf(user: Record<string, unknown> | null | undefined): string {
+  if (!user) return "U";
+  const name =
+    (typeof user.name === "string" && user.name) ||
+    (typeof user.username === "string" && user.username) ||
+    (typeof user.email === "string" && user.email) ||
+    "";
+  if (!name) return "U";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return name.slice(0, 2).toUpperCase();
+}
+
 export function UserProfileDropdown({
   user,
   onLogout,
@@ -35,90 +52,103 @@ export function UserProfileDropdown({
 }: UserProfileDropdownProps) {
   if (!user) return null;
 
+  const avatarUrl = resolveAvatarUrl(user);
+  const displayName =
+    (typeof user.name === "string" && user.name) ||
+    user.username ||
+    user.email ||
+    "My Account";
+  const email =
+    typeof user.email === "string" ? user.email : undefined;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="rounded-lg size-9 border border-border/40 hover:border-primary/50 text-muted-foreground hover:text-foreground bg-card/60 backdrop-blur-md transition-colors overflow-hidden p-0"
+        <button
+          type="button"
+          aria-label="Account menu"
+          className="flex items-center gap-2 rounded-xl px-2 py-1.5 transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0C60FC]/30"
         >
-          <Avatar className="size-full rounded-lg">
-            <AvatarImage src={resolveAvatarUrl(user)} className="object-cover" />
-            <AvatarFallback className="rounded-lg bg-zinc-800 font-mono text-[10px] font-bold text-zinc-400">
-              {user?.username?.[0]?.toUpperCase() || "U"}
-            </AvatarFallback>
-          </Avatar>
-          <span className="sr-only">Toggle user menu</span>
-        </Button>
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#0C60FC] text-xs font-extrabold text-white shadow-sm">
+            {avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={avatarUrl}
+                alt={displayName}
+                className="h-full w-full object-cover"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              initialsOf(user)
+            )}
+          </span>
+          <span className="hidden max-w-[100px] truncate text-xs font-bold text-slate-700 sm:block">
+            {displayName.split(" ")[0] || displayName}
+          </span>
+          <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+        </button>
       </DropdownMenuTrigger>
+
       <DropdownMenuContent
         align={align}
-        className="w-56 rounded-lg border border-border/50"
+        sideOffset={8}
+        className="w-60 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl ring-1 ring-black/5"
       >
-        <DropdownMenuLabel className="font-mono text-[10px] tracking-widest uppercase text-muted-foreground/80 py-2">
-          {user.username || "My Account"}
-        </DropdownMenuLabel>
-
-        <DropdownMenuSeparator />
+        {/* User identity block */}
+        <div className="px-3 py-2 border-b border-slate-100 mb-1">
+          <p className="text-xs font-bold text-slate-900 truncate">
+            {displayName}
+          </p>
+          {email && (
+            <p className="text-[10px] text-slate-400 truncate">{email}</p>
+          )}
+        </div>
 
         {/* App Dashboard Link */}
-
-        <DropdownMenuItem
-          asChild
-          className="rounded-lg cursor-pointer group hover:bg-primary/80"
-        >
-          <Link href="/app" className="w-full flex items-center gap-2">
-            <LayoutDashboard className="size-4 text-muted-foreground group-hover:text-white transition-colors" />
-            <span className="font-mono text-xs uppercase tracking-widest group-hover:text-white transition-colors">
-              App
-            </span>
+        <DropdownMenuItem asChild>
+          <Link
+            href="/app"
+            className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 focus:bg-slate-50"
+          >
+            <LayoutDashboard className="h-4 w-4 text-[#0C60FC]" />
+            Open dashboard
           </Link>
         </DropdownMenuItem>
 
-        {/* Global Settings */}
-        <DropdownMenuItem
-          asChild
-          className="rounded-lg cursor-pointer group hover:bg-primary/80"
-        >
-          <Link href="/app/settings" className="w-full flex items-center gap-2">
-            <Settings className="size-4 text-muted-foreground group-hover:text-white transition-colors" />
-            <span className="font-mono text-xs uppercase tracking-widest group-hover:text-white transition-colors">
-              Settings
-            </span>
+        {/* Settings */}
+        <DropdownMenuItem asChild>
+          <Link
+            href="/app/settings"
+            className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 focus:bg-slate-50"
+          >
+            <Settings className="h-4 w-4 text-slate-500" />
+            Settings
           </Link>
         </DropdownMenuItem>
 
         {(user.role === "super_admin" || user.role === "moderator") && (
           <>
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel className="font-mono text-[10px] tracking-widest uppercase text-primary/80 py-2">
-              Admin
-            </DropdownMenuLabel>
-            <DropdownMenuItem
-              asChild
-              className="rounded-lg cursor-pointer group hover:bg-primary/80"
-            >
-              <Link href="/admin" className="w-full flex items-center gap-2">
-                <LayoutDashboard className="size-4 text-primary opacity-80 group-hover:opacity-100 group-hover:text-white transition-colors" />
-                <span className="font-mono text-xs uppercase tracking-widest text-primary group-hover:text-white transition-colors">
-                  Admin Panel
-                </span>
+            <DropdownMenuSeparator className="my-1 bg-slate-100" />
+            <DropdownMenuItem asChild>
+              <Link
+                href="/admin"
+                className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-[#0C60FC] transition hover:bg-blue-50 focus:bg-blue-50"
+              >
+                <LayoutDashboard className="h-4 w-4" />
+                Admin Panel
               </Link>
             </DropdownMenuItem>
           </>
         )}
 
-        <DropdownMenuSeparator />
+        <DropdownMenuSeparator className="my-1 bg-slate-100" />
 
         <DropdownMenuItem
           onClick={onLogout}
-          className="rounded-lg cursor-pointer group hover:bg-red-500/10 focus:bg-red-500/10 hover:text-red-500 focus:text-red-500"
+          className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-red-50 hover:text-red-600 focus:bg-red-50 focus:text-red-600"
         >
-          <LogOut className="size-4 mt-0.5 text-muted-foreground group-hover:text-red-500 group-focus:text-red-500 transition-colors" />
-          <span className="font-mono text-xs uppercase tracking-widest ml-2 group-hover:text-red-500 group-focus:text-red-500 transition-colors">
-            Sign Out
-          </span>
+          <LogOut className="h-4 w-4" />
+          Sign out
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

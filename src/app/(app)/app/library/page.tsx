@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -11,11 +11,12 @@ import {
   Search,
   CheckCircle2,
   AlertCircle,
-  FileIcon,
   Globe,
   X,
   Tag,
   Import,
+  Loader2,
+  FileText,
 } from "lucide-react";
 import {
   useLibraryMaterials,
@@ -31,6 +32,31 @@ import { useCourseSearch } from "@/hooks/common/use-courses";
 import { useUploadFile } from "@/hooks/common/use-upload";
 import { type MaterialSummary } from "@/types/session";
 import { toast } from "sonner";
+
+// ─── MIME helpers (mirrors src/app/library/page.tsx) ─────────────────────────
+
+function cleanTitle(raw: string) {
+  return raw.replace(/\.(pdf|docx?|pptx?|txt|xlsx?|csv|zip)$/i, "").trim();
+}
+
+function mimeInfo(mime = "") {
+  if (mime.includes("pdf"))
+    return { label: "PDF", icon: FileText, bg: "bg-rose-50", text: "text-rose-700", ring: "ring-rose-200", previewBg: "bg-rose-50", accent: "text-rose-500" };
+  if (mime.includes("word") || mime.includes("docx") || mime.includes("document"))
+    return { label: "DOCX", icon: FileText, bg: "bg-blue-50", text: "text-blue-700", ring: "ring-blue-200", previewBg: "bg-blue-50", accent: "text-blue-500" };
+  if (mime.includes("presentation") || mime.includes("pptx") || mime.includes("powerpoint"))
+    return { label: "PPTX", icon: FileText, bg: "bg-orange-50", text: "text-orange-700", ring: "ring-orange-200", previewBg: "bg-orange-50", accent: "text-orange-500" };
+  if (mime.includes("sheet") || mime.includes("xlsx") || mime.includes("csv"))
+    return { label: "XLSX", icon: FileText, bg: "bg-green-50", text: "text-green-700", ring: "ring-green-200", previewBg: "bg-green-50", accent: "text-green-500" };
+  return { label: "FILE", icon: FileText, bg: "bg-violet-50", text: "text-violet-700", ring: "ring-violet-200", previewBg: "bg-violet-50", accent: "text-violet-500" };
+}
+
+function formatBytes(bytes: number) {
+  if (!bytes) return "—";
+  return bytes < 1024 * 1024
+    ? `${(bytes / 1024).toFixed(0)} KB`
+    : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 // ─── Submit to Library Modal ──────────────────────────────────────────────────
 
@@ -97,40 +123,40 @@ function SubmitToLibraryModal({
   };
 
   const fieldCls =
-    "w-full border border-border/50 bg-background/40 px-3 py-2 text-[12px] font-mono focus:outline-none focus:border-primary/50 transition-colors";
+    "w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold outline-none transition placeholder:text-slate-400 focus:border-[#0C60FC] focus:ring-4 focus:ring-blue-100";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.97 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-lg border border-primary/30 bg-card shadow-xl overflow-y-auto max-h-[90vh]"
+        className="w-full max-w-lg overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl max-h-[90vh]"
       >
         {/* Header */}
-        <div className="flex items-start justify-between p-5 border-b border-border/30">
+        <div className="flex items-start justify-between border-b border-slate-100 p-5">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <Globe className="size-3.5 text-primary" />
-              <p className="text-[10px] font-mono uppercase tracking-widest text-primary">
+            <div className="mb-1 flex items-center gap-2">
+              <Globe className="h-4 w-4 text-[#0C60FC]" />
+              <p className="text-[10px] font-extrabold uppercase tracking-[.22em] text-[#0C60FC]">
                 Share to Public Library
               </p>
             </div>
-            <p className="text-[11px] font-mono text-muted-foreground/60 max-w-xs truncate">
+            <p className="truncate text-[11px] font-semibold text-slate-500 max-w-xs">
               {material.title}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-muted-foreground/40 hover:text-muted-foreground transition-colors mt-0.5"
+            className="mt-0.5 text-slate-400 transition hover:text-slate-700"
           >
-            <X className="size-4" />
+            <X className="h-4 w-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 p-5">
           {/* Title */}
           <div>
-            <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1.5">
+            <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-widest text-slate-500">
               Title *
             </label>
             <input
@@ -144,9 +170,8 @@ function SubmitToLibraryModal({
 
           {/* Description */}
           <div>
-            <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1.5">
-              Description{" "}
-              <span className="text-muted-foreground/30">(optional)</span>
+            <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-widest text-slate-500">
+              Description <span className="text-slate-300">(optional)</span>
             </label>
             <textarea
               value={form.description}
@@ -160,9 +185,8 @@ function SubmitToLibraryModal({
           <div className="grid grid-cols-2 gap-3">
             {/* Subject */}
             <div>
-              <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1.5">
-                Subject{" "}
-                <span className="text-muted-foreground/30">(optional)</span>
+              <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-widest text-slate-500">
+                Subject <span className="text-slate-300">(optional)</span>
               </label>
               <input
                 value={form.subject}
@@ -174,9 +198,8 @@ function SubmitToLibraryModal({
 
             {/* Year */}
             <div>
-              <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1.5">
-                Year{" "}
-                <span className="text-muted-foreground/30">(optional)</span>
+              <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-widest text-slate-500">
+                Year <span className="text-slate-300">(optional)</span>
               </label>
               <input
                 type="number"
@@ -192,13 +215,12 @@ function SubmitToLibraryModal({
 
           {/* Course search */}
           <div className="relative">
-            <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1.5">
-              Course{" "}
-              <span className="text-muted-foreground/30">(optional)</span>
+            <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-widest text-slate-500">
+              Course <span className="text-slate-300">(optional)</span>
             </label>
             {selectedCourse ? (
-              <div className="flex items-center justify-between border border-primary/30 bg-primary/5 px-3 py-2">
-                <span className="text-[12px] font-mono text-foreground">
+              <div className="flex items-center justify-between rounded-xl border border-[#0C60FC]/30 bg-blue-50 px-3 py-2.5">
+                <span className="text-[12px] font-bold text-slate-900">
                   {selectedCourse.code} · {selectedCourse.title}
                 </span>
                 <button
@@ -207,14 +229,14 @@ function SubmitToLibraryModal({
                     set("courseId", "");
                     set("courseSearch", "");
                   }}
-                  className="text-muted-foreground/40 hover:text-muted-foreground ml-2"
+                  className="ml-2 text-slate-400 hover:text-slate-700"
                 >
-                  <X className="size-3" />
+                  <X className="h-3.5 w-3.5" />
                 </button>
               </div>
             ) : (
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3 text-muted-foreground/40" />
+                <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
                 <input
                   value={form.courseSearch}
                   onChange={(e) => {
@@ -222,11 +244,11 @@ function SubmitToLibraryModal({
                     setCoursePickerOpen(true);
                   }}
                   onFocus={() => setCoursePickerOpen(true)}
-                  className={`${fieldCls} pl-8`}
+                  className={`${fieldCls} pl-9`}
                   placeholder="Search by course code or name…"
                 />
                 {coursePickerOpen && courses.length > 0 && (
-                  <div className="absolute z-10 top-full left-0 right-0 border border-border/50 bg-card shadow-lg max-h-48 overflow-y-auto">
+                  <div className="absolute left-0 right-0 top-full z-10 mt-2 max-h-48 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg">
                     {courses.map((c) => (
                       <button
                         key={c._id}
@@ -236,12 +258,10 @@ function SubmitToLibraryModal({
                           set("courseSearch", `${c.code} · ${c.title}`);
                           setCoursePickerOpen(false);
                         }}
-                        className="w-full text-left px-3 py-2 text-[11px] font-mono hover:bg-primary/5 transition-colors border-b border-border/20 last:border-0"
+                        className="w-full border-b border-slate-100 px-3 py-2 text-left text-[12px] font-semibold transition last:border-0 hover:bg-slate-50"
                       >
-                        <span className="text-primary/80">{c.code}</span>
-                        <span className="text-muted-foreground ml-2">
-                          {c.title}
-                        </span>
+                        <span className="font-bold text-[#0C60FC]">{c.code}</span>
+                        <span className="ml-2 text-slate-600">{c.title}</span>
                       </button>
                     ))}
                   </div>
@@ -252,24 +272,21 @@ function SubmitToLibraryModal({
 
           {/* Tags */}
           <div>
-            <label className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 block mb-1.5">
-              Tags{" "}
-              <span className="text-muted-foreground/30">
-                (comma-separated, optional)
-              </span>
+            <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-widest text-slate-500">
+              Tags <span className="text-slate-300">(comma-separated, optional)</span>
             </label>
             <div className="relative">
-              <Tag className="absolute left-3 top-1/2 -translate-y-1/2 size-3 text-muted-foreground/40" />
+              <Tag className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
               <input
                 value={form.tags}
                 onChange={(e) => set("tags", e.target.value)}
-                className={`${fieldCls} pl-8`}
+                className={`${fieldCls} pl-9`}
                 placeholder="e.g. past paper, algorithms, year 3"
               />
             </div>
           </div>
 
-          <p className="text-[10px] font-mono text-muted-foreground/40 leading-relaxed">
+          <p className="text-[10px] leading-relaxed text-slate-400">
             Your submission will be reviewed before appearing in the public
             library. Do not submit copyrighted material you don&apos;t have
             rights to share.
@@ -280,14 +297,14 @@ function SubmitToLibraryModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 text-[10px] font-mono uppercase tracking-widest border border-border/40 hover:bg-secondary/20 transition-colors"
+              className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-[11px] font-extrabold uppercase tracking-widest text-slate-600 transition hover:bg-slate-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submit.isPending}
-              className="flex-1 px-4 py-2.5 text-[10px] font-mono uppercase tracking-widest bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50 transition-all"
+              className="flex-1 rounded-xl bg-slate-950 px-4 py-2.5 text-[11px] font-extrabold uppercase tracking-widest text-white transition hover:bg-[#0C60FC] disabled:opacity-50"
             >
               {submit.isPending ? "Submitting…" : "Submit for Review"}
             </button>
@@ -298,7 +315,100 @@ function SubmitToLibraryModal({
   );
 }
 
+// ─── Status Pill ──────────────────────────────────────────────────────────────
+
+function StatusPill({
+  status,
+  processingStatus,
+  libraryStatus,
+  isImported,
+}: {
+  status?: string;
+  processingStatus: MaterialSummary["processingStatus"];
+  libraryStatus?: MaterialSummary["libraryStatus"];
+  isImported?: boolean;
+}) {
+  const pills: { label: string; cls: string; key: string }[] = [];
+
+  if (processingStatus === "ready") {
+    pills.push({
+      key: "ready",
+      label: "Ready",
+      cls: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
+    });
+  } else if (processingStatus === "failed") {
+    pills.push({
+      key: "failed",
+      label: "Failed",
+      cls: "bg-rose-50 text-rose-700 ring-1 ring-rose-200",
+    });
+  } else if (
+    processingStatus === "processing" ||
+    processingStatus === "pending"
+  ) {
+    pills.push({
+      key: "processing",
+      label: processingStatus === "pending" ? "Queued" : "Processing",
+      cls: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
+    });
+  }
+
+  if (libraryStatus === "published") {
+    pills.push({
+      key: "published",
+      label: "Published",
+      cls: "bg-blue-50 text-[#0C60FC] ring-1 ring-blue-200",
+    });
+  } else if (libraryStatus === "pending_review") {
+    pills.push({
+      key: "review",
+      label: "In review",
+      cls: "bg-slate-100 text-slate-600 ring-1 ring-slate-200",
+    });
+  } else if (libraryStatus === "rejected") {
+    pills.push({
+      key: "rejected",
+      label: "Rejected",
+      cls: "bg-rose-50 text-rose-600 ring-1 ring-rose-200 line-through opacity-70",
+    });
+  }
+
+  if (isImported) {
+    pills.push({
+      key: "imported",
+      label: "Imported",
+      cls: "bg-violet-50 text-violet-700 ring-1 ring-violet-200",
+    });
+  }
+
+  if (pills.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      {pills.map((p) => (
+        <span
+          key={p.key}
+          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-extrabold ${p.cls}`}
+        >
+          {p.key === "ready" && <CheckCircle2 className="h-3 w-3" />}
+          {p.key === "failed" && <AlertCircle className="h-3 w-3" />}
+          {p.key === "processing" && (
+            <RefreshCw className="h-3 w-3 animate-spin" />
+          )}
+          {p.key === "published" && <Globe className="h-3 w-3" />}
+          {p.key === "review" && <Globe className="h-3 w-3" />}
+          {p.key === "rejected" && <Globe className="h-3 w-3" />}
+          {p.key === "imported" && <Import className="h-3 w-3" />}
+          {p.label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
+
+type StatusFilter = "all" | "ready" | "processing" | "failed";
 
 export default function LibraryPage() {
   const { data: materials = [], isLoading } = useLibraryMaterials();
@@ -311,14 +421,51 @@ export default function LibraryPage() {
   const uploadFile = useUploadFile();
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [isUploading, setIsUploading] = useState(false);
   const [submitTarget, setSubmitTarget] = useState<MaterialSummary | null>(
     null,
   );
 
-  const filteredMaterials = (materials || []).filter((m) =>
-    (m.title || "").toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  // Counts for the stat strip and filter chips
+  const counts = useMemo(() => {
+    const list = materials ?? [];
+    return {
+      total: list.length,
+      ready: list.filter((m) => m.processingStatus === "ready").length,
+      processing: list.filter(
+        (m) =>
+          m.processingStatus === "processing" ||
+          m.processingStatus === "pending",
+      ).length,
+      failed: list.filter((m) => m.processingStatus === "failed").length,
+    };
+  }, [materials]);
+
+  const filteredMaterials = useMemo(() => {
+    const list = materials ?? [];
+    const q = searchQuery.trim().toLowerCase();
+    return list.filter((m) => {
+      if (statusFilter === "ready" && m.processingStatus !== "ready")
+        return false;
+      if (
+        statusFilter === "processing" &&
+        m.processingStatus !== "processing" &&
+        m.processingStatus !== "pending"
+      )
+        return false;
+      if (statusFilter === "failed" && m.processingStatus !== "failed")
+        return false;
+      if (
+        q &&
+        !(m.title || "").toLowerCase().includes(q) &&
+        !(m.courseCode || "").toLowerCase().includes(q) &&
+        !(m.courseTitle || "").toLowerCase().includes(q)
+      )
+        return false;
+      return true;
+    });
+  }, [materials, searchQuery, statusFilter]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -399,213 +546,349 @@ export default function LibraryPage() {
     }
   };
 
+  const handleDeleteMaterial = async (material: MaterialSummary) => {
+    if (
+      !window.confirm(
+        `Delete "${material.title}"? This also removes its generated quizzes, flashcards and mind maps.`,
+      )
+    )
+      return;
+    try {
+      await deleteMaterial.mutateAsync(material.id);
+      toast.success("Material deleted");
+    } catch {
+      toast.error("Failed to delete material");
+    }
+  };
+
   return (
-    <div className="flex flex-col h-full max-w-5xl mx-auto px-6 py-8">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-black tracking-tighter leading-none mb-2">
-            Library
-          </h1>
-          <p className="text-sm text-muted-foreground font-mono">
-            Manage your study materials and generate AI content.
-          </p>
+    <div className="qz-app min-h-full bg-[#F7F9FC] text-slate-900 antialiased">
+      {/* Header / Hero (mirrors the public library page shape) */}
+      <header className="border-b border-slate-200 bg-white px-6 pt-8 pb-6 lg:px-8">
+        <div className="mx-auto flex max-w-7xl flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-extrabold uppercase tracking-[.22em] text-[#0C60FC]">
+              My Library
+            </p>
+            <h1 className="display mt-2 text-3xl font-bold leading-tight sm:text-4xl">
+              Your study materials.
+            </h1>
+            <p className="hand mt-1 text-xl text-[#0C60FC]">
+              upload, generate & share ✦
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
+            <span className="rounded-full bg-slate-100 px-3 py-1.5">
+              {counts.total} total
+            </span>
+            <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-emerald-700">
+              {counts.ready} ready
+            </span>
+            {counts.processing > 0 && (
+              <span className="rounded-full bg-amber-50 px-3 py-1.5 text-amber-700">
+                {counts.processing} processing
+              </span>
+            )}
+            {counts.failed > 0 && (
+              <span className="rounded-full bg-rose-50 px-3 py-1.5 text-rose-700">
+                {counts.failed} failed
+              </span>
+            )}
+          </div>
         </div>
 
-        <label className="group relative flex items-center justify-center gap-2 bg-primary px-4 py-2 cursor-pointer hover:bg-primary/90 transition-all rounded-lg">
-          <Plus className="size-4 text-primary-foreground" />
-          <span className="font-mono text-[11px] uppercase tracking-widest text-primary-foreground">
-            {isUploading ? "Uploading..." : "Add Material"}
-          </span>
-          <input
-            type="file"
-            className="hidden"
-            onChange={handleFileUpload}
-            disabled={isUploading}
-          />
-        </label>
-      </div>
+        {/* Search + Upload row */}
+        <div className="mx-auto mt-6 flex max-w-7xl flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative max-w-3xl flex-1">
+            <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search by title, course code or name…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-2xl border border-slate-200 bg-white py-3.5 pl-12 pr-4 text-sm font-semibold outline-none transition placeholder:text-slate-400 focus:border-[#0C60FC] focus:ring-4 focus:ring-blue-100"
+            />
+          </div>
 
-      {/* Search */}
-      <div className="relative mb-6">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/50" />
-        <input
-          type="text"
-          placeholder="Search materials..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full bg-card/30 border border-border/40 pl-10 pr-4 py-2.5 text-sm font-mono focus:outline-none focus:border-primary/40 transition-all"
-        />
-      </div>
+          <label className="squishy group inline-flex cursor-pointer items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3.5 text-sm font-extrabold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-[#0C60FC]">
+            {isUploading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Plus className="h-4 w-4" />
+            )}
+            <span>{isUploading ? "Uploading…" : "Add Material"}</span>
+            <input
+              type="file"
+              className="hidden"
+              onChange={handleFileUpload}
+              disabled={isUploading}
+            />
+          </label>
+        </div>
+
+        {/* Status filter chips */}
+        <div className="mx-auto mt-5 flex max-w-7xl flex-wrap gap-2">
+          {(
+            [
+              { id: "all" as const, label: "All", count: counts.total },
+              { id: "ready" as const, label: "Ready", count: counts.ready },
+              {
+                id: "processing" as const,
+                label: "Processing",
+                count: counts.processing,
+              },
+              { id: "failed" as const, label: "Failed", count: counts.failed },
+            ]
+          ).map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setStatusFilter(tab.id)}
+              className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition ${
+                statusFilter === tab.id
+                  ? "bg-slate-950 text-white"
+                  : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
+              }`}
+            >
+              {tab.label}
+              <span
+                className={`rounded-full px-1.5 py-0.5 text-[9px] font-extrabold ${
+                  statusFilter === tab.id
+                    ? "bg-white/15 text-white"
+                    : "bg-slate-100 text-slate-500"
+                }`}
+              >
+                {tab.count}
+              </span>
+            </button>
+          ))}
+        </div>
+      </header>
 
       {/* Grid */}
-      {isLoading ? (
-        <div className="flex-1 flex flex-col items-center justify-center py-20">
-          <RefreshCw className="size-8 text-primary animate-spin mb-4" />
-          <p className="text-xs font-mono uppercase tracking-widest text-muted-foreground">
-            Loading library...
-          </p>
-        </div>
-      ) : filteredMaterials.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center py-20 border border-dashed border-border/40 bg-card/10">
-          <BookOpen className="size-12 text-muted-foreground/20 mb-4" />
-          <p className="text-sm font-mono text-muted-foreground">
-            {searchQuery ? "No matches found" : "Your library is empty"}
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <AnimatePresence mode="popLayout">
-            {filteredMaterials.map((material) => (
-              <motion.div
-                key={material.id}
-                layout
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="group flex flex-col border border-border/40 bg-card/30 hover:border-primary/40 hover:bg-primary/5 transition-all p-4"
-              >
-                {/* Top row */}
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="size-10 shrink-0 flex items-center justify-center bg-muted/50 border border-border/40">
-                      <FileIcon className="size-5 text-muted-foreground" />
-                    </div>
-                    <div className="min-w-0">
-                      <h3 className="text-sm font-bold truncate leading-tight mb-1">
-                        {material.title}
-                      </h3>
-                      <p className="text-[10px] font-mono text-muted-foreground uppercase truncate">
-                        {material.mimeType} ·{" "}
-                        {(material.size / (1024 * 1024)).toFixed(2)} MB
-                        {material.courseCode && ` · ${material.courseCode}`}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => deleteMaterial.mutate(material.id)}
-                    className="shrink-0 p-1.5 text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-all"
-                    title="Delete material"
-                  >
-                    <Trash2 className="size-3.5" />
-                  </button>
-                </div>
-
-                {/* Footer */}
-                <div className="mt-auto pt-3 border-t border-border/10 space-y-2">
-                  {/* Status + process/generate row */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      {material.processingStatus === "ready" ? (
-                        <span className="flex items-center gap-1 text-[9px] font-mono text-emerald-500 uppercase tracking-tighter">
-                          <CheckCircle2 className="size-2.5" />
-                          Ready
-                        </span>
-                      ) : material.processingStatus === "failed" ? (
-                        <span className="flex items-center gap-1 text-[9px] font-mono text-destructive uppercase tracking-tighter">
-                          <AlertCircle className="size-2.5" />
-                          Error
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1 text-[9px] font-mono text-amber-500 uppercase tracking-tighter animate-pulse">
-                          <RefreshCw className="size-2.5 animate-spin" />
-                          Processing
-                        </span>
-                      )}
-
-                      {/* Contribution Status Badge */}
-                      {material.libraryStatus === "published" && (
-                        <span className="flex items-center gap-1 text-[9px] font-mono text-primary uppercase tracking-tighter border border-primary/20 px-1 ml-1">
-                          <Globe className="size-2.5" />
-                          Published
-                        </span>
-                      )}
-                      {material.libraryStatus === "pending_review" && (
-                        <span className="flex items-center gap-1 text-[9px] font-mono text-muted-foreground uppercase tracking-tighter border border-border/40 px-1 ml-1">
-                          <Globe className="size-2.5" />
-                          Reviewing
-                        </span>
-                      )}
-                      {material.libraryStatus === "rejected" && (
-                        <span className="flex items-center gap-1 text-[9px] font-mono text-destructive uppercase tracking-tighter border border-destructive/20 px-1 ml-1 line-through opacity-50">
-                          <Globe className="size-2.5" />
-                          Rejected
-                        </span>
-                      )}
-
-                      {material.isImported && (
-                        <span className="flex items-center gap-1 text-[9px] font-mono text-purple-500 uppercase tracking-tighter border border-purple-500/20 px-1 ml-1">
-                          <Import className="size-2.5" />
-                          Imported
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-1">
-                      {material.processingStatus !== "ready" &&
-                      material.processingStatus !== "processing" ? (
-                        <button
-                          onClick={() => handleProcessMaterial(material.id)}
-                          disabled={processMaterial.isPending}
-                          className="inline-flex items-center gap-1.5 px-2 py-1 text-[9px] font-mono uppercase tracking-widest text-primary hover:bg-primary/10 disabled:opacity-30 transition-colors"
-                        >
-                          <RefreshCw className="size-3" />
-                          Process
-                        </button>
-                      ) : (
-                        <>
-                          <button
-                            onClick={() =>
-                              handleGenerateFlashcards(material.id)
-                            }
-                            disabled={material.processingStatus !== "ready"}
-                            className="inline-flex items-center gap-1 px-2 py-1 text-[9px] font-mono uppercase tracking-widest text-muted-foreground hover:text-primary disabled:opacity-30 transition-colors"
-                          >
-                            <Sparkles className="size-3" />
-                            Flashcards
-                          </button>
-                          <div className="w-px h-2 bg-border/40" />
-                          <button
-                            onClick={() => handleGenerateQuiz(material.id)}
-                            disabled={material.processingStatus !== "ready"}
-                            className="inline-flex items-center gap-1 px-2 py-1 text-[9px] font-mono uppercase tracking-widest text-muted-foreground hover:text-primary disabled:opacity-30 transition-colors"
-                          >
-                            <Sparkles className="size-3" />
-                            Quiz
-                          </button>
-                          <div className="w-px h-2 bg-border/40" />
-                          <button
-                            onClick={() => handleGenerateMindMap(material.id)}
-                            disabled={material.processingStatus !== "ready"}
-                            className="inline-flex items-center gap-1 px-2 py-1 text-[9px] font-mono uppercase tracking-widest text-muted-foreground hover:text-primary disabled:opacity-30 transition-colors"
-                          >
-                            <Sparkles className="size-3" />
-                            Mind Map
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Share to Library — only for ready materials not already published/pending and NOT imported */}
-                  {material.processingStatus === "ready" &&
+      <section className="px-6 py-8 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white py-20">
+              <Loader2 className="mb-4 h-8 w-8 animate-spin text-[#0C60FC]" />
+              <p className="text-xs font-extrabold uppercase tracking-widest text-slate-400">
+                Loading your library…
+              </p>
+            </div>
+          ) : filteredMaterials.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white py-20">
+              <BookOpen className="mb-4 h-12 w-12 text-slate-300" />
+              <p className="text-sm font-bold text-slate-700">
+                {searchQuery || statusFilter !== "all"
+                  ? "No matches found"
+                  : "Your library is empty"}
+              </p>
+              <p className="mt-1 max-w-sm text-center text-xs font-semibold text-slate-500">
+                {searchQuery || statusFilter !== "all"
+                  ? "Try a different search or filter."
+                  : "Upload a PDF, DOCX, PPTX or spreadsheet to start generating flashcards, quizzes and mind maps."}
+              </p>
+              {!searchQuery && statusFilter === "all" && (
+                <label className="mt-5 inline-flex cursor-pointer items-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-xs font-extrabold text-white transition hover:bg-[#0C60FC]">
+                  <Plus className="h-4 w-4" />
+                  Upload your first material
+                  <input
+                    type="file"
+                    className="hidden"
+                    onChange={handleFileUpload}
+                    disabled={isUploading}
+                  />
+                </label>
+              )}
+            </div>
+          ) : (
+            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              <AnimatePresence mode="popLayout">
+                {filteredMaterials.map((material) => {
+                  const info = mimeInfo(material.mimeType);
+                  const isReady = material.processingStatus === "ready";
+                  const canGenerate =
+                    isReady &&
+                    !generateFlashcards.isPending &&
+                    !generateQuiz.isPending &&
+                    !generateMindMap.isPending;
+                  const canShare =
+                    isReady &&
                     !material.isImported &&
                     (!material.libraryStatus ||
-                      material.libraryStatus === "rejected") && (
-                      <button
-                        onClick={() => setSubmitTarget(material)}
-                        className="w-full flex items-center justify-center gap-1.5 py-1.5 text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 hover:text-primary hover:bg-primary/5 border border-border/20 hover:border-primary/20 transition-all"
-                      >
-                        <Globe className="size-3" />
-                        Share to Public Library
-                      </button>
-                    )}
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
+                      material.libraryStatus === "rejected");
+                  const TitleIcon = info.icon;
+
+                  return (
+                    <motion.article
+                      key={material.id}
+                      layout
+                      initial={{ opacity: 0, scale: 0.96 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.96 }}
+                      transition={{ duration: 0.18 }}
+                      className="play-card flex flex-col rounded-[26px] border border-slate-200 bg-white p-6 shadow-sm"
+                      style={{ borderRadius: "26px" }}
+                    >
+                      {/* Top row: MIME badge + delete */}
+                      <div className="flex items-start justify-between gap-2">
+                        <span
+                          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-extrabold ${info.bg} ${info.text}`}
+                        >
+                          <TitleIcon className="h-3 w-3" strokeWidth={2.25} />
+                          {info.label}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteMaterial(material)}
+                          disabled={deleteMaterial.isPending}
+                          className="rounded-xl p-1.5 text-slate-300 transition hover:bg-rose-50 hover:text-rose-600 disabled:opacity-40"
+                          title="Delete material"
+                          aria-label="Delete material"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      {/* Title + meta */}
+                      <h3 className="mt-4 truncate text-base font-bold text-slate-900">
+                        {cleanTitle(material.title)}
+                      </h3>
+                      <p className="mt-1 truncate text-xs font-semibold text-slate-500">
+                        {[
+                          material.courseCode,
+                          formatBytes(material.size),
+                          new Date(material.createdAt).toLocaleDateString(
+                            undefined,
+                            { month: "short", day: "numeric" },
+                          ),
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </p>
+
+                      {/* Preview block */}
+                      <div className={`mt-4 rounded-xl ${info.previewBg} p-3`}>
+                        <div className="flex items-start gap-3">
+                          <span
+                            className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white ring-1 ${info.ring} ${info.text}`}
+                          >
+                            <TitleIcon
+                              className="h-4 w-4"
+                              strokeWidth={2.25}
+                              aria-hidden="true"
+                            />
+                          </span>
+                          <div className="min-w-0 flex-1 space-y-1.5">
+                            <div
+                              className={`h-2 w-full rounded-full ${info.bg} opacity-80`}
+                            />
+                            <div
+                              className={`h-2 w-10/12 rounded-full ${info.bg} opacity-60`}
+                            />
+                            <div
+                              className={`h-2 w-7/12 rounded-full ${info.bg} opacity-40`}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Status pills */}
+                      <div className="mt-4">
+                        <StatusPill
+                          processingStatus={material.processingStatus}
+                          libraryStatus={material.libraryStatus}
+                          isImported={material.isImported}
+                        />
+                      </div>
+
+                      {/* Actions */}
+                      <div className="mt-auto pt-5">
+                        {!isReady ? (
+                          <button
+                            type="button"
+                            onClick={() => handleProcessMaterial(material.id)}
+                            disabled={
+                              processMaterial.isPending ||
+                              material.processingStatus === "processing" ||
+                              material.processingStatus === "pending"
+                            }
+                            className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-3 py-2.5 text-xs font-extrabold text-white transition hover:bg-[#0C60FC] disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <RefreshCw
+                              className={`h-3.5 w-3.5 ${
+                                material.processingStatus === "processing" ||
+                                material.processingStatus === "pending"
+                                  ? "animate-spin"
+                                  : ""
+                              }`}
+                            />
+                            {material.processingStatus === "failed"
+                              ? "Retry processing"
+                              : material.processingStatus === "processing" ||
+                                  material.processingStatus === "pending"
+                                ? "Processing…"
+                                : "Process material"}
+                          </button>
+                        ) : (
+                          <>
+                            <div className="grid grid-cols-3 gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleGenerateFlashcards(material.id)
+                                }
+                                disabled={!canGenerate}
+                                className="inline-flex items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white px-2 py-2 text-[10px] font-extrabold uppercase tracking-widest text-slate-600 transition hover:border-[#0C60FC]/40 hover:bg-blue-50 hover:text-[#0C60FC] disabled:cursor-not-allowed disabled:opacity-40"
+                                title="Generate flashcards"
+                              >
+                                <Sparkles className="h-3 w-3" />
+                                Cards
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleGenerateQuiz(material.id)}
+                                disabled={!canGenerate}
+                                className="inline-flex items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white px-2 py-2 text-[10px] font-extrabold uppercase tracking-widest text-slate-600 transition hover:border-[#0C60FC]/40 hover:bg-blue-50 hover:text-[#0C60FC] disabled:cursor-not-allowed disabled:opacity-40"
+                                title="Generate quiz"
+                              >
+                                <Sparkles className="h-3 w-3" />
+                                Quiz
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleGenerateMindMap(material.id)
+                                }
+                                disabled={!canGenerate}
+                                className="inline-flex items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white px-2 py-2 text-[10px] font-extrabold uppercase tracking-widest text-slate-600 transition hover:border-[#0C60FC]/40 hover:bg-blue-50 hover:text-[#0C60FC] disabled:cursor-not-allowed disabled:opacity-40"
+                                title="Generate mind map"
+                              >
+                                <Sparkles className="h-3 w-3" />
+                                Map
+                              </button>
+                            </div>
+                            {canShare && (
+                              <button
+                                type="button"
+                                onClick={() => setSubmitTarget(material)}
+                                className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-slate-200 px-3 py-2 text-[10px] font-extrabold uppercase tracking-widest text-slate-500 transition hover:border-[#0C60FC]/40 hover:bg-blue-50/50 hover:text-[#0C60FC]"
+                              >
+                                <Globe className="h-3 w-3" />
+                                Share to Public Library
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </motion.article>
+                  );
+                })}
+              </AnimatePresence>
+            </div>
+          )}
         </div>
-      )}
+      </section>
 
       {/* Submit Modal */}
       {submitTarget && (

@@ -8,6 +8,13 @@ import { useSessions, useCreateSession } from "@/hooks";
 import { useAuth } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  useSidebar,
+} from "@/components/ui/sidebar";
 
 const QUBI_POSES = [
   {
@@ -134,9 +141,13 @@ export function AppSidebar() {
   ];
 
   return (
-    <aside className="hidden border-r border-slate-200 bg-white lg:flex lg:h-screen lg:w-[248px] lg:flex-col lg:sticky lg:top-0 shrink-0">
+    <Sidebar
+      collapsible="icon"
+      variant="sidebar"
+      className="border-r border-slate-200 bg-white"
+    >
       {/* Brand & Animated Qubi Mascot Header */}
-      <div className="flex h-18 items-center border-b border-slate-100 px-3 py-2 bg-gradient-to-br from-blue-50/60 via-white to-indigo-50/30 relative overflow-hidden shrink-0">
+      <SidebarHeader className="h-18 border-b border-slate-100 bg-gradient-to-br from-blue-50/60 via-white to-indigo-50/30 relative overflow-hidden shrink-0 p-3">
         {/* Qubi Mascot — links to the app's home route (/app) */}
         <Link
           href="/app"
@@ -158,7 +169,7 @@ export function AppSidebar() {
             </AnimatePresence>
           </div>
 
-          <div className="min-w-0 flex-1">
+          <CollapsibleHide className="min-w-0 flex-1">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentPose.title}
@@ -175,12 +186,12 @@ export function AppSidebar() {
                 </p>
               </motion.div>
             </AnimatePresence>
-          </div>
+          </CollapsibleHide>
         </Link>
-      </div>
+      </SidebarHeader>
 
       {/* Main Navigation Scroll Area */}
-      <div className="flex-1 overflow-y-auto p-3 no-scrollbar space-y-4">
+      <SidebarContent className="p-3 gap-4">
         {/* New Session CTA */}
         <button
           onClick={handleNewSession}
@@ -195,9 +206,12 @@ export function AppSidebar() {
         <nav className="space-y-4">
           {navGroups.map((group) => (
             <div key={group.label} className="space-y-1">
-              <p className="px-3 pb-1 pt-1 text-[9px] font-extrabold uppercase tracking-[.18em] text-slate-400">
+              <CollapsibleHide
+                as="p"
+                className="px-3 pb-1 pt-1 text-[9px] font-extrabold uppercase tracking-[.18em] text-slate-400"
+              >
                 {group.label}
-              </p>
+              </CollapsibleHide>
               {group.items.map((item) => {
                 const isActive =
                   item.href === "/app"
@@ -208,6 +222,7 @@ export function AppSidebar() {
                   <Link
                     key={item.label}
                     href={item.href}
+                    title={item.label}
                     className={cn(
                       "nav-link flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs transition font-semibold",
                       isActive
@@ -216,11 +231,11 @@ export function AppSidebar() {
                     )}
                   >
                     <span className="text-base leading-none">{item.icon}</span>
-                    <span>{item.label}</span>
+                    <CollapsibleHide as="span">{item.label}</CollapsibleHide>
                     {item.badge && (
-                      <span className="ml-auto rounded-full bg-rose-50 px-2 py-0.5 text-[9px] font-extrabold text-rose-600">
+                      <CollapsibleHide as="span" className="ml-auto rounded-full bg-rose-50 px-2 py-0.5 text-[9px] font-extrabold text-rose-600">
                         {item.badge}
-                      </span>
+                      </CollapsibleHide>
                     )}
                   </Link>
                 );
@@ -228,23 +243,23 @@ export function AppSidebar() {
             </div>
           ))}
         </nav>
-      </div>
+      </SidebarContent>
 
       {/* User Profile Widget Footer */}
-      <div className="border-t border-slate-100 p-3 shrink-0">
+      <SidebarFooter className="border-t border-slate-100 p-3 shrink-0">
         <div className="rounded-2xl bg-[#F7F9FC] p-3">
           <div className="flex items-center gap-3">
             <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#DFFF61] text-xs font-extrabold text-slate-950">
               {userInitials}
             </span>
-            <div className="min-w-0 flex-1">
+            <CollapsibleHide className="min-w-0 flex-1">
               <p className="truncate text-xs font-extrabold text-slate-950">
                 {user?.name || "Ama Kusi"}
               </p>
               <p className="truncate text-[10px] font-semibold text-slate-500">
                 Computer Science · UG
               </p>
-            </div>
+            </CollapsibleHide>
             <button
               onClick={() => router.push("/app/settings")}
               className="ml-auto text-slate-400 hover:text-slate-600 text-xs font-bold"
@@ -253,14 +268,33 @@ export function AppSidebar() {
               •••
             </button>
           </div>
-          <div className="mt-3 h-1.5 rounded-full bg-slate-200">
-            <div className="h-full w-[68%] rounded-full bg-[#0C60FC]" />
-          </div>
-          <p className="mt-2 text-[9px] font-bold text-slate-400">
-            68% of weekly goal
-          </p>
+          <CollapsibleHide>
+            <div className="mt-3 h-1.5 rounded-full bg-slate-200">
+              <div className="h-full w-[68%] rounded-full bg-[#0C60FC]" />
+            </div>
+            <p className="mt-2 text-[9px] font-bold text-slate-400">
+              68% of weekly goal
+            </p>
+          </CollapsibleHide>
         </div>
-      </div>
-    </aside>
+      </SidebarFooter>
+    </Sidebar>
   );
+}
+
+// Hide inner content when the sidebar is collapsed to icon mode. Used for
+// group labels, item text, badges, Qubi subtitle, and the user widget —
+// everything except the icons and avatars that should remain visible.
+function CollapsibleHide({
+  children,
+  className,
+  as: Tag = "div",
+}: {
+  children: React.ReactNode;
+  className?: string;
+  as?: "div" | "p" | "span";
+}) {
+  const { state } = useSidebar();
+  if (state === "collapsed") return null;
+  return <Tag className={className}>{children}</Tag>;
 }
