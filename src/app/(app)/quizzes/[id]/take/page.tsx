@@ -86,23 +86,135 @@ function ViewAnswersScreen({
   quiz: SystemQuizDetail;
   onBack: () => void;
 }) {
+  const hintEnabled = quiz.settings.showHints;
+  const totalQuestions = quiz.lectures.reduce(
+    (sum, lecture) =>
+      sum +
+      lecture.topics.reduce(
+        (topicSum, topic) =>
+          topicSum +
+          (topic.questions?.length ??
+            topic.questionTypes?.reduce(
+              (count, group) => count + (group.questions?.length ?? 0),
+              0,
+            ) ??
+            topic.questionCount ??
+            0),
+        0,
+      ),
+    0,
+  );
+
   return (
-    <div className="mx-auto max-w-3xl px-4 py-6">
-      <div className="flex items-center justify-between mb-6">
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 text-[11px] font-mono gap-1"
-          onClick={onBack}
+    <div className="min-h-screen bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] bg-size-[16px_16px] bg-[#F7F9FC] py-8 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-4xl space-y-6">
+        <div className="flex items-center justify-between">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 text-[11px] font-mono gap-1"
+            onClick={onBack}
+          >
+            <ChevronLeft className="size-3" />
+            Back
+          </Button>
+          <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/40">
+            {quiz.title}
+          </span>
+        </div>
+
+        <motion.section
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative overflow-hidden rounded-[28px] bg-[#131B27] p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6"
         >
-          <ChevronLeft className="size-3" />
-          Back
-        </Button>
-        <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/40">
-          {quiz.title}
-        </span>
+          <div className="space-y-3">
+            <p className="hand text-2xl text-[#DFFF61]">view answers ✦</p>
+            <h1 className="display text-3xl font-extrabold tracking-tight sm:text-4xl">
+              Review the structure and every answer.
+            </h1>
+            <p className="max-w-md text-xs leading-5 text-slate-400 font-medium">
+              Open each section to inspect the questions, correct answers, and
+              hints where they are available.
+            </p>
+
+            <div className="flex flex-wrap gap-2 pt-2">
+              <span className="rounded-full bg-white/10 px-3 py-1 text-[10px] font-extrabold text-slate-200">
+                {quiz.lectures.length} sections
+              </span>
+              <span className="rounded-full bg-white/10 px-3 py-1 text-[10px] font-extrabold text-slate-200">
+                {totalQuestions} questions
+              </span>
+              <span className="rounded-full bg-white/10 px-3 py-1 text-[10px] font-extrabold text-slate-200">
+                Hints {hintEnabled ? "on" : "off"}
+              </span>
+            </div>
+          </div>
+
+          <div className="relative flex h-32 w-32 shrink-0 items-center justify-center rounded-full border-4 border-[#DFFF61] bg-white/5 shadow-inner">
+            <span className="text-4xl font-black text-white">
+              {quiz.lectures.length}
+            </span>
+          </div>
+        </motion.section>
+
+        <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between px-1">
+              <div>
+                <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#0C60FC]">
+                  QUESTION REVIEW
+                </p>
+                <h2 className="text-lg font-bold text-slate-950">
+                  Lectures and answers
+                </h2>
+              </div>
+            </div>
+
+            <QuizContent lectures={quiz.lectures} showHints={hintEnabled} />
+          </div>
+
+          <aside className="space-y-4">
+            <div className="rounded-[28px] border border-slate-200/90 bg-white p-6 shadow-sm space-y-5">
+              <div>
+                <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+                  SESSION SUMMARY
+                </p>
+                <h3 className="text-base font-bold text-slate-950 mt-1">
+                  Quiz overview
+                </h3>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-2xl bg-blue-50/60 p-4 border border-blue-100">
+                  <p className="text-2xl font-extrabold text-[#0C60FC]">
+                    {quiz.lectures.length}
+                  </p>
+                  <p className="mt-1 text-[9px] font-bold text-slate-500 uppercase">
+                    SECTIONS
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-[#E9FFD3] p-4 border border-lime-200">
+                  <p className="text-2xl font-extrabold text-slate-900">
+                    {totalQuestions}
+                  </p>
+                  <p className="mt-1 text-[9px] font-bold text-slate-600 uppercase">
+                    QUESTIONS
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={onBack}
+                className="w-full rounded-2xl bg-[#0C60FC] py-3.5 text-center text-xs font-extrabold text-white hover:bg-blue-700 transition shadow-md"
+              >
+                Back to quiz
+              </button>
+            </div>
+          </aside>
+        </div>
       </div>
-      <QuizContent lectures={quiz.lectures} />
     </div>
   );
 }
@@ -227,6 +339,7 @@ export default function SystemQuizTakePage({
 
   useEffect(() => {
     if (!started || done || isViewMode) return;
+    if (currentParam === String(current + 1)) return;
     const next = new URLSearchParams(searchParams.toString());
     next.set("q", String(current + 1));
     router.replace(`${pathname}?${next.toString()}`, { scroll: false });
@@ -420,39 +533,26 @@ export default function SystemQuizTakePage({
 
   if (done) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-6">
-        <QuizReviewResults
-          questions={questions}
-          answers={answers}
-          selfMarks={selfMarks}
-          onSelfMark={(id, v) =>
-            setSelfMarks((previous) => ({ ...previous, [id]: v }))
+      <QuizReviewResults
+        questions={questions}
+        userAnswers={answers}
+        config={
+          config ?? {
+            selectedKeys: [],
+            feedbackMode: "deferred",
+            timerMode: "none",
+            timerSeconds: 0,
+            autoNext: false,
+            allowSkip: true,
+            shuffle: false,
+            passingScore: quiz.passingScore ?? 70,
+            useZGrading: true,
+            showHints: false,
           }
-          zResults={zResults}
-          onGradeWithZ={handleGradeWithZ}
-          isGrading={gradeQuiz.isPending}
-          onRetake={handleRetake}
-          quizTitle={quiz.title}
-          passingScore={quiz.passingScore ?? 70}
-          maxStreak={maxStreak}
-          config={
-            config ?? {
-              selectedKeys: [],
-              feedbackMode: "deferred",
-              timerMode: "none",
-              timerSeconds: 0,
-              autoNext: false,
-              allowSkip: true,
-              shuffle: false,
-              passingScore: quiz.passingScore ?? 70,
-              useZGrading: true,
-              showHints: false,
-            }
-          }
-          canUseZGrading={isAuthenticated}
-          onBack={() => router.back()}
-        />
-      </div>
+        }
+        onReset={handleRetake}
+        quizTitle={quiz.title}
+      />
     );
   }
 
@@ -462,115 +562,80 @@ export default function SystemQuizTakePage({
       : null;
 
   const isAnswered = q ? !!answers[q.id] : false;
-  const progress = questions.length
-    ? ((current + 1) / questions.length) * 100
-    : 0;
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6">
-      {/* Progress bar + meta */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/50">
-            {current + 1} / {questions.length}
-          </span>
-          <div className="flex items-center gap-3">
-            {streak >= 2 && (
-              <div className="rounded-lg flex items-center gap-1 border border-amber-500/30 bg-amber-500/10 px-2 py-0.5">
-                <Flame className="size-3 text-amber-500" />
-                <span className="text-[9px] font-mono text-amber-500 font-semibold">
-                  {streak}
-                </span>
-              </div>
-            )}
-            {timeLeft !== null && (
-              <span
-                className={`text-[10px] font-mono flex items-center gap-1 ${
-                  timeLeft < 60
-                    ? "text-destructive"
-                    : "text-muted-foreground/50"
-                }`}
-              >
-                <Clock className="size-3" />
-                {Math.floor(timeLeft / 60)}:
-                {String(timeLeft % 60).padStart(2, "0")}
-              </span>
-            )}
-            <span className="text-[10px] font-mono text-muted-foreground/50">
-              {score} correct
-            </span>
+    <div className="min-h-screen bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] bg-size-[16px_16px] bg-[#F7F9FC] py-8 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-4xl space-y-6">
+        {/* Top Header Status Bar */}
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-extrabold uppercase tracking-[.18em] text-[#0C60FC]">
+              SECTION 01 · {quiz?.title || "DIGITAL IMAGE PROCESSING"}
+            </p>
+            <p className="text-xs font-bold text-slate-500 mt-0.5">
+              Question {current + 1} of {questions.length}
+            </p>
           </div>
+          <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-extrabold text-slate-700 shadow-2xs">
+            {score} correct
+          </span>
         </div>
-        <div className="h-1 bg-border/30 w-full">
+
+        {/* Live Question Card */}
+        <AnimatePresence mode="wait">
           <motion.div
-            className="h-full bg-primary"
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.3 }}
-          />
-        </div>
-      </div>
+            key={q.id}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+          >
+            <QuizQuestionCard
+              q={q}
+              index={current}
+              total={questions.length}
+              answer={answers[q.id] ?? ""}
+              onAnswer={handleSelect}
+              feedbackState={feedbackState}
+              mode={config?.feedbackMode ?? "deferred"}
+              disabled={false}
+              showHints={config?.showHints ?? false}
+              hintsRevealed={hintsRevealed}
+              onRevealHint={(qid) =>
+                setHintsRevealed((h) => ({ ...h, [qid]: true }))
+              }
+            />
+          </motion.div>
+        </AnimatePresence>
 
-      {/* Question */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={q.id}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          transition={{ duration: 0.18 }}
-          className="mb-6"
-        >
-          <QuizQuestionCard
-            q={q}
-            index={current}
-            total={questions.length}
-            answer={answers[q.id] ?? ""}
-            onAnswer={handleSelect}
-            feedbackState={feedbackState}
-            mode={config?.feedbackMode ?? "deferred"}
-            disabled={false}
-            showHints={config?.showHints ?? false}
-            hintsRevealed={hintsRevealed}
-            onRevealHint={(qid) =>
-              setHintsRevealed((h) => ({ ...h, [qid]: true }))
-            }
-          />
-        </motion.div>
-      </AnimatePresence>
+        {/* Floating Bottom Navigation Action Bar */}
+        <div className="rounded-2xl border border-slate-200/90 bg-white/95 backdrop-blur-xl p-3 shadow-xl flex items-center justify-between">
+          <button
+            type="button"
+            onClick={handlePrev}
+            disabled={current === 0}
+            className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-xs font-extrabold text-slate-700 hover:bg-slate-50 transition disabled:opacity-40"
+          >
+            ← Previous
+          </button>
 
-      {/* Navigation */}
-      <div className="flex items-center justify-between gap-3">
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 text-[10px] font-mono gap-1"
-          onClick={handlePrev}
-          disabled={current === 0}
-        >
-          <ChevronLeft className="size-3" />
-          Prev
-        </Button>
-
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 text-[10px] font-mono gap-1 text-muted-foreground/50"
+          <button
+            type="button"
             onClick={handleSkip}
             disabled={!config?.allowSkip || current >= questions.length - 1}
+            className="text-xs font-extrabold text-slate-500 hover:text-slate-900 transition disabled:opacity-40"
           >
-            <SkipForward className="size-3" />
-            Skip
-          </Button>
-          <Button
-            size="sm"
-            className="h-8 text-[10px] font-mono gap-1"
+            Skip for now
+          </button>
+
+          <button
+            type="button"
             onClick={handleNext}
             disabled={!isAnswered && !config?.allowSkip}
+            className="rounded-2xl bg-[#0C60FC] px-6 py-3 text-xs font-extrabold text-white hover:bg-blue-700 transition shadow-md disabled:opacity-40"
           >
-            {current === questions.length - 1 ? "Finish" : "Next"}
-            <ChevronRight className="size-3" />
-          </Button>
+            {current === questions.length - 1 ? "Finish quiz →" : "Next →"}
+          </button>
         </div>
       </div>
     </div>
