@@ -138,7 +138,12 @@ function StudentVerificationSection() {
     }
   }
 
-  const STATUS_CONFIG = {
+  // Statuses we know how to render. Unknown values (e.g. a new enum case the
+  // backend added) fall through to the unverified entry.
+  const STATUS_CONFIG: Record<
+    string,
+    { icon: React.ElementType; label: string; color: string }
+  > = {
     verified: { icon: CheckCircle, label: "Verified", color: "text-primary" },
     pending: { icon: Clock, label: "Email sent", color: "text-amber-400" },
     expired: { icon: XCircle, label: "Expired", color: "text-destructive" },
@@ -148,9 +153,10 @@ function StudentVerificationSection() {
       label: "Not verified",
       color: "text-muted-foreground",
     },
-  } as const;
+  };
 
-  const cfg = STATUS_CONFIG[status?.status ?? "unverified"];
+  const cfg =
+    STATUS_CONFIG[status?.status ?? "unverified"] ?? STATUS_CONFIG.unverified;
   const StatusIcon = cfg.icon;
 
   return (
