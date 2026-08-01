@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { resolveAvatarUrl } from "@/lib/utils";
 
 interface UserProfileDropdownProps {
   user:
@@ -19,6 +20,7 @@ interface UserProfileDropdownProps {
         username?: string;
         email?: string;
         profilePicture?: string;
+        oauthPicture?: string;
         role?: "student" | "creator" | "moderator" | "super_admin";
       } & Record<string, unknown>)
     | null;
@@ -42,7 +44,7 @@ export function UserProfileDropdown({
           className="rounded-lg size-9 border border-border/40 hover:border-primary/50 text-muted-foreground hover:text-foreground bg-card/60 backdrop-blur-md transition-colors overflow-hidden p-0"
         >
           <Avatar className="size-full rounded-lg">
-            <AvatarImage src={user.profilePicture} className="object-cover" />
+            <AvatarImage src={resolveAvatarUrl(user)} className="object-cover" />
             <AvatarFallback className="rounded-lg bg-zinc-800 font-mono text-[10px] font-bold text-zinc-400">
               {user?.username?.[0]?.toUpperCase() || "U"}
             </AvatarFallback>
