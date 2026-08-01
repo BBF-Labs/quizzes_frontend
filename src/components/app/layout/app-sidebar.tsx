@@ -154,7 +154,7 @@ export function AppSidebar() {
           aria-label="Qz home"
           className="group cursor-pointer w-full h-full flex items-center gap-2.5 rounded-2xl border border-slate-200/90 bg-white px-3 py-1.5 shadow-2xs hover:border-[#0C60FC]/40 transition"
         >
-          <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-[#F7F9FC] flex items-center justify-center">
+          <div className="relative h-12 w-12 shrink-0 flex items-center justify-center">
             <AnimatePresence mode="wait">
               <motion.img
                 key={currentPose.src}
@@ -196,7 +196,7 @@ export function AppSidebar() {
         <button
           onClick={handleNewSession}
           disabled={createSession.isPending}
-          className="mb-4 w-full flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-xs font-extrabold text-slate-700 hover:border-[#0C60FC] hover:bg-blue-50 hover:text-[#0C60FC] transition shadow-2xs"
+          className="mb-4 w-full flex items-center justify-between rounded-xl bg-slate-950 px-3.5 py-3 text-xs font-extrabold text-white hover:bg-[#0C60FC] transition shadow-sm"
         >
           <span>＋ New study session</span>
           <span className="text-[10px] text-slate-400 font-mono">⌘N</span>
