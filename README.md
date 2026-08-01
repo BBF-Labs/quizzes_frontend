@@ -43,7 +43,8 @@ frontend loads `https://accounts.google.com/gsi/client`, calls
 `accounts.id.prompt()` to surface Google's consent modal over the page, and
 POSTs the resulting `id_token` to `POST /api/v1/auth/oauth/google`. The backend
 verifies the `id_token` against Google's JWKS and either logs the user in,
-sends a merge-confirm email, or creates a fresh account. The
+auto-links the provider by email (sending a notification email to the original
+account owner), or creates a fresh account. The
 `NEXT_PUBLIC_GOOGLE_CLIENT_ID` is the only OAuth value on the frontend; the
 client secret (when one is needed) lives only on the backend.
 
