@@ -78,8 +78,8 @@ export default function QuizDetailPage({
   const noAttempts = quiz?.remainingAttempts === 0;
 
   return (
-    <div className="min-h-full bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] bg-[#F7F9FC] py-8 px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-4xl space-y-6">
+    <div className="min-h-full bg-[#F7F9FC] py-8 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl space-y-6">
         {/* ── Loading Skeleton ── */}
         {isLoading && (
           <div className="space-y-4 animate-pulse">

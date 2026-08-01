@@ -3,30 +3,13 @@
 import { useEffect, useState, useCallback, useRef, use, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import {
-  ChevronLeft,
-  ChevronRight,
-  CheckCircle2,
-  Zap,
-  Flame,
-  SkipForward,
-  Settings2,
-  Clock,
-  Target,
-  Shuffle,
-  BookOpen,
-  AlertCircle,
-  Loader2,
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { AlertCircle, BookOpen } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   QuizQuestionCard,
   type FeedbackState,
 } from "@/components/app/quizzes/question-renderer";
 import { QuizReviewResults } from "@/components/app/quizzes/quiz-review-results";
-import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { useGradeQuizAnswers } from "@/hooks/app/use-app-library";
@@ -42,43 +25,7 @@ import type {
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface SavedProgress {
-  config: QuizConfig;
-  current: number;
-  answers: Record<string, string>;
-  immediateResults: Record<string, "correct" | "wrong" | null>;
-  streak: number;
-  maxStreak: number;
-  questionIds: string[];
-  savedAt: string;
-}
-
-type Screen = "resume" | "config" | "quiz" | "results";
-
-// ─── Storage helpers ──────────────────────────────────────────────────────────
-
-const storageKey = (id: string) => `qz-quiz-${id}`;
-
-function saveProgress(id: string, data: SavedProgress) {
-  try {
-    localStorage.setItem(storageKey(id), JSON.stringify(data));
-  } catch {}
-}
-
-function loadProgress(id: string): SavedProgress | null {
-  try {
-    const raw = localStorage.getItem(storageKey(id));
-    return raw ? (JSON.parse(raw) as SavedProgress) : null;
-  } catch {
-    return null;
-  }
-}
-
-function clearProgress(id: string) {
-  try {
-    localStorage.removeItem(storageKey(id));
-  } catch {}
-}
+type Screen = "config" | "quiz" | "results";
 
 // ─── Misc helpers ─────────────────────────────────────────────────────────────
 
@@ -113,12 +60,6 @@ function buildQuestions(quiz: QuizDetail, config: QuizConfig): QuizQuestion[] {
   return config.shuffle ? shuffle(qs) : qs;
 }
 
-function fmtSeconds(s: number): string {
-  const m = Math.floor(s / 60);
-  const sec = s % 60;
-  return `${m}:${sec.toString().padStart(2, "0")}`;
-}
-
 function isFreeResponseType(type: QuizQuestion["type"]): boolean {
   return (
     type === "free_text" ||
@@ -126,481 +67,6 @@ function isFreeResponseType(type: QuizQuestion["type"]): boolean {
     type === "essay" ||
     type === "fill_in_blank" ||
     type === "fill_in"
-  );
-}
-
-// ─── Resume prompt ─────────────────────────────────────────────────────────────
-
-function ResumePrompt({
-  savedAt,
-  answered,
-  total,
-  onResume,
-  onRestart,
-}: {
-  savedAt: string;
-  answered: number;
-  total: number;
-  onResume: () => void;
-  onRestart: () => void;
-}) {
-  const [ago, setAgo] = useState("");
-
-  useEffect(() => {
-    const calculate = () => {
-      const diff = Date.now() - new Date(savedAt).getTime();
-      if (diff < 60000) return "just now";
-      if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
-      return `${Math.floor(diff / 3600000)}h ago`;
-    };
-    // Use setTimeout to avoid synchronous state update in effect
-    const timeout = setTimeout(() => setAgo(calculate()), 0);
-    const interval = setInterval(() => setAgo(calculate()), 60000);
-    return () => {
-      clearTimeout(timeout);
-      clearInterval(interval);
-    };
-  }, [savedAt]);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="rounded-lg border border-border/40 bg-card/30 px-6 py-8 text-center max-w-sm mx-auto mt-16"
-    >
-      <div className="flex justify-center mb-4">
-        <div className="rounded-lg size-12 border border-primary/30 bg-primary/5 flex items-center justify-center">
-          <BookOpen className="size-5 text-primary/70" />
-        </div>
-      </div>
-      <p className="font-mono text-sm font-bold text-foreground mb-1">
-        Resume where you left off?
-      </p>
-      <p className="text-[11px] font-mono text-muted-foreground/60 mb-1">
-        {answered} of {total} answered · saved {ago}
-      </p>
-      <div className="flex gap-2 mt-6">
-        <Button
-          variant="outline"
-          size="sm"
-          className="flex-1 h-8 text-[10px] font-mono"
-          onClick={onRestart}
-        >
-          Start over
-        </Button>
-        <Button
-          size="sm"
-          className="flex-1 h-8 text-[10px] font-mono"
-          onClick={onResume}
-        >
-          Continue
-        </Button>
-      </div>
-    </motion.div>
-  );
-}
-
-// ─── Config screen ─────────────────────────────────────────────────────────────
-
-function ConfigScreen({
-  quiz,
-  onStart,
-}: {
-  quiz: QuizDetail;
-  onStart: (config: QuizConfig) => void | Promise<void>;
-}) {
-  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
-  const [feedbackMode, setFeedbackMode] = useState<"immediate" | "deferred">(
-    "immediate",
-  );
-  const [timerMode, setTimerMode] = useState<"none" | "per_question" | "total">(
-    "none",
-  );
-  const [timerSeconds, setTimerSeconds] = useState(60);
-  const [autoNext, setAutoNext] = useState(true);
-  const [allowSkip, setAllowSkip] = useState(true);
-  const [doShuffle, setDoShuffle] = useState(false);
-  const [passingScore, setPassingScore] = useState(70);
-  const [useZGrading, setUseZGrading] = useState(false);
-  const [showHints, setShowHints] = useState(false);
-
-  const totalSelected = quiz.lectures.reduce(
-    (s, l, li) =>
-      s +
-      l.topics.reduce(
-        (ts, t, ti) =>
-          ts +
-          (selectedKeys.includes(`${li}:${ti}`)
-            ? (t.questionCount ?? t.questions?.length ?? 0)
-            : 0),
-        0,
-      ),
-    0,
-  );
-
-  const toggleTopic = (key: string) =>
-    setSelectedKeys((prev) =>
-      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
-    );
-
-  const toggleLecture = (li: number) => {
-    const topicKeys = quiz.lectures[li].topics.map((_, ti) => `${li}:${ti}`);
-    const allOn = topicKeys.every((k) => selectedKeys.includes(k));
-    setSelectedKeys((prev) =>
-      allOn
-        ? prev.filter((k) => !topicKeys.includes(k))
-        : [...new Set([...prev, ...topicKeys])],
-    );
-  };
-
-  const hasFreeTxt = quiz.lectures.some((l) =>
-    l.topics.some((t) =>
-      (t.questions ?? []).some((q) => isFreeResponseType(q.type)),
-    ),
-  );
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="max-w-2xl mx-auto"
-    >
-      <div className="mb-6">
-        <p className="text-[10px] font-mono uppercase tracking-[0.25em] text-primary/80 mb-1">
-          Quiz Setup
-        </p>
-        <h1 className="text-xl font-black tracking-tight truncate">
-          {quiz.title}
-        </h1>
-      </div>
-
-      <div className="flex flex-col gap-4">
-        {/* Quiz Range */}
-        <section className="rounded-lg border border-border/40 bg-card/20 px-4 py-4">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/70">
-              Quiz Range
-            </p>
-            <span className="text-[10px] font-mono text-primary/70 font-semibold">
-              {totalSelected} questions
-            </span>
-          </div>
-          <div className="flex flex-col gap-2">
-            {quiz.lectures.map((l, li) => {
-              const topicKeys = l.topics.map((_, ti) => `${li}:${ti}`);
-              const allOn = topicKeys.every((k) => selectedKeys.includes(k));
-              const someOn = topicKeys.some((k) => selectedKeys.includes(k));
-              return (
-                <div
-                  key={li}
-                  className="rounded-lg border border-border/20 px-3 py-2"
-                >
-                  <button
-                    type="button"
-                    onClick={() => toggleLecture(li)}
-                    className="w-full flex items-center gap-2 text-left"
-                  >
-                    <span
-                      className={`size-3.5 border shrink-0 flex items-center justify-center ${allOn ? "border-primary bg-primary" : someOn ? "border-primary/50 bg-primary/20" : "border-border/50"}`}
-                    >
-                      {(allOn || someOn) && (
-                        <span className="block size-1.5 bg-primary-foreground" />
-                      )}
-                    </span>
-                    <span className="font-mono text-[11px] font-semibold text-foreground flex-1 truncate">
-                      {l.lectureTitle}
-                    </span>
-                    <span className="text-[9px] font-mono text-muted-foreground/40">
-                      {l.topics.reduce(
-                        (s, t) =>
-                          s + (t.questionCount ?? t.questions?.length ?? 0),
-                        0,
-                      )}{" "}
-                      Qs
-                    </span>
-                  </button>
-                  {l.topics.length > 1 && (
-                    <div className="ml-5 mt-1.5 flex flex-col gap-1">
-                      {l.topics.map((t, ti) => {
-                        const key = `${li}:${ti}`;
-                        const on = selectedKeys.includes(key);
-                        return (
-                          <button
-                            key={ti}
-                            type="button"
-                            onClick={() => toggleTopic(key)}
-                            className="flex items-center gap-2 text-left"
-                          >
-                            <span
-                              className={`size-3 border shrink-0 flex items-center justify-center ${on ? "border-primary bg-primary" : "border-border/40"}`}
-                            >
-                              {on && (
-                                <span className="block size-1 bg-primary-foreground" />
-                              )}
-                            </span>
-                            <span className="font-mono text-[10px] text-muted-foreground/70">
-                              {t.topicTitle}
-                            </span>
-                            <span className="text-[9px] font-mono text-muted-foreground/30">
-                              {t.questionCount ?? t.questions?.length ?? 0}Q
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* Feedback mode */}
-        <section className="rounded-lg border border-border/40 bg-card/20 px-4 py-4">
-          <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/70 mb-3">
-            Feedback
-          </p>
-          <div className="flex gap-2">
-            {(["immediate", "deferred"] as const).map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => setFeedbackMode(m)}
-                className={`rounded-lg flex-1 py-2 border text-[10px] font-mono uppercase tracking-widest font-semibold transition-all ${
-                  feedbackMode === m
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border/40 text-muted-foreground/60 hover:border-border/70"
-                }`}
-              >
-                {m === "immediate" ? "Immediate" : "After Quiz"}
-              </button>
-            ))}
-          </div>
-          {feedbackMode === "immediate" && (
-            <label className="flex items-center gap-2 mt-3 cursor-pointer">
-              <button
-                type="button"
-                onClick={() => setAutoNext((v) => !v)}
-                className={`size-4 border flex items-center justify-center shrink-0 ${autoNext ? "border-primary bg-primary" : "border-border/50"}`}
-              >
-                {autoNext && (
-                  <CheckCircle2 className="size-2.5 text-primary-foreground" />
-                )}
-              </button>
-              <span className="text-[10px] font-mono text-muted-foreground/70">
-                Auto-advance after answering MCQ
-              </span>
-            </label>
-          )}
-        </section>
-
-        {/* Timer Slider */}
-        <section className="rounded-lg border border-border/40 bg-card/20 px-4 py-4">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/70">
-              Timer (Minutes)
-            </p>
-            <Badge variant="outline" className="text-[10px] font-mono h-5">
-              {timerSeconds === 0
-                ? "Unlimited"
-                : `${Math.floor(timerSeconds / 60)}m`}
-            </Badge>
-          </div>
-          <Slider
-            value={[Math.floor(timerSeconds / 60)]}
-            min={0}
-            max={120}
-            step={5}
-            onValueChange={([v]) => {
-              setTimerSeconds(v * 60);
-              setTimerMode(v === 0 ? "none" : "total");
-            }}
-            className="py-4"
-          />
-          <p className="text-[10px] font-mono text-muted-foreground/40 mt-2">
-            Slide from 0 to 120 minutes. Custom timing allowed.
-          </p>
-        </section>
-
-        {/* Passing score + options row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <section className="rounded-lg border border-border/40 bg-card/20 px-4 py-4">
-            <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/70 mb-3">
-              Passing Score
-            </p>
-            <div className="flex gap-1.5 flex-wrap">
-              {[50, 60, 70, 80, 90].map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => setPassingScore(s)}
-                  className={`rounded-lg px-3 py-1 border text-[10px] font-mono font-semibold transition-all ${
-                    passingScore === s
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border/40 text-muted-foreground/60 hover:border-border/70"
-                  }`}
-                >
-                  {s}%
-                </button>
-              ))}
-            </div>
-          </section>
-
-          <section className="rounded-lg border border-border/40 bg-card/20 px-4 py-4">
-            <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/70 mb-3">
-              Options
-            </p>
-            <div className="flex flex-col gap-2">
-              {[
-                {
-                  label: "Allow skipping questions",
-                  value: allowSkip,
-                  set: setAllowSkip,
-                },
-                {
-                  label: "Shuffle questions",
-                  value: doShuffle,
-                  set: setDoShuffle,
-                },
-                { label: "Show Hints", value: showHints, set: setShowHints },
-              ].map(({ label, value, set }) => (
-                <label
-                  key={label}
-                  className="flex items-center gap-2 cursor-pointer"
-                >
-                  <Switch checked={value} onCheckedChange={set} />
-                  <span className="text-[10px] font-mono text-muted-foreground/70">
-                    {label}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </section>
-        </div>
-
-        {/* Z-grading */}
-        {hasFreeTxt && (
-          <section className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-4">
-            <label className="flex items-start gap-3 cursor-pointer">
-              <button
-                type="button"
-                onClick={() => setUseZGrading((v) => !v)}
-                className={`size-4 border flex items-center justify-center shrink-0 mt-0.5 ${useZGrading ? "border-primary bg-primary" : "border-border/50"}`}
-              >
-                {useZGrading && (
-                  <CheckCircle2 className="size-2.5 text-primary-foreground" />
-                )}
-              </button>
-              <div>
-                <p className="text-[11px] font-mono font-semibold text-foreground flex items-center gap-1.5">
-                  <Zap className="size-3 text-primary" />
-                  Grade free-text answers with Z
-                </p>
-                <p className="text-[10px] font-mono text-muted-foreground/60 mt-0.5">
-                  Z will review and score your written answers with detailed
-                  feedback after you submit.
-                </p>
-              </div>
-            </label>
-          </section>
-        )}
-
-        <Button
-          size="sm"
-          className="w-full h-10 text-[11px] font-mono uppercase tracking-widest font-bold mt-2"
-          disabled={totalSelected === 0}
-          onClick={() =>
-            onStart({
-              selectedKeys,
-              feedbackMode,
-              timerMode,
-              timerSeconds,
-              autoNext,
-              allowSkip,
-              shuffle: doShuffle,
-              passingScore,
-              useZGrading,
-              showHints,
-            })
-          }
-        >
-          Start Quiz · {totalSelected} questions
-        </Button>
-      </div>
-    </motion.div>
-  );
-}
-
-// ─── Timer bar ─────────────────────────────────────────────────────────────────
-
-function TimerBar({
-  remaining,
-  total,
-}: {
-  remaining: number;
-  total: number;
-  mode: "per_question" | "total";
-}) {
-  const pct = total > 0 ? (remaining / total) * 100 : 0;
-  const color =
-    pct > 50 ? "bg-primary" : pct > 20 ? "bg-amber-500" : "bg-red-500";
-
-  return (
-    <div className="w-full h-0.5 bg-border/20">
-      <motion.div
-        className={`h-full ${color} transition-colors duration-500`}
-        animate={{ width: `${pct}%` }}
-        transition={{ duration: 0.9, ease: "linear" }}
-      />
-    </div>
-  );
-}
-
-// ─── Question map dots ─────────────────────────────────────────────────────────
-
-function QuestionMap({
-  questions,
-  current,
-  answers,
-  immediateResults,
-  onJump,
-}: {
-  questions: QuizQuestion[];
-  current: number;
-  answers: Record<string, string>;
-  immediateResults: Record<string, FeedbackState>;
-  onJump: (i: number) => void;
-}) {
-  if (questions.length > 30) return null;
-
-  return (
-    <div className="flex gap-1 flex-wrap justify-center mt-4">
-      {questions.map((q, i) => {
-        const answered = !!answers[q.id];
-        const result = immediateResults[q.id];
-        const isCurrent = i === current;
-
-        const color = isCurrent
-          ? "bg-primary border-primary"
-          : result === "correct"
-            ? "bg-green-500/60 border-green-500/40"
-            : result === "wrong"
-              ? "bg-red-500/60 border-red-500/40"
-              : answered
-                ? "bg-primary/30 border-primary/30"
-                : "bg-transparent border-border/30";
-
-        return (
-          <button
-            key={q.id}
-            type="button"
-            onClick={() => onJump(i)}
-            className={`rounded-lg size-2.5 border transition-colors ${color} hover:border-primary/60`}
-            aria-label={`Question ${i + 1}`}
-          />
-        );
-      })}
-    </div>
   );
 }
 
@@ -625,9 +91,6 @@ export default function QuizTakePage({
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const [screen, setScreen] = useState<Screen>("config");
-  const [savedProgress, setSavedProgress] = useState<SavedProgress | null>(
-    null,
-  );
 
   const [config, setConfig] = useState<QuizConfig | null>(null);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
@@ -652,6 +115,18 @@ export default function QuizTakePage({
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const currentParam = searchParams.get("q");
 
+  // Live score for header pill (mirrors public take page)
+  const liveScore = useMemo(() => {
+    return questions.filter((qq) => {
+      if (!qq) return false;
+      if (qq.options && qq.options.length > 0) {
+        return answersMatch(qq.type, answers[qq.id], qq.correctAnswer);
+      }
+      if (zResults[qq.id]) return zResults[qq.id].isCorrect;
+      return false;
+    }).length;
+  }, [questions, answers, zResults]);
+
   const stopTimer = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -661,14 +136,13 @@ export default function QuizTakePage({
 
   const handleSubmit = useCallback(() => {
     stopTimer();
-    clearProgress(id);
     const marks: Record<string, boolean | null> = {};
     questions.forEach((q) => {
       if (isFreeResponseType(q.type)) marks[q.id] = null;
     });
     setSelfMarks(marks);
     setScreen("results");
-  }, [id, questions, stopTimer]);
+  }, [questions, stopTimer]);
 
   const handleAnswer = useCallback(
     (val: string) => {
@@ -760,11 +234,6 @@ export default function QuizTakePage({
         setQuiz(q);
         if (q) {
           useBreadcrumbStore.getState().setDynamicTitle(q.title);
-          const saved = loadProgress(id);
-          if (saved && saved.questionIds.length > 0) {
-            setSavedProgress(saved);
-            setScreen("resume");
-          }
         }
       })
       .catch(() => setLoadError("Failed to load quiz."))
@@ -810,68 +279,26 @@ export default function QuizTakePage({
     return stopTimer;
   }, [screen, config?.timerMode, config?.timerSeconds, stopTimer]);
 
-  useEffect(() => {
-    if (screen !== "quiz" || !config || questions.length === 0) return;
-    saveProgress(id, {
-      config,
-      current,
-      answers,
-      immediateResults,
-      streak,
-      maxStreak,
-      questionIds: questions.map((q) => q.id),
-      savedAt: new Date().toISOString(),
-    });
-  }, [
-    answers,
-    current,
-    id,
-    config,
-    questions,
-    immediateResults,
-    streak,
-    maxStreak,
-    screen,
-  ]);
-
   const startQuiz = useCallback(
-    (cfg: QuizConfig, resumeData?: SavedProgress) => {
+    (cfg: QuizConfig) => {
       setConfig(cfg);
 
       const quizWithQuestions: QuizDetail = quiz!;
 
-      if (resumeData) {
-        const allQs = buildQuestions(quizWithQuestions, cfg);
-        const ordered = resumeData.questionIds
-          .map((qid) => allQs.find((q) => q.id === qid))
-          .filter(Boolean) as QuizQuestion[];
-        setQuestions(ordered);
-        setCurrent(
-          Math.max(
+      const qs = buildQuestions(quizWithQuestions, cfg);
+      setQuestions(qs);
+      const qFromUrl = Number(currentParam || "1");
+      const nextCurrent = Number.isFinite(qFromUrl)
+        ? Math.max(
             0,
-            Math.min(resumeData.current, Math.max(ordered.length - 1, 0)),
-          ),
-        );
-        setAnswers(resumeData.answers);
-        setImmediateResults(resumeData.immediateResults);
-        setStreak(resumeData.streak);
-        setMaxStreak(resumeData.maxStreak);
-      } else {
-        const qs = buildQuestions(quizWithQuestions, cfg);
-        setQuestions(qs);
-        const qFromUrl = Number(currentParam || "1");
-        const nextCurrent = Number.isFinite(qFromUrl)
-          ? Math.max(
-              0,
-              Math.min(Math.floor(qFromUrl) - 1, Math.max(qs.length - 1, 0)),
-            )
-          : 0;
-        setCurrent(nextCurrent);
-        setAnswers({});
-        setImmediateResults({});
-        setStreak(0);
-        setMaxStreak(0);
-      }
+            Math.min(Math.floor(qFromUrl) - 1, Math.max(qs.length - 1, 0)),
+          )
+        : 0;
+      setCurrent(nextCurrent);
+      setAnswers({});
+      setImmediateResults({});
+      setStreak(0);
+      setMaxStreak(0);
 
       setTimerRemaining(cfg.timerSeconds);
       setScreen("quiz");
@@ -881,7 +308,6 @@ export default function QuizTakePage({
 
   const handleRetake = useCallback(() => {
     stopTimer();
-    clearProgress(id);
     setAnswers({});
     setImmediateResults({});
     setSelfMarks({});
@@ -889,7 +315,7 @@ export default function QuizTakePage({
     setStreak(0);
     setMaxStreak(0);
     setScreen("config");
-  }, [id, stopTimer]);
+  }, [stopTimer]);
 
   const handleGradeWithZ = useCallback(async () => {
     if (!quiz || !config) return;
@@ -955,240 +381,124 @@ export default function QuizTakePage({
   const currentFeedback = currentQ
     ? (immediateResults[currentQ.id] ?? null)
     : null;
-  const isLast = current === questions.length - 1;
-  const unansweredCount = questions.length - Object.keys(answers).length;
+
+  if (screen === "config") {
+    return (
+      <div className="py-8">
+        <QuizConfigScreen
+          quiz={quiz}
+          showZGrading
+          onStart={(cfg) => startQuiz(cfg)}
+        />
+      </div>
+    );
+  }
+
+  if (screen === "results" && config) {
+    return (
+      <QuizReviewResults
+        questions={questions}
+        userAnswers={answers}
+        config={config}
+        onReset={handleRetake}
+        quizTitle={quiz.title}
+      />
+    );
+  }
+
+  if (!config || !currentQ) {
+    return (
+      <div className="flex items-center justify-center min-h-100">
+        <div className="size-6 border-2 border-primary border-t-transparent animate-spin rounded-full" />
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-full px-4 pt-2 pb-12">
-      <div className="mx-auto max-w-2xl">
-        <div className="flex items-center justify-end mb-4">
-          <div className="flex items-center gap-3">
-            <AnimatePresence>
-              {streak >= 2 && screen === "quiz" && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  className="rounded-lg flex items-center gap-1 border border-amber-500/30 bg-amber-500/10 px-2 py-0.5"
-                >
-                  <Flame className="size-3 text-amber-500" />
-                  <span className="text-[9px] font-mono text-amber-500 font-semibold">
-                    {streak}
-                  </span>
-                </motion.div>
-              )}
-            </AnimatePresence>
-            {screen === "quiz" && config?.timerMode === "total" && (
-              <span
-                className={`text-[10px] font-mono tabular-nums ${
-                  timerRemaining < config.timerSeconds * 0.2
-                    ? "text-red-500"
-                    : timerRemaining < config.timerSeconds * 0.5
-                      ? "text-amber-500"
-                      : "text-muted-foreground/60"
-                }`}
-              >
-                <Clock className="size-3 inline mr-1" />
-                {fmtSeconds(timerRemaining)}
-              </span>
-            )}
+    <div className="min-h-screen bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] bg-size-[16px_16px] bg-[#F7F9FC] py-8 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-4xl space-y-6">
+        {/* Top Header Status Bar */}
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-extrabold uppercase tracking-[.18em] text-[#0C60FC]">
+              SECTION 01
+            </p>
+            <p className="text-xs font-bold text-slate-500 mt-0.5">
+              Question {current + 1} of {questions.length}
+            </p>
           </div>
+          <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-extrabold text-slate-700 shadow-2xs">
+            {liveScore} correct
+          </span>
         </div>
 
-        {screen === "resume" && savedProgress && (
-          <ResumePrompt
-            savedAt={savedProgress.savedAt}
-            answered={Object.keys(savedProgress.answers).length}
-            total={savedProgress.questionIds.length}
-            onResume={() => {
-              startQuiz(savedProgress.config, savedProgress);
-            }}
-            onRestart={() => {
-              clearProgress(id);
-              setSavedProgress(null);
-              setScreen("config");
-            }}
-          />
-        )}
-
-        {/* ── Config ── */}
-        {screen === "config" && (
-          <QuizConfigScreen
-            quiz={quiz}
-            showZGrading
-            onStart={(cfg) => startQuiz(cfg)}
-          />
-        )}
-
-        {/* ── Quiz ── */}
-        {screen === "quiz" && config && currentQ && (
-          <>
-            {/* Progress bar */}
-            {config.timerMode !== "none" && (
-              <TimerBar
-                remaining={timerRemaining}
-                total={config.timerSeconds}
-                mode={config.timerMode as "per_question" | "total"}
-              />
-            )}
-
-            {/* Overall progress bar */}
-            <div className="w-full h-0.5 bg-border/20 mt-1">
-              <motion.div
-                className="h-full bg-primary/30"
-                animate={{
-                  width: `${((current + 1) / questions.length) * 100}%`,
-                }}
-                transition={{ duration: 0.3 }}
-              />
-            </div>
-
-            {/* Question map */}
-            <QuestionMap
-              questions={questions}
-              current={current}
-              answers={answers}
-              immediateResults={immediateResults}
-              onJump={(i) => {
-                if (config.allowSkip || i < current) setCurrent(i);
-              }}
+        {/* Live Question Card */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentQ.id}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+          >
+            <QuestionCard
+              q={currentQ}
+              index={current}
+              total={questions.length}
+              answer={currentAnswer}
+              onAnswer={handleAnswer}
+              feedbackState={currentFeedback}
+              mode={config.feedbackMode}
+              disabled={false}
+              showHints={config.showHints}
+              hintsRevealed={hintsRevealed}
+              onRevealHint={(qid) =>
+                setHintsRevealed((h) => ({ ...h, [qid]: true }))
+              }
+              streak={streak}
             />
+          </motion.div>
+        </AnimatePresence>
 
-            {/* Question card */}
-            <div className="mt-4">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={currentQ.id}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.18 }}
-                >
-                  <QuestionCard
-                    q={currentQ}
-                    index={current}
-                    total={questions.length}
-                    answer={currentAnswer}
-                    onAnswer={handleAnswer}
-                    feedbackState={currentFeedback}
-                    mode={config.feedbackMode}
-                    disabled={false}
-                    showHints={config.showHints}
-                    hintsRevealed={hintsRevealed}
-                    onRevealHint={(id) =>
-                      setHintsRevealed((h) => ({ ...h, [id]: true }))
-                    }
-                    streak={streak}
-                  />
-                </motion.div>
-              </AnimatePresence>
-            </div>
+        {/* Floating Bottom Navigation Action Bar */}
+        <div className="rounded-2xl border border-slate-200/90 bg-white/95 backdrop-blur-xl p-3 shadow-xl flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => setCurrent((c) => Math.max(0, c - 1))}
+            disabled={current === 0}
+            className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-xs font-extrabold text-slate-700 hover:bg-slate-50 transition disabled:opacity-40"
+          >
+            ← Previous
+          </button>
 
-            {/* Per-question timer label */}
-            {config.timerMode === "per_question" && (
-              <p
-                className={`mt-1.5 text-right text-[10px] font-mono tabular-nums ${
-                  timerRemaining < config.timerSeconds * 0.2
-                    ? "text-red-500"
-                    : timerRemaining < config.timerSeconds * 0.5
-                      ? "text-amber-500"
-                      : "text-muted-foreground/40"
-                }`}
-              >
-                {fmtSeconds(timerRemaining)}
-              </p>
-            )}
+          <button
+            type="button"
+            onClick={() => {
+              if (!config.allowSkip) return;
+              setCurrent((c) => Math.min(c + 1, questions.length - 1));
+            }}
+            disabled={!config.allowSkip || current >= questions.length - 1}
+            className="text-xs font-extrabold text-slate-500 hover:text-slate-900 transition disabled:opacity-40"
+          >
+            Skip for now
+          </button>
 
-            {/* Navigation */}
-            <div className="mt-4 flex items-center justify-between gap-3">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 gap-1 text-[10px] font-mono"
-                onClick={() => setCurrent((c) => Math.max(0, c - 1))}
-                disabled={current === 0}
-              >
-                <ChevronLeft className="size-3.5" />
-                Prev
-              </Button>
-
-              <div className="flex items-center gap-2">
-                {/* Skip */}
-                {config.allowSkip && !isLast && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setCurrent((c) => Math.min(c + 1, questions.length - 1))
-                    }
-                    className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground/40 hover:text-muted-foreground transition-colors"
-                  >
-                    <SkipForward className="size-3.5" />
-                    Skip
-                  </button>
-                )}
-
-                {/* Submit / Next */}
-                {isLast ? (
-                  <Button
-                    size="sm"
-                    className="h-8 gap-1 text-[10px] font-mono"
-                    onClick={handleSubmit}
-                  >
-                    Submit
-                  </Button>
-                ) : (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 gap-1 text-[10px] font-mono"
-                    onClick={() => setCurrent((c) => c + 1)}
-                    disabled={
-                      !config.allowSkip &&
-                      !answers[currentQ.id] &&
-                      currentQ.type !== "mcq" &&
-                      currentQ.type !== "true_false"
-                    }
-                  >
-                    Next
-                    <ChevronRight className="size-3.5" />
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            {/* Unanswered warning on last question */}
-            {isLast && unansweredCount > 0 && (
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="mt-3 text-center text-[10px] font-mono text-amber-500/70 flex items-center justify-center gap-1"
-              >
-                <AlertCircle className="size-3" />
-                {unansweredCount} question{unansweredCount !== 1 ? "s" : ""}{" "}
-                unanswered
-              </motion.p>
-            )}
-
-            {/* Keyboard hint */}
-            <p className="mt-6 text-center text-[9px] font-mono text-muted-foreground/25 uppercase tracking-widest">
-              1–{Math.min(9, currentQ.options?.length ?? 0)} to select · ← → to
-              navigate
-            </p>
-          </>
-        )}
-
-        {/* ── Results ── */}
-        {screen === "results" && config && (
-          <div className="mt-2">
-            <QuizReviewResults
-              questions={questions}
-              userAnswers={answers}
-              config={config}
-              onReset={handleRetake}
-              quizTitle={quiz.title}
-            />
-          </div>
-        )}
+          <button
+            type="button"
+            onClick={() => {
+              if (current < questions.length - 1) {
+                if (!config.allowSkip && !currentAnswer) return;
+                setCurrent((c) => c + 1);
+              } else {
+                handleSubmit();
+              }
+            }}
+            disabled={!currentAnswer && !config.allowSkip}
+            className="rounded-2xl bg-[#0C60FC] px-6 py-3 text-xs font-extrabold text-white hover:bg-blue-700 transition shadow-md disabled:opacity-40"
+          >
+            {current === questions.length - 1 ? "Finish quiz →" : "Next →"}
+          </button>
+        </div>
       </div>
     </div>
   );

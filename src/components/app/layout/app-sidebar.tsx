@@ -9,6 +9,12 @@ import { useAuth } from "@/contexts/auth-context";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
+  Settings,
+  CreditCard,
+  LogOut,
+  ChevronDown,
+} from "lucide-react";
+import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
@@ -76,10 +82,11 @@ function QzLogoIcon({ className = "h-5 w-5" }: { className?: string }) {
 export function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const createSession = useCreateSession();
 
   const [poseIndex, setPoseIndex] = useState(0);
+  const [profileExpanded, setProfileExpanded] = useState(false);
 
   // Auto rotate Qubi postures every 4 seconds
   useEffect(() => {
@@ -248,8 +255,14 @@ export function AppSidebar() {
       {/* User Profile Widget Footer */}
       <SidebarFooter className="border-t border-slate-100 p-3 shrink-0">
         <div className="rounded-2xl bg-[#F7F9FC] p-3">
-          <div className="flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#DFFF61] text-xs font-extrabold text-slate-950">
+          <button
+            type="button"
+            onClick={() => setProfileExpanded((v) => !v)}
+            aria-expanded={profileExpanded}
+            aria-label="Toggle account menu"
+            className="flex w-full items-center gap-3 rounded-xl text-left transition hover:bg-white/60"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#DFFF61] text-xs font-extrabold text-slate-950">
               {userInitials}
             </span>
             <CollapsibleHide className="min-w-0 flex-1">
@@ -260,22 +273,82 @@ export function AppSidebar() {
                 Computer Science · UG
               </p>
             </CollapsibleHide>
-            <button
-              onClick={() => router.push("/app/settings")}
-              className="ml-auto text-slate-400 hover:text-slate-600 text-xs font-bold"
-              title="Settings"
-            >
-              •••
-            </button>
-          </div>
-          <CollapsibleHide>
-            <div className="mt-3 h-1.5 rounded-full bg-slate-200">
-              <div className="h-full w-[68%] rounded-full bg-[#0C60FC]" />
-            </div>
-            <p className="mt-2 text-[9px] font-bold text-slate-400">
-              68% of weekly goal
-            </p>
-          </CollapsibleHide>
+            <ChevronDown
+              className={cn(
+                "ml-auto h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200",
+                profileExpanded && "rotate-180",
+              )}
+            />
+          </button>
+
+          {/* Weekly goal progress — hidden when submenu is open to make room */}
+          <AnimatePresence initial={false}>
+            {!profileExpanded && (
+              <motion.div
+                key="progress"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.18, ease: "easeOut" }}
+                className="overflow-hidden"
+              >
+                <CollapsibleHide>
+                  <div className="mt-3 h-1.5 rounded-full bg-slate-200">
+                    <div className="h-full w-[68%] rounded-full bg-[#0C60FC]" />
+                  </div>
+                  <p className="mt-2 text-[9px] font-bold text-slate-400">
+                    68% of weekly goal
+                  </p>
+                </CollapsibleHide>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Expanded submenu */}
+          <AnimatePresence initial={false}>
+            {profileExpanded && (
+              <motion.div
+                key="submenu"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.22, ease: "easeOut" }}
+                className="overflow-hidden"
+              >
+                <CollapsibleHide>
+                  <div className="mt-3 space-y-0.5 border-t border-slate-200/70 pt-3">
+                    <Link
+                      href="/app/settings"
+                      onClick={() => setProfileExpanded(false)}
+                      className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-700 transition hover:bg-white hover:text-slate-950"
+                    >
+                      <Settings className="h-3.5 w-3.5 text-slate-500" />
+                      Settings
+                    </Link>
+                    <Link
+                      href="/app/billing"
+                      onClick={() => setProfileExpanded(false)}
+                      className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-700 transition hover:bg-white hover:text-slate-950"
+                    >
+                      <CreditCard className="h-3.5 w-3.5 text-slate-500" />
+                      Billing
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProfileExpanded(false);
+                        logout();
+                      }}
+                      className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-700 transition hover:bg-rose-50 hover:text-rose-600"
+                    >
+                      <LogOut className="h-3.5 w-3.5" />
+                      Sign out
+                    </button>
+                  </div>
+                </CollapsibleHide>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </SidebarFooter>
     </Sidebar>
