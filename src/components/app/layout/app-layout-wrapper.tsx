@@ -68,6 +68,12 @@ export function AppLayoutWrapper({ children }: { children: ReactNode }) {
     notes: "Note",
     mindmaps: "Mind Map",
   };
+  // Sub-route actions appended after a dynamic detail id (e.g.
+  // /app/quizzes/<id>/take → "Take Quiz"). Keeps deep paths readable when
+  // older segments have been collapsed away.
+  const subRouteLabelMap: Record<string, string> = {
+    take: "Take Quiz",
+  };
   const breadcrumbOffset = isAppSection ? 1 : 0;
 
   const { user, logout } = useAuth();
@@ -84,8 +90,18 @@ export function AppLayoutWrapper({ children }: { children: ReactNode }) {
   const breadcrumbSegments = segments.slice(breadcrumbOffset);
   const parentSegment = breadcrumbSegments[0] || "";
 
+  // Breadcrumb cap: show at most 2 items total.
+  // - On nested paths we drop the fixed "Today" anchor so the 2 slots are
+  //   the parent section + the current page (handled like a stack — always
+  //   render the last 2 segments; older segments are collapsed away).
+  // - On shallow paths (e.g. /app, /app/quizzes) we keep "Today" so the user
+  //   still has a way back to the dashboard.
+  const showTodayAnchor = breadcrumbSegments.length === 0;
+  const visibleSegments = breadcrumbSegments.slice(-2);
+
   const formatSegment = (segment: string, index: number) => {
     if (routeLabelMap[segment]) return routeLabelMap[segment];
+    if (subRouteLabelMap[segment]) return subRouteLabelMap[segment];
     const isNestedDetail = index > 0 && detailLabelMap[parentSegment];
     if (isNestedDetail && dynamicTitle) return dynamicTitle;
     if (isNestedDetail) return detailLabelMap[parentSegment];
@@ -109,29 +125,38 @@ export function AppLayoutWrapper({ children }: { children: ReactNode }) {
               <div className="h-4 w-px bg-slate-200" />
               <Breadcrumb>
                 <BreadcrumbList>
-                  <BreadcrumbItem className={breadcrumbSegments.length > 1 ? "hidden sm:inline-flex" : ""}>
-                    <BreadcrumbLink asChild>
-                      <Link
-                        href="/app"
-                        className="text-[10px] font-extrabold tracking-widest uppercase text-slate-400 hover:text-[#0C60FC] transition-colors"
-                      >
-                        Today
-                      </Link>
-                    </BreadcrumbLink>
-                  </BreadcrumbItem>
-                  {breadcrumbSegments.length > 0 && (
+                  {showTodayAnchor && (
+                    <BreadcrumbItem>
+                      <BreadcrumbLink asChild>
+                        <Link
+                          href="/app"
+                          className="text-[10px] font-extrabold tracking-widest uppercase text-slate-400 hover:text-[#0C60FC] transition-colors"
+                        >
+                          Today
+                        </Link>
+                      </BreadcrumbLink>
+                    </BreadcrumbItem>
+                  )}
+                  {visibleSegments.length > 0 && (
                     <>
-                      <BreadcrumbSeparator className={breadcrumbSegments.length > 1 ? "hidden sm:inline-flex" : ""} />
-                      {breadcrumbSegments.map((segment, index) => {
-                        const isLast = index === breadcrumbSegments.length - 1;
-                        const href = `/${segments.slice(0, index + breadcrumbOffset + 1).join("/")}`;
-                        const label = formatSegment(segment, index);
-                        const isSecondLast = index === breadcrumbSegments.length - 2;
-                        const showOnMobile = isLast || isSecondLast;
+                      {showTodayAnchor && <BreadcrumbSeparator />}
+                      {visibleSegments.map((segment, index) => {
+                        // Map visible segment back to its position in the
+                        // full breadcrumbSegments array so labels and hrefs
+                        // resolve correctly when older segments were dropped.
+                        const realIndex =
+                          breadcrumbSegments.length -
+                          visibleSegments.length +
+                          index;
+                        const isLast = index === visibleSegments.length - 1;
+                        const href = `/${segments
+                          .slice(0, realIndex + breadcrumbOffset + 1)
+                          .join("/")}`;
+                        const label = formatSegment(segment, realIndex);
 
                         return (
                           <React.Fragment key={`${href}-${segment}`}>
-                            <BreadcrumbItem className={!showOnMobile ? "hidden sm:inline-flex" : ""}>
+                            <BreadcrumbItem>
                               {isLast ? (
                                 <BreadcrumbPage className="text-[10px] font-extrabold tracking-widest uppercase text-slate-950">
                                   {label}
@@ -147,7 +172,7 @@ export function AppLayoutWrapper({ children }: { children: ReactNode }) {
                                 </BreadcrumbLink>
                               )}
                             </BreadcrumbItem>
-                            {!isLast && <BreadcrumbSeparator className={index < breadcrumbSegments.length - 2 ? "hidden sm:inline-flex" : ""} />}
+                            {!isLast && <BreadcrumbSeparator />}
                           </React.Fragment>
                         );
                       })}

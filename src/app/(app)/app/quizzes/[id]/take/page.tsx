@@ -961,15 +961,7 @@ export default function QuizTakePage({
   return (
     <div className="min-h-full px-4 pt-2 pb-12">
       <div className="mx-auto max-w-2xl">
-        <div className="flex items-center justify-between mb-4">
-          <button
-            type="button"
-            onClick={() => router.push(`/app/quizzes/${id}`)}
-            className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground/50 hover:text-foreground transition-colors uppercase tracking-widest"
-          >
-            <ChevronLeft className="size-3.5" />
-            Back
-          </button>
+        <div className="flex items-center justify-end mb-4">
           <div className="flex items-center gap-3">
             <AnimatePresence>
               {streak >= 2 && screen === "quiz" && (
