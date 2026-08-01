@@ -58,6 +58,20 @@ const GIS_SRC = "https://accounts.google.com/gsi/client";
 
 let gisLoadPromise: Promise<void> | null = null;
 
+// GIS is a global singleton: `accounts.id.initialize()` replaces any prior
+// configuration. Track which clientId we've already initialised for so a
+// second mount (e.g. React Strict Mode, or login + signup both rendering
+// GoogleSignInButton on the same page) doesn't spam
+// "google.accounts.id.initialize() is called multiple times".
+let initializedClientId: string | null = null;
+
+// One-shot credential resolver. Each call to `loginWithGoogle` swaps this in
+// for the duration of its prompt; the global GIS callback routes the
+// returned credential to whichever resolver is currently active.
+let pendingCredentialResolver:
+  | ((cred: string | null, err: Error | null) => void)
+  | null = null;
+
 function loadGisScript(clientId: string): Promise<void> {
   if (typeof window === "undefined") return Promise.resolve();
   if (window.google?.accounts?.id) return Promise.resolve();
@@ -97,14 +111,33 @@ function loadGisScript(clientId: string): Promise<void> {
       new Promise<void>((resolve, reject) => {
         const tryInit = (attempt = 0) => {
           if (window.google?.accounts?.id) {
-            window.google.accounts.id.initialize({
-              client_id: clientId,
-              callback: () => {
-                // No-op callback — loginWithGoogle() overrides per-invocation.
-              },
-              cancel_on_tap_outside: true,
-              use_fedcm_for_prompt: true,
-            });
+            // Idempotent: only initialise once per page lifetime per clientId.
+            // Calling `accounts.id.initialize` more than once triggers the
+            // GSI_LOGGER warning AND silently discards the previous config.
+            if (initializedClientId !== clientId) {
+              window.google.accounts.id.initialize({
+                client_id: clientId,
+                callback: (resp: { credential?: string }) => {
+                  const resolve_ = pendingCredentialResolver;
+                  pendingCredentialResolver = null;
+                  if (!resolve_) return; // Stale prompt — ignore.
+                  if (resp?.credential) {
+                    resolve_(resp.credential, null);
+                  } else {
+                    resolve_(
+                      null,
+                      new Error("Google did not return a credential"),
+                    );
+                  }
+                },
+                cancel_on_tap_outside: true,
+                // FedCM is opt-in and unreliable across browsers/cookie
+                // policies. The standard GIS popup flow covers the same
+                // surface and works in every environment we ship to today.
+                use_fedcm_for_prompt: false,
+              });
+              initializedClientId = clientId;
+            }
             resolve();
             return;
           }
@@ -159,25 +192,30 @@ export function useGoogleAuth(options: UseGoogleAuthOptions = {}) {
     try {
       await loadGisScript(clientId);
 
-      const idToken: string = await new Promise((resolve, reject) => {
+      const idToken: string = await new Promise<string>((resolve, reject) => {
         if (!window.google?.accounts?.id) {
           reject(new Error("Google Identity Services is unavailable"));
           return;
         }
-        // Re-initialise with a one-shot callback so we capture *this* attempt's token.
-        window.google.accounts.id.initialize({
-          client_id: clientId,
-          callback: (resp) => {
-            if (resp?.credential) resolve(resp.credential);
-            else reject(new Error("Google did not return a credential"));
-          },
-          cancel_on_tap_outside: true,
-          use_fedcm_for_prompt: true,
-        });
+        // GIS is a singleton — only the callback registered at initialize
+        // time ever fires. We park a one-shot resolver here that the global
+        // callback consults, then call `prompt()`. Re-initialising on every
+        // click triggers the GSI "called multiple times" warning and
+        // overwrites the callback mid-flight, dropping credentials.
+        const previousResolver = pendingCredentialResolver;
+        pendingCredentialResolver = (cred, err) => {
+          // If a previous prompt was somehow still pending, resolve it as
+          // cancelled so the caller doesn't hang.
+          if (previousResolver) previousResolver(null, new Error("Cancelled"));
+          if (err) reject(err);
+          else if (cred) resolve(cred);
+          else reject(new Error("Google did not return a credential"));
+        };
         try {
           window.google.accounts.id.prompt();
         } catch (err) {
-          reject(err);
+          pendingCredentialResolver = previousResolver; // restore so a stale prompt can't claim our slot
+          reject(err as Error);
         }
       });
 
