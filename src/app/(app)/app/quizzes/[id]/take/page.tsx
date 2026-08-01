@@ -959,9 +959,17 @@ export default function QuizTakePage({
   const unansweredCount = questions.length - Object.keys(answers).length;
 
   return (
-    <div className="min-h-full px-4 pt-2 pb-12">
-      <div className="mx-auto max-w-2xl">
-        <div className="flex items-center justify-end mb-4">
+    <div className="min-h-full bg-[#F7F9FC]">
+      {screen === "config" ? (
+        <QuizConfigScreen
+          quiz={quiz}
+          showZGrading
+          onStart={(cfg) => startQuiz(cfg)}
+        />
+      ) : (
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-6 pb-12">
+          <div className="mx-auto max-w-2xl">
+            <div className="flex items-center justify-end mb-4">
           <div className="flex items-center gap-3">
             <AnimatePresence>
               {streak >= 2 && screen === "quiz" && (
@@ -1008,15 +1016,6 @@ export default function QuizTakePage({
               setSavedProgress(null);
               setScreen("config");
             }}
-          />
-        )}
-
-        {/* ── Config ── */}
-        {screen === "config" && (
-          <QuizConfigScreen
-            quiz={quiz}
-            showZGrading
-            onStart={(cfg) => startQuiz(cfg)}
           />
         )}
 
@@ -1189,7 +1188,9 @@ export default function QuizTakePage({
             />
           </div>
         )}
-      </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
