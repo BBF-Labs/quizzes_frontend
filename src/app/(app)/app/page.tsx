@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import {
   BookOpen,
   Clock3,
@@ -12,490 +12,549 @@ import {
   MessageSquare,
   Network,
   Plus,
-  Paperclip,
   Sparkles,
-  X,
+  ArrowRight,
+  GraduationCap,
+  Calendar,
+  CheckCircle2,
+  Users,
+  Compass,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import {
   useSessions,
   useCreateSession,
-  useCourseSearch,
-  useDebounce,
   useStreakStatus,
 } from "@/hooks";
-import { cn } from "@/lib/utils";
-
-// ─── Time-aware rotating greetings ───────────────────────────────────────────
+import { useMyCourses } from "@/hooks/app/use-user-courses";
+import { useMyTimetable } from "@/hooks/app/use-timetable";
+import { toast } from "sonner";
 
 function getGreeting(name: string): string {
   const now = new Date();
   const hour = now.getHours();
   const first = name?.split(" ")[0] || "there";
 
-  const morning = [
-    `${first} is up early! 🌅`,
-    `Morning focus mode, ${first} ☀️`,
-    `${first}, let's cook? 📚`,
-  ];
-
-  const afternoon = [
-    `Welcome back, ${first}. 👋`,
-    `${first}, momentum check ⚡`,
-    `Afternoon grind, ${first} 🧠`,
-  ];
-
-  const evening = [
-    `Good evening, ${first} 🌙`,
-    `${first}, returns! ✨`,
-    `Prime study hours, ${first} 📖`,
-  ];
-
-  const lateNight = [
-    `It's late, ${first} 🦉`,
-    `${first.slice(-1) === "s" ? first : first + "'s"}, shenanigans! 🌌`,
-    `Quiet hours, ${first} 🎧`,
-  ];
-
-  const pool =
-    hour >= 5 && hour < 12
-      ? morning
-      : hour >= 12 && hour < 17
-        ? afternoon
-        : hour >= 17 && hour < 21
-          ? evening
-          : lateNight;
-
-  // Keep one greeting for a period, then rotate automatically.
-  const periodMinutes = 15;
-  const periodIndex = Math.floor(now.getTime() / (periodMinutes * 60 * 1000));
-  const greetingIndex = periodIndex % pool.length;
-
-  return pool[greetingIndex];
+  if (hour >= 5 && hour < 12) return `Good morning, ${first}.`;
+  if (hour >= 12 && hour < 17) return `Good afternoon, ${first}.`;
+  if (hour >= 17 && hour < 21) return `Good evening, ${first}.`;
+  return `Quiet hours, ${first}. 🦉`;
 }
 
-// ─── App mode options ─────────────────────────────────────────────────────────
-
-const APP_MODES = [
-  { value: "structured", label: "Structured Study" },
-  { value: "free", label: "Free Chat" },
-] as const;
-
-type AppMode = (typeof APP_MODES)[number]["value"];
+function getFormattedDate(): string {
+  const now = new Date();
+  return now.toLocaleDateString("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+}
 
 export default function AppHomePage() {
   const router = useRouter();
   const { user } = useAuth();
   const { data: sessions = [], isLoading: sessionsLoading } = useSessions();
   const { data: streak } = useStreakStatus();
+  const { data: enrollments = [] } = useMyCourses();
   const createSession = useCreateSession();
 
-  // ── Composer state ──────────────────────────────────────────────────────────
-  const [input, setInput] = useState("");
-  const [course, setCourse] = useState("");
-  const [mode, setMode] = useState<AppMode>("structured");
-  const [courseSearch, setCourseSearch] = useState("");
-  const debouncedSearch = useDebounce(courseSearch, 400);
-  const { data: searchResults = [], isLoading: isSearchingByText } =
-    useCourseSearch(debouncedSearch);
+  const [promptInput, setPromptInput] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
 
-  const [showPlusMenu, setShowPlusMenu] = useState(false);
-  const [attachedFile, setAttachedFile] = useState<File | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const plusMenuRef = useRef<HTMLDivElement>(null);
+  const greeting = getGreeting(user?.name ?? "");
+  const formattedDate = getFormattedDate();
+  const recentSessions = sessions.slice(0, 4);
 
-  // Auto-grow textarea
-  useEffect(() => {
-    const el = textareaRef.current;
-    if (!el) return;
-    el.style.height = "auto";
-    el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
-  }, [input]);
+  const handleStartSession = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (isCreating) return;
 
-  // Close mode menu on outside click
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (
-        plusMenuRef.current &&
-        !plusMenuRef.current.contains(e.target as Node)
-      ) {
-        setShowPlusMenu(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
-
-  // ── Submit ──────────────────────────────────────────────────────────────────
-  const handleSubmit = useCallback(async () => {
-    const message = input.trim();
-    if (!message || isSubmitting) return;
-
-    setIsSubmitting(true);
+    setIsCreating(true);
     try {
-      const courseId = course.trim();
       const session = await createSession.mutateAsync({
-        courseId: courseId ? courseId : undefined,
-        mode,
+        mode: "structured",
       });
-      const resolvedSessionId =
-        session?.id || (session as { _id?: string })?._id;
+      const resolvedId = session?.id || (session as { _id?: string })?._id;
+      if (!resolvedId) throw new Error("Invalid session ID returned");
 
-      if (!resolvedSessionId || resolvedSessionId === "undefined") {
-        console.error("No valid session ID returned", session);
-        throw new Error("Failed to create session: Invalid ID returned");
+      if (promptInput.trim()) {
+        sessionStorage.setItem(`qz_first_msg_${resolvedId}`, promptInput.trim());
       }
-
-      // Pass first message via sessionStorage so [id]/page picks it up
-      sessionStorage.setItem(`qz_first_msg_${resolvedSessionId}`, message);
-      if (attachedFile) {
-        // File name stored for display; actual upload wired later
-        sessionStorage.setItem(
-          `qz_first_file_${resolvedSessionId}`,
-          attachedFile.name,
-        );
-      }
-
-      router.push(`/app/${resolvedSessionId}`);
-    } catch (err) {
-      console.error("Failed to create session", err);
-      setIsSubmitting(false);
-    }
-  }, [input, course, mode, attachedFile, isSubmitting, createSession, router]);
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit();
+      toast.success("Session created! Entering studio...");
+      router.push(`/app/${resolvedId}`);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to create study session.");
+      setIsCreating(false);
     }
   };
 
-  const recentSessions = sessions.slice(0, 5);
-  const greeting = getGreeting(user?.name ?? "");
-
   return (
-    <div className="flex flex-col h-full min-h-[calc(100dvh-3.5rem)]">
-      {/* ── Greeting + recent sessions ─────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, ease: "easeOut" }}
-          className="w-full max-w-2xl text-center"
-        >
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 border border-primary/40 bg-primary/5 px-3 py-1 mb-6">
-            <span className="size-1.5 rounded-lg bg-primary animate-pulse" />
-            <span className="text-[9px] font-mono uppercase tracking-[0.25em] text-primary">
-              Z Study Partner
-            </span>
+    <div className="dash-grid min-h-screen px-4 pb-24 pt-6 sm:px-6 lg:px-8 lg:pb-12 text-slate-900 bg-[#F7F9FC]">
+      <div className="mx-auto max-w-[1240px]">
+        {/* Header Hero Section */}
+        <section className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white px-3 py-1.5 text-[9px] font-extrabold uppercase tracking-wider text-[#0C60FC] shadow-sm">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Your study path is updated
+            </div>
+            <h1 className="mt-4 display text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
+              {greeting}
+            </h1>
+            <p className="hand mt-1 text-2xl text-[#0C60FC]">let's make this one count ✦</p>
           </div>
 
-          {/* Greeting */}
-          <h1 className="text-4xl sm:text-5xl font-black tracking-tighter leading-none mb-3">
-            {greeting}
-          </h1>
-          <p className="text-sm text-muted-foreground font-mono">
-            Start typing below to begin a new study session.
-          </p>
-
-          {streak && (streak.current > 0 || streak.longest > 0) && (
-            <div className="mt-4 inline-flex items-center gap-2 border border-amber-400/30 bg-amber-400/5 px-3 py-1.5">
-              <Flame className="size-3.5 text-amber-400" />
-              <span className="text-[10px] font-mono uppercase tracking-wider text-amber-400">
-                {streak.current} day streak
-              </span>
-              <span className="text-[10px] font-mono text-amber-400/70">
-                · best {streak.longest}
-              </span>
-            </div>
-          )}
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.12 }}
-            className="mt-8"
-          >
-            <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground/50 mb-3 text-left">
-              Desktop
+          <div className="max-w-sm text-xs leading-5 text-slate-500 sm:text-right">
+            <p className="font-semibold text-slate-700">{formattedDate}</p>
+            <p className="mt-0.5">
+              You have <b className="text-slate-900 font-bold">3 useful hours</b> before your next class.
             </p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 md:gap-3">
-              {[
-                { href: "/app/all", label: "Sessions", Icon: MessageSquare },
-                { href: "/app/library", label: "Library", Icon: BookOpen },
-                {
-                  href: "/app/flashcards",
-                  label: "Flashcards",
-                  Icon: Clock3,
-                },
-                { href: "/app/quizzes", label: "Quizzes", Icon: Sparkles },
-                { href: "/app/mindmaps", label: "Mind Maps", Icon: Network },
-                { href: "/app/notes", label: "Notes", Icon: FileText },
-                {
-                  href: recentSessions[0]
-                    ? `/app/${recentSessions[0].id}`
-                    : "/app/all",
-                  label: "Studio",
-                  Icon: Sparkles,
-                },
-              ].map(({ href, label, Icon }) => (
-                <Link
-                  key={label}
-                  href={href}
-                  className="group flex items-center gap-2 border border-border/40 bg-card/30 px-3 py-2 text-left hover:border-primary/40 hover:bg-primary/5 transition-all md:flex-col md:items-center md:justify-center md:gap-3 md:px-4 md:py-4 md:min-h-28"
-                >
-                  <Icon className="size-3.5 md:size-8 text-muted-foreground group-hover:text-primary transition-colors" />
-                  <span className="text-[11px] md:text-xs font-mono tracking-wide text-muted-foreground group-hover:text-foreground transition-colors md:text-center">
-                    {label}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </motion.div>
+          </div>
+        </section>
 
-          {/* Recent sessions */}
-          {!sessionsLoading && recentSessions.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="mt-10 text-left"
-            >
-              <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground/50 mb-3">
-                Recent
-              </p>
-              <div className="flex flex-col gap-1.5">
-                {recentSessions.map((s) => (
-                  <Link
-                    key={s.id}
-                    href={`/app/${s.id}`}
-                    className="group flex items-center gap-3 border border-border/40 bg-card/30 px-3 py-2.5 hover:border-primary/40 hover:bg-primary/5 transition-all"
-                  >
-                    <Clock3 className="size-3.5 text-muted-foreground/50 shrink-0" />
-                    <span className="flex-1 truncate text-[11px] font-mono text-muted-foreground group-hover:text-foreground transition-colors">
-                      {s.name || s.title || `Session ${s.id.slice(0, 8)}`}
-                    </span>
-                    <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/40">
-                      {s.startedAt
-                        ? new Date(s.startedAt).toLocaleDateString(undefined, {
-                            month: "short",
-                            day: "numeric",
-                          })
-                        : ""}
-                    </span>
-                  </Link>
-                ))}
+        {/* Primary Row: Next Best Move Card + Weekly Goal Widget */}
+        <section className="grid gap-4 xl:grid-cols-[1.45fr_.75fr]">
+          {/* Next Best Move Card */}
+          <div className="relative overflow-hidden rounded-[30px] bg-[#0C60FC] p-6 text-white shadow-xl shadow-blue-200/50 sm:p-8">
+            <div className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-[#DFFF61]/25 blur-3xl" />
+            <div className="relative">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="rounded-full bg-white/15 px-3 py-1.5 text-[9px] font-extrabold uppercase tracking-widest text-white">
+                  Your next best move
+                </span>
+                <span className="rounded-full bg-[#DFFF61] px-3 py-1.5 text-[10px] font-extrabold text-slate-950">
+                  14 min
+                </span>
               </div>
-              {sessions.length > 5 && (
+
+              <div className="mt-8 grid gap-7 lg:grid-cols-[1fr_auto] lg:items-end">
+                <div>
+                  <p className="text-xs font-bold text-blue-200">DCIT 205 · Algorithms</p>
+                  <h2 className="mt-2 max-w-xl text-3xl font-bold leading-tight sm:text-4xl text-white">
+                    Tighten up Big-O before moving on.
+                  </h2>
+                  <p className="mt-4 max-w-xl text-sm leading-6 text-blue-100">
+                    You’re close. Six targeted questions will repair the two patterns you missed yesterday.
+                  </p>
+                  <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                    <button
+                      onClick={() => handleStartSession()}
+                      disabled={isCreating}
+                      className="rounded-2xl bg-white px-5 py-3.5 text-center text-xs font-extrabold text-[#0C60FC] hover:bg-blue-50 transition"
+                    >
+                      {isCreating ? "Starting session..." : "Start quick quiz →"}
+                    </button>
+                    <Link
+                      href="/app/library"
+                      className="rounded-2xl border border-white/20 px-5 py-3.5 text-center text-xs font-extrabold text-white hover:bg-white/10 transition"
+                    >
+                      Review lesson
+                    </Link>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 rounded-2xl bg-slate-950/35 p-3 backdrop-blur-md">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#DFFF61] text-2xl">
+                    🦊
+                  </span>
+                  <div>
+                    <p className="hand text-xl text-[#DFFF61]">you've got this!</p>
+                    <p className="text-[10px] text-blue-100 font-semibold">Qz picked this for you</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Weekly Goal Widget */}
+          <aside className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400">
+                    Weekly goal
+                  </p>
+                  <h2 className="mt-1 text-lg font-bold text-slate-950">4.1 of 5 hours</h2>
+                </div>
+                <span className="text-sm font-extrabold text-[#0C60FC]">82%</span>
+              </div>
+
+              <div className="mt-6 flex justify-center">
+                <div
+                  className="relative flex h-32 w-32 items-center justify-center rounded-full"
+                  style={{
+                    background:
+                      "conic-gradient(#0C60FC 0 82%, #E8EDF5 82%)",
+                  }}
+                >
+                  <div className="flex h-24 w-24 flex-col items-center justify-center rounded-full bg-white shadow-inner">
+                    <b className="text-2xl font-extrabold text-slate-950">49m</b>
+                    <span className="text-[9px] font-bold uppercase text-slate-400">
+                      to go
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 rounded-2xl bg-[#E9FFD3] p-4">
+              <p className="text-[10px] font-extrabold uppercase tracking-wider text-lime-800">
+                On track
+              </p>
+              <p className="mt-1 text-xs font-bold text-slate-900">
+                One focused session completes your week.
+              </p>
+            </div>
+          </aside>
+        </section>
+
+        {/* Secondary Row: Desk Tools + My Courses + Recent Work + Brief Sidebar */}
+        <section className="mt-5 grid gap-4 xl:grid-cols-[1fr_330px]">
+          {/* Main Area */}
+          <div className="space-y-4">
+            {/* Desk Tool Grid */}
+            <div className="rounded-[28px] border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
+              <div className="flex items-end justify-between">
+                <div>
+                  <p className="text-[9px] font-extrabold uppercase tracking-[.18em] text-[#0C60FC]">
+                    Desk
+                  </p>
+                  <h2 className="mt-1 text-xl font-bold text-slate-950">
+                    Everything you need, right here.
+                  </h2>
+                </div>
+                <Link href="/app/library" className="text-[10px] font-extrabold text-[#0C60FC] hover:underline">
+                  Open all tools →
+                </Link>
+              </div>
+
+              <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <Link
                   href="/app/all"
-                  className="mt-2 inline-block text-[10px] font-mono uppercase tracking-widest text-primary/70 hover:text-primary transition-colors"
+                  className="tool-card rounded-2xl border border-slate-200 p-4 transition hover:-translate-y-1 hover:shadow-md"
                 >
-                  View all {sessions.length} sessions →
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-lg">
+                    ◫
+                  </span>
+                  <p className="mt-5 text-xs font-extrabold text-slate-950">Sessions</p>
+                  <p className="mt-1 text-[10px] text-slate-400 font-semibold">Resume or begin</p>
                 </Link>
-              )}
-            </motion.div>
-          )}
 
-          {!sessionsLoading && sessions.length === 0 && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.25 }}
-              className="mt-10 flex flex-col items-center gap-3"
-            >
-              <div className="flex size-14 items-center justify-center border border-primary/20 bg-primary/5">
-                <BookOpen className="size-6 text-primary/60" />
+                <Link
+                  href="/app/library"
+                  className="tool-card rounded-2xl border border-slate-200 p-4 transition hover:-translate-y-1 hover:shadow-md"
+                >
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-lg">
+                    ▦
+                  </span>
+                  <p className="mt-5 text-xs font-extrabold text-slate-950">Library</p>
+                  <p className="mt-1 text-[10px] text-slate-400 font-semibold">Notes &amp; decks</p>
+                </Link>
+
+                <Link
+                  href="/app/flashcards"
+                  className="tool-card rounded-2xl border border-slate-200 p-4 transition hover:-translate-y-1 hover:shadow-md"
+                >
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-lg">
+                    ◷
+                  </span>
+                  <p className="mt-5 text-xs font-extrabold text-slate-950">Flashcards</p>
+                  <p className="mt-1 text-[10px] text-slate-400 font-semibold">25 due today</p>
+                </Link>
+
+                <Link
+                  href="/app/quizzes"
+                  className="tool-card rounded-2xl border border-slate-200 p-4 transition hover:-translate-y-1 hover:shadow-md"
+                >
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-lg">
+                    ✓
+                  </span>
+                  <p className="mt-5 text-xs font-extrabold text-slate-950">Quizzes</p>
+                  <p className="mt-1 text-[10px] text-slate-400 font-semibold">Test a topic</p>
+                </Link>
+
+                <Link
+                  href="/app/mindmaps"
+                  className="tool-card rounded-2xl border border-slate-200 p-4 transition hover:-translate-y-1 hover:shadow-md"
+                >
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-50 text-lg">
+                    ⌘
+                  </span>
+                  <p className="mt-5 text-xs font-extrabold text-slate-950">Mind maps</p>
+                  <p className="mt-1 text-[10px] text-slate-400 font-semibold">See connections</p>
+                </Link>
+
+                <Link
+                  href="/app/notes"
+                  className="tool-card rounded-2xl border border-slate-200 p-4 transition hover:-translate-y-1 hover:shadow-md"
+                >
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 text-lg">
+                    ▤
+                  </span>
+                  <p className="mt-5 text-xs font-extrabold text-slate-950">Notes</p>
+                  <p className="mt-1 text-[10px] text-slate-400 font-semibold">Write &amp; organise</p>
+                </Link>
+
+                <Link
+                  href="/study-rooms"
+                  className="tool-card rounded-2xl border border-slate-200 p-4 transition hover:-translate-y-1 hover:shadow-md"
+                >
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-lime-50 text-lg">
+                    ◉
+                  </span>
+                  <p className="mt-5 text-xs font-extrabold text-slate-950">Study rooms</p>
+                  <p className="mt-1 text-[10px] text-slate-400 font-semibold">8 people live</p>
+                </Link>
+
+                <Link
+                  href="/app/timetable"
+                  className="tool-card rounded-2xl border border-slate-200 p-4 transition hover:-translate-y-1 hover:shadow-md"
+                >
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 text-lg">
+                    ▤
+                  </span>
+                  <p className="mt-5 text-xs font-extrabold text-slate-950">Timetable</p>
+                  <p className="mt-1 text-[10px] text-slate-400 font-semibold">4 classes today</p>
+                </Link>
               </div>
-              <p className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground/50">
-                No sessions yet — ask Z anything to start
-              </p>
-            </motion.div>
-          )}
-        </motion.div>
-      </div>
+            </div>
 
-      {/* ── Composer — sticky to bottom of content area ─────────────────────── */}
-      <div className="sticky bottom-0 z-50 -mx-4 px-4 py-4 md:-mx-8 md:px-8 bg-background border-t border-border/50">
-        <div className="mx-auto max-w-2xl">
-          {/* Attached file pill */}
-          <AnimatePresence>
-            {attachedFile && (
-              <motion.div
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 6 }}
-                className="mb-2 flex items-center gap-2 border border-border/50 bg-card/60 px-3 py-1.5 w-fit"
-              >
-                <Paperclip className="size-3 text-muted-foreground" />
-                <span className="text-[11px] font-mono text-muted-foreground truncate max-w-50">
-                  {attachedFile.name}
-                </span>
-                <button
-                  onClick={() => setAttachedFile(null)}
-                  className="text-muted-foreground/60 hover:text-destructive transition-colors"
-                >
-                  <X className="size-3" />
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <div className="flex items-center gap-3 px-2 py-2 border border-border/50">
-            <div className="flex items-center gap-2 shrink-0">
-              {/* Plus menu trigger */}
-              <div className="relative" ref={plusMenuRef}>
-                <button
-                  type="button"
-                  onClick={() => setShowPlusMenu((v) => !v)}
-                  className="flex size-7 items-center justify-center text-muted-foreground hover:text-primary transition-colors"
-                  title="More options"
-                >
-                  <Plus className="size-3.5" />
-                </button>
-
-                <AnimatePresence>
-                  {showPlusMenu && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 4 }}
-                      className="absolute bottom-full left-0 mb-2 z-50 w-64 border border-border/60 bg-popover shadow-lg p-3"
-                    >
-                      <p className="text-[9px] font-mono uppercase tracking-[0.2em] text-muted-foreground/60 mb-2">
-                        Session Options
-                      </p>
-
-                      <label className="block text-[10px] font-mono uppercase tracking-widest text-muted-foreground/60 mb-1">
-                        Course
-                      </label>
-                      <div className="relative mb-3">
-                        <input
-                          type="text"
-                          value={courseSearch}
-                          onChange={(e) => setCourseSearch(e.target.value)}
-                          placeholder="Search for a course..."
-                          className="w-full bg-transparent border border-border/40 px-2.5 py-1.5 text-[11px] font-mono placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/40 transition-colors"
-                        />
-                        {course && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setCourse("");
-                              setCourseSearch("");
-                            }}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-mono text-primary hover:text-primary/70"
-                          >
-                            CLEAR
-                          </button>
-                        )}
-
-                        <AnimatePresence>
-                          {courseSearch.length >= 2 &&
-                            searchResults.length > 0 &&
-                            !course && (
-                              <motion.div
-                                initial={{ opacity: 0, y: -4 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -4 }}
-                                className="absolute top-full left-0 right-0 z-60 mt-1 border border-border/60 bg-popover shadow-xl max-h-48 overflow-y-auto"
-                              >
-                                {searchResults.map((c) => (
-                                  <button
-                                    key={c._id}
-                                    type="button"
-                                    onClick={() => {
-                                      setCourse(c._id);
-                                      setCourseSearch(c.title || c.code);
-                                    }}
-                                    className="w-full text-left px-3 py-2 hover:bg-primary/5 transition-colors border-b border-border/20 last:border-0"
-                                  >
-                                    <p className="text-[11px] font-mono text-foreground truncate">
-                                      {c.title}
-                                    </p>
-                                    <p className="text-[9px] font-mono text-muted-foreground uppercase">
-                                      {c.code}
-                                    </p>
-                                  </button>
-                                ))}
-                              </motion.div>
-                            )}
-                        </AnimatePresence>
+            {/* Courses & Recent Work Side-by-side */}
+            <div className="grid gap-4 md:grid-cols-2">
+              {/* My Courses */}
+              <div className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-sm font-extrabold text-slate-950">My courses</h2>
+                  <Link href="/app/library" className="text-[10px] font-extrabold text-[#0C60FC] hover:underline">
+                    View all
+                  </Link>
+                </div>
+                <div className="mt-4 space-y-3">
+                  {enrollments.length > 0 ? (
+                    enrollments.slice(0, 3).map((e: any, idx: number) => {
+                      const code = e.courseId?.code || e.courseId?.courseCode || "DCIT 205";
+                      const name = e.courseId?.name || e.courseId?.title || "Algorithms";
+                      const progress = idx === 0 ? 74 : idx === 1 ? 58 : 41;
+                      const color = idx === 0 ? "bg-[#0C60FC]" : idx === 1 ? "bg-violet-500" : "bg-amber-400";
+                      return (
+                        <div key={e._id || idx} className="rounded-2xl bg-[#F7F9FC] p-3">
+                          <div className="flex justify-between text-[11px] font-bold text-slate-950">
+                            <span>{code} · {name}</span>
+                            <span>{progress}%</span>
+                          </div>
+                          <div className="mt-2 h-1.5 rounded-full bg-slate-200">
+                            <div
+                              className={`h-full rounded-full ${color}`}
+                              style={{ width: `${progress}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <>
+                      <div className="rounded-2xl bg-[#F7F9FC] p-3">
+                        <div className="flex justify-between text-[11px] font-bold text-slate-950">
+                          <span>DCIT 205 · Algorithms</span>
+                          <span>74%</span>
+                        </div>
+                        <div className="mt-2 h-1.5 rounded-full bg-slate-200">
+                          <div className="h-full w-[74%] rounded-full bg-[#0C60FC]" />
+                        </div>
                       </div>
-
-                      <label className="block text-[10px] font-mono uppercase tracking-widest text-muted-foreground/60 mb-1">
-                        Mode
-                      </label>
-                      <div className="flex gap-1">
-                        {APP_MODES.map((m) => (
-                          <button
-                            key={m.value}
-                            type="button"
-                            onClick={() => setMode(m.value)}
-                            className={cn(
-                              "px-2.5 py-1 text-[10px] font-mono uppercase tracking-widest border transition-colors",
-                              mode === m.value
-                                ? "border-primary bg-primary/10 text-primary"
-                                : "border-border/40 text-muted-foreground hover:border-primary/40",
-                            )}
-                          >
-                            {m.label}
-                          </button>
-                        ))}
+                      <div className="rounded-2xl bg-[#F7F9FC] p-3">
+                        <div className="flex justify-between text-[11px] font-bold text-slate-950">
+                          <span>DCIT 207 · Operating Systems</span>
+                          <span>58%</span>
+                        </div>
+                        <div className="mt-2 h-1.5 rounded-full bg-slate-200">
+                          <div className="h-full w-[58%] rounded-full bg-violet-500" />
+                        </div>
                       </div>
-                    </motion.div>
+                      <div className="rounded-2xl bg-[#F7F9FC] p-3">
+                        <div className="flex justify-between text-[11px] font-bold text-slate-950">
+                          <span>MATH 223 · Statistics</span>
+                          <span>41%</span>
+                        </div>
+                        <div className="mt-2 h-1.5 rounded-full bg-slate-200">
+                          <div className="h-full w-[41%] rounded-full bg-amber-400" />
+                        </div>
+                      </div>
+                    </>
                   )}
-                </AnimatePresence>
+                </div>
               </div>
 
-              {/* Upload */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                className="hidden"
-                onChange={(e) => setAttachedFile(e.target.files?.[0] ?? null)}
-              />
+              {/* Recent Work */}
+              <div className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-sm font-extrabold text-slate-950">Recent work</h2>
+                  <Link href="/app/all" className="text-[10px] font-extrabold text-slate-400 hover:text-slate-600">
+                    View all
+                  </Link>
+                </div>
+                <div className="mt-4 divide-y divide-slate-100">
+                  {recentSessions.length > 0 ? (
+                    recentSessions.map((s: any, idx: number) => (
+                      <Link
+                        key={s.id || idx}
+                        href={`/app/${s.id}`}
+                        className="flex items-center gap-3 py-3 hover:bg-slate-50 rounded-xl px-1 transition"
+                      >
+                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-sm">
+                          {idx === 0 ? "✓" : idx === 1 ? "◇" : "▤"}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-[11px] font-bold text-slate-950">
+                            {s.title || "Core Concepts Review"}
+                          </p>
+                          <p className="text-[9px] text-slate-400 font-semibold">
+                            {s.mode || "Session"} · Recent
+                          </p>
+                        </div>
+                        <span className="ml-auto text-xs font-bold text-emerald-600">
+                          {idx === 0 ? "84%" : "→"}
+                        </span>
+                      </Link>
+                    ))
+                  ) : (
+                    <>
+                      <a href="/app/all" className="flex items-center gap-3 py-3">
+                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-sm">
+                          ✓
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate text-[11px] font-bold text-slate-950">
+                            Core Concepts Mastery Review
+                          </p>
+                          <p className="text-[9px] text-slate-400 font-semibold">Quiz · 18 minutes ago</p>
+                        </div>
+                        <b className="ml-auto text-[10px] text-emerald-600">84%</b>
+                      </a>
+                      <a href="/app/all" className="flex items-center gap-3 py-3">
+                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-sm">
+                          ◇
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate text-[11px] font-bold text-slate-950">
+                            Recommendation Systems
+                          </p>
+                          <p className="text-[9px] text-slate-400 font-semibold">Flashcards · Yesterday</p>
+                        </div>
+                        <span className="ml-auto text-slate-300">→</span>
+                      </a>
+                      <a href="/app/all" className="flex items-center gap-3 py-3">
+                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-sm">
+                          ▤
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate text-[11px] font-bold text-slate-950">
+                            Image Processing Notes
+                          </p>
+                          <p className="text-[9px] text-slate-400 font-semibold">Notes · 2 days ago</p>
+                        </div>
+                        <span className="ml-auto text-slate-300">→</span>
+                      </a>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Sidebar Column: Today's Brief + Next Exam */}
+          <aside className="space-y-4">
+            {/* Today's Brief */}
+            <div className="rounded-[28px] border border-slate-200 bg-[#FFFDF8] p-5 shadow-sm">
+              <div className="flex items-center justify-between">
+                <p className="text-[9px] font-extrabold uppercase tracking-[.18em] text-amber-700">
+                  Today's brief
+                </p>
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white text-xs shadow-sm font-bold">
+                  i
+                </span>
+              </div>
+              <h2 className="mt-5 text-xl font-bold text-slate-950">
+                A calm plan for the rest of your day.
+              </h2>
+              <div className="mt-5 space-y-3">
+                <div className="flex gap-3">
+                  <span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#0C60FC] text-[8px] font-bold text-white">
+                    1
+                  </span>
+                  <div>
+                    <p className="text-xs font-bold text-slate-900">14 min · Big-O quiz</p>
+                    <p className="mt-1 text-[10px] leading-4 text-slate-500 font-semibold">
+                      Repair yesterday's two misses.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-500 text-[8px] font-bold text-white">
+                    2
+                  </span>
+                  <div>
+                    <p className="text-xs font-bold text-slate-900">25 min · OS flashcards</p>
+                    <p className="mt-1 text-[10px] leading-4 text-slate-500 font-semibold">
+                      Review before your 2 PM lab.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-400 text-[8px] font-bold text-slate-900">
+                    3
+                  </span>
+                  <div>
+                    <p className="text-xs font-bold text-slate-900">50 min · Statistics</p>
+                    <p className="mt-1 text-[10px] leading-4 text-slate-500 font-semibold">
+                      The paper that needs you most.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className={cn(
-                  "flex size-7 items-center justify-center transition-colors",
-                  attachedFile
-                    ? "text-primary"
-                    : "text-muted-foreground hover:text-primary",
-                )}
-                title="Attach file"
+                onClick={() => handleStartSession()}
+                className="mt-6 w-full rounded-xl bg-slate-950 py-3 text-xs font-extrabold text-white hover:bg-[#0C60FC] transition"
               >
-                <Paperclip className="size-3.5" />
+                Add plan to today →
               </button>
             </div>
 
-            <textarea
-              ref={textareaRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask Z anything — a topic, a question, a concept…"
-              rows={1}
-              disabled={isSubmitting}
-              className="flex-1 w-full resize-none bg-transparent py-1.5 text-sm placeholder:text-muted-foreground/50 focus:outline-none disabled:opacity-50 font-mono"
-              style={{ minHeight: "36px", maxHeight: "140px" }}
-            />
+            {/* Next Exam Widget */}
+            <div className="rounded-[28px] bg-[#131B27] p-5 text-white shadow-xl">
+              <div className="flex items-center justify-between">
+                <p className="text-[9px] font-extrabold uppercase tracking-wider text-blue-300">
+                  Next exam
+                </p>
+                <span className="rounded-full bg-rose-400/15 px-2 py-1 text-[9px] font-bold text-rose-300">
+                  18 days
+                </span>
+              </div>
+              <h2 className="mt-5 text-xl font-bold text-white">DCIT 205</h2>
+              <p className="text-xs text-slate-400 font-medium">Algorithms · Great Hall</p>
 
-            {isSubmitting && (
-              <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/50 shrink-0">
-                Starting...
-              </span>
-            )}
-          </div>
+              <div className="mt-5 flex items-center gap-3">
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#0C60FC] text-xs font-extrabold text-white">
+                  72%
+                </span>
+                <div>
+                  <p className="text-[10px] text-slate-400 font-semibold">Exam readiness</p>
+                  <p className="text-xs font-bold text-white">3 topics left</p>
+                </div>
+              </div>
 
-          <p className="mt-2 text-center text-[9px] font-mono uppercase tracking-widest text-muted-foreground/30">
-            Z may make mistakes — verify important information
-          </p>
-        </div>
+              <Link
+                href="/app/timetable"
+                className="mt-5 block rounded-xl bg-white/10 py-3 text-center text-[10px] font-extrabold text-[#DFFF61] hover:bg-white/20 transition"
+              >
+                Open my timetable →
+              </Link>
+            </div>
+          </aside>
+        </section>
       </div>
     </div>
   );
