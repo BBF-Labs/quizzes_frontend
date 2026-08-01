@@ -8,7 +8,7 @@ export const metadata = constructMetadata({
   description: "Browse curated lecture notes, past questions, and study materials from universities across Ghana.",
 });
 
-export default function LibraryLayout({ children }: { children: ReactNode }) {
+export default function CommunityLibraryLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <Navbar />

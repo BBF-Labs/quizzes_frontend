@@ -746,6 +746,7 @@ export default function QuizTakePage({
 
   useEffect(() => {
     if (screen !== "quiz") return;
+    if (currentParam === String(current + 1)) return;
     const next = new URLSearchParams(searchParams.toString());
     next.set("q", String(current + 1));
     router.replace(`${pathname}?${next.toString()}`, { scroll: false });
@@ -1020,7 +1021,11 @@ export default function QuizTakePage({
 
         {/* ── Config ── */}
         {screen === "config" && (
-          <QuizConfigScreen quiz={quiz} onStart={(cfg) => startQuiz(cfg)} />
+          <QuizConfigScreen
+            quiz={quiz}
+            showZGrading
+            onStart={(cfg) => startQuiz(cfg)}
+          />
         )}
 
         {/* ── Quiz ── */}
@@ -1081,6 +1086,7 @@ export default function QuizTakePage({
                     onRevealHint={(id) =>
                       setHintsRevealed((h) => ({ ...h, [id]: true }))
                     }
+                    streak={streak}
                   />
                 </motion.div>
               </AnimatePresence>
@@ -1184,20 +1190,10 @@ export default function QuizTakePage({
           <div className="mt-2">
             <QuizReviewResults
               questions={questions}
-              answers={answers}
-              selfMarks={selfMarks}
-              onSelfMark={(id, v) =>
-                setSelfMarks((prev) => ({ ...prev, [id]: v }))
-              }
-              zResults={zResults}
-              onGradeWithZ={handleGradeWithZ}
-              isGrading={gradeQuiz.isPending}
-              onRetake={handleRetake}
-              quizTitle={quiz.title}
-              passingScore={config.passingScore}
-              maxStreak={maxStreak}
+              userAnswers={answers}
               config={config}
-              canUseZGrading
+              onReset={handleRetake}
+              quizTitle={quiz.title}
             />
           </div>
         )}

@@ -20,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/auth-context";
-import { cn } from "@/lib/utils";
+import { cn, resolveAvatarUrl } from "@/lib/utils";
 import { useProfileCheck, useProfileUpdate } from "@/hooks";
 import { useUploadFile, IUpload } from "@/hooks";
 import { toast } from "sonner";
@@ -185,7 +185,7 @@ export default function ProfilePage() {
                       src={
                         localPreview ||
                         uploadedPicture?.url ||
-                        user?.profilePicture
+                        resolveAvatarUrl(user)
                       }
                       className="object-cover"
                     />
@@ -204,7 +204,7 @@ export default function ProfilePage() {
                       ? "Uploading..."
                       : localPreview ||
                           uploadedPicture?.url ||
-                          user?.profilePicture
+                          resolveAvatarUrl(user)
                         ? "Change Image"
                         : "Upload Image"}
                   </Button>

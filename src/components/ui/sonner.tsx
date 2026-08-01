@@ -1,11 +1,11 @@
 "use client";
 
 import {
-  CircleCheckIcon,
-  InfoIcon,
-  Loader2Icon,
-  OctagonXIcon,
-  TriangleAlertIcon,
+  CheckCircle2,
+  Info,
+  Loader2,
+  XCircle,
+  AlertTriangle,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Toaster as Sonner, type ToasterProps } from "sonner";
@@ -21,54 +21,34 @@ const Toaster = ({ ...props }: ToasterProps) => {
       toastOptions={{
         classNames: {
           toast:
-            "group toast rounded-lg border border-border bg-card text-card-foreground font-mono shadow-[6px_6px_0px_rgba(0,0,0,0.25)] dark:shadow-[6px_6px_0px_rgba(255,255,255,0.06)]",
-          title: "text-[11px] font-bold uppercase tracking-widest",
-          description: "text-[11px] text-muted-foreground leading-relaxed",
+            "group toast flex items-center gap-3 rounded-2xl border border-slate-200/90 bg-white/95 text-slate-900 shadow-xl backdrop-blur-md px-4 py-3.5 font-sans transition-all",
+          title: "text-xs font-bold text-slate-950 leading-tight",
+          description: "text-[11px] font-semibold text-slate-500 leading-relaxed mt-0.5",
           actionButton:
-            "rounded-lg border border-border bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-widest px-3",
+            "rounded-xl bg-slate-950 px-3 py-1.5 text-[11px] font-extrabold text-white hover:bg-[#0C60FC] transition",
           cancelButton:
-            "rounded-lg border border-border bg-secondary text-secondary-foreground text-[10px] font-bold uppercase tracking-widest px-3",
+            "rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold text-slate-600 hover:bg-slate-50 transition",
           closeButton:
-            "rounded-lg border border-border bg-background text-foreground",
-          success: "border-primary/60",
-          error: "border-destructive/60 text-destructive",
-          warning: "border-yellow-500/60 text-yellow-500",
-          info: "border-primary/50",
+            "rounded-full border border-slate-200 bg-white text-slate-500 hover:bg-slate-100 transition",
+          success: "!border-emerald-200 !bg-emerald-50/90 !text-emerald-950",
+          error: "!border-rose-200 !bg-rose-50/90 !text-rose-950",
+          warning: "!border-amber-200 !bg-amber-50/90 !text-amber-950",
+          info: "!border-blue-200 !bg-blue-50/90 !text-slate-950",
         },
       }}
       icons={{
-        success: <CircleCheckIcon className="size-4" />,
-        info: <InfoIcon className="size-4" />,
-        warning: <TriangleAlertIcon className="size-4" />,
-        error: <OctagonXIcon className="size-4" />,
-        loading: <Loader2Icon className="size-4 animate-spin" />,
+        success: <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />,
+        info: <Info className="h-4 w-4 shrink-0 text-[#0C60FC]" />,
+        warning: <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />,
+        error: <XCircle className="h-4 w-4 shrink-0 text-rose-600" />,
+        loading: <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[#0C60FC]" />,
       }}
       style={
         {
-          "--normal-bg": "var(--card)",
-          "--normal-text": "var(--card-foreground)",
-          "--normal-border": "var(--border)",
-          "--success-bg":
-            "color-mix(in oklab, var(--card) 86%, var(--primary) 14%)",
-          "--success-text": "var(--card-foreground)",
-          "--success-border":
-            "color-mix(in oklab, var(--primary) 60%, var(--border) 40%)",
-          "--error-bg":
-            "color-mix(in oklab, var(--card) 88%, var(--destructive) 12%)",
-          "--error-text": "var(--card-foreground)",
-          "--error-border":
-            "color-mix(in oklab, var(--destructive) 60%, var(--border) 40%)",
-          "--warning-bg":
-            "color-mix(in oklab, var(--card) 86%, oklch(0.75 0.16 84) 14%)",
-          "--warning-text": "var(--card-foreground)",
-          "--warning-border":
-            "color-mix(in oklab, oklch(0.75 0.16 84) 60%, var(--border) 40%)",
-          "--info-bg":
-            "color-mix(in oklab, var(--card) 86%, var(--primary) 14%)",
-          "--info-text": "var(--card-foreground)",
-          "--info-border":
-            "color-mix(in oklab, var(--primary) 55%, var(--border) 45%)",
-          "--border-radius": "var(--radius)",
+          "--normal-bg": "#ffffff",
+          "--normal-text": "#0f172a",
+          "--normal-border": "#e2e8f0",
+          "--border-radius": "16px",
         } as React.CSSProperties
       }
       {...props}

@@ -22,7 +22,7 @@ import { useProfileCheck, useProfileUpdate } from "@/hooks";
 import { useUploadFile, IUpload } from "@/hooks";
 import { toast } from "sonner";
 import { Bell, MessageSquare, Check, X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, resolveAvatarUrl } from "@/lib/utils";
 
 const ROLE_LABELS: Record<string, string> = {
   student: "Student",
@@ -171,7 +171,7 @@ export default function ProfilePage() {
     ? (ROLE_LABELS[user.role] ?? user.role)
     : "Student";
   const avatarSrc =
-    localPreview || uploadedPicture?.url || user?.profilePicture;
+    localPreview || uploadedPicture?.url || resolveAvatarUrl(user);
 
   return (
     <div className="space-y-6">

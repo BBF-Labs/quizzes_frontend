@@ -1,479 +1,982 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { AnimatePresence, motion, type Variants } from "framer-motion";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Bell, Calendar, Clock, MapPin } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Calendar as CalendarIcon,
+  Clock,
+  MapPin,
+  Sparkles,
+  Plus,
+  ArrowRight,
+  BookOpen,
+  CheckCircle2,
+  AlertCircle,
+  Search,
+  Filter,
+  CheckSquare,
+  Square,
+  ListTodo,
+  Check,
+} from "lucide-react";
 import {
   useMyTimetable,
   type IExamSessionEntry,
 } from "@/hooks/app/use-timetable";
-import { cn } from "@/lib/utils";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { useMyCourses } from "@/hooks/app/use-user-courses";
+import { useAuth } from "@/contexts/auth-context";
+import { toast } from "sonner";
+import { Calendar } from "@/components/ui/calendar";
 
-const SEMESTERS = ["Semester 1", "Semester 2", "Summer Session"];
-const ACADEMIC_YEARS = ["2023-2024", "2024-2025", "2025-2026"];
+type TabView = "week" | "month" | "agenda" | "exams";
 
-const containerVariants: Variants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
-};
+interface TaskItem {
+  id: string;
+  title: string;
+  category: string;
+  done: boolean;
+}
 
-const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 12 },
-  visible: { opacity: 1, y: 0 },
-};
+const INITIAL_TASKS: TaskItem[] = [
+  {
+    id: "t1",
+    title: "Re-read DCIT 205 L03 notes",
+    category: "Algorithms",
+    done: true,
+  },
+  {
+    id: "t2",
+    title: "10 Big-O practice questions",
+    category: "Algorithms",
+    done: true,
+  },
+  {
+    id: "t3",
+    title: "Memoization vs tabulation review",
+    category: "Algorithms",
+    done: false,
+  },
+  {
+    id: "t4",
+    title: "OS Process Scheduling lab prep",
+    category: "Operating Systems",
+    done: false,
+  },
+  {
+    id: "t5",
+    title: "Linear Algebra Problem Set 4",
+    category: "Mathematics",
+    done: false,
+  },
+];
 
-const formatDuration = (minutes: number) => {
-  if (minutes % 60 === 0) {
-    return `${minutes / 60}h`;
-  }
+const WEEK_DAYS = [
+  { day: "MON", date: "12", isToday: true, dotColor: "bg-[#DFFF61]" },
+  { day: "TUE", date: "13", isToday: false, dotColor: "bg-slate-300" },
+  { day: "WED", date: "14", isToday: false, dotColor: "bg-violet-400" },
+  { day: "THU", date: "15", isToday: false, dotColor: "bg-amber-400" },
+  { day: "FRI", date: "16", isToday: false, dotColor: "bg-emerald-400" },
+  { day: "MON", date: "19", isToday: false, dotColor: "bg-cyan-400" },
+  { day: "WED", date: "21", isToday: false, dotColor: "bg-rose-400" },
+  { day: "FRI", date: "23", isToday: false, dotColor: "bg-amber-400" },
+];
 
-  const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
-
-  if (hours === 0) {
-    return `${remainingMinutes}m`;
-  }
-
-  return `${hours}h ${remainingMinutes}m`;
-};
-
-const formatDate = (dateStr: string) => {
-  const date = new Date(dateStr);
-  return {
-    day: date.toLocaleDateString(undefined, { weekday: "short" }),
-    date: date.getDate(),
-    month: date.toLocaleDateString(undefined, { month: "short" }),
-    time: date.toLocaleTimeString(undefined, {
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
-  };
-};
-
-const getCalendarDaysAway = (targetMs: number, nowMs: number) => {
-  const targetDate = new Date(targetMs);
-  const nowDate = new Date(nowMs);
-  const targetStart = new Date(
-    targetDate.getFullYear(),
-    targetDate.getMonth(),
-    targetDate.getDate(),
-  ).getTime();
-  const nowStart = new Date(
-    nowDate.getFullYear(),
-    nowDate.getMonth(),
-    nowDate.getDate(),
-  ).getTime();
-  return Math.round((targetStart - nowStart) / (1000 * 60 * 60 * 24));
-};
-
-const getEntryStatus = (
-  entry: IExamSessionEntry,
-): "ongoing" | "today" | "upcoming" => {
-  return entry.timingStatus ?? "upcoming";
-};
-
-export default function TimetablePage() {
+export default function PrivateTimetablePage() {
+  const router = useRouter();
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState<TabView>("week");
   const [selectedSemester, setSelectedSemester] = useState("Semester 1");
   const [selectedYear, setSelectedYear] = useState("2025-2026");
-  const [nowMs, setNowMs] = useState(() => Date.now());
+  const [searchQuery, setSearchQuery] = useState("");
+  const [calendarDate, setCalendarDate] = useState<Date | undefined>(
+    new Date(),
+  );
+
+  // Tasks state
+  const [tasks, setTasks] = useState<TaskItem[]>(INITIAL_TASKS);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [taskFilter, setTaskFilter] = useState<"all" | "active" | "completed">(
+    "all",
+  );
 
   const { data: timetables = [], isLoading } = useMyTimetable(
     selectedSemester,
     selectedYear,
   );
 
-  const allEntries = useMemo<IExamSessionEntry[]>(() => {
+  const sortedExams = useMemo(() => {
     return [...timetables].sort(
       (a, b) =>
         new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
     );
   }, [timetables]);
 
-  const mostRecentEntry = useMemo(() => {
-    const ongoing = allEntries.find((entry) => {
-      const start = new Date(entry.scheduledAt).getTime();
-      const end = start + (entry.durationMinutes || 120) * 60 * 1000;
-      return nowMs >= start && nowMs <= end;
-    });
-    if (ongoing) return ongoing;
-
-    const upcoming = allEntries.find(
-      (entry) => new Date(entry.scheduledAt).getTime() >= nowMs,
+  const daysToFirstExam = useMemo(() => {
+    if (sortedExams.length === 0) return 18;
+    const firstMs = new Date(sortedExams[0].scheduledAt).getTime();
+    const diff = Math.max(
+      0,
+      Math.ceil((firstMs - Date.now()) / (1000 * 60 * 60 * 24)),
     );
-    return upcoming ?? allEntries[0] ?? null;
-  }, [allEntries, nowMs]);
+    return diff || 18;
+  }, [sortedExams]);
 
-  const otherEntries = useMemo(
-    () =>
-      allEntries.filter(
-        (entry) =>
-          !mostRecentEntry ||
-          `${entry._id}:${entry.sessionId || ""}` !==
-            `${mostRecentEntry._id}:${mostRecentEntry.sessionId || ""}`,
-      ),
-    [allEntries, mostRecentEntry],
+  // Task actions
+  const toggleTask = (id: string) => {
+    setTasks((prev) =>
+      prev.map((t) => {
+        if (t.id === id) {
+          const nextState = !t.done;
+          toast.success(nextState ? "Task completed! 🎉" : "Task uncompleted");
+          return { ...t, done: nextState };
+        }
+        return t;
+      }),
+    );
+  };
+
+  const handleAddTask = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTaskTitle.trim()) return;
+    const newTask: TaskItem = {
+      id: `t_${Date.now()}`,
+      title: newTaskTitle.trim(),
+      category: "General Study",
+      done: false,
+    };
+    setTasks((prev) => [newTask, ...prev]);
+    setNewTaskTitle("");
+    toast.success("Task added to schedule!");
+  };
+
+  const completedCount = useMemo(
+    () => tasks.filter((t) => t.done).length,
+    [tasks],
   );
+  const completionPercentage = useMemo(() => {
+    if (tasks.length === 0) return 0;
+    return Math.round((completedCount / tasks.length) * 100);
+  }, [tasks, completedCount]);
 
-  const mostRecentStatus = mostRecentEntry
-    ? getEntryStatus(mostRecentEntry)
-    : null;
-  const mostRecentDaysRemaining = mostRecentEntry
-    ? Math.max(
-        0,
-        getCalendarDaysAway(
-          new Date(mostRecentEntry.scheduledAt).getTime(),
-          nowMs,
-        ),
-      )
-    : null;
-
-  useEffect(() => {
-    const timer = setInterval(() => setNowMs(Date.now()), 60000);
-    return () => clearInterval(timer);
-  }, []);
+  const filteredTasks = useMemo(() => {
+    if (taskFilter === "active") return tasks.filter((t) => !t.done);
+    if (taskFilter === "completed") return tasks.filter((t) => t.done);
+    return tasks;
+  }, [tasks, taskFilter]);
 
   return (
-    <div className="flex flex-col gap-8 py-8 px-4 md:px-8 max-w-7xl mx-auto min-h-[calc(100dvh-3.5rem)]">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-black tracking-tighter uppercase">
-            Exam Timetable
-          </h1>
-          <p className="text-sm text-muted-foreground font-mono uppercase tracking-widest">
-            Personalized schedule based on your course enrollments.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Select value={selectedSemester} onValueChange={setSelectedSemester}>
-            <SelectTrigger className="w-40 font-mono text-[11px] uppercase tracking-widest bg-background">
-              <SelectValue placeholder="Semester" />
-            </SelectTrigger>
-            <SelectContent>
-              {SEMESTERS.map((semester) => (
-                <SelectItem key={semester} value={semester}>
-                  {semester}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select value={selectedYear} onValueChange={setSelectedYear}>
-            <SelectTrigger className="w-35 font-mono text-[11px] uppercase tracking-widest bg-background">
-              <SelectValue placeholder="Year" />
-            </SelectTrigger>
-            <SelectContent>
-              {ACADEMIC_YEARS.map((year) => (
-                <SelectItem key={year} value={year}>
-                  {year}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="bg-primary/5 border border-primary/20 p-4 flex items-start gap-3 rounded-lg">
-        <Bell className="size-4 text-primary shrink-0 mt-0.5" />
-        <p className="text-[10px] font-mono uppercase tracking-widest text-primary/80 leading-relaxed">
-          Push notifications are enabled. You will be reminded 7 days, 3 days,
-          and 1 day before each exam.
-        </p>
-      </div>
-
-      <AnimatePresence mode="wait">
-        {isLoading ? (
-          <motion.div
-            key="loading"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="space-y-4"
-          >
-            {[1, 2, 3].map((index) => (
-              <div
-                key={index}
-                className="h-32 border border-border/40 animate-pulse bg-card/20 border-dashed rounded-lg"
-              />
-            ))}
-          </motion.div>
-        ) : allEntries.length > 0 ? (
-          <motion.div
-            key="layout"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1.9fr)] gap-0 border border-border/50 rounded-lg overflow-hidden"
-          >
-            <motion.div
-              variants={itemVariants}
-              className="lg:sticky lg:top-8 border-b lg:border-b-0 lg:border-r border-border/50 p-8 md:p-10 flex flex-col justify-between bg-card"
-            >
-              <div>
-                <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-6 flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 bg-primary block animate-pulse" />
-                  Most Recent Exam
-                </div>
-
-                {mostRecentEntry ? (
-                  <>
-                    <h3 className="text-lg font-mono font-bold text-foreground uppercase tracking-widest mb-2">
-                      {mostRecentEntry.courseCode}
-                    </h3>
-                    <p className="text-muted-foreground font-mono text-xs uppercase tracking-wider mb-8">
-                      {mostRecentEntry.courseName}
-                    </p>
-                    <div
-                      className={cn(
-                        "font-black text-foreground font-mono tracking-tighter leading-none mb-2",
-                        mostRecentStatus === "ongoing"
-                          ? "text-4xl md:text-6xl text-primary animate-pulse"
-                          : mostRecentStatus === "today"
-                            ? "text-5xl md:text-7xl"
-                            : "text-7xl md:text-8xl",
-                      )}
-                    >
-                      {mostRecentStatus === "ongoing"
-                        ? "ONGOING"
-                        : mostRecentStatus === "today"
-                          ? "TODAY"
-                          : mostRecentDaysRemaining}
-                    </div>
-                    {mostRecentStatus === "upcoming" && (
-                      <div className="text-xs font-mono tracking-widest text-muted-foreground uppercase">
-                        Days Remaining
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="text-xs font-mono uppercase tracking-widest text-muted-foreground">
-                    No upcoming exams
-                  </div>
-                )}
+    <div className="dash-grid min-h-screen px-4 pb-24 pt-6 sm:px-6 lg:px-8 lg:pb-12 text-slate-900 bg-[#F7F9FC]">
+      <div className="mx-auto max-w-[1280px] space-y-4">
+        {/* Header Hero Banner */}
+        <section className="relative overflow-hidden rounded-[28px] bg-[#131B27] p-5 text-white sm:p-7 shadow-xl">
+          <div className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full bg-[#0C60FC]/30 blur-3xl" />
+          <div className="relative flex flex-col gap-7 xl:flex-row xl:items-end xl:justify-between">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] font-bold text-slate-300">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+                Official timetable synced
               </div>
-
-              {mostRecentEntry && (
-                <div className="mt-10 pt-6 border-t border-border/50">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <div className="text-2xl font-black text-foreground font-mono">
-                        {formatDate(mostRecentEntry.scheduledAt).time}
-                      </div>
-                      <div className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase mt-1">
-                        Start Time
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-black text-foreground font-mono">
-                        {formatDuration(mostRecentEntry.durationMinutes || 120)}
-                      </div>
-                      <div className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase mt-1">
-                        Duration
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </motion.div>
-
-            <motion.div
-              variants={itemVariants}
-              className="lg:max-h-160 flex flex-col"
-            >
-              <div className="p-4 border-b border-border/50 bg-background/80 flex items-center gap-4 font-mono text-xs">
-                <div className="w-6 h-6 border border-primary/40 bg-primary/20 flex items-center justify-center text-primary font-bold shrink-0 rounded-none">
-                  Z
-                </div>
-                <div className="font-bold text-foreground uppercase tracking-widest flex items-center gap-3">
-                  <span className="w-1.5 h-1.5 bg-primary block animate-pulse" />
-                  Other Exams
-                </div>
-              </div>
-
-              <div className="flex-1 overflow-y-auto scrollbar-none [-ms-overflow-style:none] [&::-webkit-scrollbar]:w-0">
-                {otherEntries.length > 0 ? (
-                  otherEntries.map((entry) => {
-                    const dateInfo = formatDate(entry.scheduledAt);
-                    const status = getEntryStatus(entry);
-                    const displayLabel =
-                      entry.label &&
-                      entry.label.trim() !== entry.courseName.trim()
-                        ? entry.label
-                        : null;
-
-                    return (
-                      <motion.div
-                        key={entry._id}
-                        variants={itemVariants}
-                        className={cn(
-                          "grid grid-cols-1 md:grid-cols-[100px_minmax(0,1fr)_120px] border-b border-border/50 last:border-b-0 transition-all hover:border-primary/40 group overflow-hidden",
-                          "bg-card/5 hover:bg-card/10",
-                        )}
-                      >
-                        <div
-                          className={cn(
-                            "flex flex-row md:flex-col items-center justify-center p-4 gap-2 md:gap-0 border-r border-b md:border-b-0 border-border/40",
-                            "bg-primary/5 group-hover:bg-primary/10 transition-colors",
-                          )}
-                        >
-                          <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/60">
-                            {dateInfo.day}
-                          </span>
-                          <span className="text-2xl font-black tracking-tighter leading-none">
-                            {dateInfo.date}
-                          </span>
-                          <span className="text-[10px] font-mono uppercase tracking-widest font-bold">
-                            {dateInfo.month}
-                          </span>
-                        </div>
-
-                        <div className="p-5 md:p-6 flex flex-col gap-3 min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <Badge
-                              variant="outline"
-                              className="font-mono text-[9px] uppercase tracking-widest h-5 rounded-lg border-border/40"
-                            >
-                              {entry.courseCode}
-                            </Badge>
-                            <Badge
-                              variant="outline"
-                              className="font-mono text-[9px] uppercase tracking-widest h-5 rounded-lg border-primary/30 text-primary/70"
-                            >
-                              {entry.examType}
-                            </Badge>
-                            {displayLabel && (
-                              <Badge
-                                variant="secondary"
-                                className="font-mono text-[9px] uppercase tracking-widest h-5 rounded-lg border-primary/20 bg-primary/10 text-primary"
-                              >
-                                {displayLabel}
-                              </Badge>
-                            )}
-                          </div>
-
-                          <h4 className="text-lg md:text-xl font-black tracking-tight uppercase leading-tight text-foreground">
-                            {entry.courseName}
-                          </h4>
-
-                          <div className="flex flex-wrap gap-y-2 gap-x-5 text-sm text-muted-foreground font-mono">
-                            <div className="flex items-center gap-1.5">
-                              <Clock className="w-3.5 h-3.5 text-primary/80" />
-                              <span>
-                                {dateInfo.time} ·{" "}
-                                {formatDuration(entry.durationMinutes || 120)}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <MapPin className="w-3.5 h-3.5 text-primary/80" />
-                              <span className="truncate">{entry.venue}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {(() => {
-                          const itemStart = new Date(
-                            entry.scheduledAt,
-                          ).getTime();
-                          const itemDaysAway = Math.max(
-                            0,
-                            getCalendarDaysAway(itemStart, nowMs),
-                          );
-
-                          return (
-                            <div
-                              className={cn(
-                                "border-l border-border/50 flex flex-col items-center justify-center px-4 py-6 text-center shrink-0 min-w-28",
-                                status === "ongoing"
-                                  ? "bg-primary/10 animate-pulse"
-                                  : status === "today"
-                                    ? "bg-primary/5"
-                                    : "bg-background/60",
-                              )}
-                            >
-                              <div
-                                className={cn(
-                                  "font-black font-mono tracking-tight leading-none",
-                                  status === "ongoing"
-                                    ? "text-sm text-primary"
-                                    : status === "today"
-                                      ? "text-xl text-primary"
-                                      : "text-4xl text-foreground",
-                                )}
-                              >
-                                {status === "ongoing"
-                                  ? "ONGOING"
-                                  : status === "today"
-                                    ? "TODAY"
-                                    : itemDaysAway}
-                              </div>
-                              {status === "upcoming" && (
-                                <div className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase mt-2">
-                                  Days
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })()}
-                      </motion.div>
-                    );
-                  })
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-full py-16 px-6 text-center">
-                    <div className="size-12 border border-border/40 bg-muted/10 flex items-center justify-center rounded-lg mb-4">
-                      <Calendar className="size-6 text-muted-foreground/40" />
-                    </div>
-                    <p className="text-sm font-black uppercase tracking-widest">
-                      No other exams
-                    </p>
-                    <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/60 mt-2 max-w-xs">
-                      The most recent exam is the only upcoming entry right now.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="empty"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex flex-col items-center justify-center py-24 border-2 border-dashed border-border/40 bg-card/20 gap-6 rounded-lg"
-          >
-            <div className="size-16 border border-border/40 bg-muted/10 flex items-center justify-center rounded-lg">
-              <Calendar className="size-8 text-muted-foreground/40" />
-            </div>
-            <div className="text-center space-y-2">
-              <p className="text-lg font-black tracking-tighter uppercase">
-                No exams scheduled
+              <p className="mt-6 text-[10px] font-extrabold uppercase tracking-[.2em] text-blue-300">
+                Monday, 12 January · Week 9
               </p>
-              <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/60 max-w-xs mx-auto">
-                We couldn&apos;t find any published exam timetables for your
-                enrolled courses in this period.
+              <h1 className="mt-2 display text-3xl font-bold tracking-tight sm:text-5xl">
+                Your timetable.
+              </h1>
+              <p className="mt-3 max-w-xl text-sm leading-6 text-slate-400">
+                Up next:{" "}
+                <b className="text-white font-bold">
+                  DCIT 205 Algorithms lecture
+                </b>{" "}
+                at 9:00 AM · Great Hall. Three classes and one study block
+                today.
               </p>
             </div>
-            <Link href="/app/courses">
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-2 font-mono text-[10px] uppercase tracking-[0.2em]"
+
+            <div className="flex flex-wrap gap-2 sm:gap-3">
+              <div className="min-w-24 rounded-2xl bg-white/7 p-4">
+                <p className="text-3xl font-bold text-white">4</p>
+                <p className="mt-1 text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                  today
+                </p>
+              </div>
+              <div className="min-w-24 rounded-2xl bg-white/7 p-4">
+                <p className="text-3xl font-bold text-[#DFFF61]">
+                  {daysToFirstExam}
+                </p>
+                <p className="mt-1 text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                  days to exams
+                </p>
+              </div>
+              <Link
+                href="/app"
+                className="flex min-w-32 items-center justify-center rounded-2xl bg-[#0C60FC] px-5 py-4 text-xs font-extrabold text-white hover:bg-blue-700 transition"
               >
-                Manage Enrollments
-              </Button>
-            </Link>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                Start next block →
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* Main 2-Column Grid: Timetable Board + Calendar & Tasks Sidebar */}
+        <div className="grid gap-5 xl:grid-cols-[1fr_380px]">
+          {/* LEFT MAIN AREA */}
+          <div className="space-y-4">
+            {/* Board & Tab Selector Section */}
+            <section
+              id="board"
+              className="panel p-4 sm:p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm"
+            >
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <p className="text-[10px] font-extrabold uppercase tracking-[.18em] text-[#0C60FC]">
+                    January 2026 · {selectedSemester}
+                  </p>
+                  <h2 className="mt-1 text-lg font-bold text-slate-950">
+                    Everything on your schedule
+                  </h2>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <select
+                    value={selectedSemester}
+                    onChange={(e) => setSelectedSemester(e.target.value)}
+                    className="rounded-xl border border-slate-200 bg-[#F7F9FC] px-3 py-2 text-xs font-bold text-slate-700 outline-none cursor-pointer"
+                  >
+                    <option value="Semester 1">Semester 1</option>
+                    <option value="Semester 2">Semester 2</option>
+                  </select>
+
+                  <div
+                    id="tabs"
+                    className="date-rail flex gap-1 overflow-x-auto rounded-xl bg-[#F0F3F8] p-1"
+                  >
+                    {(["week", "month", "agenda", "exams"] as TabView[]).map(
+                      (tab) => (
+                        <button
+                          key={tab}
+                          onClick={() => setActiveTab(tab)}
+                          className={`shrink-0 rounded-lg px-3.5 py-2 text-[10px] font-extrabold capitalize transition ${
+                            activeTab === tab
+                              ? "bg-white text-slate-950 shadow-xs"
+                              : "text-slate-500 hover:text-slate-900"
+                          }`}
+                        >
+                          {tab}
+                        </button>
+                      ),
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Date Selector Rail */}
+              <div className="date-rail mt-5 flex gap-2 overflow-x-auto pb-1">
+                {WEEK_DAYS.map((d, idx) => (
+                  <div
+                    key={idx}
+                    className={`min-w-16 rounded-2xl p-3 text-center transition ${
+                      d.isToday
+                        ? "bg-[#0C60FC] text-white shadow-md"
+                        : "bg-slate-50 text-slate-900"
+                    }`}
+                  >
+                    <p
+                      className={`text-[9px] font-bold uppercase ${d.isToday ? "text-blue-200" : "text-slate-400"}`}
+                    >
+                      {d.day}
+                    </p>
+                    <p className="mt-1 text-xl font-bold">{d.date}</p>
+                    <i
+                      className={`mx-auto mt-2 block h-1.5 w-1.5 rounded-full ${d.dotColor}`}
+                    />
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* TAB 1: WEEK VIEW */}
+            {activeTab === "week" && (
+              <section className="space-y-4">
+                <div className="panel p-4 sm:p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h2 className="text-base font-bold text-slate-950">
+                        Week 9 · 12–16 January
+                      </h2>
+                      <p className="mt-1 text-[11px] font-semibold text-slate-500">
+                        Lectures, labs, tutorials and your planned study blocks.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-3 text-[10px] font-bold text-slate-500">
+                      <span className="flex items-center gap-1.5">
+                        <i className="h-2 w-2 rounded-full bg-[#0C60FC]" />
+                        Lecture
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <i className="h-2 w-2 rounded-full bg-violet-400" />
+                        Lab / tutorial
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <i className="h-2 w-2 rounded-full bg-lime-400" />
+                        Study block
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <i className="h-2 w-2 rounded-full bg-rose-400" />
+                        Exam
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Desktop Timetable Grid */}
+                  <div className="mt-5 hidden lg:block">
+                    <div className="grid grid-cols-[60px_repeat(5,minmax(0,1fr))] gap-1 pb-2 text-center font-bold">
+                      <span />
+                      <span className="rounded-lg bg-blue-50 py-1.5 text-[10px] text-[#0C60FC]">
+                        MON 12
+                      </span>
+                      <span className="py-1.5 text-[10px] text-slate-500">
+                        TUE 13
+                      </span>
+                      <span className="py-1.5 text-[10px] text-slate-500">
+                        WED 14
+                      </span>
+                      <span className="py-1.5 text-[10px] text-slate-500">
+                        THU 15
+                      </span>
+                      <span className="py-1.5 text-[10px] text-slate-500">
+                        FRI 16
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-[60px_repeat(5,minmax(0,1fr))] grid-rows-[repeat(10,48px)] gap-1">
+                      {[
+                        "08:00",
+                        "09:00",
+                        "10:00",
+                        "11:00",
+                        "12:00",
+                        "13:00",
+                        "14:00",
+                        "15:00",
+                        "16:00",
+                        "17:00",
+                      ].map((t, i) => (
+                        <span
+                          key={t}
+                          className="text-[9px] font-extrabold uppercase text-slate-400"
+                          style={{ gridColumn: 1, gridRow: i + 1 }}
+                        >
+                          {t}
+                        </span>
+                      ))}
+
+                      {/* Mon events */}
+                      <div
+                        className="rounded-xl bg-blue-50 p-2 text-[#0C60FC] ring-1 ring-blue-200"
+                        style={{ gridColumn: 2, gridRow: "2 / 4" }}
+                      >
+                        <b className="block text-[11px] font-bold">
+                          DCIT 205 Lecture
+                        </b>
+                        <span className="text-[9px] text-slate-500">
+                          09:00–11:00 · Great Hall
+                        </span>
+                      </div>
+                      <div
+                        className="rounded-xl bg-slate-100 p-2 text-slate-700"
+                        style={{ gridColumn: 2, gridRow: "6 / 8" }}
+                      >
+                        <b className="block text-[11px] font-bold">
+                          UGRC 210 Tutorial
+                        </b>
+                        <span className="text-[9px] text-slate-500">
+                          13:00–14:30 · NNB 4
+                        </span>
+                      </div>
+
+                      {/* Tue events */}
+                      <div
+                        className="rounded-xl bg-violet-50 p-2 text-violet-700 ring-1 ring-violet-200"
+                        style={{ gridColumn: 3, gridRow: "1 / 3" }}
+                      >
+                        <b className="block text-[11px] font-bold">
+                          DCIT 207 Lecture
+                        </b>
+                        <span className="text-[9px] text-slate-500">
+                          08:00–10:00 · Balme Hall
+                        </span>
+                      </div>
+                      <div
+                        className="rounded-xl bg-amber-50 p-2 text-amber-800 ring-1 ring-amber-200"
+                        style={{ gridColumn: 3, gridRow: "4 / 6" }}
+                      >
+                        <b className="block text-[11px] font-bold">
+                          MATH 223 Lecture
+                        </b>
+                        <span className="text-[9px] text-slate-500">
+                          11:00–13:00 · Maths 12
+                        </span>
+                      </div>
+
+                      {/* Wed events */}
+                      <div
+                        className="rounded-xl bg-cyan-50 p-2 text-cyan-800 ring-1 ring-cyan-200"
+                        style={{ gridColumn: 4, gridRow: "3 / 5" }}
+                      >
+                        <b className="block text-[11px] font-bold">
+                          DCIT 201 Lecture
+                        </b>
+                        <span className="text-[9px] text-slate-500">
+                          10:00–12:00 · N Block
+                        </span>
+                      </div>
+
+                      {/* Thu events */}
+                      <div
+                        className="rounded-xl bg-amber-50 p-2 text-amber-800"
+                        style={{ gridColumn: 5, gridRow: "2 / 4" }}
+                      >
+                        <b className="block text-[11px] font-bold">
+                          MATH 223 Tutorial
+                        </b>
+                        <span className="text-[9px] text-slate-500">
+                          09:00–10:30 · Maths 4
+                        </span>
+                      </div>
+
+                      {/* Fri events */}
+                      <div
+                        className="rounded-xl bg-slate-950 p-2 text-white"
+                        style={{ gridColumn: 6, gridRow: "8 / 10" }}
+                      >
+                        <b className="block text-[11px] font-bold">
+                          Weekly review with Qz
+                        </b>
+                        <span className="text-[9px] text-slate-400">
+                          15:00–16:00
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* TAB 2: MONTH VIEW */}
+            {activeTab === "month" && (
+              <section className="panel p-4 sm:p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-base font-bold text-slate-950">
+                      January 2026
+                    </h2>
+                    <p className="mt-1 text-[11px] font-semibold text-slate-500">
+                      Classes, study blocks and the exam window in one view.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button className="h-9 w-9 rounded-xl border border-slate-200 text-slate-500 font-bold hover:bg-slate-50">
+                      ‹
+                    </button>
+                    <button className="rounded-xl border border-slate-200 px-3 py-2 text-[10px] font-extrabold text-slate-600">
+                      Today
+                    </button>
+                    <button className="h-9 w-9 rounded-xl border border-slate-200 text-slate-500 font-bold hover:bg-slate-50">
+                      ›
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-5 overflow-x-auto">
+                  <div className="min-w-[680px]">
+                    <div className="grid grid-cols-7 gap-1.5 pb-2 text-center text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                      <span>Mon</span>
+                      <span>Tue</span>
+                      <span>Wed</span>
+                      <span>Thu</span>
+                      <span>Fri</span>
+                      <span>Sat</span>
+                      <span>Sun</span>
+                    </div>
+                    <div className="grid grid-cols-7 gap-1.5">
+                      {/* Out of month days */}
+                      <div className="min-h-[84px] rounded-2xl border border-dashed border-slate-200 p-2 opacity-45">
+                        <span className="text-[11px] font-bold text-slate-400">29</span>
+                      </div>
+                      <div className="min-h-[84px] rounded-2xl border border-dashed border-slate-200 p-2 opacity-45">
+                        <span className="text-[11px] font-bold text-slate-400">30</span>
+                      </div>
+                      <div className="min-h-[84px] rounded-2xl border border-dashed border-slate-200 p-2 opacity-45">
+                        <span className="text-[11px] font-bold text-slate-400">31</span>
+                      </div>
+
+                      {/* Days 1 to 31 */}
+                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
+                        <span className="text-[11px] font-bold text-slate-900">1</span>
+                        <p className="mt-2 rounded-md bg-slate-100 px-1.5 py-1 text-[9px] font-bold text-slate-600">Holiday</p>
+                      </div>
+                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
+                        <span className="text-[11px] font-bold text-slate-900">2</span>
+                      </div>
+                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
+                        <span className="text-[11px] font-bold text-slate-400">3</span>
+                      </div>
+                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
+                        <span className="text-[11px] font-bold text-slate-400">4</span>
+                      </div>
+
+                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
+                        <span className="text-[11px] font-bold text-slate-900">5</span>
+                        <p className="mt-2 rounded-md bg-blue-50 px-1.5 py-1 text-[9px] font-bold text-[#0C60FC]">3 classes</p>
+                      </div>
+                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
+                        <span className="text-[11px] font-bold text-slate-900">6</span>
+                        <p className="mt-2 rounded-md bg-violet-50 px-1.5 py-1 text-[9px] font-bold text-violet-700">3 classes</p>
+                      </div>
+                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
+                        <span className="text-[11px] font-bold text-slate-900">7</span>
+                        <p className="mt-2 rounded-md bg-blue-50 px-1.5 py-1 text-[9px] font-bold text-[#0C60FC]">2 classes</p>
+                      </div>
+                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
+                        <span className="text-[11px] font-bold text-slate-900">8</span>
+                        <p className="mt-2 rounded-md bg-blue-50 px-1.5 py-1 text-[9px] font-bold text-[#0C60FC]">3 classes</p>
+                      </div>
+                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
+                        <span className="text-[11px] font-bold text-slate-900">9</span>
+                        <p className="mt-2 rounded-md bg-lime-100 px-1.5 py-1 text-[9px] font-bold text-lime-900">Review · Qz</p>
+                      </div>
+                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
+                        <span className="text-[11px] font-bold text-slate-400">10</span>
+                      </div>
+                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
+                        <span className="text-[11px] font-bold text-slate-400">11</span>
+                      </div>
+
+                      {/* Today */}
+                      <div className="min-h-[84px] rounded-2xl border border-[#0C60FC] bg-blue-50/60 p-2 ring-2 ring-[#0C60FC]">
+                        <span className="text-[11px] font-extrabold text-[#0C60FC]">12 · Today</span>
+                        <p className="mt-2 rounded-md bg-rose-100 px-1.5 py-1 text-[9px] font-bold text-rose-700">EXAM · DCIT 205</p>
+                        <p className="mt-1 rounded-md bg-white px-1.5 py-1 text-[9px] font-bold text-slate-600">+2 classes</p>
+                      </div>
+
+                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
+                        <span className="text-[11px] font-bold text-slate-900">13</span>
+                        <p className="mt-2 rounded-md bg-rose-100 px-1.5 py-1 text-[9px] font-bold text-rose-700">EXAM · UGRC 210</p>
+                      </div>
+                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
+                        <span className="text-[11px] font-bold text-slate-900">14</span>
+                        <p className="mt-2 rounded-md bg-rose-100 px-1.5 py-1 text-[9px] font-bold text-rose-700">EXAM · DCIT 207</p>
+                        <p className="mt-1 rounded-md bg-violet-50 px-1.5 py-1 text-[9px] font-bold text-violet-700">OS practical</p>
+                      </div>
+                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
+                        <span className="text-[11px] font-bold text-slate-900">15</span>
+                        <p className="mt-2 rounded-md bg-rose-100 px-1.5 py-1 text-[9px] font-bold text-rose-700">EXAM · MATH 221</p>
+                      </div>
+                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
+                        <span className="text-[11px] font-bold text-slate-900">16</span>
+                        <p className="mt-2 rounded-md bg-rose-100 px-1.5 py-1 text-[9px] font-bold text-rose-700">EXAM · BUSA 301</p>
+                      </div>
+                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
+                        <span className="text-[11px] font-bold text-slate-400">17</span>
+                        <p className="mt-2 rounded-md bg-lime-100 px-1.5 py-1 text-[9px] font-bold text-lime-900">Study block</p>
+                      </div>
+                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
+                        <span className="text-[11px] font-bold text-slate-400">18</span>
+                      </div>
+
+                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
+                        <span className="text-[11px] font-bold text-slate-900">19</span>
+                        <p className="mt-2 rounded-md bg-rose-100 px-1.5 py-1 text-[9px] font-bold text-rose-700">EXAM · DCIT 201</p>
+                      </div>
+                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
+                        <span className="text-[11px] font-bold text-slate-900">20</span>
+                        <p className="mt-2 rounded-md bg-lime-100 px-1.5 py-1 text-[9px] font-bold text-lime-900">Study block</p>
+                      </div>
+                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
+                        <span className="text-[11px] font-bold text-slate-900">21</span>
+                        <p className="mt-2 rounded-md bg-rose-100 px-1.5 py-1 text-[9px] font-bold text-rose-700">EXAM · DCIT 203</p>
+                      </div>
+                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
+                        <span className="text-[11px] font-bold text-slate-900">22</span>
+                        <p className="mt-2 rounded-md bg-lime-100 px-1.5 py-1 text-[9px] font-bold text-lime-900">Study block</p>
+                      </div>
+                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
+                        <span className="text-[11px] font-bold text-slate-900">23</span>
+                      </div>
+                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
+                        <span className="text-[11px] font-bold text-slate-400">24</span>
+                      </div>
+                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
+                        <span className="text-[11px] font-bold text-slate-400">25</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* TAB 3: AGENDA VIEW */}
+            {activeTab === "agenda" && (
+              <section className="panel p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-base font-bold text-slate-950">
+                    Upcoming Agenda
+                  </h2>
+                  <div className="relative w-60">
+                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Search agenda..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2 text-xs font-semibold outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="divide-y divide-slate-100">
+                  {sortedExams.length > 0 ? (
+                    sortedExams.map((entry) => (
+                      <div
+                        key={entry._id}
+                        className="py-3.5 flex items-center gap-4"
+                      >
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#0C60FC] font-extrabold text-xs">
+                          {new Date(entry.scheduledAt).getDate()}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-slate-950">
+                            {entry.courseCode} · {entry.courseName}
+                          </p>
+                          <p className="text-[10px] text-slate-500 font-semibold">
+                            {entry.examType.toUpperCase()} · {entry.venue}
+                          </p>
+                        </div>
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-bold text-slate-600">
+                          {entry.durationMinutes} min
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="py-8 text-center text-xs font-semibold text-slate-400">
+                      No upcoming exam events found for this semester.
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
+
+            {/* TAB 4: EXAMS VIEW */}
+            {activeTab === "exams" && (
+              <section className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {sortedExams.length > 0 ? (
+                    sortedExams.map((entry) => (
+                      <article
+                        key={entry._id}
+                        className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition"
+                      >
+                        <div className="flex items-start justify-between">
+                          <span className="rounded-full bg-rose-50 px-2.5 py-1 text-[9px] font-extrabold text-rose-600">
+                            FINAL EXAM
+                          </span>
+                          <span className="text-xs font-extrabold text-slate-400">
+                            {new Date(entry.scheduledAt).toLocaleDateString(
+                              "en-GB",
+                              {
+                                day: "numeric",
+                                month: "short",
+                              },
+                            )}
+                          </span>
+                        </div>
+
+                        <h3 className="mt-4 text-base font-bold text-slate-950">
+                          {entry.courseCode}
+                        </h3>
+                        <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                          {entry.courseName}
+                        </p>
+
+                        <div className="mt-5 space-y-2 text-xs font-semibold text-slate-600">
+                          <p className="flex items-center gap-2">
+                            <Clock className="h-3.5 w-3.5 text-slate-400" />
+                            {new Date(entry.scheduledAt).toLocaleTimeString(
+                              "en-GB",
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              },
+                            )}{" "}
+                            · {entry.durationMinutes} mins
+                          </p>
+                          <p className="flex items-center gap-2">
+                            <MapPin className="h-3.5 w-3.5 text-slate-400" />
+                            {entry.venue}
+                          </p>
+                        </div>
+
+                        <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                          <span className="text-[10px] font-extrabold text-emerald-600 uppercase">
+                            ✓ Seat Assigned
+                          </span>
+                          <Link
+                            href="/app"
+                            className="rounded-xl bg-slate-950 px-3.5 py-2 text-[10px] font-extrabold text-white hover:bg-[#0C60FC] transition"
+                          >
+                            Study paper →
+                          </Link>
+                        </div>
+                      </article>
+                    ))
+                  ) : (
+                    <>
+                      <article className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm">
+                        <div className="flex items-start justify-between">
+                          <span className="rounded-full bg-rose-50 px-2.5 py-1 text-[9px] font-extrabold text-rose-600">
+                            IN 18 DAYS
+                          </span>
+                          <span className="text-xs font-extrabold text-slate-400">
+                            12 Jan
+                          </span>
+                        </div>
+                        <h3 className="mt-4 text-base font-bold text-slate-950">
+                          DCIT 205 · Algorithms
+                        </h3>
+                        <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                          Great Hall, Main Campus
+                        </p>
+                        <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                          <span className="text-[10px] font-extrabold text-emerald-600 uppercase">
+                            Seat #42 · Main Row
+                          </span>
+                          <Link
+                            href="/app"
+                            className="rounded-xl bg-slate-950 px-3.5 py-2 text-[10px] font-extrabold text-white hover:bg-[#0C60FC] transition"
+                          >
+                            Study paper →
+                          </Link>
+                        </div>
+                      </article>
+
+                      <article className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm">
+                        <div className="flex items-start justify-between">
+                          <span className="rounded-full bg-rose-50 px-2.5 py-1 text-[9px] font-extrabold text-rose-600">
+                            IN 19 DAYS
+                          </span>
+                          <span className="text-xs font-extrabold text-slate-400">
+                            13 Jan
+                          </span>
+                        </div>
+                        <h3 className="mt-4 text-base font-bold text-slate-950">
+                          DCIT 207 · Operating Systems
+                        </h3>
+                        <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                          Balme Hall, Main Campus
+                        </p>
+                        <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                          <span className="text-[10px] font-extrabold text-emerald-600 uppercase">
+                            Seat #18 · Upper Wing
+                          </span>
+                          <Link
+                            href="/app"
+                            className="rounded-xl bg-slate-950 px-3.5 py-2 text-[10px] font-extrabold text-white hover:bg-[#0C60FC] transition"
+                          >
+                            Study paper →
+                          </Link>
+                        </div>
+                      </article>
+                    </>
+                  )}
+                </div>
+              </section>
+            )}
+          </div>
+
+          {/* RIGHT SIDEBAR: Tasks & Goals Widget */}
+          <aside className="space-y-4">
+            {/* Tasks & Goals Widget Card with Strikethrough Completed Tasks */}
+            <div className="panel p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-extrabold text-slate-950 flex items-center gap-1.5">
+                    <ListTodo className="h-4 w-4 text-[#0C60FC]" /> Study Tasks
+                  </h3>
+                  <p className="hand text-base text-[#0C60FC] leading-none mt-0.5">
+                    cross them off!
+                  </p>
+                </div>
+                <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-extrabold text-[#0C60FC]">
+                  {completedCount} / {tasks.length} DONE
+                </span>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-[10px] font-extrabold text-slate-500">
+                  <span>Progress</span>
+                  <span>{completionPercentage}%</span>
+                </div>
+                <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-[#0C60FC] transition-all duration-300"
+                    style={{ width: `${completionPercentage}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Filter Pills */}
+              <div className="flex gap-1.5 rounded-xl bg-[#F7F9FC] p-1 text-[10px] font-bold text-slate-600">
+                {(["all", "active", "completed"] as const).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setTaskFilter(f)}
+                    className={`flex-1 py-1.5 text-center rounded-lg capitalize transition ${
+                      taskFilter === f
+                        ? "bg-white text-slate-950 shadow-2xs font-extrabold"
+                        : "hover:text-slate-900"
+                    }`}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
+
+              {/* Tasks Checklist */}
+              <ul className="space-y-2 max-h-[300px] overflow-y-auto no-scrollbar">
+                <AnimatePresence mode="popLayout">
+                  {filteredTasks.map((t) => (
+                    <motion.li
+                      key={t.id}
+                      layout
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      onClick={() => toggleTask(t.id)}
+                      className={`group cursor-pointer flex items-start gap-2.5 rounded-2xl p-3 transition border ${
+                        t.done
+                          ? "bg-[#F7F9FC] border-slate-100 text-slate-400 line-through"
+                          : "bg-white border-slate-200/90 text-slate-900 shadow-2xs hover:border-[#0C60FC]/40"
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-md border transition ${
+                          t.done
+                            ? "border-emerald-500 bg-emerald-500 text-white"
+                            : "border-slate-300 bg-white group-hover:border-[#0C60FC]"
+                        }`}
+                      >
+                        {t.done && <Check className="h-3 w-3 stroke-[3]" />}
+                      </button>
+
+                      <div className="min-w-0 flex-1">
+                        <p
+                          className={`text-xs font-bold leading-snug ${t.done ? "line-through text-slate-400" : "text-slate-900"}`}
+                        >
+                          {t.title}
+                        </p>
+                        <span className="mt-0.5 inline-block text-[9px] font-semibold text-slate-400">
+                          {t.category}
+                        </span>
+                      </div>
+                    </motion.li>
+                  ))}
+                </AnimatePresence>
+              </ul>
+
+              {/* Add New Task Form */}
+              <form onSubmit={handleAddTask} className="pt-2">
+                <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-[#F7F9FC] px-3 py-1.5 focus-within:bg-white focus-within:ring-2 focus-within:ring-[#0C60FC]/20 transition">
+                  <input
+                    type="text"
+                    value={newTaskTitle}
+                    onChange={(e) => setNewTaskTitle(e.target.value)}
+                    placeholder="Add a new study task..."
+                    className="min-w-0 flex-1 bg-transparent py-1 text-xs font-semibold text-slate-900 outline-none placeholder:text-slate-400"
+                  />
+                  <button
+                    type="submit"
+                    className="rounded-xl bg-slate-950 px-2.5 py-1.5 text-[10px] font-extrabold text-white hover:bg-[#0C60FC] transition"
+                  >
+                    + Add
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* Weekly Study Metrics & Workload Analytics Widget Card */}
+            <div className="panel p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-extrabold text-slate-950 flex items-center gap-1.5">
+                    <Sparkles className="h-4 w-4 text-[#0C60FC]" /> Workload & Metrics
+                  </h3>
+                  <p className="hand text-base text-[#0C60FC] leading-none mt-0.5">
+                    weekly breakdown
+                  </p>
+                </div>
+                <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-extrabold text-emerald-600">
+                  🔥 8 Day Streak
+                </span>
+              </div>
+
+              {/* Weekly Workload Visual Bar Chart */}
+              <div className="space-y-2 pt-1">
+                <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                  Daily Study Hours
+                </p>
+                <div className="grid grid-cols-5 gap-2 items-end h-28 pt-4 pb-1 border-b border-slate-100">
+                  {[
+                    { day: "Mon", hrs: 4.5, pct: "75%", color: "bg-[#0C60FC]" },
+                    { day: "Tue", hrs: 6.0, pct: "100%", color: "bg-[#0C60FC]" },
+                    { day: "Wed", hrs: 4.0, pct: "65%", color: "bg-blue-400" },
+                    { day: "Thu", hrs: 3.5, pct: "55%", color: "bg-blue-400" },
+                    { day: "Fri", hrs: 2.5, pct: "40%", color: "bg-blue-300" },
+                  ].map((bar) => (
+                    <div key={bar.day} className="flex flex-col items-center gap-1.5 h-full justify-end">
+                      <span className="text-[9px] font-extrabold text-slate-500">{bar.hrs}h</span>
+                      <div className="w-full bg-slate-100 rounded-t-lg h-20 flex items-end overflow-hidden">
+                        <div
+                          className={`w-full rounded-t-lg transition-all duration-500 ${bar.color}`}
+                          style={{ height: bar.pct }}
+                        />
+                      </div>
+                      <span className="text-[9px] font-bold uppercase text-slate-400">{bar.day}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Time Allocation Segmented Bar */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-[10px] font-extrabold text-slate-500">
+                  <span>Semester Allocation</span>
+                  <span>21 hrs / wk</span>
+                </div>
+                <div className="h-2.5 rounded-full bg-slate-100 flex overflow-hidden p-0.5">
+                  <div className="h-full w-[55%] rounded-l-full bg-[#0C60FC]" title="Lectures 55%" />
+                  <div className="h-full w-[25%] bg-violet-400" title="Labs 25%" />
+                  <div className="h-full w-[20%] rounded-r-full bg-[#DFFF61]" title="Study 20%" />
+                </div>
+                <div className="flex justify-between text-[9px] font-bold text-slate-500 pt-0.5">
+                  <span className="flex items-center gap-1">
+                    <i className="h-2 w-2 rounded-full bg-[#0C60FC]" /> 55% Lectures
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <i className="h-2 w-2 rounded-full bg-violet-400" /> 25% Labs
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <i className="h-2 w-2 rounded-full bg-[#DFFF61]" /> 20% Self Study
+                  </span>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
     </div>
   );
 }

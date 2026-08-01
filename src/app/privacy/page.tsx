@@ -1,192 +1,150 @@
 "use client";
 
-import React from "react";
-import { motion } from "framer-motion";
-import { Shield, Lock, Eye, FileText, Database, Share2, Mail, ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { Navbar } from "@/components/common";
-import { Footer } from "@/components/landing";
-
-const SECTION_ICON_SIZE = 20;
-
-const PrivacySection = ({ 
-  id,
-  title, 
-  icon: Icon, 
-  children 
-}: { 
-  id?: string;
-  title: string; 
-  icon: React.ElementType; 
-  children: React.ReactNode 
-}) => (
-  <motion.section 
-    id={id}
-    initial={{ opacity: 0, y: 20 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    viewport={{ once: true }}
-    className="mb-16 last:mb-0 scroll-mt-32"
-  >
-    <div className="flex items-center gap-3 mb-6">
-      <div className="p-2 border border-primary/20 bg-primary/5">
-        <Icon className="size-5 text-primary" />
-      </div>
-      <h2 className="text-xl font-black tracking-tighter uppercase">{title}</h2>
-    </div>
-    <div className="pl-0 md:pl-12 text-sm leading-relaxed text-muted-foreground font-mono space-y-4">
-      {children}
-    </div>
-  </motion.section>
-);
+import { LandingHeader, LandingFooter, MobileNav } from "@/components/landing";
 
 export default function PrivacyPage() {
-  const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
-    }
-  };
-
-  const navItems = [
-    { label: "Collection", id: "collection" },
-    { label: "Usage", id: "usage" },
-    { label: "AI Disclosure", id: "ai-disclosure" },
-    { label: "Security", id: "security" },
-    { label: "Rights", id: "rights" },
-  ];
-
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
+    <div className="overflow-x-hidden bg-white text-slate-900 antialiased selection:bg-[#0C60FC] selection:text-white">
+      <LandingHeader />
 
-      <main className="pt-32 pb-20 px-4">
-        <div className="max-w-5xl mx-auto">
-          
-          {/* Hero */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-20 border-l-4 border-primary pl-8 py-4"
-          >
-            <div className="inline-block border border-primary/40 bg-primary/5 px-2 py-1 mb-6">
-              <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-primary">
-                Legal / Privacy
-              </span>
-            </div>
-            <h1 className="text-5xl md:text-7xl font-black tracking-tighter mb-6 uppercase">
-              Privacy & <br />
-              <span className="text-primary">Data Policy</span>
-            </h1>
-            <p className="max-w-2xl text-muted-foreground font-mono text-sm leading-relaxed">
-              Your study data is your intellectual advantage. We treat it as 
-              privileged information, ensuring that your privacy is protected 
-              while providing you with the ultimate AI-powered study experience.
-              <br /><br />
-              <span className="text-foreground/80">Last Updated: April 2026</span>
+      <main>
+        {/* Header Hero */}
+        <section className="soft-grid relative overflow-hidden px-5 pb-16 pt-36 lg:pb-20 lg:pt-44">
+          <div className="pointer-events-none absolute -left-20 top-24 h-80 w-80 rounded-full bg-blue-100 blur-3xl" />
+          <div className="relative mx-auto max-w-7xl">
+            <p className="text-xs font-extrabold uppercase tracking-[.24em] text-[#0C60FC]">
+              Legal / Privacy
             </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
-            
-            {/* Sidebar / Quick Links */}
-            <aside className="hidden md:block col-span-1 sticky top-32 h-fit space-y-4">
-              <div className="border border-border/50 bg-card/40 p-4">
-                <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/60 mb-4">
-                  Quick Navigation
-                </p>
-                <nav className="flex flex-col gap-2">
-                  {navItems.map((item) => (
-                    <button 
-                      key={item.id}
-                      onClick={() => scrollToSection(item.id)}
-                      className="text-[11px] font-mono uppercase text-left hover:text-primary transition-colors py-1 focus:outline-none"
-                    >
-                      {item.label}
-                    </button>
-                  ))}
-                </nav>
-              </div>
-              <Link 
-                href="/" 
-                className="flex items-center gap-2 text-[10px] font-mono uppercase text-muted-foreground hover:text-foreground transition-colors group"
-              >
-                <ArrowLeft className="size-3 group-hover:-translate-x-1 transition-transform" />
-                Back to Home
-              </Link>
-            </aside>
-
-            {/* Content */}
-            <div className="col-span-1 md:col-span-3">
-              
-              <PrivacySection id="collection" title="Information We Collect" icon={Database}>
-                <p>To provide the Z study platform, we collect information that you explicitly provide and data generated during your sessions.</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                  <div className="border border-border/40 p-4 bg-secondary/20">
-                    <p className="text-foreground font-bold mb-2 uppercase text-[12px]">Account Information</p>
-                    <p className="text-[12px]">Email address, name, university affiliation, and study program to personalize your context.</p>
-                  </div>
-                  <div className="border border-border/40 p-4 bg-secondary/20">
-                    <p className="text-foreground font-bold mb-2 uppercase text-[12px]">Study Materials</p>
-                    <p className="text-[12px]">PDFs, lecture notes, and diagrams you upload for AI processing and session generation.</p>
-                  </div>
-                </div>
-              </PrivacySection>
-
-              <PrivacySection id="usage" title="How We Use Your Data" icon={Eye}>
-                <p>We use your data strictly to facilitate your learning journey. This includes:</p>
-                <ul className="list-disc pl-5 space-y-2">
-                  <li>Generating personalized quiz questions and flashcards based on your uploads.</li>
-                  <li>Providing context-aware AI Tutoring sessions through the Z Chat.</li>
-                  <li>Analyzing study sessions (duration, accuracy, streaks) to provide you with insights into your performance.</li>
-                  <li>Maintaining your learning history so you can pick up where you left off.</li>
-                </ul>
-              </PrivacySection>
-
-              <PrivacySection id="ai-disclosure" title="AI Disclosure" icon={Shield}>
-                <p>Z leverages advanced Large Language Models (LLMs) from providers like OpenAI and Anthropic.</p>
-                <p className="bg-primary/10 border-l-2 border-primary p-4 my-4 font-bold text-foreground">
-                  IMPORTANT: Your data is sent to these providers only for processing during your sessions. By default, your study materials are NOT used to train these third-party global models.
-                </p>
-                <p>We transmit information over secure, encrypted channels. These providers are bound by strict privacy agreements to ensure your data is processed only as instructed for your specific sessions.</p>
-              </PrivacySection>
-
-              <PrivacySection id="security" title="Data Security" icon={Lock}>
-                <p>We implement robust security measures to protect your material:</p>
-                <ul className="list-disc pl-5 space-y-2">
-                  <li>Encryption of data at rest and during transit (TLS/SSL).</li>
-                  <li>Secure authentication systems powered by industry-standard protocols.</li>
-                  <li>Regular auditing of our infrastructure and data access logs.</li>
-                </ul>
-              </PrivacySection>
-
-              <PrivacySection id="rights" title="Your Rights & Control" icon={Share2}>
-                <p>You have full control over your study data:</p>
-                <div className="space-y-4 mt-4">
-                  <div className="border border-border/40 p-5">
-                    <p className="text-foreground font-bold mb-1 uppercase">Right to Deletion</p>
-                    <p>You can delete specific study materials, sessions, or your entire account at any time. Once deleted, your data is scrubbed from our active databases.</p>
-                  </div>
-                  <div className="border border-border/40 p-5">
-                    <p className="text-foreground font-bold mb-1 uppercase">Access & Portability</p>
-                    <p>You can access all your generated quizzes and summaries through the dashboard. We are working on features to allow exporting your full study history.</p>
-                  </div>
-                </div>
-              </PrivacySection>
-
-              <PrivacySection title="Contact BFLabs" icon={Mail}>
-                <p>If you have questions about this policy or how your data is handled, reach out to our privacy team at BetaForge Labs.</p>
-                <div className="mt-4 pt-4 border-t border-border/30">
-                  <p className="text-primary font-bold">Email: privacy@bflabs.tech</p>
-                  <p>Attn: Data Privacy Officer</p>
-                </div>
-              </PrivacySection>
-
+            <h1 className="mt-6 max-w-4xl display text-5xl font-bold leading-[1.02] tracking-[-.05em] text-slate-950 sm:text-7xl">
+              Privacy &amp;<br />
+              <span className="text-[#0C60FC]">Data Policy.</span>
+            </h1>
+            <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-600">
+              Your study data is your intellectual advantage. We treat it as privileged information while providing your AI-powered study experience.
+            </p>
+            <div className="mt-8 inline-flex rounded-full border border-slate-200 bg-white px-3.5 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 shadow-sm">
+              Last updated · April 2026
             </div>
           </div>
+        </section>
+
+        {/* Content Layout */}
+        <div className="mx-auto grid max-w-7xl gap-12 px-5 pb-24 lg:grid-cols-[220px_1fr]">
+          <aside className="hidden lg:block">
+            <nav className="sticky top-28 space-y-2 text-xs font-bold text-slate-500">
+              <p className="mb-4 text-[10px] uppercase tracking-widest text-slate-400">
+                On this page
+              </p>
+              <a href="#collect" className="block hover:text-[#0C60FC]">Information we collect</a>
+              <a href="#use" className="block hover:text-[#0C60FC]">How we use data</a>
+              <a href="#ai" className="block hover:text-[#0C60FC]">AI disclosure</a>
+              <a href="#security" className="block hover:text-[#0C60FC]">Data security</a>
+              <a href="#rights" className="block hover:text-[#0C60FC]">Your rights</a>
+              <a href="#contact" className="block hover:text-[#0C60FC]">Contact</a>
+            </nav>
+          </aside>
+
+          <article className="max-w-3xl space-y-12 leading-7 text-slate-600">
+            <section id="collect">
+              <p className="text-[10px] font-extrabold uppercase tracking-[.18em] text-[#0C60FC]">01</p>
+              <h2 className="mt-2 text-2xl font-bold text-slate-900">Information we collect</h2>
+              <p className="mt-4">
+                To provide the Qz study platform, we collect information you explicitly provide and information generated during your sessions.
+              </p>
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl border border-slate-200 bg-[#F7F9FC] p-5">
+                  <h3 className="font-bold text-slate-900">Account information</h3>
+                  <p className="mt-2 text-sm text-slate-600">
+                    Email address, name, university affiliation and study programme used to personalise your context.
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-[#F7F9FC] p-5">
+                  <h3 className="font-bold text-slate-900">Study materials</h3>
+                  <p className="mt-2 text-sm text-slate-600">
+                    PDFs, lecture notes and diagrams you upload for AI processing and session generation.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            <section id="use">
+              <p className="text-[10px] font-extrabold uppercase tracking-[.18em] text-[#0C60FC]">02</p>
+              <h2 className="mt-2 text-2xl font-bold text-slate-900">How we use your data</h2>
+              <p className="mt-4">We use your data strictly to facilitate your learning journey. This includes:</p>
+              <ul className="mt-4 list-disc space-y-2 pl-5 text-sm">
+                <li>Generating personalised quiz questions and flashcards from your uploads.</li>
+                <li>Providing context-aware tutoring sessions through Qz Chat.</li>
+                <li>Analysing duration, accuracy and streaks to explain your performance.</li>
+                <li>Maintaining your learning history so you can continue where you left off.</li>
+              </ul>
+            </section>
+
+            <section id="ai" className="rounded-[24px] border border-blue-100 bg-blue-50/60 p-6 sm:p-8">
+              <p className="text-[10px] font-extrabold uppercase tracking-[.18em] text-[#0C60FC]">03 / AI disclosure</p>
+              <h2 className="mt-2 text-2xl font-bold text-slate-900">How AI providers process data</h2>
+              <p className="mt-4">
+                Qz uses advanced large language models. Information is sent to model providers only for processing during your requested sessions.
+              </p>
+              <p className="mt-4 font-bold text-slate-900">
+                By default, your study materials are not used to train third-party global models.
+              </p>
+              <p className="mt-4 text-sm">
+                Information is transmitted over encrypted channels and providers are bound by strict processing agreements.
+              </p>
+            </section>
+
+            <section id="security">
+              <p className="text-[10px] font-extrabold uppercase tracking-[.18em] text-[#0C60FC]">04</p>
+              <h2 className="mt-2 text-2xl font-bold text-slate-900">Data security</h2>
+              <p className="mt-4">We apply technical and organisational safeguards appropriate to the sensitivity of your material.</p>
+              <ul className="mt-4 list-disc space-y-2 pl-5 text-sm">
+                <li>Encryption in transit using TLS/SSL and encryption of stored data.</li>
+                <li>Secure authentication based on industry-standard protocols.</li>
+                <li>Regular reviews of infrastructure and data access logs.</li>
+              </ul>
+            </section>
+
+            <section id="rights">
+              <p className="text-[10px] font-extrabold uppercase tracking-[.18em] text-[#0C60FC]">05</p>
+              <h2 className="mt-2 text-2xl font-bold text-slate-900">Your rights &amp; control</h2>
+              <div className="mt-5 space-y-4">
+                <div className="border-l-2 border-[#0C60FC] pl-5">
+                  <h3 className="font-bold text-slate-900">Right to deletion</h3>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Delete specific materials, sessions or your entire account. Deleted information is removed from active databases.
+                  </p>
+                </div>
+                <div className="border-l-2 border-[#0C60FC] pl-5">
+                  <h3 className="font-bold text-slate-900">Access &amp; portability</h3>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Access generated quizzes and summaries in your dashboard. Full study-history export is supported.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            <section id="contact" className="rounded-[24px] bg-slate-950 p-7 text-white shadow-xl">
+              <p className="text-[10px] font-extrabold uppercase tracking-[.18em] text-[#DFFF61]">
+                Contact BFLabs
+              </p>
+              <h2 className="mt-2 text-2xl font-bold">Questions about your data?</h2>
+              <p className="mt-3 text-sm text-slate-400">
+                Contact the Data Privacy Officer at BetaForge Labs.
+              </p>
+              <a
+                href="mailto:privacy@bflabs.tech"
+                className="mt-5 inline-flex rounded-xl bg-white px-4 py-3 text-sm font-extrabold text-slate-950 transition hover:bg-blue-50"
+              >
+                privacy@bflabs.tech
+              </a>
+            </section>
+          </article>
         </div>
       </main>
 
-      <Footer />
+      <LandingFooter />
+      <MobileNav />
     </div>
   );
 }

@@ -53,9 +53,14 @@ interface AuthContextValue {
     password: string,
     referralCode?: string,
   ) => Promise<void>;
+  oauthLogin: (
+    provider: "google",
+    payload: { idToken: string; referralCode?: string },
+  ) => Promise<void>;
   logout: () => Promise<void>;
   updateSession: () => void;
 }
+
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
@@ -241,6 +246,56 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [signupMutation],
   );
 
+  const oauthLoginMutation = useMutation({
+    mutationFn: async ({
+      provider,
+      idToken,
+      referralCode,
+    }: {
+      provider: "google";
+      idToken: string;
+      referralCode?: string;
+    }) => {
+      const res = await api.post<{
+        data?: {
+          user?: User;
+          accessToken?: string;
+          refreshToken?: string;
+          status?: "logged_in";
+        };
+      }>(`/auth/oauth/${provider}`, { idToken, referralCode });
+
+      const body = res.data?.data;
+      if (
+        !body ||
+        !body.user ||
+        !body.accessToken ||
+        !body.refreshToken ||
+        body.status !== "logged_in"
+      ) {
+        throw new Error("OAuth login failed");
+      }
+      return body;
+    },
+    onSuccess: async (body) => {
+      setSession(body.user!, body.accessToken!, body.refreshToken!);
+      signalSessionActive();
+      qc.setQueryData(queryKeys.authSession, body.user!);
+      await qc.invalidateQueries({
+        queryKey: [...queryKeys.authSession, "validation"],
+      });
+    },
+  });
+
+  const oauthLogin = useCallback(
+    (
+      provider: "google",
+      payload: { idToken: string; referralCode?: string },
+    ): Promise<void> =>
+      oauthLoginMutation.mutateAsync({ provider, ...payload }).then(() => undefined),
+    [oauthLoginMutation],
+  );
+
   const logout = useCallback(async () => {
     try {
       await api.post("/auth/logout");
@@ -275,6 +330,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         hasAdminAccess,
         login,
         signup,
+        oauthLogin,
         logout,
         updateSession,
       }}
