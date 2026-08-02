@@ -37,6 +37,13 @@ export const useCreateApp = () => {
       };
     },
     onSuccess: () => {
+      // Starting a session consumes the tutorSessions daily usage counter
+      // server-side (enforceUsageLimit runs before the session is created),
+      // so the Usage page's counter needs to refresh here too, not just the
+      // session list.
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.billing.status(),
+      });
       return queryClient.invalidateQueries({
         queryKey: queryKeys.app.lists(),
       });
