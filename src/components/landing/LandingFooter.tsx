@@ -75,6 +75,10 @@ export function LandingFooter() {
                   </a>
                 </div>
               </div>
+              {/* Qubi decoration only renders when the CTA copy is
+                  visible — the "race you inside!" caption needs the
+                  pitch copy to make sense, and the image without the
+                  caption is just noise. So both live or die together. */}
               <div className="relative hidden h-52 lg:block">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -87,25 +91,13 @@ export function LandingFooter() {
                 </span>
               </div>
             </div>
-          ) : (
-            // Logged-in visitors — skip the pitch copy and the divider
-            // entirely so mobile doesn't reserve empty space for a hidden
-            // decoration. The Qubi image is desktop-only via lg:block.
-            <div className="relative hidden h-44 lg:ml-auto lg:block lg:pb-2">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={QUBI_RUN_SRC}
-                alt="Qubi running toward the next study session"
-                className="qubi-run absolute -bottom-12 right-8 h-56 w-56 object-contain"
-              />
-            </div>
-          )}
+          ) : null}
 
-          {/* Compact newsletter signup — same useSubscribeNewsletter
-              hook as the landing NewsletterSection, sized for a small
-              column under the social icons rather than a full card. */}
-          <div className={`grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.35fr_repeat(4,1fr)] ${showCta ? "pt-0" : "pt-2"}`}>
-            <div>
+          {/* Footer link grid: 2-up on mobile (brand column spans both
+              cols, four link columns flow into a 2×2), expanding to
+              the full 5-col layout at lg+. */}
+          <div className={`grid gap-10 grid-cols-2 lg:grid-cols-[1.35fr_repeat(4,1fr)] ${showCta ? "pt-0" : "pt-2"}`}>
+            <div className="col-span-2 lg:col-span-1">
               <Link href="/" className="flex items-center gap-3">
                 <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -146,7 +138,7 @@ export function LandingFooter() {
               >
                 <label
                   htmlFor="footer-newsletter-email"
-                  className="hand block text-base leading-5 text-[#0C60FC]"
+                  className="hand block text-sm leading-5 text-[#0C60FC]"
                 >
                   good notes, straight to your inbox ✦
                 </label>
@@ -158,21 +150,21 @@ export function LandingFooter() {
                     value={newsletterEmail}
                     onChange={(e) => setNewsletterEmail(e.target.value)}
                     placeholder="you@university.edu"
-                    className="min-w-0 flex-1 rounded-xl border-0 bg-transparent px-4 py-3.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-[#0C60FC]/20"
+                    className="min-w-0 flex-1 rounded-xl border-0 bg-transparent px-3 py-2 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-[#0C60FC]/20"
                   />
                   <button
                     type="submit"
                     disabled={subscribeMutation.isPending}
-                    className="squishy shrink-0 rounded-xl bg-slate-950 px-5 py-3.5 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-[#0C60FC] disabled:opacity-70"
+                    className="squishy shrink-0 rounded-xl bg-slate-950 px-4 py-2 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-[#0C60FC] disabled:opacity-70"
                   >
                     {subscribeMutation.isPending ? (
                       <span className="flex items-center gap-1">
-                        <Loader2 className="h-4 w-4 animate-spin" /> Subscribing…
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" /> …
                       </span>
                     ) : newsletterSubmitted ? (
                       "Joined! ✓"
                     ) : (
-                      "Join the newsletter →"
+                      "Join →"
                     )}
                   </button>
                 </div>
