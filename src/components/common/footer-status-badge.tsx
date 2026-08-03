@@ -12,17 +12,17 @@ import type { GlobalState } from "@/hooks/common/use-status";
 const COPY: Record<GlobalState, { dot: string; text: string; aria: string }> = {
   operational: {
     dot: "bg-emerald-400",
-    text: "All systems operational",
+    text: "All good",
     aria: "All systems operational",
   },
   partial_outage: {
     dot: "bg-amber-400",
-    text: "Partial outage",
+    text: "A few hiccups",
     aria: "Partial outage in progress",
   },
   major_outage: {
     dot: "bg-rose-400",
-    text: "Major outage",
+    text: "Working on it",
     aria: "Major outage in progress",
   },
 };

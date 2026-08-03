@@ -1,8 +1,7 @@
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Activity, ArrowUpRight } from "lucide-react";
 import { LandingHeader, LandingFooter, MobileNav } from "@/components/landing";
 import { StatusBanner } from "@/components/common/status-banner";
 import { ComponentStatusCard } from "@/components/common/component-status-card";
-import { QUBI_PEEK_SRC, QUBI_STUDY_SRC, QUBI_RUN_SRC } from "@/lib/constants";
 import type { GlobalStatus } from "@/hooks/common/use-status";
 
 // ISR — revalidate every 30s in the background. The fetch below also
@@ -24,14 +23,9 @@ async function fetchStatus(): Promise<GlobalStatus | null> {
   }
 }
 
-const STATE_MASCOTS = {
-  operational: { src: QUBI_PEEK_SRC, caption: "everything's fine ↘" },
-  partial_outage: { src: QUBI_STUDY_SRC, caption: "we're on it ↘" },
-  major_outage: { src: QUBI_RUN_SRC, caption: "fixing now ↘" },
-} as const;
-
 export default async function StatusPage() {
   const status = await fetchStatus();
+  const statusJsonUrl = `${process.env.NEXT_PUBLIC_API_URL?.replace(/\/api\/v1\/?$/, "")}/status.json`;
 
   return (
     <div className="overflow-x-hidden bg-white text-slate-900 antialiased selection:bg-[#0C60FC] selection:text-white">
@@ -42,7 +36,7 @@ export default async function StatusPage() {
           <div className="pointer-events-none absolute -left-32 top-24 h-96 w-96 rounded-full bg-emerald-100/60 blur-3xl" />
           <div className="pointer-events-none absolute -right-32 top-40 h-96 w-96 rounded-full bg-[#0C60FC]/10 blur-3xl" />
 
-          <div className="relative mx-auto max-w-7xl">
+          <div className="relative mx-auto max-w-5xl">
             <p className="text-xs font-extrabold uppercase tracking-[.22em] text-[#0C60FC]">
               Live · Qz Status
             </p>
@@ -52,27 +46,13 @@ export default async function StatusPage() {
               <span className="scribble">running right now.</span>
             </h1>
             <p className="hand mt-3 text-2xl text-[#0C60FC]">
-              refreshed every 30s ✦
+              if something&apos;s off, you&apos;ll see it here ✦
             </p>
             <p className="mt-4 max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">
-              Live probe of the four systems that keep Qz running. Latency is
-              measured from our backend — what you see is what we see.
+              We poke the bits of Qz that keep your study sessions alive, every
+              30 seconds, from our own backend. If any of them stop replying,
+              we&apos;ll be the first to know — and so will you.
             </p>
-
-            {/* Qubi sticker — position depends on current state */}
-            {status && (
-              <div className="qubi-sticker absolute -right-2 top-20 hidden md:block">
-                <span className="hand absolute -left-28 top-2 hidden w-32 -rotate-6 text-xl leading-5 text-[#0C60FC] sm:block">
-                  {STATE_MASCOTS[status.state].caption}
-                </span>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={STATE_MASCOTS[status.state].src}
-                  alt="Qubi"
-                  className="qubi-bob h-24 w-24 object-contain"
-                />
-              </div>
-            )}
 
             {status ? (
               <>
@@ -81,7 +61,7 @@ export default async function StatusPage() {
                   label={status.label}
                   generatedAt={status.generatedAt}
                 />
-                <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                <div className="mt-6 grid gap-4 sm:grid-cols-2">
                   {status.components.map((c) => (
                     <ComponentStatusCard key={c.id} component={c} />
                   ))}
@@ -91,23 +71,18 @@ export default async function StatusPage() {
               <StatusUnavailable />
             )}
 
-            <div className="mt-10 rounded-2xl border border-slate-200 bg-white p-5 text-sm leading-6 text-slate-600">
-              <p className="text-xs font-extrabold uppercase tracking-widest text-slate-700">
-                About this page
-              </p>
-              <p className="mt-3">
-                We probe the four critical systems above every 30 seconds from
-                the Qz backend. Operational means the probe succeeded in under
-                2 seconds. Degraded means it took longer than 2 seconds. Down
-                means it timed out or errored.
-              </p>
-              <p className="mt-3">
-                Powering your own monitoring? Read the public feed at{" "}
-                <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs font-bold text-slate-700">
-                  {process.env.NEXT_PUBLIC_API_URL?.replace(/\/api\/v1\/?$/, "")}/status.json
-                </code>
-                {" "}— Atlassian-compatible schema.
-              </p>
+            <HowWeCheck />
+
+            <div className="mt-8 flex items-center justify-between gap-4 text-[11px] text-slate-500">
+              <a
+                href={statusJsonUrl}
+                className="inline-flex items-center gap-1.5 font-semibold text-slate-500 transition hover:text-[#0C60FC]"
+              >
+                <Activity className="h-3.5 w-3.5" />
+                /status.json
+                <ArrowUpRight className="h-3 w-3" />
+              </a>
+              <span>Public machine-readable feed · Atlassian schema</span>
             </div>
           </div>
         </section>
@@ -119,9 +94,30 @@ export default async function StatusPage() {
   );
 }
 
+function HowWeCheck() {
+  return (
+    <div className="mt-12 rounded-[24px] border border-slate-200 bg-white p-6 sm:p-8">
+      <p className="text-xs font-extrabold uppercase tracking-widest text-slate-700">
+        How we check
+      </p>
+      <h3 className="display mt-2 text-2xl font-bold text-slate-950 sm:text-3xl">
+        We poke it, we measure it, we tell you.
+      </h3>
+      <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+        Four times a minute, our backend quietly asks each piece of Qz
+        &ldquo;are you still there?&rdquo;. A fast, friendly reply is
+        <b className="text-emerald-700"> green</b>. A slow reply is{" "}
+        <b className="text-amber-700">amber</b>. No reply at all is
+        <b className="text-rose-700"> red</b> — and that&apos;s when we drop
+        everything.
+      </p>
+    </div>
+  );
+}
+
 function StatusUnavailable() {
   return (
-    <div className="mt-8 rounded-2xl border border-amber-200 bg-amber-50 p-6">
+    <div className="mt-8 rounded-2xl border border-amber-200 bg-[#FFF4D6] p-6">
       <div className="flex items-center gap-3">
         <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100">
           <AlertTriangle className="h-5 w-5 text-amber-600" />

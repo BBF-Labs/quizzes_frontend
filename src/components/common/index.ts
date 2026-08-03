@@ -11,7 +11,6 @@ export * from "./plan-card";
 export * from "./referral-card";
 export * from "./json-ld";
 export * from "./MarkdownContent";
-export * from "./status-dot";
 export * from "./status-banner";
 export * from "./component-status-card";
 export * from "./footer-status-badge";

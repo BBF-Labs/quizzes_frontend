@@ -1,6 +1,5 @@
-import { AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
 import type { GlobalState } from "@/hooks/common/use-status";
-import { StatusDot } from "./status-dot";
+import { QUBI_PEEK_SRC, QUBI_STUDY_SRC, QUBI_RUN_SRC } from "@/lib/constants";
 
 interface StatusBannerProps {
   state: GlobalState;
@@ -8,79 +7,88 @@ interface StatusBannerProps {
   generatedAt: string;
 }
 
+/**
+ * Friendly hero banner — Qubi is the centerpiece, not a lucide icon.
+ * Per-state copy is plain English, not "Operational/Degraded/Down".
+ */
+
 const STATE_COPY: Record<GlobalState, {
+  headline: string;
+  handCaption: string;
+  qubi: string;
   bg: string;
-  border: string;
-  iconBg: string;
-  iconColor: string;
-  Icon: typeof CheckCircle2;
+  accent: string;
+  ink: string;
 }> = {
   operational: {
-    bg: "bg-emerald-50",
-    border: "border-emerald-200",
-    iconBg: "bg-emerald-100",
-    iconColor: "text-emerald-600",
-    Icon: CheckCircle2,
+    headline: "Everything's humming.",
+    handCaption: "all quiet on the Qz front ✦",
+    qubi: QUBI_PEEK_SRC,
+    bg: "bg-[#E9FFD3]",
+    accent: "border-[#D4F5A3]",
+    ink: "text-slate-900",
   },
   partial_outage: {
-    bg: "bg-amber-50",
-    border: "border-amber-200",
-    iconBg: "bg-amber-100",
-    iconColor: "text-amber-600",
-    Icon: AlertTriangle,
+    headline: "A few hiccups, but we’re on it.",
+    handCaption: "team is digging in ↘",
+    qubi: QUBI_STUDY_SRC,
+    bg: "bg-[#FFF4D6]",
+    accent: "border-[#FFE2A8]",
+    ink: "text-slate-900",
   },
   major_outage: {
-    bg: "bg-rose-50",
-    border: "border-rose-200",
-    iconBg: "bg-rose-100",
-    iconColor: "text-rose-600",
-    Icon: XCircle,
+    headline: "We’re fixing this right now.",
+    handCaption: "full crew on it ↘",
+    qubi: QUBI_RUN_SRC,
+    bg: "bg-[#FFE0E0]",
+    accent: "border-[#FFC4C4]",
+    ink: "text-slate-900",
   },
 };
 
-/**
- * Hero banner showing the platform's current global state.
- * Lives at the top of the status page, above the component grid.
- */
 export function StatusBanner({ state, label, generatedAt }: StatusBannerProps) {
   const copy = STATE_COPY[state];
-  const { Icon } = copy;
   const date = new Date(generatedAt);
 
   const time = date.toLocaleTimeString("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
-    second: "2-digit",
     timeZone: "UTC",
   });
 
   return (
     <div
-      className={`mt-8 flex items-center justify-between gap-6 rounded-2xl border ${copy.border} ${copy.bg} px-5 py-4 sm:px-6`}
+      className={`relative mt-8 overflow-hidden rounded-[28px] border ${copy.accent} ${copy.bg} px-6 py-7 sm:px-9 sm:py-9`}
     >
-      <div className="flex items-center gap-4">
-        <span
-          className={`flex h-10 w-10 items-center justify-center rounded-xl ${copy.iconBg}`}
-        >
-          <Icon className={`h-5 w-5 ${copy.iconColor}`} />
-        </span>
+      {/* soft blob accents */}
+      <div className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full bg-white/40 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-20 -left-10 h-48 w-48 rounded-full bg-[#0C60FC]/10 blur-3xl" />
+
+      <div className="relative grid items-center gap-6 sm:grid-cols-[1fr_auto]">
         <div>
-          <div className="flex items-center gap-2">
-            <StatusDot state={state === "operational" ? "operational" : state === "partial_outage" ? "degraded" : "down"} />
-            <p className="text-xs font-extrabold uppercase tracking-widest text-slate-700">
-              {state === "operational" ? "All clear" : state === "partial_outage" ? "Partial outage" : "Major outage"}
-            </p>
-          </div>
-          <p className="mt-1 text-base font-bold text-slate-950 sm:text-lg">
+          <p className="text-xs font-extrabold uppercase tracking-[.22em] text-[#0C60FC]">
             {label}
           </p>
+          <h2 className="display mt-2 text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
+            {copy.headline}
+          </h2>
+          <p className={`hand mt-2 text-xl ${copy.ink}`}>
+            {copy.handCaption}
+          </p>
+          <p className="mt-4 text-[11px] font-semibold text-slate-600">
+            Last checked {time} UTC · auto-refreshes every 30s
+          </p>
+        </div>
+
+        <div className="relative shrink-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={copy.qubi}
+            alt="Qubi"
+            className="qubi-bob h-32 w-32 object-contain sm:h-40 sm:w-40"
+          />
         </div>
       </div>
-      <p className="hidden text-right text-[11px] font-semibold text-slate-500 sm:block">
-        Last checked at {time} UTC
-        <br />
-        auto-refreshes every 30s
-      </p>
     </div>
   );
 }
