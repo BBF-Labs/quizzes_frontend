@@ -187,6 +187,12 @@ export const useCreateLibraryMaterial = () => {
       return res.data.data;
     },
     onSuccess: () => {
+      // Uploading consumes the materialUploads daily usage counter
+      // server-side before the material is created, so refresh billing
+      // status alongside the material list.
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.billing.status(),
+      });
       queryClient.invalidateQueries({
         queryKey: queryKeys.library.materials.root(),
       });
@@ -233,6 +239,11 @@ export const useGenerateFlashcards = () => {
       return res.data;
     },
     onSuccess: () => {
+      // flashcardSets is consumed server-side before generation kicks off,
+      // so the counter is already updated by the time this resolves.
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.billing.status(),
+      });
       queryClient.invalidateQueries({
         queryKey: queryKeys.library.flashcards.root(),
       });
@@ -256,6 +267,11 @@ export const useGenerateQuiz = () => {
       return res.data;
     },
     onSuccess: () => {
+      // quizGenerations is consumed server-side before generation kicks off,
+      // so the counter is already updated by the time this resolves.
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.billing.status(),
+      });
       queryClient.invalidateQueries({
         queryKey: queryKeys.library.quizzes.root(),
       });
@@ -330,6 +346,11 @@ export const useGenerateMindMap = () => {
       return res.data;
     },
     onSuccess: () => {
+      // mindMaps is consumed server-side before generation kicks off, so
+      // the counter is already updated by the time this resolves.
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.billing.status(),
+      });
       queryClient.invalidateQueries({
         queryKey: queryKeys.library.mindmaps.root(),
       });
