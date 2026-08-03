@@ -6,6 +6,20 @@ import { toast } from "sonner";
 import { Copy, Gift, Users, Check, Sparkles, Link2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { QUBI_PEEK_SRC } from "@/lib/constants";
+import { createAvatar } from "@dicebear/core";
+import { avataaars } from "@dicebear/collection";
+
+const PLACEHOLDER_SEEDS = ["maya", "kwame", "amara", "kojo"];
+const PLACEHOLDER_BG = ["d1d4f9", "c0aede", "b6e3f4", "ffd5dc"];
+
+// DiceBear Avataaars URIs — same generator the study-rooms use for human
+// avatars. Generated once at module load and shared across instances.
+const PLACEHOLDER_AVATARS = PLACEHOLDER_SEEDS.map((seed, i) =>
+  createAvatar(avataaars, {
+    seed,
+    backgroundColor: [PLACEHOLDER_BG[i]],
+  }).toDataUri(),
+);
 
 export function ReferralCard() {
   const { data: status, isLoading } = useReferralStatus();
@@ -110,13 +124,14 @@ export function ReferralCard() {
                 </span>
                 <div className="flex items-center">
                   <div className="flex -space-x-2">
-                    {[0, 1, 2, 3].map((i) => (
+                    {PLACEHOLDER_AVATARS.map((uri, i) => (
                       <span
                         key={i}
-                        className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#E9FFD3] bg-slate-100 text-slate-300 grayscale"
+                        className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-[#E9FFD3] bg-slate-100 grayscale"
                         aria-hidden="true"
                       >
-                        <Users className="h-4 w-4" />
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={uri} alt="" className="h-full w-full object-cover" />
                       </span>
                     ))}
                     <span className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#E9FFD3] bg-white text-[10px] font-extrabold text-slate-400">
