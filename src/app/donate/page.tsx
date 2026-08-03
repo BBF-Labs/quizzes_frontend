@@ -134,16 +134,11 @@ export default function DonatePage() {
                 className={`mt-8 overflow-hidden rounded-[24px] border ${CREW_BG_BORDER} p-6`}
                 style={{ backgroundColor: CREW_BG }}
               >
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-extrabold uppercase tracking-widest text-slate-700">
-                    What your gift does
-                  </p>
-                  <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-widest text-slate-500">
-                    Cooked plan
-                  </span>
-                </div>
+                <p className="text-xs font-extrabold uppercase tracking-widest text-slate-700">
+                  What your gift does
+                </p>
                 <p className="mt-3 text-[11px] leading-5 text-slate-600">
-                  Donations sponsor a <b>Cooked</b> weekly plan (GHS 4.99) for a student who can&apos;t afford one.
+                  Every donation sponsors Qz access for a student who can&apos;t afford it — no tier, no quota, just full study tools.
                 </p>
                 <ul className="mt-4 space-y-3 text-sm font-semibold text-slate-700">
                   <li className="flex items-center gap-3">
@@ -156,7 +151,7 @@ export default function DonatePage() {
                     <span className="w-16 shrink-0 rounded-lg bg-white px-2 py-1.5 text-center text-[11px] font-extrabold shadow-sm">
                       GHS 100
                     </span>{" "}
-                    ≈ a full month of Cooked access
+                    ≈ a full month of sponsored access
                   </li>
                   <li className="flex items-center gap-3">
                     <span className="w-16 shrink-0 rounded-lg bg-white px-2 py-1.5 text-center text-[11px] font-extrabold shadow-sm">
@@ -166,7 +161,7 @@ export default function DonatePage() {
                   </li>
                 </ul>
                 <p className="mt-4 text-[11px] leading-5 text-slate-500">
-                  Estimates based on the current Cooked weekly price of GHS 4.99.
+                  Estimates based on average AI usage per active student.
                 </p>
               </div>
 
@@ -187,6 +182,20 @@ export default function DonatePage() {
                 {ledger?.donations && ledger.donations.length > 0 && (() => {
                   const recent = ledger.donations.slice(0, 5);
                   const remaining = ledger.donations.length - recent.length;
+                  // Treat anonymous donations, missing names, and the literal
+                  // "Supporter" placeholder as anonymous — i.e. not named donors
+                  // worth highlighting in the caption.
+                  const isAnonymousDonation = (name?: string) => {
+                    const cleaned = (name ?? "").trim().toLowerCase();
+                    return cleaned === "" || cleaned === "supporter";
+                  };
+                  const named = recent
+                    .filter((d) => !d.isAnonymous && !isAnonymousDonation(d.donorName))
+                    .map((d) => d.donorName!.trim());
+                  const unnamedCount = recent.length - named.length;
+                  const namedSlice = named.slice(0, 2);
+                  const moreNamed = named.length - namedSlice.length;
+                  const totalOthers = unnamedCount + moreNamed + remaining;
                   return (
                     <div className="mt-5 border-t border-slate-100 pt-4">
                       {/* overlapping avatars — same pattern as the crew card */}
@@ -212,17 +221,17 @@ export default function DonatePage() {
                         )}
                       </div>
 
-                      {/* caption listing the visible donors + amounts */}
+                      {/* caption — named donors first, everyone else lumped as "others" */}
                       <p className="mt-3 text-[11px] leading-5 text-slate-600">
-                        {recent
-                          .map((d) =>
-                            d.isAnonymous
-                              ? `Anonymous`
-                              : d.donorName || "Supporter",
-                          )
-                          .slice(0, 3)
-                          .join(", ")}
-                        {recent.length > 3 && " and others"}
+                        {namedSlice.length > 0 ? (
+                          <>
+                            {namedSlice.join(", ")}
+                            {totalOthers > 0 && " and "}
+                          </>
+                        ) : null}
+                        {totalOthers > 0 && (
+                          <b>{totalOthers === 1 ? "1 other" : `${totalOthers} others`}</b>
+                        )}
                         {" "}recently chipped in to keep Qz free.
                       </p>
                     </div>
