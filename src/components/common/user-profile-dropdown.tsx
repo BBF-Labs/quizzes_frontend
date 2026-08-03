@@ -108,7 +108,7 @@ export function UserProfileDropdown({
         <DropdownMenuItem asChild>
           <Link
             href="/app"
-            className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 focus:bg-slate-50"
+            className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 hover:text-slate-900 focus:bg-slate-50 focus:text-slate-900 focus:outline-none data-[highlighted]:bg-slate-50 data-[highlighted]:text-slate-900"
           >
             <LayoutDashboard className="h-4 w-4 text-[#0C60FC]" />
             Open dashboard
@@ -119,7 +119,7 @@ export function UserProfileDropdown({
         <DropdownMenuItem asChild>
           <Link
             href="/app/settings"
-            className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 focus:bg-slate-50"
+            className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 hover:text-slate-900 focus:bg-slate-50 focus:text-slate-900 focus:outline-none data-[highlighted]:bg-slate-50 data-[highlighted]:text-slate-900"
           >
             <Settings className="h-4 w-4 text-slate-500" />
             Settings
@@ -132,7 +132,7 @@ export function UserProfileDropdown({
             <DropdownMenuItem asChild>
               <Link
                 href="/admin"
-                className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-[#0C60FC] transition hover:bg-blue-50 focus:bg-blue-50"
+                className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-[#0C60FC] transition hover:bg-blue-50 hover:text-[#0C60FC] focus:bg-blue-50 focus:text-[#0C60FC] focus:outline-none data-[highlighted]:bg-blue-50 data-[highlighted]:text-[#0C60FC]"
               >
                 <LayoutDashboard className="h-4 w-4" />
                 Admin Panel
@@ -145,7 +145,7 @@ export function UserProfileDropdown({
 
         <DropdownMenuItem
           onClick={onLogout}
-          className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-red-50 hover:text-red-600 focus:bg-red-50 focus:text-red-600"
+          className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-red-50 hover:text-red-600 focus:bg-red-50 focus:text-red-600 focus:outline-none data-[highlighted]:bg-red-50 data-[highlighted]:text-red-600"
         >
           <LogOut className="h-4 w-4" />
           Sign out

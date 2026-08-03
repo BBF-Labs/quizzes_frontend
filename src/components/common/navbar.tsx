@@ -203,7 +203,7 @@ export function Navbar() {
                     <DropdownMenuItem key={href} asChild>
                       <Link
                         href={href}
-                        className="text-[11px] tracking-widest uppercase cursor-pointer"
+                        className="text-[11px] tracking-widest uppercase cursor-pointer rounded-sm focus:bg-accent focus:text-accent-foreground focus:outline-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground"
                       >
                         {label}
                       </Link>
