@@ -1,103 +1,175 @@
 "use client";
 
-import { useEffect, useState, useRef, Suspense } from "react";
+import { useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { motion } from "framer-motion";
-import { useConfirmNewsletter } from "@/hooks";
-import { Navbar } from "@/components/common";
-import { Footer } from "@/components/landing";
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, AlertCircle } from "lucide-react";
+import { motion } from "framer-motion";
+import { Mail, ArrowRight, CheckCircle2, AlertCircle } from "lucide-react";
+import { useConfirmNewsletter } from "@/hooks";
+import { LandingHeader, LandingFooter } from "@/components/landing";
+import {
+  QUBI_PEEK_SRC,
+  QUBI_STUDY_SRC,
+  QUBI_WAVE_SRC,
+  QUBI_RUN_SRC,
+} from "@/lib/constants";
 
 function ConfirmContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
-  const { mutate, isPending, isSuccess, isError } = useConfirmNewsletter();
+  const { mutate, isPending, isSuccess, isError, error } =
+    useConfirmNewsletter();
   const initialized = useRef(false);
 
   useEffect(() => {
     if (token && !initialized.current) {
-      mutate(token);
       initialized.current = true;
+      mutate(token);
     }
   }, [token, mutate]);
 
+  const stage = isPending ? "verifying" : isSuccess ? "success" : isError ? "error" : "verifying";
+
+  const errorMessage =
+    (error as { response?: { data?: { message?: string } } })?.response?.data
+      ?.message ?? "The link is invalid or has expired. Try requesting a new one.";
+
   return (
-    <div className="max-w-md w-full mx-auto">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-card/40 border border-border/50 p-8 md:p-12 text-center relative overflow-hidden"
-      >
-        {/* Decorative corner */}
-        <div className="absolute top-0 right-0 w-16 h-16 pointer-events-none">
-          <div className="absolute top-0 right-0 w-0.5 h-8 bg-primary" />
-          <div className="absolute top-0 right-0 w-8 h-0.5 bg-primary" />
+    <div className="relative mx-auto max-w-2xl px-5">
+      {/* Soft-grid background blobs */}
+      <div className="pointer-events-none absolute -left-32 top-10 h-96 w-96 rounded-full bg-blue-100/70 blur-3xl" />
+      <div className="pointer-events-none absolute -right-32 top-40 h-96 w-96 rounded-full bg-violet-100/70 blur-3xl" />
+
+      <div className="relative pt-32 pb-24 lg:pt-40">
+        {/* Header */}
+        <div className="text-center">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-white px-3.5 py-2 text-xs font-bold text-blue-700 shadow-sm">
+            <Mail className="h-3.5 w-3.5" />
+            Newsletter verification
+          </div>
+          <h1 className="display text-balance text-4xl font-bold leading-[1.04] tracking-[-.045em] text-slate-950 sm:text-5xl">
+            {stage === "verifying" && "Confirming your spot."}
+            {stage === "success" && (
+              <>
+                You&apos;re <span className="text-[#0C60FC]">in.</span>
+              </>
+            )}
+            {stage === "error" && "Link expired."}
+          </h1>
+          <p className="hand mx-auto mt-3 max-w-xl -rotate-1 text-2xl text-[#0C60FC]">
+            {stage === "verifying" && "syncing the inbox →"}
+            {stage === "success" && "good notes, headed your way ✦"}
+            {stage === "error" && "let&apos;s try that again ↘"}
+          </p>
+          <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-slate-600">
+            {stage === "verifying" &&
+              "Hold tight — we're confirming your newsletter token with the Qz servers."}
+            {stage === "success" &&
+              "Your subscription is now active. From the next mailing, you'll get fresh study tips, useful resources and product updates — never spammy."}
+            {stage === "error" && errorMessage}
+          </p>
         </div>
 
-        <div className="flex justify-center mb-8">
-          {isPending ? (
-            <div className="w-16 h-16 border-2 border-primary/20 border-t-primary animate-spin" />
-          ) : isSuccess ? (
-            <div className="w-16 h-16 bg-primary/20 flex items-center justify-center border border-primary/50">
-              <CheckCircle2 className="w-8 h-8 text-primary" />
-            </div>
-          ) : (
-            <div className="w-16 h-16 bg-red-500/20 flex items-center justify-center border border-red-500/50">
-              <AlertCircle className="w-8 h-8 text-red-500" />
-            </div>
-          )}
-        </div>
-
-        <h1 className="text-3xl font-black tracking-tighter uppercase mb-4 italic">
-          {isPending
-            ? "VERIFYING..."
-            : isSuccess
-              ? "ACCESS GRANTED."
-              : "ERROR DETECTED."}
-        </h1>
-
-        <div className="h-px bg-border/50 w-full mb-8" />
-
-        <p className="text-sm font-mono text-muted-foreground uppercase tracking-widest leading-relaxed mb-10">
-          {isPending
-            ? "SYNCHRONIZING ENCRYPTION KEYS AND VALIDATING YOUR SUBSCRIBER STATUS..."
-            : isSuccess
-              ? "YOUR SUBSCRIPTION HAS BEEN SUCCESSFULLY VETTED. YOU ARE NOW SYNCED WITH THE QZ INTEL STREAM."
-              : "THE PROVIDED TOKEN IS INVALID OR HAS EXPIRED. PLEASE INITIATE A NEW REQUEST FROM THE FOOTER."}
-        </p>
-
-        <Link
-          href="/"
-          className="inline-flex items-center space-x-3 bg-primary px-8 py-4 text-primary-foreground font-mono text-xs font-bold uppercase tracking-[0.2em] hover:bg-white hover:text-primary hover:ring-1 hover:ring-inset hover:ring-primary transition-all duration-300 group rounded(--radius)"
+        {/* Status card */}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="relative mx-auto mt-12 max-w-md overflow-visible rounded-[32px] border border-slate-200 bg-white p-8 shadow-xl shadow-blue-50/50 sm:p-10"
+          style={{ borderRadius: "32px" }}
         >
-          <span>RETURN TO BASE</span>
-          <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-        </Link>
-      </motion.div>
+          {/* Qubi sticker resting on top-right */}
+          <div className="qubi-sticker absolute -right-2 -top-14 hidden sm:block">
+            <span className="hand absolute -left-28 top-2 w-28 -rotate-6 text-xl leading-5 text-[#0C60FC]">
+              {stage === "success" && "welcome!"}
+              {stage === "verifying" && "one sec ↘"}
+              {stage === "error" && "oops!"}
+            </span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={
+                stage === "success"
+                  ? QUBI_WAVE_SRC
+                  : stage === "verifying"
+                    ? QUBI_STUDY_SRC
+                    : QUBI_RUN_SRC
+              }
+              alt="Qubi reacting to your confirmation"
+              className="h-24 w-24 object-contain"
+            />
+          </div>
+
+          {/* Icon */}
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl border border-slate-200 bg-white">
+            {stage === "verifying" && (
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-[#0C60FC]" />
+            )}
+            {stage === "success" && (
+              <CheckCircle2 className="h-10 w-10 text-[#0C60FC]" strokeWidth={2.25} />
+            )}
+            {stage === "error" && (
+              <AlertCircle className="h-10 w-10 text-rose-500" strokeWidth={2.25} />
+            )}
+          </div>
+
+          <p className="mt-6 text-center text-xs font-extrabold uppercase tracking-[0.2em] text-slate-400">
+            {stage === "verifying" && "Verifying token"}
+            {stage === "success" && "Status · Active"}
+            {stage === "error" && "Status · Failed"}
+          </p>
+
+          <div className="mt-6 flex flex-col gap-3">
+            {stage === "success" && (
+              <Link
+                href="/#newsletter"
+                className="squishy inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3.5 text-sm font-extrabold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-[#0C60FC]"
+              >
+                <span>Discover more from Qz</span>
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Link>
+            )}
+            {stage === "error" && (
+              <Link
+                href="/#newsletter"
+                className="squishy inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3.5 text-sm font-extrabold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-[#0C60FC]"
+              >
+                <span>Request a new link</span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            )}
+            <Link
+              href="/"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3.5 text-sm font-extrabold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+            >
+              Back to home
+            </Link>
+          </div>
+        </motion.div>
+      </div>
     </div>
   );
 }
 
 export default function ConfirmPage() {
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <Navbar />
-      <main className="flex-1 flex items-center justify-center p-4 relative py-24">
-        {/* Background Grid Pattern */}
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[40px_40px]" />
+    <div className="overflow-x-hidden bg-white text-slate-900 antialiased selection:bg-[#0C60FC] selection:text-white">
+      <LandingHeader />
 
+      <main className="soft-grid relative overflow-hidden">
         <Suspense
           fallback={
-            <div className="max-w-md w-full mx-auto text-center font-mono animate-pulse">
-              LOADING SECURE MODULE...
+            <div className="relative mx-auto max-w-2xl px-5 pt-40">
+              <div className="text-center font-mono text-sm uppercase tracking-widest text-slate-400 animate-pulse">
+                Loading confirmation…
+              </div>
             </div>
           }
         >
           <ConfirmContent />
         </Suspense>
       </main>
-      <Footer />
+
+      <LandingFooter />
     </div>
   );
 }
