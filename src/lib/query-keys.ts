@@ -96,4 +96,14 @@ export const queryKeys = {
     root: ["analytics"] as const,
     summary: () => [...queryKeys.analytics.root, "summary"] as const,
   },
+  status: {
+    root: ["status"] as const,
+    live: () => [...queryKeys.status.root, "live"] as const,
+    history: (hours: number) => [...queryKeys.status.root, "history", hours] as const,
+    incidents: (hours: number) => [...queryKeys.status.root, "incidents", hours] as const,
+    reports: (componentId?: string) =>
+      componentId
+        ? ([...queryKeys.status.root, "reports", componentId] as const)
+        : ([...queryKeys.status.root, "reports", "all"] as const),
+  },
 };
