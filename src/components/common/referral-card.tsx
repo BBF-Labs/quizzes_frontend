@@ -32,8 +32,8 @@ export function ReferralCard() {
   if (isLoading) {
     return (
       <div
-        className="h-50 w-full animate-pulse rounded-[32px] border border-slate-200 bg-[#E9FFD3] p-6"
-        style={{ borderRadius: "32px" }}
+        className="h-50 w-full animate-pulse rounded-[28px] border border-slate-200 bg-[#E9FFD3] p-7"
+        style={{ borderRadius: "28px" }}
       />
     );
   }
@@ -42,8 +42,8 @@ export function ReferralCard() {
 
   return (
     <section
-      className="relative overflow-visible rounded-[32px] border border-slate-200 bg-[#E9FFD3] px-6 py-10 sm:px-10 lg:px-14 lg:py-12 shadow-sm"
-      style={{ borderRadius: "32px" }}
+      className="play-card relative overflow-visible rounded-[28px] border border-slate-200 bg-[#E9FFD3] p-7 shadow-sm"
+      style={{ borderRadius: "28px" }}
     >
       {/* soft glow blob */}
       <div className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full bg-lime-200/60 blur-3xl" />
@@ -64,8 +64,7 @@ export function ReferralCard() {
       <motion.div
         initial={{ opacity: 0, scale: 0.97 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="relative grid items-center gap-8 overflow-hidden rounded-[24px] lg:grid-cols-[1fr_.9fr]"
-        style={{ borderRadius: "24px" }}
+        className="relative grid items-center gap-8 lg:grid-cols-[1fr_.9fr]"
       >
         <div className="space-y-3">
           <p className="hand text-2xl text-[#0C60FC]">
@@ -101,40 +100,38 @@ export function ReferralCard() {
           </div>
         </div>
 
-        <div>
-          <div className="space-y-2 rounded-2xl bg-white p-2 shadow-[0_12px_35px_rgba(12,96,252,.12)] ring-1 ring-slate-200">
-            <button
-              onClick={handleCopyCode}
-              className="group/btn flex h-12 w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-4 transition hover:border-[#0C60FC]/40 hover:bg-blue-50/50"
-            >
-              <div className="flex items-center gap-2">
-                <Gift className="h-3.5 w-3.5 text-[#0C60FC]" />
-                <span className="text-sm font-bold tracking-widest text-[#0C60FC]">
-                  {status.code}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
-                  {copiedCode ? "Copied" : "Code"}
-                </span>
-                {copiedCode ? (
-                  <Check className="h-3 w-3 text-emerald-500" />
-                ) : (
-                  <Copy className="h-3 w-3 text-slate-400 transition-colors group-hover/btn:text-[#0C60FC]" />
-                )}
-              </div>
-            </button>
-
-            <button
-              onClick={handleCopyLink}
-              className="squishy flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3.5 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-[#0C60FC]"
-            >
-              <Link2 className="h-4 w-4" />
-              <span className="text-[10px] font-extrabold uppercase tracking-widest">
-                {copiedLink ? "Link Copied" : "Copy Invite Link"}
+        <div className="space-y-2">
+          <button
+            onClick={handleCopyCode}
+            className="group/btn flex h-12 w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-4 transition hover:border-[#0C60FC]/40 hover:bg-blue-50/50"
+          >
+            <div className="flex items-center gap-2">
+              <Gift className="h-3.5 w-3.5 text-[#0C60FC]" />
+              <span className="text-sm font-bold tracking-widest text-[#0C60FC]">
+                {status.code}
               </span>
-            </button>
-          </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+                {copiedCode ? "Copied" : "Code"}
+              </span>
+              {copiedCode ? (
+                <Check className="h-3 w-3 text-emerald-500" />
+              ) : (
+                <Copy className="h-3 w-3 text-slate-400 transition-colors group-hover/btn:text-[#0C60FC]" />
+              )}
+            </div>
+          </button>
+
+          <button
+            onClick={handleCopyLink}
+            className="squishy flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-[#0C60FC]"
+          >
+            <Link2 className="h-4 w-4" />
+            <span className="text-[10px] font-extrabold uppercase tracking-widest">
+              {copiedLink ? "Link Copied" : "Copy Invite Link"}
+            </span>
+          </button>
         </div>
       </motion.div>
     </section>
