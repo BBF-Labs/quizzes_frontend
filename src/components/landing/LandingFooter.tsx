@@ -208,7 +208,7 @@ export function LandingFooter() {
                 <Link href="/about" className="block hover:text-white">About Qz</Link>
                 <Link href="/blog" className="block hover:text-white">Blog</Link>
                 <Link href="/faq" className="block hover:text-white">FAQ</Link>
-                <a href="mailto:support@bflabs.tech" className="block hover:text-white">Contact</a>
+                <Link href="/contact" className="block hover:text-white">Contact</Link>
               </div>
             </div>
             <div>
