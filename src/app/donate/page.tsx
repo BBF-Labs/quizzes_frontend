@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useDonationLedger, useInitiateDonation } from "@/hooks/common/use-donations";
 import { useAuth } from "@/contexts/auth-context";
 import { LandingHeader, LandingFooter, MobileNav } from "@/components/landing";
-import { Loader2, Heart, ShieldCheck, Sparkles, CheckCircle2 } from "lucide-react";
+import { Loader2, Heart, ShieldCheck, Sparkles, CheckCircle2, Activity } from "lucide-react";
 import { QUBI_PEEK_SRC } from "@/lib/constants";
 
 const PRESET_AMOUNTS = [50, 100, 200, 500, 1000];
@@ -133,8 +133,8 @@ export default function DonatePage() {
               <div className="mt-6 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
                 <div className="flex items-center justify-between text-xs font-bold text-slate-500">
                   <span>Community Contributions</span>
-                  <span className="flex items-center gap-1 text-[#0C60FC]">
-                    <Sparkles className="h-3.5 w-3.5" /> Live Ledger
+                  <span className="flex items-center gap-1.5 text-[#0C60FC]">
+                    <Activity className="h-3.5 w-3.5" /> Live Ledger
                   </span>
                 </div>
                 <div className="mt-2 flex items-baseline gap-2">
