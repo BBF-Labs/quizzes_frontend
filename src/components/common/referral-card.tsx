@@ -4,8 +4,8 @@ import { useReferralStatus } from "@/hooks/common/use-billing";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Copy, Gift, Users, Check, Sparkles, Link2 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
+import { QUBI_PEEK_SRC } from "@/lib/constants";
 
 export function ReferralCard() {
   const { data: status, isLoading } = useReferralStatus();
@@ -31,95 +31,112 @@ export function ReferralCard() {
 
   if (isLoading) {
     return (
-      <div className="p-6 border border-border/50 bg-card rounded-lg animate-pulse h-50" />
+      <div
+        className="h-50 w-full animate-pulse rounded-[32px] border border-slate-200 bg-[#E9FFD3] p-6"
+        style={{ borderRadius: "32px" }}
+      />
     );
   }
 
   if (!status) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="relative overflow-hidden p-6 border border-border/10 bg-linear-to-br from-card/80 to-card/40 backdrop-blur-xl rounded-lg shadow-2xl group"
+    <section
+      className="relative overflow-visible rounded-[32px] border border-slate-200 bg-[#E9FFD3] px-6 py-10 sm:px-10 lg:px-14 lg:py-12 shadow-sm"
+      style={{ borderRadius: "32px" }}
     >
-      {/* Background decoration */}
-      <div className="absolute top-0 right-0 -mr-12 -mt-12 size-48 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-colors duration-500" />
-      <div className="absolute bottom-0 left-0 -ml-12 -mb-12 size-32 bg-primary/5 rounded-full blur-2xl" />
+      {/* soft glow blob */}
+      <div className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full bg-lime-200/60 blur-3xl" />
 
-      <div className="relative flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
-        <div className="space-y-2 max-w-sm">
-          <div className="flex items-center gap-2 text-primary">
-            <Gift className="size-4" />
-            <span className="text-xs font-mono uppercase tracking-widest font-bold">
-              Refer & Save
-            </span>
-          </div>
-          <h3 className="text-xl font-black tracking-tighter">
+      {/* Qubi resting on the top-right corner */}
+      <div className="qubi-sticker absolute -right-2 -top-14 z-10 block">
+        <span className="hand absolute -left-28 top-3 hidden w-28 -rotate-6 text-xl leading-5 text-[#0C60FC] sm:block">
+          sharing pays off ↘
+        </span>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={QUBI_PEEK_SRC}
+          alt="Qubi celebrating a referral"
+          className="h-20 w-20 object-contain sm:h-24 sm:w-24"
+        />
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, scale: 0.97 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="relative grid items-center gap-8 overflow-hidden rounded-[24px] lg:grid-cols-[1fr_.9fr]"
+        style={{ borderRadius: "24px" }}
+      >
+        <div className="space-y-3">
+          <p className="hand text-2xl text-[#0C60FC]">
+            good vibes, great discounts ✦
+          </p>
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
             Share the knowledge, <br /> get 15% off.
-          </h3>
-          <p className="text-xs text-muted-foreground leading-relaxed">
+          </h2>
+          <p className="max-w-xl text-sm leading-6 text-slate-600 sm:text-base">
             Invite your friends to Qz. When they complete their first
             subscription, you&apos;ll get a 15% discount on your next renewal.
           </p>
-        </div>
 
-        <div className="flex flex-col items-center gap-4 w-full md:w-auto">
-          <div className="flex flex-col gap-2 w-full md:w-48">
-            <button
-              onClick={handleCopyCode}
-              className="relative w-full h-12 bg-background border border-border/40 hover:border-primary/50 flex items-center justify-between px-4 transition-all duration-300 group/btn rounded-lg"
-            >
-              <span className="text-sm font-mono font-bold tracking-widest text-primary">
-                {status.code}
-              </span>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono uppercase text-muted-foreground/60">
-                  {copiedCode ? "Copied" : "Code"}
-                </span>
-                {copiedCode ? (
-                  <Check className="size-3 text-emerald-500" />
-                ) : (
-                  <Copy className="size-3 text-muted-foreground group-hover/btn:text-primary transition-colors" />
-                )}
-              </div>
-            </button>
-
-            <button
-              onClick={handleCopyLink}
-              className="relative w-full h-10 bg-primary/5 border border-primary/20 hover:bg-primary/10 flex items-center justify-center gap-2 transition-all duration-300 rounded-lg"
-            >
-              <Link2 className="size-3 text-primary" />
-              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-primary">
-                {copiedLink ? "Link Copied" : "Copy Invite Link"}
-              </span>
-            </button>
-          </div>
-
-          <div className="flex items-center gap-6">
+          <div className="mt-4 flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
-              <Users className="size-3 text-muted-foreground" />
-              <div className="flex items-center gap-1.5">
-                <span className="text-sm font-bold leading-none">
-                  {status.referredCount}
-                </span>
-                <span className="text-[9px] text-muted-foreground uppercase font-mono tracking-tighter">
-                  Friends Referred
-                </span>
-              </div>
+              <Users className="h-3.5 w-3.5 text-slate-400" />
+              <span className="text-sm font-bold leading-none text-slate-950">
+                {status.referredCount}
+              </span>
+              <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400">
+                Friends Referred
+              </span>
             </div>
 
             {status.hasPendingDiscount && (
-              <div className="flex items-center gap-2 py-1 px-3 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-                <Sparkles className="size-3 text-emerald-500" />
-                <span className="text-[10px] font-bold text-emerald-500 uppercase font-mono">
+              <div className="flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1">
+                <Sparkles className="h-3 w-3 text-emerald-600" />
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-600">
                   Reward Pending
                 </span>
               </div>
             )}
           </div>
         </div>
-      </div>
-    </motion.div>
+
+        <div>
+          <div className="space-y-2 rounded-2xl bg-white p-2 shadow-[0_12px_35px_rgba(12,96,252,.12)] ring-1 ring-slate-200">
+            <button
+              onClick={handleCopyCode}
+              className="group/btn flex h-12 w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-4 transition hover:border-[#0C60FC]/40 hover:bg-blue-50/50"
+            >
+              <div className="flex items-center gap-2">
+                <Gift className="h-3.5 w-3.5 text-[#0C60FC]" />
+                <span className="text-sm font-bold tracking-widest text-[#0C60FC]">
+                  {status.code}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+                  {copiedCode ? "Copied" : "Code"}
+                </span>
+                {copiedCode ? (
+                  <Check className="h-3 w-3 text-emerald-500" />
+                ) : (
+                  <Copy className="h-3 w-3 text-slate-400 transition-colors group-hover/btn:text-[#0C60FC]" />
+                )}
+              </div>
+            </button>
+
+            <button
+              onClick={handleCopyLink}
+              className="squishy flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3.5 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-[#0C60FC]"
+            >
+              <Link2 className="h-4 w-4" />
+              <span className="text-[10px] font-extrabold uppercase tracking-widest">
+                {copiedLink ? "Link Copied" : "Copy Invite Link"}
+              </span>
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </section>
   );
 }
