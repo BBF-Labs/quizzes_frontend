@@ -30,7 +30,7 @@ const CHANNELS = [
     label: "General & support",
     email: "support@bflabs.tech",
     desc: "Account help, billing questions, anything about using Qz.",
-    responseTime: "Replies within 24 hours on weekdays",
+    responseTime: "Replies within 24 hours",
   },
   {
     icon: Bug,
