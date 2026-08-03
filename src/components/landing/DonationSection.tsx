@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { useDonationLedger, useInitiateDonation } from "@/hooks/common/use-donations";
 import { useAuth } from "@/contexts/auth-context";
-import { Loader2, Heart, ShieldCheck, Sparkles } from "lucide-react";
+import { Loader2, Heart, ShieldCheck } from "lucide-react";
 import { QUBI_PEEK_SRC } from "@/lib/constants";
+import { DonorLedgerCard } from "@/components/common/donor-ledger-card";
 
 const PRESET_AMOUNTS = [10, 20, 50, 100];
 
@@ -84,40 +85,14 @@ export function DonationSection() {
               </p>
 
               {/* Progress & Total Ledger Stats */}
-              <div className="mt-8 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-                <div className="flex items-center justify-between text-xs font-bold text-slate-500">
-                  <span>Total Raised by Community</span>
-                  <span className="flex items-center gap-1 text-[#0C60FC]">
-                    <Sparkles className="h-3.5 w-3.5" />
-                    Community Fueled
-                  </span>
-                </div>
-                <div className="mt-2 flex items-baseline gap-2">
-                  <span className="text-xs font-bold text-slate-400">GHS</span>
-                  <span className="display text-4xl font-bold text-slate-900">
-                    {isLedgerLoading ? "…" : ledger?.totalRaisedGHS?.toLocaleString() ?? "0"}
-                  </span>
-                </div>
-
-                {/* Ledger Recent Supporters Feed */}
-                {ledger?.donations && ledger.donations.length > 0 && (
-                  <div className="mt-5 border-t border-slate-100 pt-4">
-                    <p className="text-[11px] font-extrabold uppercase tracking-widest text-slate-400">
-                      Recent Champions
-                    </p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {ledger.donations.slice(0, 4).map((d) => (
-                        <div
-                          key={d._id}
-                          className="flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1 text-xs font-bold text-slate-700 ring-1 ring-slate-200"
-                        >
-                          <span>{d.isAnonymous ? "Anonymous" : d.donorName || "Supporter"}</span>
-                          <span className="text-[#0C60FC]">GHS {d.amount}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+              <div className="mt-8">
+                <DonorLedgerCard
+                  totalRaisedGHS={ledger?.totalRaisedGHS}
+                  donations={ledger?.donations}
+                  isLoading={isLedgerLoading}
+                  label="Total Raised by Community"
+                  badge="Community Fueled"
+                />
               </div>
 
               <div className="mt-6 flex items-center gap-3 text-xs font-semibold text-slate-500">
