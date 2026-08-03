@@ -10,6 +10,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/library',
     '/timetable',
     '/about',
+    '/contact',
     '/terms',
     '/privacy',
   ].map((route) => ({
