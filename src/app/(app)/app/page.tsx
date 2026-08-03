@@ -6,9 +6,12 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   BookOpen,
+  CalendarDays,
   Clock3,
   FileText,
   Flame,
+  Layers,
+  ListChecks,
   MessageSquare,
   Network,
   Plus,
@@ -233,8 +236,8 @@ export default function AppHomePage() {
                   href="/app/all"
                   className="tool-card rounded-2xl border border-slate-200 p-4 transition hover:-translate-y-1 hover:shadow-md"
                 >
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-lg">
-                    ◫
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-[#0C60FC]">
+                    <MessageSquare className="h-5 w-5" strokeWidth={2.25} />
                   </span>
                   <p className="mt-5 text-xs font-extrabold text-slate-950">Sessions</p>
                   <p className="mt-1 text-[10px] text-slate-400 font-semibold">Resume or begin</p>
@@ -244,8 +247,8 @@ export default function AppHomePage() {
                   href="/app/library"
                   className="tool-card rounded-2xl border border-slate-200 p-4 transition hover:-translate-y-1 hover:shadow-md"
                 >
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-lg">
-                    ▦
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+                    <BookOpen className="h-5 w-5" strokeWidth={2.25} />
                   </span>
                   <p className="mt-5 text-xs font-extrabold text-slate-950">Library</p>
                   <p className="mt-1 text-[10px] text-slate-400 font-semibold">Notes &amp; decks</p>
@@ -255,8 +258,8 @@ export default function AppHomePage() {
                   href="/app/flashcards"
                   className="tool-card rounded-2xl border border-slate-200 p-4 transition hover:-translate-y-1 hover:shadow-md"
                 >
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-lg">
-                    ◷
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                    <Layers className="h-5 w-5" strokeWidth={2.25} />
                   </span>
                   <p className="mt-5 text-xs font-extrabold text-slate-950">Flashcards</p>
                   <p className="mt-1 text-[10px] text-slate-400 font-semibold">25 due today</p>
@@ -266,8 +269,8 @@ export default function AppHomePage() {
                   href="/app/quizzes"
                   className="tool-card rounded-2xl border border-slate-200 p-4 transition hover:-translate-y-1 hover:shadow-md"
                 >
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-lg">
-                    ✓
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                    <ListChecks className="h-5 w-5" strokeWidth={2.25} />
                   </span>
                   <p className="mt-5 text-xs font-extrabold text-slate-950">Quizzes</p>
                   <p className="mt-1 text-[10px] text-slate-400 font-semibold">Test a topic</p>
@@ -277,8 +280,8 @@ export default function AppHomePage() {
                   href="/app/mindmaps"
                   className="tool-card rounded-2xl border border-slate-200 p-4 transition hover:-translate-y-1 hover:shadow-md"
                 >
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-50 text-lg">
-                    ⌘
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-50 text-cyan-600">
+                    <Network className="h-5 w-5" strokeWidth={2.25} />
                   </span>
                   <p className="mt-5 text-xs font-extrabold text-slate-950">Mind maps</p>
                   <p className="mt-1 text-[10px] text-slate-400 font-semibold">See connections</p>
@@ -288,8 +291,8 @@ export default function AppHomePage() {
                   href="/app/notes"
                   className="tool-card rounded-2xl border border-slate-200 p-4 transition hover:-translate-y-1 hover:shadow-md"
                 >
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 text-lg">
-                    ▤
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
+                    <FileText className="h-5 w-5" strokeWidth={2.25} />
                   </span>
                   <p className="mt-5 text-xs font-extrabold text-slate-950">Notes</p>
                   <p className="mt-1 text-[10px] text-slate-400 font-semibold">Write &amp; organise</p>
@@ -299,8 +302,8 @@ export default function AppHomePage() {
                   href="/study-rooms"
                   className="tool-card rounded-2xl border border-slate-200 p-4 transition hover:-translate-y-1 hover:shadow-md"
                 >
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-lime-50 text-lg">
-                    ◉
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-lime-50 text-lime-600">
+                    <Users className="h-5 w-5" strokeWidth={2.25} />
                   </span>
                   <p className="mt-5 text-xs font-extrabold text-slate-950">Study rooms</p>
                   <p className="mt-1 text-[10px] text-slate-400 font-semibold">8 people live</p>
@@ -310,8 +313,8 @@ export default function AppHomePage() {
                   href="/app/timetable"
                   className="tool-card rounded-2xl border border-slate-200 p-4 transition hover:-translate-y-1 hover:shadow-md"
                 >
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 text-lg">
-                    ▤
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
+                    <CalendarDays className="h-5 w-5" strokeWidth={2.25} />
                   </span>
                   <p className="mt-5 text-xs font-extrabold text-slate-950">Timetable</p>
                   <p className="mt-1 text-[10px] text-slate-400 font-semibold">4 classes today</p>
@@ -395,33 +398,44 @@ export default function AppHomePage() {
                 </div>
                 <div className="mt-4 divide-y divide-slate-100">
                   {recentSessions.length > 0 ? (
-                    recentSessions.map((s: any, idx: number) => (
-                      <Link
-                        key={s.id || idx}
-                        href={`/app/${s.id}`}
-                        className="flex items-center gap-3 py-3 hover:bg-slate-50 rounded-xl px-1 transition"
-                      >
-                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-sm">
-                          {idx === 0 ? "✓" : idx === 1 ? "◇" : "▤"}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-[11px] font-bold text-slate-950">
-                            {s.title || "Core Concepts Review"}
-                          </p>
-                          <p className="text-[9px] text-slate-400 font-semibold">
-                            {s.mode || "Session"} · Recent
-                          </p>
-                        </div>
-                        <span className="ml-auto text-xs font-bold text-emerald-600">
-                          {idx === 0 ? "84%" : "→"}
-                        </span>
-                      </Link>
-                    ))
+                    recentSessions.map((s: any, idx: number) => {
+                      const TypeIcon = [ListChecks, Layers, FileText, MessageSquare][idx] ?? ListChecks;
+                      const tint =
+                        idx === 0
+                          ? "bg-blue-50 text-[#0C60FC]"
+                          : idx === 1
+                          ? "bg-violet-50 text-violet-600"
+                          : idx === 2
+                          ? "bg-amber-50 text-amber-600"
+                          : "bg-emerald-50 text-emerald-600";
+                      return (
+                        <Link
+                          key={s.id || idx}
+                          href={`/app/${s.id}`}
+                          className="flex items-center gap-3 py-3 hover:bg-slate-50 rounded-xl px-1 transition"
+                        >
+                          <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${tint}`}>
+                            <TypeIcon className="h-4 w-4" strokeWidth={2.25} />
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-[11px] font-bold text-slate-950">
+                              {s.title || "Core Concepts Review"}
+                            </p>
+                            <p className="text-[9px] text-slate-400 font-semibold">
+                              {s.mode || "Session"} · Recent
+                            </p>
+                          </div>
+                          <span className="ml-auto text-xs font-bold text-emerald-600">
+                            {idx === 0 ? "84%" : "→"}
+                          </span>
+                        </Link>
+                      );
+                    })
                   ) : (
                     <>
                       <a href="/app/all" className="flex items-center gap-3 py-3">
-                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-sm">
-                          ✓
+                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-[#0C60FC]">
+                          <ListChecks className="h-4 w-4" strokeWidth={2.25} />
                         </span>
                         <div className="min-w-0">
                           <p className="truncate text-[11px] font-bold text-slate-950">
@@ -432,8 +446,8 @@ export default function AppHomePage() {
                         <b className="ml-auto text-[10px] text-emerald-600">84%</b>
                       </a>
                       <a href="/app/all" className="flex items-center gap-3 py-3">
-                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-sm">
-                          ◇
+                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+                          <Layers className="h-4 w-4" strokeWidth={2.25} />
                         </span>
                         <div className="min-w-0">
                           <p className="truncate text-[11px] font-bold text-slate-950">
@@ -444,8 +458,8 @@ export default function AppHomePage() {
                         <span className="ml-auto text-slate-300">→</span>
                       </a>
                       <a href="/app/all" className="flex items-center gap-3 py-3">
-                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-sm">
-                          ▤
+                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                          <FileText className="h-4 w-4" strokeWidth={2.25} />
                         </span>
                         <div className="min-w-0">
                           <p className="truncate text-[11px] font-bold text-slate-950">
