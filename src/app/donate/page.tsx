@@ -9,6 +9,36 @@ import { QUBI_PEEK_SRC } from "@/lib/constants";
 
 const PRESET_AMOUNTS = [50, 100, 200, 500, 1000];
 
+// Lime green matching the "Find your study people" landing card.
+const CREW_BG = "#E9FFD3";
+const CREW_BG_BORDER = "border-slate-200";
+
+// Avatar palette — same approach as the crew card on the landing page.
+const AVATAR_BG = [
+  "bg-blue-200",
+  "bg-violet-200",
+  "bg-orange-200",
+  "bg-emerald-200",
+  "bg-rose-200",
+  "bg-amber-200",
+  "bg-sky-200",
+];
+
+function initialsOf(name?: string): string {
+  const cleaned = (name ?? "").trim();
+  if (!cleaned) return "AN";
+  const parts = cleaned.split(/\s+/).slice(0, 2);
+  return parts.map((p) => p[0]?.toUpperCase() ?? "").join("") || "AN";
+}
+
+function pickAvatarBg(seed: string): string {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+  }
+  return AVATAR_BG[hash % AVATAR_BG.length];
+}
+
 export default function DonatePage() {
   const { user } = useAuth();
   const { data: ledger, isLoading: isLedgerLoading } = useDonationLedger();
@@ -100,32 +130,43 @@ export default function DonatePage() {
                 </div>
               </div>
 
-              <div className="mt-8 rounded-[24px] border border-slate-200 bg-[#F7F9FC] p-6">
-                <p className="text-xs font-extrabold uppercase tracking-widest text-slate-400">
-                  What your gift does
+              <div
+                className={`mt-8 overflow-hidden rounded-[24px] border ${CREW_BG_BORDER} p-6`}
+                style={{ backgroundColor: CREW_BG }}
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-extrabold uppercase tracking-widest text-slate-700">
+                    What your gift does
+                  </p>
+                  <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-widest text-slate-500">
+                    Cooked plan
+                  </span>
+                </div>
+                <p className="mt-3 text-[11px] leading-5 text-slate-600">
+                  Donations sponsor a <b>Cooked</b> weekly plan (GHS 4.99) for a student who can&apos;t afford one.
                 </p>
                 <ul className="mt-4 space-y-3 text-sm font-semibold text-slate-700">
                   <li className="flex items-center gap-3">
                     <span className="w-16 shrink-0 rounded-lg bg-white px-2 py-1.5 text-center text-[11px] font-extrabold shadow-sm">
-                      GHS 50
+                      GHS 25
                     </span>{" "}
                     ≈ 1 student studying free for a week
                   </li>
                   <li className="flex items-center gap-3">
                     <span className="w-16 shrink-0 rounded-lg bg-white px-2 py-1.5 text-center text-[11px] font-extrabold shadow-sm">
-                      GHS 200
+                      GHS 100
                     </span>{" "}
-                    ≈ a full month of sponsored access
+                    ≈ a full month of Cooked access
                   </li>
                   <li className="flex items-center gap-3">
                     <span className="w-16 shrink-0 rounded-lg bg-white px-2 py-1.5 text-center text-[11px] font-extrabold shadow-sm">
-                      GHS 1000
+                      GHS 500
                     </span>{" "}
                     ≈ a whole study group through exam season
                   </li>
                 </ul>
                 <p className="mt-4 text-[11px] leading-5 text-slate-500">
-                  Estimates based on current average AI usage per active student.
+                  Estimates based on the current Cooked weekly price of GHS 4.99.
                 </p>
               </div>
 
@@ -143,19 +184,50 @@ export default function DonatePage() {
                     {isLedgerLoading ? "…" : ledger?.totalRaisedGHS?.toLocaleString() ?? "0"}
                   </span>
                 </div>
-                {ledger?.donations && ledger.donations.length > 0 && (
-                  <div className="mt-4 flex flex-wrap gap-2 pt-2 border-t border-slate-100">
-                    {ledger.donations.slice(0, 5).map((d) => (
-                      <span
-                        key={d._id}
-                        className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-3 py-1 text-xs font-bold text-slate-700 ring-1 ring-slate-200"
-                      >
-                        {d.isAnonymous ? "Anonymous" : d.donorName || "Supporter"}
-                        <b className="text-[#0C60FC]">GHS {d.amount}</b>
-                      </span>
-                    ))}
-                  </div>
-                )}
+                {ledger?.donations && ledger.donations.length > 0 && (() => {
+                  const recent = ledger.donations.slice(0, 5);
+                  const remaining = ledger.donations.length - recent.length;
+                  return (
+                    <div className="mt-5 border-t border-slate-100 pt-4">
+                      {/* overlapping avatars — same pattern as the crew card */}
+                      <div className="flex items-center">
+                        <div className="flex -space-x-2">
+                          {recent.map((d) => {
+                            const seed = d.donorName || d._id;
+                            return (
+                              <span
+                                key={d._id}
+                                title={d.isAnonymous ? "Anonymous" : d.donorName || "Supporter"}
+                                className={`flex h-10 w-10 items-center justify-center rounded-full border-2 border-white text-xs font-bold ${pickAvatarBg(seed)}`}
+                              >
+                                {initialsOf(d.isAnonymous ? undefined : d.donorName)}
+                              </span>
+                            );
+                          })}
+                        </div>
+                        {remaining > 0 && (
+                          <span className="ml-3 text-[11px] font-semibold text-slate-500">
+                            +{remaining} more
+                          </span>
+                        )}
+                      </div>
+
+                      {/* caption listing the visible donors + amounts */}
+                      <p className="mt-3 text-[11px] leading-5 text-slate-600">
+                        {recent
+                          .map((d) =>
+                            d.isAnonymous
+                              ? `Anonymous`
+                              : d.donorName || "Supporter",
+                          )
+                          .slice(0, 3)
+                          .join(", ")}
+                        {recent.length > 3 && " and others"}
+                        {" "}recently chipped in to keep Qz free.
+                      </p>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 
