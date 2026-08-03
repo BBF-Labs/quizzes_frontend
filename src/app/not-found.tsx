@@ -40,7 +40,8 @@ export default function NotFound() {
             </div>
 
             <h1 className="display text-balance text-6xl font-bold leading-[1.04] tracking-[-.045em] text-slate-950 sm:text-7xl">
-              Off the <span className="scribble">map.</span>
+              Off the grid.<br />
+              <span className="scribble">you wandered.</span>
             </h1>
 
             <p className="hand mx-auto mt-3 max-w-xl -rotate-1 text-2xl text-[#0C60FC]">
