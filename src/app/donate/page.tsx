@@ -4,40 +4,15 @@ import { useState } from "react";
 import { useDonationLedger, useInitiateDonation } from "@/hooks/common/use-donations";
 import { useAuth } from "@/contexts/auth-context";
 import { LandingHeader, LandingFooter, MobileNav } from "@/components/landing";
-import { Loader2, Heart, ShieldCheck, Sparkles, CheckCircle2, Activity } from "lucide-react";
+import { Loader2, Heart, ShieldCheck, Sparkles, CheckCircle2 } from "lucide-react";
 import { QUBI_PEEK_SRC } from "@/lib/constants";
+import { DonorLedgerCard } from "@/components/common/donor-ledger-card";
 
 const PRESET_AMOUNTS = [50, 100, 200, 500, 1000];
 
 // Lime green matching the "Find your study people" landing card.
 const CREW_BG = "#E9FFD3";
 const CREW_BG_BORDER = "border-slate-200";
-
-// Avatar palette — same approach as the crew card on the landing page.
-const AVATAR_BG = [
-  "bg-blue-200",
-  "bg-violet-200",
-  "bg-orange-200",
-  "bg-emerald-200",
-  "bg-rose-200",
-  "bg-amber-200",
-  "bg-sky-200",
-];
-
-function initialsOf(name?: string): string {
-  const cleaned = (name ?? "").trim();
-  if (!cleaned) return "AN";
-  const parts = cleaned.split(/\s+/).slice(0, 2);
-  return parts.map((p) => p[0]?.toUpperCase() ?? "").join("") || "AN";
-}
-
-function pickAvatarBg(seed: string): string {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) {
-    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
-  }
-  return AVATAR_BG[hash % AVATAR_BG.length];
-}
 
 export default function DonatePage() {
   const { user } = useAuth();
@@ -166,77 +141,12 @@ export default function DonatePage() {
               </div>
 
               {/* Live Ledger Summary */}
-              <div className="mt-6 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-                <div className="flex items-center justify-between text-xs font-bold text-slate-500">
-                  <span>Community Contributions</span>
-                  <span className="flex items-center gap-1.5 text-[#0C60FC]">
-                    <Activity className="h-3.5 w-3.5" /> Live Ledger
-                  </span>
-                </div>
-                <div className="mt-2 flex items-baseline gap-2">
-                  <span className="text-xs font-bold text-slate-400">GHS</span>
-                  <span className="display text-4xl font-bold text-slate-900">
-                    {isLedgerLoading ? "…" : ledger?.totalRaisedGHS?.toLocaleString() ?? "0"}
-                  </span>
-                </div>
-                {ledger?.donations && ledger.donations.length > 0 && (() => {
-                  const recent = ledger.donations.slice(0, 5);
-                  const remaining = ledger.donations.length - recent.length;
-                  // Treat anonymous donations, missing names, and the literal
-                  // "Supporter" placeholder as anonymous — i.e. not named donors
-                  // worth highlighting in the caption.
-                  const isAnonymousDonation = (name?: string) => {
-                    const cleaned = (name ?? "").trim().toLowerCase();
-                    return cleaned === "" || cleaned === "supporter";
-                  };
-                  const named = recent
-                    .filter((d) => !d.isAnonymous && !isAnonymousDonation(d.donorName))
-                    .map((d) => d.donorName!.trim());
-                  const unnamedCount = recent.length - named.length;
-                  const namedSlice = named.slice(0, 2);
-                  const moreNamed = named.length - namedSlice.length;
-                  const totalOthers = unnamedCount + moreNamed + remaining;
-                  return (
-                    <div className="mt-5 border-t border-slate-100 pt-4">
-                      {/* overlapping avatars — same pattern as the crew card */}
-                      <div className="flex items-center">
-                        <div className="flex -space-x-2">
-                          {recent.map((d) => {
-                            const seed = d.donorName || d._id;
-                            return (
-                              <span
-                                key={d._id}
-                                title={d.isAnonymous ? "Anonymous" : d.donorName || "Supporter"}
-                                className={`flex h-10 w-10 items-center justify-center rounded-full border-2 border-white text-xs font-bold ${pickAvatarBg(seed)}`}
-                              >
-                                {initialsOf(d.isAnonymous ? undefined : d.donorName)}
-                              </span>
-                            );
-                          })}
-                        </div>
-                        {remaining > 0 && (
-                          <span className="ml-3 text-[11px] font-semibold text-slate-500">
-                            +{remaining} more
-                          </span>
-                        )}
-                      </div>
-
-                      {/* caption — named donors first, everyone else lumped as "others" */}
-                      <p className="mt-3 text-[11px] leading-5 text-slate-600">
-                        {namedSlice.length > 0 ? (
-                          <>
-                            {namedSlice.join(", ")}
-                            {totalOthers > 0 && " and "}
-                          </>
-                        ) : null}
-                        {totalOthers > 0 && (
-                          <b>{totalOthers === 1 ? "1 other" : `${totalOthers} others`}</b>
-                        )}
-                        {" "}recently chipped in to keep Qz free.
-                      </p>
-                    </div>
-                  );
-                })()}
+              <div className="mt-6">
+                <DonorLedgerCard
+                  totalRaisedGHS={ledger?.totalRaisedGHS}
+                  donations={ledger?.donations}
+                  isLoading={isLedgerLoading}
+                />
               </div>
             </div>
 
