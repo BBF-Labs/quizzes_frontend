@@ -1,8 +1,8 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
-import { Loader2 } from "lucide-react";
+import { AuthenticatingLoader } from "@/components/common/authenticating-loader";
 
 export function AppGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoading, isHydrating, isValidating } = useAuth();
@@ -22,14 +22,7 @@ export function AppGuard({ children }: { children: React.ReactNode }) {
   }, [user, isAuthLoading, pathname, router]);
 
   if (!canShow) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center space-y-4">
-        <Loader2 className="size-8 text-primary animate-spin" />
-        <p className="text-[10px] font-mono tracking-[0.2em] uppercase text-muted-foreground animate-pulse">
-          Authenticating…
-        </p>
-      </div>
-    );
+    return <AuthenticatingLoader />;
   }
 
   return <>{children}</>;
