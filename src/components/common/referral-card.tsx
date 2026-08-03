@@ -6,6 +6,20 @@ import { toast } from "sonner";
 import { Copy, Gift, Users, Check, Sparkles, Link2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { QUBI_PEEK_SRC } from "@/lib/constants";
+import { createAvatar } from "@dicebear/core";
+import { avataaars } from "@dicebear/collection";
+
+const PLACEHOLDER_SEEDS = ["maya", "kwame", "amara", "kojo"];
+const PLACEHOLDER_BG = ["d1d4f9", "c0aede", "b6e3f4", "ffd5dc"];
+
+// DiceBear Avataaars URIs — same generator the study-rooms use for human
+// avatars. Generated once at module load and shared across instances.
+const PLACEHOLDER_AVATARS = PLACEHOLDER_SEEDS.map((seed, i) =>
+  createAvatar(avataaars, {
+    seed,
+    backgroundColor: [PLACEHOLDER_BG[i]],
+  }).toDataUri(),
+);
 
 export function ReferralCard() {
   const { data: status, isLoading } = useReferralStatus();
@@ -78,23 +92,56 @@ export function ReferralCard() {
             subscription, you&apos;ll get a 15% discount on your next renewal.
           </p>
 
-          <div className="mt-4 flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Users className="h-3.5 w-3.5 text-slate-400" />
-              <span className="text-sm font-bold leading-none text-slate-950">
-                {status.referredCount}
-              </span>
-              <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400">
-                Friends Referred
-              </span>
-            </div>
+          <div className="mt-4">
+            {status.referredCount > 0 ? (
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Users className="h-3.5 w-3.5 text-slate-400" />
+                  <span className="text-sm font-bold leading-none text-slate-950">
+                    {status.referredCount}
+                  </span>
+                  <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400">
+                    Friends Referred
+                  </span>
+                </div>
 
-            {status.hasPendingDiscount && (
-              <div className="flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1">
-                <Sparkles className="h-3 w-3 text-emerald-600" />
-                <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-600">
-                  Reward Pending
+                {status.hasPendingDiscount && (
+                  <div className="flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1">
+                    <Sparkles className="h-3 w-3 text-emerald-600" />
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-600">
+                      Reward Pending
+                    </span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              // Empty state — four greyscale placeholder tiles + a "+1 others"
+              // chip, mirroring the donor ledger's avatar stack. Qubi peeks
+              // in to soften the "no one yet" moment.
+              <div className="relative">
+                <span className="hand absolute -right-1 -top-9 hidden rotate-[6deg] text-sm leading-4 text-[#0C60FC] sm:block">
+                  uh oh, no one&apos;s here ↘
                 </span>
+                <div className="flex items-center">
+                  <div className="flex -space-x-2">
+                    {PLACEHOLDER_AVATARS.map((uri, i) => (
+                      <span
+                        key={i}
+                        className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-[#E9FFD3] bg-slate-100 grayscale"
+                        aria-hidden="true"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={uri} alt="" className="h-full w-full object-cover" />
+                      </span>
+                    ))}
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#E9FFD3] bg-white text-[10px] font-extrabold text-slate-400">
+                      +1
+                    </span>
+                  </div>
+                </div>
+                <p className="mt-3 text-[11px] leading-5 text-slate-600">
+                  Your crew&apos;s not here yet — share the link to fill these spots ✦
+                </p>
               </div>
             )}
           </div>

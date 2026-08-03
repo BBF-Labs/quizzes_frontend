@@ -304,34 +304,146 @@ export default function PricingPage() {
 
         {/* Pay-as-you-go Credit Bundles */}
         {creditBundles.length > 0 && (
-          <section className="bg-[#F7F9FC] px-5 py-16">
+          <section className="bg-[#F7F9FC] px-5 py-20 lg:py-28">
             <div className="mx-auto max-w-7xl">
-              <div className="text-center">
-                <p className="hand text-2xl text-[#0C60FC]">need extra generations? ✦</p>
-                <h2 className="mt-1 text-3xl font-bold text-slate-950">Pay-as-you-go Credits</h2>
-                <p className="mt-2 text-sm text-slate-600">Credits never expire. Top up anytime for extra quizzes and flashcards.</p>
+              <div className="mx-auto max-w-3xl text-center">
+                <p className="hand hand-wiggle text-3xl text-[#0C60FC]">
+                  need extra generations? ✦
+                </p>
+                <h2 className="mt-2 text-balance text-4xl font-bold tracking-tight sm:text-5xl">
+                  Pay-as-you-go{" "}
+                  <span className="scribble">credits.</span>
+                </h2>
+                <p className="mt-4 max-w-2xl mx-auto text-base leading-7 text-slate-600">
+                  Credits never expire. Top up anytime for extra quizzes,
+                  flashcards or mind maps on top of any plan.
+                </p>
               </div>
 
-              <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {creditBundles.map((bundle) => (
-                  <article key={bundle._id} className="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm flex flex-col justify-between">
-                    <div>
-                      <span className="flex h-10 w-10 mx-auto items-center justify-center rounded-xl bg-blue-50 text-blue-700 text-lg font-bold">
-                        ⚡
-                      </span>
-                      <h3 className="mt-3 text-base font-extrabold text-slate-950">{bundle.name}</h3>
-                      <p className="mt-2 text-2xl font-extrabold text-slate-950">GHS {bundle.priceGHS}</p>
-                      <p className="mt-1 text-xs text-slate-500">{bundle.credits} extra generation credits</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleBuyCreditBundle(bundle._id)}
-                      className="mt-5 w-full rounded-xl bg-slate-950 py-2.5 text-xs font-extrabold text-white hover:bg-[#0C60FC] transition"
+              <div className="mt-12 flex flex-wrap justify-center gap-5">
+                {creditBundles.map((bundle, idx) => {
+                  const priceGhs = Number(bundle.priceGHS);
+                  const perCredit =
+                    bundle.credits > 0 ? priceGhs / bundle.credits : 0;
+                  const isStarter = idx === 0;
+                  const isBest = idx === creditBundles.length - 1;
+
+                  // Backend names come back lowercase ("starter pack"); title-case
+                  // for display so the card reads like the rest of the page.
+                  const displayName = bundle.name
+                    .split(" ")
+                    .map((w) => (w.length > 0 ? w[0].toUpperCase() + w.slice(1) : w))
+                    .join(" ");
+
+                  return (
+                    <article
+                      key={bundle._id}
+                      className={`play-card relative flex w-full flex-col rounded-[28px] p-7 sm:w-[calc(50%-0.625rem)] lg:w-[calc(33.333%-0.833rem)] xl:w-[calc(25%-0.9375rem)] ${
+                        isBest
+                          ? "bg-slate-950 text-white shadow-2xl shadow-slate-900/30"
+                          : "border border-slate-200 bg-white text-slate-950"
+                      }`}
+                      style={{ borderRadius: "28px" }}
                     >
-                      Buy {bundle.credits} Credits
-                    </button>
-                  </article>
-                ))}
+                      {isBest && (
+                        <span className="absolute -top-3 left-7 rounded-full bg-[#DFFF61] px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-slate-900">
+                          Best value
+                        </span>
+                      )}
+                      {isStarter && (
+                        <span className="absolute -top-3 left-7 rounded-full bg-blue-100 px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-blue-700">
+                          Starter
+                        </span>
+                      )}
+
+                      <div className="flex items-center gap-3">
+                        <span
+                          className={`flex h-11 w-11 items-center justify-center rounded-2xl ${
+                            isBest ? "bg-white/10" : "bg-slate-950"
+                          }`}
+                        >
+                          <Zap
+                            className={`h-5 w-5 text-[#DFFF61]`}
+                            strokeWidth={2.25}
+                          />
+                        </span>
+                        <div className="min-w-0">
+                          <p
+                            className={`text-[10px] font-extrabold uppercase tracking-widest ${
+                              isBest ? "text-[#DFFF61]" : "text-slate-500"
+                            }`}
+                          >
+                            Credit pack
+                          </p>
+                          <h3 className="display mt-0.5 text-lg font-bold">
+                            {displayName}
+                          </h3>
+                        </div>
+                      </div>
+
+                      <div className="mt-6">
+                        <div className="flex items-end gap-1">
+                          <span
+                            className={`text-xs font-bold ${
+                              isBest ? "text-slate-300" : "text-slate-400"
+                            }`}
+                          >
+                            GHS
+                          </span>
+                          <span className="display text-4xl font-bold">
+                            {bundle.priceGHS}
+                          </span>
+                        </div>
+                        <p
+                          className={`mt-1 text-xs font-semibold ${
+                            isBest ? "text-slate-300" : "text-slate-500"
+                          }`}
+                        >
+                          one-time · never expires
+                        </p>
+                      </div>
+
+                      <ul
+                        className={`mt-6 space-y-2.5 text-sm ${
+                          isBest ? "text-slate-100" : "text-slate-600"
+                        }`}
+                      >
+                        <li className="flex gap-2">
+                          <b className={isBest ? "text-[#DFFF61]" : "text-emerald-500"}>
+                            ✓
+                          </b>
+                          {bundle.credits} generation credits
+                        </li>
+                        <li className="flex gap-2">
+                          <b className={isBest ? "text-[#DFFF61]" : "text-emerald-500"}>
+                            ✓
+                          </b>
+                          GHS {perCredit.toFixed(2)} per credit
+                        </li>
+                        <li className="flex gap-2">
+                          <b className={isBest ? "text-[#DFFF61]" : "text-emerald-500"}>
+                            ✓
+                          </b>
+                          Works on any plan
+                        </li>
+                      </ul>
+
+                      <div className="mt-auto pt-7">
+                        <button
+                          type="button"
+                          onClick={() => handleBuyCreditBundle(bundle._id)}
+                          className={`squishy w-full rounded-2xl py-3.5 text-center text-sm font-extrabold transition ${
+                            isBest
+                              ? "bg-[#DFFF61] text-slate-900 hover:bg-white"
+                              : "bg-slate-950 text-white hover:bg-[#0C60FC]"
+                          }`}
+                        >
+                          Buy {bundle.credits} credits
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
             </div>
           </section>
