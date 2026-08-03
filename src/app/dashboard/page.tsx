@@ -3,13 +3,12 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Sparkles } from "lucide-react";
-import { Navbar } from "@/components/common";
-import { Footer } from "@/components/landing";
+import { LandingHeader, Footer } from "@/components/landing";
 
 export default function StudentDashboardPlaceholderPage() {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <Navbar />
+      <LandingHeader />
       <main className="flex-1 flex items-center justify-center p-4 relative py-24">
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[40px_40px]" />
 
