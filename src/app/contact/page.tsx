@@ -16,8 +16,8 @@ import {
   Globe,
   Clock,
   CheckCircle2,
-  Sparkles,
   MapPin,
+  MessageCircle,
 } from "lucide-react";
 import { LandingHeader, LandingFooter, MobileNav } from "@/components/landing";
 import { QUBI_PEEK_SRC } from "@/lib/constants";
@@ -311,8 +311,8 @@ export default function ContactPage() {
                   Accra, Ghana
                 </p>
                 <p className="mt-1 text-[11px] leading-5 text-slate-500">
-                  Built by a small remote team across Accra, Kumasi and Lagos.
-                  Office hours: Mon–Fri, 09:00–17:00 GMT.
+                  Built by a small, fully remote team in Ghana. Office hours:
+                  Mon–Fri, 09:00–17:00 GMT.
                 </p>
               </div>
 
@@ -363,7 +363,7 @@ export default function ContactPage() {
 
               {/* In-app nudge */}
               <div className="rounded-[24px] border border-[#DFFF61] bg-[#E9FFD3] p-7">
-                <Sparkles className="h-5 w-5 text-[#0C60FC]" />
+                <MessageCircle className="h-5 w-5 text-[#0C60FC]" />
                 <p className="mt-3 text-base font-bold text-slate-950">
                   Already on Qz?
                 </p>
