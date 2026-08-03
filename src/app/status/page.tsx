@@ -1,68 +1,50 @@
-import { AlertTriangle, Activity, ArrowUpRight } from "lucide-react";
+"use client";
+
+import { AlertTriangle } from "lucide-react";
 import { LandingHeader, LandingFooter, MobileNav } from "@/components/landing";
 import { StatusBanner } from "@/components/common/status-banner";
 import { ComponentStatusCard } from "@/components/common/component-status-card";
-import type { GlobalStatus } from "@/hooks/common/use-status";
+import { StatusTimeline } from "@/components/common/status-timeline";
+import { IncidentFeed } from "@/components/common/incident-feed";
+import { IncidentReportForm } from "@/components/common/incident-report-form";
+import { CommunityReportsPanel } from "@/components/common/community-reports-panel";
+import { HowWeCheckCard } from "@/components/common/how-we-check-card";
+import {
+  useGlobalStatus,
+  useStatusHistory,
+  useStatusIncidents,
+} from "@/hooks/common/use-status";
 
-// ISR — revalidate every 30s in the background. The fetch below also
-// uses `next: { revalidate: 30 }` for belt-and-suspenders.
-export const revalidate = 30;
-
-async function fetchStatus(): Promise<GlobalStatus | null> {
-  const base = process.env.NEXT_PUBLIC_API_URL || "";
-  const url = `${base.replace(/\/api\/v1\/?$/, "")}/api/v1/status`;
-  try {
-    const res = await fetch(url, {
-      next: { revalidate: 30, tags: ["status"] },
-    });
-    if (!res.ok) return null;
-    const json = await res.json();
-    return json?.data ?? null;
-  } catch {
-    return null;
-  }
-}
-
-export default async function StatusPage() {
-  const status = await fetchStatus();
-  const statusJsonUrl = `${process.env.NEXT_PUBLIC_API_URL?.replace(/\/api\/v1\/?$/, "")}/status.json`;
+// Client-driven page — TanStack Query polls every 30s (live) and 60s (history
+// + incidents). No ISR needed: the page itself is the polling loop, and SSR
+// would just double-fetch on mount.
+export default function StatusPage() {
+  const status = useGlobalStatus();
+  const history = useStatusHistory(24);
+  const incidents = useStatusIncidents(24);
 
   return (
     <div className="overflow-x-hidden bg-white text-slate-900 antialiased selection:bg-[#0C60FC] selection:text-white">
       <LandingHeader />
 
       <main>
-        <section className="soft-grid relative overflow-hidden px-5 pb-16 pt-32 lg:pt-40">
-          <div className="pointer-events-none absolute -left-32 top-24 h-96 w-96 rounded-full bg-emerald-100/60 blur-3xl" />
-          <div className="pointer-events-none absolute -right-32 top-40 h-96 w-96 rounded-full bg-[#0C60FC]/10 blur-3xl" />
+        {/* ─── Live status (banner + components) ──────────────────────── */}
+        <section className="soft-grid relative overflow-hidden px-5 pb-20 pt-12 sm:pt-14 lg:pb-24 lg:pt-20">
+          <div className="pointer-events-none absolute -left-32 top-24 h-96 w-96 rounded-full bg-blue-100/70 blur-3xl" />
+          <div className="pointer-events-none absolute -right-32 top-40 h-96 w-96 rounded-full bg-violet-100/70 blur-3xl" />
 
-          <div className="relative mx-auto max-w-5xl">
-            <p className="text-xs font-extrabold uppercase tracking-[.22em] text-[#0C60FC]">
-              Live · Qz Status
-            </p>
-            <h1 className="display mt-4 text-balance text-4xl font-bold leading-[1.07] tracking-[-.04em] sm:text-6xl">
-              How Qz is
-              <br />
-              <span className="scribble">running right now.</span>
-            </h1>
-            <p className="hand mt-3 text-2xl text-[#0C60FC]">
-              if something&apos;s off, you&apos;ll see it here ✦
-            </p>
-            <p className="mt-4 max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">
-              We poke the bits of Qz that keep your study sessions alive, every
-              30 seconds, from our own backend. If any of them stop replying,
-              we&apos;ll be the first to know — and so will you.
-            </p>
-
-            {status ? (
+          <div className="relative mx-auto max-w-7xl">
+            {status.isPending ? (
+              <StatusLoading />
+            ) : status.data ? (
               <>
                 <StatusBanner
-                  state={status.state}
-                  label={status.label}
-                  generatedAt={status.generatedAt}
+                  state={status.data.state}
+                  label={status.data.label}
+                  generatedAt={status.data.generatedAt}
                 />
-                <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                  {status.components.map((c) => (
+                <div className="mt-6 grid gap-5 sm:grid-cols-2">
+                  {status.data.components.map((c) => (
                     <ComponentStatusCard key={c.id} component={c} />
                   ))}
                 </div>
@@ -70,20 +52,88 @@ export default async function StatusPage() {
             ) : (
               <StatusUnavailable />
             )}
+          </div>
+        </section>
 
-            <HowWeCheck />
-
-            <div className="mt-8 flex items-center justify-between gap-4 text-[11px] text-slate-500">
-              <a
-                href={statusJsonUrl}
-                className="inline-flex items-center gap-1.5 font-semibold text-slate-500 transition hover:text-[#0C60FC]"
-              >
-                <Activity className="h-3.5 w-3.5" />
-                /status.json
-                <ArrowUpRight className="h-3 w-3" />
-              </a>
-              <span>Public machine-readable feed · Atlassian schema</span>
+        {/* ─── Status history ──────────────────────────────────────────── */}
+        <section className="bg-[#F7F9FC] px-5 py-16 sm:py-20 lg:py-28">
+          <div className="mx-auto max-w-7xl">
+            <div className="mx-auto max-w-3xl px-2 text-center sm:px-0">
+              <p className="hand hand-wiggle text-2xl text-[#0C60FC] sm:text-3xl">
+                hour by hour, no smoke ✦
+              </p>
+              <h2 className="mt-2 text-balance text-3xl font-bold tracking-tight sm:text-5xl">
+                Past 24 hours,{" "}
+                <span className="scribble">spelled out.</span>
+              </h2>
+              <p className="mt-4 max-w-2xl mx-auto text-sm leading-7 text-slate-600 sm:text-base">
+                Each bar is one hour. Green is healthy, amber is slow, rose is
+                unresponsive. Tap any bar for the exact reading.
+              </p>
             </div>
+            <div className="mt-8 sm:mt-12">
+              {history.isPending ? (
+                <div className="h-40 animate-pulse rounded-[28px] border border-slate-200 bg-white" />
+              ) : history.data ? (
+                <StatusTimeline history={history.data} />
+              ) : null}
+            </div>
+          </div>
+        </section>
+
+        {/* ─── Past incidents ──────────────────────────────────────────── */}
+        <section className="bg-white px-5 py-20 lg:py-28">
+          <div className="mx-auto max-w-7xl">
+            <div className="mx-auto max-w-3xl text-center">
+              <p className="hand hand-wiggle text-3xl text-[#0C60FC]">
+                the messy stuff, laid out ↘
+              </p>
+              <h2 className="mt-2 text-balance text-4xl font-bold tracking-tight sm:text-5xl">
+                What happened,{" "}
+                <span className="scribble">service by service.</span>
+              </h2>
+              <p className="mt-4 max-w-2xl mx-auto text-base leading-7 text-slate-600">
+                Each collapsible row is one of the four services. Expand for
+                the runs we detected and how long they lasted.
+              </p>
+            </div>
+            <div className="mt-12">
+              {incidents.isPending ? (
+                <div className="h-72 animate-pulse rounded-[28px] border border-slate-200 bg-white" />
+              ) : incidents.data ? (
+                <IncidentFeed incidents={incidents.data} />
+              ) : null}
+            </div>
+          </div>
+        </section>
+
+        {/* ─── Community + Report form ─────────────────────────────────── */}
+        <section className="bg-[#F7F9FC] px-5 py-20 lg:py-28">
+          <div className="mx-auto max-w-7xl">
+            <div className="mx-auto max-w-3xl text-center">
+              <p className="hand hand-wiggle text-3xl text-[#0C60FC]">
+                your voice, our dashboard ✦
+              </p>
+              <h2 className="mt-2 text-balance text-4xl font-bold tracking-tight sm:text-5xl">
+                Tell us what{" "}
+                <span className="scribble">we missed.</span>
+              </h2>
+              <p className="mt-4 max-w-2xl mx-auto text-base leading-7 text-slate-600">
+                See what other users are flagging, or drop a quick anonymous
+                report. We correlate it with our own probes to triage faster.
+              </p>
+            </div>
+            <div className="mt-12 grid gap-6 lg:grid-cols-[1.2fr_1fr]">
+              <CommunityReportsPanel />
+              <IncidentReportForm />
+            </div>
+          </div>
+        </section>
+
+        {/* ─── How we check ────────────────────────────────────────────── */}
+        <section className="bg-white px-5 py-20 lg:py-28">
+          <div className="mx-auto max-w-7xl">
+            <HowWeCheckCard />
           </div>
         </section>
       </main>
@@ -94,30 +144,24 @@ export default async function StatusPage() {
   );
 }
 
-function HowWeCheck() {
+// ─── Sub-components ──────────────────────────────────────────────────────────
+
+function StatusLoading() {
   return (
-    <div className="mt-12 rounded-[24px] border border-slate-200 bg-white p-6 sm:p-8">
-      <p className="text-xs font-extrabold uppercase tracking-widest text-slate-700">
-        How we check
-      </p>
-      <h3 className="display mt-2 text-2xl font-bold text-slate-950 sm:text-3xl">
-        We poke it, we measure it, we tell you.
-      </h3>
-      <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-        Four times a minute, our backend quietly asks each piece of Qz
-        &ldquo;are you still there?&rdquo;. A fast, friendly reply is
-        <b className="text-emerald-700"> green</b>. A slow reply is{" "}
-        <b className="text-amber-700">amber</b>. No reply at all is
-        <b className="text-rose-700"> red</b> — and that&apos;s when we drop
-        everything.
-      </p>
+    <div className="mt-6 grid gap-4 sm:grid-cols-2">
+      {[0, 1, 2, 3].map((i) => (
+        <div
+          key={i}
+          className="h-32 animate-pulse rounded-[26px] border border-slate-200 bg-slate-50"
+        />
+      ))}
     </div>
   );
 }
 
 function StatusUnavailable() {
   return (
-    <div className="mt-8 rounded-2xl border border-amber-200 bg-[#FFF4D6] p-6">
+    <div className="mt-6 rounded-[28px] border border-amber-200 bg-[#FFF4D6] p-6">
       <div className="flex items-center gap-3">
         <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100">
           <AlertTriangle className="h-5 w-5 text-amber-600" />

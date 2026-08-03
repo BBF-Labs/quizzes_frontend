@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
+import { useGlobalStatus } from "@/hooks/common/use-status";
 import type { GlobalState } from "@/hooks/common/use-status";
 
 /**
- * Compact live status pill for the footer. Polls /api/v1/status every 60s
- * so we don't hammer the backend. Renders as an inline element next to
- * other footer copy.
+ * Compact live status pill for the footer. Backed by the shared
+ * `useGlobalStatus` query so the footer, the status page, and any future
+ * widget all observe one in-memory cache (single 30s poll tick).
  */
 const COPY: Record<GlobalState, { dot: string; text: string; aria: string }> = {
   operational: {
@@ -27,39 +27,10 @@ const COPY: Record<GlobalState, { dot: string; text: string; aria: string }> = {
   },
 };
 
-const POLL_MS = 60_000;
-
 export function FooterStatusBadge() {
-  const [state, setState] = useState<GlobalState | "loading" | "unknown">(
-    "loading",
-  );
+  const { data, isPending, isError } = useGlobalStatus();
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const fetchStatus = async () => {
-      try {
-        const base = process.env.NEXT_PUBLIC_API_URL || "";
-        const url = `${base.replace(/\/api\/v1\/?$/, "")}/api/v1/status`;
-        const res = await fetch(url, { cache: "no-store" });
-        if (!res.ok) throw new Error("status fetch failed");
-        const json = await res.json();
-        const next: GlobalState | undefined = json?.data?.state;
-        if (!cancelled) setState(next ?? "unknown");
-      } catch {
-        if (!cancelled) setState("unknown");
-      }
-    };
-
-    fetchStatus();
-    const id = setInterval(fetchStatus, POLL_MS);
-    return () => {
-      cancelled = true;
-      clearInterval(id);
-    };
-  }, []);
-
-  if (state === "loading") {
+  if (isPending) {
     return (
       <span className="flex items-center gap-1.5 text-slate-500">
         <Loader2 className="h-3 w-3 animate-spin" />
@@ -68,7 +39,7 @@ export function FooterStatusBadge() {
     );
   }
 
-  if (state === "unknown") {
+  if (isError || !data) {
     // Backend unreachable — be honest, don't pretend it's fine.
     return (
       <a href="/status" className="flex items-center gap-1.5 text-slate-500 hover:text-white">
@@ -78,14 +49,18 @@ export function FooterStatusBadge() {
     );
   }
 
-  const copy = COPY[state];
+  const copy = COPY[data.state];
   return (
     <a
       href="/status"
       aria-label={copy.aria}
       className="group inline-flex items-center gap-1.5 text-slate-500 transition hover:text-white"
     >
-      <span className={`h-1.5 w-1.5 rounded-full ${copy.dot} ${state === "operational" ? "" : "animate-pulse"}`} />
+      <span
+        className={`h-1.5 w-1.5 rounded-full ${copy.dot} ${
+          data.state === "operational" ? "" : "animate-pulse"
+        }`}
+      />
       <span>{copy.text}</span>
     </a>
   );
