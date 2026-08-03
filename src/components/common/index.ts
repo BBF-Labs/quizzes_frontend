@@ -14,3 +14,4 @@ export * from "./MarkdownContent";
 export * from "./status-dot";
 export * from "./status-banner";
 export * from "./component-status-card";
+export * from "./footer-status-badge";

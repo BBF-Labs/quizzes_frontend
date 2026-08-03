@@ -6,6 +6,7 @@ import { Loader2, Linkedin, Twitter, Github } from "lucide-react";
 import { LOGO_SRC, QUBI_RUN_SRC } from "@/lib/constants";
 import { useAuth } from "@/contexts/auth-context";
 import { useSubscribeNewsletter } from "@/hooks/marketing/use-newsletter";
+import { FooterStatusBadge } from "@/components/common/footer-status-badge";
 
 export function LandingFooter() {
   const { user, isLoading } = useAuth();
@@ -223,6 +224,7 @@ export function LandingFooter() {
           </div>
           <div className="mt-12 flex flex-col gap-3 border-t border-white/10 pt-6 text-[11px] text-slate-500 sm:flex-row sm:items-center sm:justify-between">
             <p>© 2026 Qz · BetaForge Labs. All rights reserved.</p>
+            <FooterStatusBadge />
             <p>Made for students who want clarity, not chaos.</p>
           </div>
         </div>
