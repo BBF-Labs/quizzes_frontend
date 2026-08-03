@@ -4,7 +4,7 @@ import { useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { LogOut, ArrowRight, AlertCircle, MailMinus } from "lucide-react";
+import { ArrowRight, AlertCircle, LogOut, MailMinus, Compass } from "lucide-react";
 import { useUnsubscribeNewsletter } from "@/hooks";
 import { LandingHeader, LandingFooter } from "@/components/landing";
 import {
@@ -13,6 +13,36 @@ import {
   QUBI_WAVE_SRC,
   QUBI_RUN_SRC,
 } from "@/lib/constants";
+
+const STAGE_COPY = {
+  verifying: {
+    chip: "Newsletter unsubscribe",
+    qubi: QUBI_STUDY_SRC,
+    qubiLabel: "one sec ↘",
+    Icon: Compass,
+    statusLabel: "Confirming",
+    accent: "rose",
+    cta: null,
+  },
+  success: {
+    chip: "Newsletter removed",
+    qubi: QUBI_WAVE_SRC,
+    qubiLabel: "see ya!",
+    Icon: LogOut,
+    statusLabel: "Status · Unsubscribed",
+    accent: "rose",
+    cta: { href: "/", label: "Back to Qz" },
+  },
+  error: {
+    chip: "Newsletter link expired",
+    qubi: QUBI_RUN_SRC,
+    qubiLabel: "oops!",
+    Icon: AlertCircle,
+    statusLabel: "Status · Failed",
+    accent: "rose",
+    cta: { href: "/#newsletter", label: "Manage preferences" },
+  },
+} as const;
 
 function UnsubscribeContent() {
   const searchParams = useSearchParams();
@@ -35,122 +65,120 @@ function UnsubscribeContent() {
       : isError
         ? "error"
         : "verifying";
+  const copy = STAGE_COPY[stage];
 
   const errorMessage =
     (error as { response?: { data?: { message?: string } } })?.response?.data
       ?.message ?? "The unsubscribe link is invalid or has already been used.";
 
+  const headline = {
+    verifying: "Removing you from the list.",
+    success: "You're off.",
+    error: "Link expired.",
+  }[stage];
+
+  const kicker = {
+    verifying: "tearing up the records ↘",
+    success: "see you around ✦",
+    error: "let's try that again ↘",
+  }[stage];
+
+  const sub = {
+    verifying:
+      "Hold on — we're confirming your unsubscribe request and scrubbing your email from the broadcast list.",
+    success:
+      "Your email has been removed from all Qz broadcast lists. No more study tips from us — but you can always resubscribe from the footer.",
+    error: errorMessage,
+  }[stage];
+
   return (
     <div className="relative mx-auto max-w-2xl px-5">
-      {/* Soft-grid background blobs */}
+      {/* Soft-grid background blobs (rose palette) */}
       <div className="pointer-events-none absolute -left-32 top-10 h-96 w-96 rounded-full bg-rose-100/70 blur-3xl" />
       <div className="pointer-events-none absolute -right-32 top-40 h-96 w-96 rounded-full bg-slate-200/60 blur-3xl" />
 
       <div className="relative pt-32 pb-24 lg:pt-40">
-        {/* Header */}
-        <div className="text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-3.5 py-2 text-xs font-bold text-rose-700 shadow-sm">
-            <MailMinus className="h-3.5 w-3.5" />
-            Newsletter unsubscribe
-          </div>
-          <h1 className="display text-balance text-4xl font-bold leading-[1.04] tracking-[-.045em] text-slate-950 sm:text-5xl">
-            {stage === "verifying" && "Removing you from the list."}
-            {stage === "success" && (
-              <>
-                You&apos;re <span className="text-rose-500">off.</span>
-              </>
-            )}
-            {stage === "error" && "Link expired."}
-          </h1>
-          <p className="hand mx-auto mt-3 max-w-xl -rotate-1 text-2xl text-rose-500">
-            {stage === "verifying" && "tearing up the records ↘"}
-            {stage === "success" && "see you around ✦"}
-            {stage === "error" && "let&apos;s try that again ↘"}
-          </p>
-          <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-slate-600">
-            {stage === "verifying" &&
-              "Hold on — we're confirming your unsubscribe request and scrubbing your email from the broadcast list."}
-            {stage === "success" &&
-              "Your email has been removed from all Qz broadcast lists. No more study tips from us — but you can always resubscribe from the footer."}
-            {stage === "error" && errorMessage}
-          </p>
-        </div>
-
-        {/* Status card */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="relative mx-auto mt-12 max-w-md overflow-visible rounded-[32px] border border-slate-200 bg-white p-8 shadow-xl shadow-rose-50/50 sm:p-10"
-          style={{ borderRadius: "32px" }}
-        >
-          {/* Qubi sticker */}
-          <div className="qubi-sticker absolute -right-2 -top-14 hidden sm:block">
-            <span className="hand absolute -left-28 top-2 w-28 -rotate-6 text-xl leading-5 text-rose-500">
-              {stage === "success" && "see ya!"}
-              {stage === "verifying" && "one sec ↘"}
-              {stage === "error" && "oops!"}
+        {/* Header + floating Qubi */}
+        <div className="relative flex flex-col items-center text-center">
+          <motion.div
+            initial={{ opacity: 0, y: -8, rotate: -8 }}
+            animate={{ opacity: 1, y: 0, rotate: -4 }}
+            transition={{ duration: 0.5 }}
+            className="qubi-sticker absolute -right-2 -top-10 hidden sm:block"
+          >
+            <span className="hand absolute -left-28 top-2 hidden w-28 -rotate-6 text-xl leading-5 text-rose-500 sm:block">
+              {copy.qubiLabel}
             </span>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={
-                stage === "success"
-                  ? QUBI_WAVE_SRC
-                  : stage === "verifying"
-                    ? QUBI_STUDY_SRC
-                    : QUBI_RUN_SRC
-              }
+              src={copy.qubi}
               alt="Qubi reacting to your unsubscribe"
               className="h-24 w-24 object-contain"
             />
+          </motion.div>
+
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-3.5 py-2 text-xs font-bold text-rose-700 shadow-sm">
+            <MailMinus className="h-3.5 w-3.5" />
+            {copy.chip}
           </div>
 
-          {/* Icon */}
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl border border-slate-200 bg-white">
-            {stage === "verifying" && (
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-rose-500" />
+          <h1 className="display text-balance text-5xl font-bold leading-[1.04] tracking-[-.045em] text-slate-950 sm:text-6xl">
+            {stage === "success" ? (
+              <>
+                You&apos;re <span className="scribble">off.</span>
+              </>
+            ) : (
+              <>
+                <span className="scribble">{headline.split(" ")[0]}</span>{" "}
+                {headline.split(" ").slice(1).join(" ")}
+              </>
             )}
-            {stage === "success" && (
-              <LogOut className="h-10 w-10 text-rose-500" strokeWidth={2.25} />
-            )}
-            {stage === "error" && (
-              <AlertCircle className="h-10 w-10 text-rose-500" strokeWidth={2.25} />
-            )}
-          </div>
+          </h1>
 
-          <p className="mt-6 text-center text-xs font-extrabold uppercase tracking-[0.2em] text-slate-400">
-            {stage === "verifying" && "Confirming"}
-            {stage === "success" && "Status · Unsubscribed"}
-            {stage === "error" && "Status · Failed"}
+          <p className="hand mx-auto mt-3 max-w-xl -rotate-1 text-2xl text-rose-500">
+            {kicker}
           </p>
 
-          <div className="mt-6 flex flex-col gap-3">
-            {stage === "success" && (
-              <Link
-                href="/"
-                className="squishy inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3.5 text-sm font-extrabold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-[#0C60FC]"
-              >
-                <span>Back to Qz</span>
-                <ArrowRight className="h-4 w-4" />
-              </Link>
+          <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-slate-600">
+            {sub}
+          </p>
+        </div>
+
+        {/* Inline status pills + CTAs (no card) */}
+        <div className="mx-auto mt-10 flex max-w-md flex-col items-center gap-4">
+          {/* Icon */}
+          <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-slate-200 bg-white">
+            {stage === "verifying" ? (
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-rose-500" />
+            ) : (
+              <copy.Icon
+                className={`h-10 w-10 ${stage === "error" || stage === "success" ? "text-rose-500" : "text-[#0C60FC]"}`}
+                strokeWidth={2.25}
+              />
             )}
-            {stage === "error" && (
-              <Link
-                href="/#newsletter"
-                className="squishy inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3.5 text-sm font-extrabold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-[#0C60FC]"
-              >
-                <span>Manage preferences</span>
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            )}
-            <Link
-              href="/"
-              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3.5 text-sm font-extrabold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-            >
-              Return to home
-            </Link>
           </div>
-        </motion.div>
+
+          <p className="text-center text-xs font-extrabold uppercase tracking-[0.2em] text-slate-400">
+            {copy.statusLabel}
+          </p>
+
+          {copy.cta && (
+            <Link
+              href={copy.cta.href}
+              className="squishy inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3.5 text-sm font-extrabold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-[#0C60FC]"
+            >
+              <span>{copy.cta.label}</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          )}
+
+          <Link
+            href="/"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3.5 text-sm font-extrabold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+          >
+            Return to home
+          </Link>
+        </div>
       </div>
     </div>
   );
