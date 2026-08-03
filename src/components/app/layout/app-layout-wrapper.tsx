@@ -24,7 +24,7 @@ import {
 import { useBreadcrumbStore } from "@/store/breadcrumb";
 import { useGlobalAppEvents } from "@/hooks/app/use-global-app-events";
 import { useStreakStatus } from "@/hooks";
-import { Search, Bell } from "lucide-react";
+import { Search, Bell, Flame } from "lucide-react";
 
 export function AppLayoutWrapper({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -199,8 +199,9 @@ export function AppLayoutWrapper({ children }: { children: ReactNode }) {
 
             {/* Right Controls */}
             <div className="ml-auto flex items-center gap-3 shrink-0">
-              <button className="hidden sm:block rounded-xl border border-slate-200 bg-white px-3 py-2 text-[10px] font-extrabold text-amber-600 hover:bg-slate-50 transition shadow-2xs">
-                🔥 {streak?.current ?? 8} day streak
+              <button className="hidden sm:flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[10px] font-extrabold text-amber-600 hover:bg-slate-50 transition shadow-2xs">
+                <Flame className="h-3.5 w-3.5" />
+                {streak?.current ?? 8} day streak
               </button>
 
               <button

@@ -1,103 +1,209 @@
 "use client";
 
-import { useEffect, useState, useRef, Suspense } from "react";
+import { useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { motion } from "framer-motion";
-import { useUnsubscribeNewsletter } from "@/hooks";
-import { Navbar } from "@/components/common";
-import { Footer } from "@/components/landing";
 import Link from "next/link";
-import { ArrowRight, LogOut, CheckCircle2, AlertCircle } from "lucide-react";
+import { motion } from "framer-motion";
+import { ArrowRight, AlertCircle, LogOut, MailMinus, Compass } from "lucide-react";
+import { useUnsubscribeNewsletter } from "@/hooks";
+import { LandingHeader, LandingFooter } from "@/components/landing";
+import {
+  QUBI_PEEK_SRC,
+  QUBI_STUDY_SRC,
+  QUBI_WAVE_SRC,
+  QUBI_RUN_SRC,
+} from "@/lib/constants";
+
+const STAGE_COPY = {
+  verifying: {
+    chip: "Newsletter unsubscribe",
+    qubi: QUBI_STUDY_SRC,
+    qubiLabel: "one sec ↘",
+    Icon: Compass,
+    statusLabel: "Confirming",
+    accent: "rose",
+    cta: null,
+  },
+  success: {
+    chip: "Newsletter removed",
+    qubi: QUBI_WAVE_SRC,
+    qubiLabel: "see ya!",
+    Icon: LogOut,
+    statusLabel: "Status · Unsubscribed",
+    accent: "rose",
+    cta: { href: "/", label: "Back to Qz" },
+  },
+  error: {
+    chip: "Newsletter link expired",
+    qubi: QUBI_RUN_SRC,
+    qubiLabel: "oops!",
+    Icon: AlertCircle,
+    statusLabel: "Status · Failed",
+    accent: "rose",
+    cta: { href: "/#newsletter", label: "Manage preferences" },
+  },
+} as const;
 
 function UnsubscribeContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
-  const { mutate, isPending, isSuccess, isError } = useUnsubscribeNewsletter();
+  const { mutate, isPending, isSuccess, isError, error } =
+    useUnsubscribeNewsletter();
   const initialized = useRef(false);
 
   useEffect(() => {
     if (token && !initialized.current) {
-      mutate(token);
       initialized.current = true;
+      mutate(token);
     }
   }, [token, mutate]);
 
+  const stage = isPending
+    ? "verifying"
+    : isSuccess
+      ? "success"
+      : isError
+        ? "error"
+        : "verifying";
+  const copy = STAGE_COPY[stage];
+
+  const errorMessage =
+    (error as { response?: { data?: { message?: string } } })?.response?.data
+      ?.message ?? "The unsubscribe link is invalid or has already been used.";
+
+  const headline = {
+    verifying: "Removing you from the list.",
+    success: "You're off.",
+    error: "Link expired.",
+  }[stage];
+
+  const kicker = {
+    verifying: "tearing up the records ↘",
+    success: "see you around ✦",
+    error: "let's try that again ↘",
+  }[stage];
+
+  const sub = {
+    verifying:
+      "Hold on — we're confirming your unsubscribe request and scrubbing your email from the broadcast list.",
+    success:
+      "Your email has been removed from all Qz broadcast lists. No more study tips from us — but you can always resubscribe from the footer.",
+    error: errorMessage,
+  }[stage];
+
   return (
-    <div className="max-w-md w-full mx-auto">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-card/40 border border-border/50 p-8 md:p-12 text-center relative overflow-hidden"
-      >
-        {/* Decorative corner */}
-        <div className="absolute bottom-0 left-0 w-16 h-16 pointer-events-none">
-          <div className="absolute bottom-0 left-0 w-0.5 h-8 bg-red-500/50" />
-          <div className="absolute bottom-0 left-0 w-8 h-0.5 bg-red-500/50" />
+    <div className="relative mx-auto max-w-2xl px-5">
+      {/* Soft-grid background blobs (rose palette) */}
+      <div className="pointer-events-none absolute -left-32 top-10 h-96 w-96 rounded-full bg-rose-100/70 blur-3xl" />
+      <div className="pointer-events-none absolute -right-32 top-40 h-96 w-96 rounded-full bg-slate-200/60 blur-3xl" />
+
+      <div className="relative pt-32 pb-24 lg:pt-40">
+        {/* Header + floating Qubi */}
+        <div className="relative flex flex-col items-center text-center">
+          <motion.div
+            initial={{ opacity: 0, y: -8, rotate: -8 }}
+            animate={{ opacity: 1, y: 0, rotate: -4 }}
+            transition={{ duration: 0.5 }}
+            className="qubi-sticker absolute -right-2 -top-10 hidden sm:block"
+          >
+            <span className="hand absolute -left-28 top-2 hidden w-28 -rotate-6 text-xl leading-5 text-rose-500 sm:block">
+              {copy.qubiLabel}
+            </span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={copy.qubi}
+              alt="Qubi reacting to your unsubscribe"
+              className="h-24 w-24 object-contain"
+            />
+          </motion.div>
+
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-3.5 py-2 text-xs font-bold text-rose-700 shadow-sm">
+            <MailMinus className="h-3.5 w-3.5" />
+            {copy.chip}
+          </div>
+
+          <h1 className="display text-balance text-5xl font-bold leading-[1.04] tracking-[-.045em] text-slate-950 sm:text-6xl">
+            {stage === "success" ? (
+              <>
+                You&apos;re <span className="scribble">off.</span>
+              </>
+            ) : (
+              <>
+                <span className="scribble">{headline.split(" ")[0]}</span>{" "}
+                {headline.split(" ").slice(1).join(" ")}
+              </>
+            )}
+          </h1>
+
+          <p className="hand mx-auto mt-3 max-w-xl -rotate-1 text-2xl text-rose-500">
+            {kicker}
+          </p>
+
+          <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-slate-600">
+            {sub}
+          </p>
         </div>
 
-        <div className="flex justify-center mb-8">
-          {isPending ? (
-            <div className="w-16 h-16 border-2 border-red-500/20 border-t-red-500 animate-spin" />
-          ) : isSuccess ? (
-            <div className="w-16 h-16 bg-red-500/20 flex items-center justify-center border border-red-500/50">
-              <LogOut className="w-8 h-8 text-red-500" />
-            </div>
-          ) : (
-            <div className="w-16 h-16 bg-muted flex items-center justify-center border border-border">
-              <AlertCircle className="w-8 h-8 text-muted-foreground" />
-            </div>
+        {/* Inline status pills + CTAs (no card) */}
+        <div className="mx-auto mt-10 flex max-w-md flex-col items-center gap-4">
+          {/* Icon */}
+          <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-slate-200 bg-white">
+            {stage === "verifying" ? (
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-rose-500" />
+            ) : (
+              <copy.Icon
+                className={`h-10 w-10 ${stage === "error" || stage === "success" ? "text-rose-500" : "text-[#0C60FC]"}`}
+                strokeWidth={2.25}
+              />
+            )}
+          </div>
+
+          <p className="text-center text-xs font-extrabold uppercase tracking-[0.2em] text-slate-400">
+            {copy.statusLabel}
+          </p>
+
+          {copy.cta && (
+            <Link
+              href={copy.cta.href}
+              className="squishy inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3.5 text-sm font-extrabold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-[#0C60FC]"
+            >
+              <span>{copy.cta.label}</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           )}
+
+          <Link
+            href="/"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3.5 text-sm font-extrabold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+          >
+            Return to home
+          </Link>
         </div>
-
-        <h1 className="text-3xl font-black tracking-tighter uppercase mb-4 italic">
-          {isPending
-            ? "PROCESS_QUIT..."
-            : isSuccess
-              ? "LINK SEVERED."
-              : "ERROR DETECTED."}
-        </h1>
-
-        <div className="h-px bg-border/50 w-full mb-8" />
-
-        <p className="text-sm font-mono text-muted-foreground uppercase tracking-widest leading-relaxed mb-10">
-          {isPending
-            ? "TERMINATING SUBSCRIPTION PROTOCOLS AND SCRUBBING DATA STREAMS..."
-            : isSuccess
-              ? "YOUR EMAIL HAS BEEN REMOVED FROM ALL ACTIVE BROADCAST LISTS. THE CONNECTION HAS BEEN TERMINATED."
-              : "THE UNSUBSCRIBE REQUEST COULD NOT BE COMPLETED. TOKEN MAY BE INVALID OR ALREADY PROCESSED."}
-        </p>
-
-        <Link
-          href="/"
-          className="inline-flex items-center space-x-3 border border-border px-8 py-4 text-foreground font-mono text-xs font-bold uppercase tracking-[0.2em] hover:bg-white hover:text-primary hover:ring-1 hover:ring-inset hover:ring-primary transition-all duration-300 group"
-        >
-          <span>CLOSE TERMINAL</span>
-          <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-        </Link>
-      </motion.div>
+      </div>
     </div>
   );
 }
 
 export default function UnsubscribePage() {
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <Navbar />
-      <main className="flex-1 flex items-center justify-center p-4 relative py-24">
-        {/* Background Grid Pattern */}
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[40px_40px]" />
+    <div className="overflow-x-hidden bg-white text-slate-900 antialiased selection:bg-[#0C60FC] selection:text-white">
+      <LandingHeader />
 
+      <main className="soft-grid relative overflow-hidden">
         <Suspense
           fallback={
-            <div className="max-w-md w-full mx-auto text-center font-mono animate-pulse">
-              LOADING SECURE MODULE...
+            <div className="relative mx-auto max-w-2xl px-5 pt-40">
+              <div className="text-center font-mono text-sm uppercase tracking-widest text-slate-400 animate-pulse">
+                Loading unsubscribe…
+              </div>
             </div>
           }
         >
           <UnsubscribeContent />
         </Suspense>
       </main>
-      <Footer />
+
+      <LandingFooter />
     </div>
   );
 }

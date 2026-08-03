@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Flame, Play } from "lucide-react";
 import { OrganizationJsonLd, WebAppJsonLd } from "@/components/common";
 import { LandingHeader, LandingFooter, MobileNav, NewsletterSection, DonationSection } from "@/components/landing";
 import { LOGO_SRC, QUBI_WAVE_SRC, QUBI_PEEK_SRC } from "@/lib/constants";
@@ -86,7 +87,9 @@ export default function Home() {
                     href="#how"
                     className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-6 py-4 text-sm font-extrabold text-slate-700 shadow-sm hover:bg-slate-50"
                   >
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-[9px] text-white">▶</span> See how it works
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-white">
+                      <Play className="h-3 w-3 fill-current" />
+                    </span> See how it works
                   </a>
                 </div>
                 <div className="mt-7 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs font-semibold text-slate-500 lg:justify-start">
@@ -177,7 +180,10 @@ export default function Home() {
                       </div>
                       <div className="rounded-2xl bg-white p-3 shadow-sm">
                         <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Study streak</p>
-                        <p className="mt-1 text-lg font-extrabold">🔥 8 days</p>
+                        <p className="mt-1 flex items-center gap-1.5 text-lg font-extrabold">
+                          <Flame className="h-4 w-4 text-amber-500" strokeWidth={2.25} />
+                          8 days
+                        </p>
                         <p className="mt-2 text-[9px] font-semibold text-slate-400">Personal best</p>
                       </div>
                     </div>

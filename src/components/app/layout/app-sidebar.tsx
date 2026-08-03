@@ -13,7 +13,18 @@ import {
   CreditCard,
   LogOut,
   ChevronDown,
+  House,
+  MessageSquare,
+  BookMarked,
+  GraduationCap,
+  CalendarDays,
+  Layers,
+  ListChecks,
+  Network,
+  Users,
+  Plus,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -120,29 +131,36 @@ export function AppSidebar() {
     return user.name.slice(0, 2).toUpperCase();
   }, [user?.name]);
 
-  const navGroups = [
+  type NavItem = {
+    href: string;
+    label: string;
+    icon: LucideIcon;
+    badge?: string;
+  };
+
+  const navGroups: { label: string; items: NavItem[] }[] = [
     {
       label: "Workspace",
       items: [
-        { href: "/app", label: "Today", icon: "⌂" },
-        { href: "/app/all", label: "Sessions", icon: "◫" },
-        { href: "/app/library", label: "My library", icon: "▦" },
+        { href: "/app", label: "Today", icon: House },
+        { href: "/app/all", label: "Sessions", icon: MessageSquare },
+        { href: "/app/library", label: "My library", icon: BookMarked },
       ],
     },
     {
       label: "Academics",
       items: [
-        { href: "/app/courses", label: "My courses", icon: "◎" },
-        { href: "/app/timetable", label: "Timetable", icon: "▤", badge: "4" },
+        { href: "/app/courses", label: "My courses", icon: GraduationCap },
+        { href: "/app/timetable", label: "Timetable", icon: CalendarDays, badge: "4" },
       ],
     },
     {
       label: "Study tools",
       items: [
-        { href: "/app/flashcards", label: "Flashcards", icon: "◇" },
-        { href: "/app/quizzes", label: "Quizzes", icon: "✓" },
-        { href: "/app/mindmaps", label: "Mind maps", icon: "⌘" },
-        { href: "/study-rooms", label: "Study rooms", icon: "◉" },
+        { href: "/app/flashcards", label: "Flashcards", icon: Layers },
+        { href: "/app/quizzes", label: "Quizzes", icon: ListChecks },
+        { href: "/app/mindmaps", label: "Mind maps", icon: Network },
+        { href: "/study-rooms", label: "Study rooms", icon: Users },
       ],
     },
   ];
@@ -205,7 +223,10 @@ export function AppSidebar() {
           disabled={createSession.isPending}
           className="mb-4 w-full flex items-center justify-between rounded-xl bg-slate-950 px-3.5 py-3 text-xs font-extrabold text-white hover:bg-[#0C60FC] transition shadow-sm"
         >
-          <span>＋ New study session</span>
+          <span className="flex items-center gap-1.5">
+            <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
+            New study session
+          </span>
           <span className="text-[10px] text-slate-400 font-mono">⌘N</span>
         </button>
 
@@ -224,6 +245,7 @@ export function AppSidebar() {
                   item.href === "/app"
                     ? pathname === "/app"
                     : pathname.startsWith(item.href);
+                const Icon = item.icon;
 
                 return (
                   <Link
@@ -237,7 +259,7 @@ export function AppSidebar() {
                         : "text-slate-500 hover:bg-[#F0F4FA] hover:text-slate-900"
                     )}
                   >
-                    <span className="text-base leading-none">{item.icon}</span>
+                    <Icon className="h-4 w-4 shrink-0" strokeWidth={2.25} />
                     <CollapsibleHide as="span">{item.label}</CollapsibleHide>
                     {item.badge && (
                       <CollapsibleHide as="span" className="ml-auto rounded-full bg-rose-50 px-2 py-0.5 text-[9px] font-extrabold text-rose-600">

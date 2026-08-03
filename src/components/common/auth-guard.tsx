@@ -1,8 +1,8 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
-import { Loader2 } from "lucide-react";
+import { Loader } from "@/components/common/loader";
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -28,14 +28,7 @@ export function AuthGuard({ children, requireSuperAdmin = false }: AuthGuardProp
   }, [user, isSuperAdminRole, isAuthLoading, requireSuperAdmin, pathname, router]);
 
   if (!canShow) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center space-y-4">
-        <Loader2 className="size-8 text-primary animate-spin" />
-        <p className="text-[10px] font-mono tracking-[0.2em] uppercase text-muted-foreground animate-pulse">
-          Authenticating…
-        </p>
-      </div>
-    );
+    return <Loader />;
   }
 
   return <>{children}</>;

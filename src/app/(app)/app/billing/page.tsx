@@ -203,8 +203,8 @@ function CreditBundleCard({
   return (
     <article className="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm flex flex-col justify-between">
       <div>
-        <span className="flex h-10 w-10 mx-auto items-center justify-center rounded-xl bg-blue-50 text-blue-700 text-lg font-bold">
-          ⚡
+        <span className="flex h-10 w-10 mx-auto items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+          <Zap className="h-5 w-5" strokeWidth={2.25} />
         </span>
         <h3 className="mt-3 text-base font-extrabold text-slate-950">{bundle.name}</h3>
         <p className="mt-2 text-2xl font-extrabold text-slate-950">GHS {bundle.priceGHS}</p>

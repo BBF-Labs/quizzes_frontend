@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
-import { Navbar } from "@/components/common";
-import { Footer } from "@/components/landing";
+import { LandingHeader, Footer } from "@/components/landing";
 
 export default function StudyRoomsJoinLayout({
   children,
@@ -9,7 +8,7 @@ export default function StudyRoomsJoinLayout({
 }) {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <Navbar />
+      <LandingHeader />
       <main className="flex-1 pt-16">{children}</main>
       <Footer />
     </div>

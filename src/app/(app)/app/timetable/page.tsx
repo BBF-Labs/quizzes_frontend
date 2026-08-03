@@ -8,7 +8,6 @@ import {
   Calendar as CalendarIcon,
   Clock,
   MapPin,
-  Sparkles,
   Plus,
   ArrowRight,
   BookOpen,
@@ -20,6 +19,8 @@ import {
   Square,
   ListTodo,
   Check,
+  BarChart3,
+  Flame,
 } from "lucide-react";
 import {
   useMyTimetable,
@@ -28,7 +29,6 @@ import {
 import { useMyCourses } from "@/hooks/app/use-user-courses";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
-import { Calendar } from "@/components/ui/calendar";
 
 type TabView = "week" | "month" | "agenda" | "exams";
 
@@ -82,6 +82,104 @@ const WEEK_DAYS = [
   { day: "WED", date: "21", isToday: false, dotColor: "bg-rose-400" },
   { day: "FRI", date: "23", isToday: false, dotColor: "bg-amber-400" },
 ];
+
+// Events for the week grid. Each event has a day (1-5 = MON-FRI in the grid)
+// plus a row range. The same data drives both the desktop grid and the
+// mobile-friendly list view.
+interface WeekEvent {
+  title: string;
+  meta: string;
+  day: number; // 1=MON, 2=TUE, 3=WED, 4=THU, 5=FRI
+  startRow: number;
+  endRow: number;
+  tone: "blue" | "violet" | "amber" | "cyan" | "slate" | "ink";
+}
+
+const WEEK_EVENTS: WeekEvent[] = [
+  {
+    title: "DCIT 205 Lecture",
+    meta: "09:00–11:00 · Great Hall",
+    day: 1,
+    startRow: 2,
+    endRow: 4,
+    tone: "blue",
+  },
+  {
+    title: "UGRC 210 Tutorial",
+    meta: "13:00–14:30 · NNB 4",
+    day: 1,
+    startRow: 6,
+    endRow: 8,
+    tone: "slate",
+  },
+  {
+    title: "DCIT 207 Lecture",
+    meta: "08:00–10:00 · Balme Hall",
+    day: 2,
+    startRow: 1,
+    endRow: 3,
+    tone: "violet",
+  },
+  {
+    title: "MATH 223 Lecture",
+    meta: "11:00–13:00 · Maths 12",
+    day: 2,
+    startRow: 4,
+    endRow: 6,
+    tone: "amber",
+  },
+  {
+    title: "DCIT 201 Lecture",
+    meta: "10:00–12:00 · N Block",
+    day: 3,
+    startRow: 3,
+    endRow: 5,
+    tone: "cyan",
+  },
+  {
+    title: "MATH 223 Tutorial",
+    meta: "09:00–10:30 · Maths 4",
+    day: 4,
+    startRow: 2,
+    endRow: 4,
+    tone: "amber",
+  },
+  {
+    title: "Weekly review with Qz",
+    meta: "15:00–16:00",
+    day: 5,
+    startRow: 8,
+    endRow: 10,
+    tone: "ink",
+  },
+];
+
+const EVENT_TONE_CLS: Record<
+  WeekEvent["tone"],
+  { bg: string; text: string; ring?: string }
+> = {
+  blue: { bg: "bg-blue-50", text: "text-[#0C60FC]", ring: "ring-1 ring-blue-200" },
+  violet: { bg: "bg-violet-50", text: "text-violet-700", ring: "ring-1 ring-violet-200" },
+  amber: { bg: "bg-amber-50", text: "text-amber-800", ring: "ring-1 ring-amber-200" },
+  cyan: { bg: "bg-cyan-50", text: "text-cyan-800", ring: "ring-1 ring-cyan-200" },
+  slate: { bg: "bg-slate-100", text: "text-slate-700" },
+  ink: { bg: "bg-slate-950", text: "text-white" },
+};
+
+const TIME_SLOTS = [
+  "08:00",
+  "09:00",
+  "10:00",
+  "11:00",
+  "12:00",
+  "13:00",
+  "14:00",
+  "15:00",
+  "16:00",
+  "17:00",
+];
+
+const WEEK_DAY_LABELS = ["MON", "TUE", "WED", "THU", "FRI"] as const;
 
 export default function PrivateTimetablePage() {
   const router = useRouter();
@@ -333,36 +431,23 @@ export default function PrivateTimetablePage() {
                   <div className="mt-5 hidden lg:block">
                     <div className="grid grid-cols-[60px_repeat(5,minmax(0,1fr))] gap-1 pb-2 text-center font-bold">
                       <span />
-                      <span className="rounded-lg bg-blue-50 py-1.5 text-[10px] text-[#0C60FC]">
-                        MON 12
-                      </span>
-                      <span className="py-1.5 text-[10px] text-slate-500">
-                        TUE 13
-                      </span>
-                      <span className="py-1.5 text-[10px] text-slate-500">
-                        WED 14
-                      </span>
-                      <span className="py-1.5 text-[10px] text-slate-500">
-                        THU 15
-                      </span>
-                      <span className="py-1.5 text-[10px] text-slate-500">
-                        FRI 16
-                      </span>
+                      {WEEK_DAY_LABELS.map((label, idx) => {
+                        const isFirst = idx === 0;
+                        return (
+                          <span
+                            key={label}
+                            className={`rounded-lg py-1.5 text-[10px] ${
+                              isFirst ? "bg-blue-50 text-[#0C60FC]" : "text-slate-500"
+                            }`}
+                          >
+                            {label} {WEEK_DAYS[idx]?.date}
+                          </span>
+                        );
+                      })}
                     </div>
 
                     <div className="grid grid-cols-[60px_repeat(5,minmax(0,1fr))] grid-rows-[repeat(10,48px)] gap-1">
-                      {[
-                        "08:00",
-                        "09:00",
-                        "10:00",
-                        "11:00",
-                        "12:00",
-                        "13:00",
-                        "14:00",
-                        "15:00",
-                        "16:00",
-                        "17:00",
-                      ].map((t, i) => (
+                      {TIME_SLOTS.map((t, i) => (
                         <span
                           key={t}
                           className="text-[9px] font-extrabold uppercase text-slate-400"
@@ -372,93 +457,65 @@ export default function PrivateTimetablePage() {
                         </span>
                       ))}
 
-                      {/* Mon events */}
-                      <div
-                        className="rounded-xl bg-blue-50 p-2 text-[#0C60FC] ring-1 ring-blue-200"
-                        style={{ gridColumn: 2, gridRow: "2 / 4" }}
-                      >
-                        <b className="block text-[11px] font-bold">
-                          DCIT 205 Lecture
-                        </b>
-                        <span className="text-[9px] text-slate-500">
-                          09:00–11:00 · Great Hall
-                        </span>
-                      </div>
-                      <div
-                        className="rounded-xl bg-slate-100 p-2 text-slate-700"
-                        style={{ gridColumn: 2, gridRow: "6 / 8" }}
-                      >
-                        <b className="block text-[11px] font-bold">
-                          UGRC 210 Tutorial
-                        </b>
-                        <span className="text-[9px] text-slate-500">
-                          13:00–14:30 · NNB 4
-                        </span>
-                      </div>
-
-                      {/* Tue events */}
-                      <div
-                        className="rounded-xl bg-violet-50 p-2 text-violet-700 ring-1 ring-violet-200"
-                        style={{ gridColumn: 3, gridRow: "1 / 3" }}
-                      >
-                        <b className="block text-[11px] font-bold">
-                          DCIT 207 Lecture
-                        </b>
-                        <span className="text-[9px] text-slate-500">
-                          08:00–10:00 · Balme Hall
-                        </span>
-                      </div>
-                      <div
-                        className="rounded-xl bg-amber-50 p-2 text-amber-800 ring-1 ring-amber-200"
-                        style={{ gridColumn: 3, gridRow: "4 / 6" }}
-                      >
-                        <b className="block text-[11px] font-bold">
-                          MATH 223 Lecture
-                        </b>
-                        <span className="text-[9px] text-slate-500">
-                          11:00–13:00 · Maths 12
-                        </span>
-                      </div>
-
-                      {/* Wed events */}
-                      <div
-                        className="rounded-xl bg-cyan-50 p-2 text-cyan-800 ring-1 ring-cyan-200"
-                        style={{ gridColumn: 4, gridRow: "3 / 5" }}
-                      >
-                        <b className="block text-[11px] font-bold">
-                          DCIT 201 Lecture
-                        </b>
-                        <span className="text-[9px] text-slate-500">
-                          10:00–12:00 · N Block
-                        </span>
-                      </div>
-
-                      {/* Thu events */}
-                      <div
-                        className="rounded-xl bg-amber-50 p-2 text-amber-800"
-                        style={{ gridColumn: 5, gridRow: "2 / 4" }}
-                      >
-                        <b className="block text-[11px] font-bold">
-                          MATH 223 Tutorial
-                        </b>
-                        <span className="text-[9px] text-slate-500">
-                          09:00–10:30 · Maths 4
-                        </span>
-                      </div>
-
-                      {/* Fri events */}
-                      <div
-                        className="rounded-xl bg-slate-950 p-2 text-white"
-                        style={{ gridColumn: 6, gridRow: "8 / 10" }}
-                      >
-                        <b className="block text-[11px] font-bold">
-                          Weekly review with Qz
-                        </b>
-                        <span className="text-[9px] text-slate-400">
-                          15:00–16:00
-                        </span>
-                      </div>
+                      {WEEK_EVENTS.map((event, i) => {
+                        const tone = EVENT_TONE_CLS[event.tone];
+                        return (
+                          <div
+                            key={i}
+                            className={`rounded-xl p-2 ${tone.bg} ${tone.text} ${tone.ring ?? ""}`}
+                            style={{
+                              gridColumn: event.day + 1,
+                              gridRow: `${event.startRow} / ${event.endRow}`,
+                            }}
+                          >
+                            <b className="block text-[11px] font-bold">
+                              {event.title}
+                            </b>
+                            <span className="text-[9px] opacity-80">
+                              {event.meta}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
+                  </div>
+
+                  {/* Mobile-friendly list fallback (visible below `lg`) */}
+                  <div className="mt-5 space-y-3 lg:hidden">
+                    {WEEK_EVENTS.length === 0 ? (
+                      <p className="rounded-2xl border border-dashed border-slate-200 p-6 text-center text-xs font-semibold text-slate-400">
+                        No classes scheduled this week.
+                      </p>
+                    ) : (
+                      WEEK_EVENTS.map((event, i) => {
+                        const tone = EVENT_TONE_CLS[event.tone];
+                        const dayLabel = WEEK_DAY_LABELS[event.day - 1];
+                        const dayDate = WEEK_DAYS[event.day - 1]?.date;
+                        return (
+                          <div
+                            key={i}
+                            className={`flex items-start gap-3 rounded-2xl p-3 ${tone.bg} ${tone.text} ${tone.ring ?? ""}`}
+                          >
+                            <span className="flex w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-white/70 px-1 py-1.5 text-center">
+                              <span className="text-[9px] font-extrabold uppercase tracking-wider">
+                                {dayLabel}
+                              </span>
+                              <span className="text-sm font-extrabold leading-none">
+                                {dayDate}
+                              </span>
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-bold leading-snug">
+                                {event.title}
+                              </p>
+                              <p className="mt-0.5 text-[10px] opacity-80">
+                                {event.meta}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
               </section>
@@ -912,14 +969,15 @@ export default function PrivateTimetablePage() {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-extrabold text-slate-950 flex items-center gap-1.5">
-                    <Sparkles className="h-4 w-4 text-[#0C60FC]" /> Workload & Metrics
+                    <BarChart3 className="h-4 w-4 text-[#0C60FC]" /> Workload & Metrics
                   </h3>
                   <p className="hand text-base text-[#0C60FC] leading-none mt-0.5">
                     weekly breakdown
                   </p>
                 </div>
-                <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-extrabold text-emerald-600">
-                  🔥 8 Day Streak
+                <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-extrabold text-emerald-600">
+                  <Flame className="h-3 w-3" strokeWidth={2.25} />
+                  8 Day Streak
                 </span>
               </div>
 
