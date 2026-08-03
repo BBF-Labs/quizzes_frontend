@@ -2,7 +2,7 @@
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
-import { AuthenticatingLoader } from "@/components/common/authenticating-loader";
+import { Loader } from "@/components/common/loader";
 
 export function AppGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoading, isHydrating, isValidating } = useAuth();
@@ -22,7 +22,7 @@ export function AppGuard({ children }: { children: React.ReactNode }) {
   }, [user, isAuthLoading, pathname, router]);
 
   if (!canShow) {
-    return <AuthenticatingLoader />;
+    return <Loader />;
   }
 
   return <>{children}</>;

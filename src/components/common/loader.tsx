@@ -18,14 +18,12 @@ const QUBI_STAGES = [
 
 const ROTATE_MS = 1600;
 
-interface AuthenticatingLoaderProps {
+interface LoaderProps {
   /** Optional override for the small kicker label above the title. */
   message?: string;
 }
 
-export function AuthenticatingLoader({
-  message = "Authenticating",
-}: AuthenticatingLoaderProps) {
+export function Loader({ message = "Loading" }: LoaderProps) {
   const [stageIndex, setStageIndex] = useState(0);
 
   useEffect(() => {

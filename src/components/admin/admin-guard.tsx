@@ -2,7 +2,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
-import { AuthenticatingLoader } from "@/components/common/authenticating-loader";
+import { Loader } from "@/components/common/loader";
 
 export function AdminGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoading, hasAdminAccess } = useAuth();
@@ -15,7 +15,7 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
   }, [user, isLoading, hasAdminAccess, router]);
 
   if (isLoading) {
-    return <AuthenticatingLoader message="Verifying admin access" />;
+    return <Loader message="Verifying admin access" />;
   }
 
   if (!user || !hasAdminAccess) return null;
