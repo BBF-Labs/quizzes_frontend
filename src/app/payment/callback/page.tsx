@@ -4,9 +4,10 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { CheckCircle2, AlertCircle, ArrowRight, CreditCard, Heart } from "lucide-react";
+import { CheckCircle2, AlertCircle, ArrowRight, CreditCard, Heart, Compass } from "lucide-react";
 import { api } from "@/lib/api";
 import { LandingHeader, LandingFooter } from "@/components/landing";
+import { SuccessConfetti } from "@/components/common/success-confetti";
 import {
   QUBI_PEEK_SRC,
   QUBI_STUDY_SRC,
@@ -19,7 +20,6 @@ type Stage = "verifying" | "success" | "error";
 
 function detectType(reference: string): PaymentType {
   if (reference.startsWith("don_")) return "donation";
-  // BBF- prefix = subscription/credits, fall back for anything else
   return "plan";
 }
 
@@ -48,40 +48,44 @@ const TYPE_COPY: Record<
     redirectLabel: string;
     icon: typeof CreditCard;
     blobs: "blue" | "rose" | "lime";
+    accentClass: string;
   }
 > = {
   plan: {
     chip: "Subscription active",
-    kicker: "level up the grind ↘",
-    headline: "Your plan is",
+    kicker: "level up the grind ✦",
+    headline: "Your plan is live.",
     accentWord: "live.",
     sub: "Subscription upgraded. You now have full access to every Qz study tool — go break some records.",
     redirect: "/app/billing",
     redirectLabel: "View your billing",
     icon: CreditCard,
     blobs: "blue",
+    accentClass: "text-[#0C60FC]",
   },
   credits: {
     chip: "Credits topped up",
     kicker: "extra fuel loaded ✦",
-    headline: "Credits",
+    headline: "Credits acquired.",
     accentWord: "acquired.",
     sub: "Your account has been topped up with extra AI credits. Generate away.",
     redirect: "/app/billing",
     redirectLabel: "View credits",
     icon: CreditCard,
     blobs: "blue",
+    accentClass: "text-[#0C60FC]",
   },
   donation: {
     chip: "Donation received",
     kicker: "keep the lights on ✦",
-    headline: "Thank",
+    headline: "Thank you.",
     accentWord: "you.",
     sub: "Your gift directly funds free access for students who can't afford a subscription. We see you.",
     redirect: "/pricing",
     redirectLabel: "Back to pricing",
     icon: Heart,
     blobs: "lime",
+    accentClass: "text-rose-500",
   },
 };
 
@@ -124,71 +128,58 @@ function PaymentCallbackInner() {
         ? "bg-slate-200/60"
         : "bg-blue-100/70";
 
+  const missingRef = !reference;
+  const showSuccess = reference && stage === "success";
+
+  const chipText = missingRef
+    ? "Payment confirmation"
+    : stage === "verifying"
+      ? "Payment confirmation"
+      : stage === "success"
+        ? copy.chip
+        : "Payment failed";
+
+  const kickerText = missingRef
+    ? "we need a reference ↘"
+    : stage === "verifying"
+      ? "talking to Paystack ↘"
+      : stage === "success"
+        ? copy.kicker
+        : "let's try again ↘";
+
+  const subText = missingRef
+    ? "No payment reference was found in the URL. Head back to pricing and try again, or contact support if you were charged."
+    : stage === "verifying"
+      ? "Hold tight — we're confirming your transaction with Paystack. This usually takes a couple of seconds."
+      : stage === "success"
+        ? copy.sub
+        : "We could not verify your payment. If funds were deducted, please contact support with the reference key below.";
+
+  // Status icon lookup
+  const StatusIcon =
+    stage === "verifying" ? Compass : stage === "success" ? CheckCircle2 : AlertCircle;
+
   return (
     <div className="relative mx-auto max-w-2xl px-5">
       {/* Soft-grid background blobs */}
       <div className={`pointer-events-none absolute -left-32 top-10 h-96 w-96 rounded-full ${blurA} blur-3xl`} />
       <div className={`pointer-events-none absolute -right-32 top-40 h-96 w-96 rounded-full ${blurB} blur-3xl`} />
 
+      {showSuccess && <SuccessConfetti />}
+
       <div className="relative pt-32 pb-24 lg:pt-40">
-        {/* Header */}
-        <div className="text-center">
-          <div
-            className={`mb-6 inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-bold shadow-sm ${
-              stage === "error"
-                ? "border-rose-200 bg-white text-rose-700"
-                : "border-blue-200 bg-white text-blue-700"
-            }`}
+        {/* Header + floating Qubi */}
+        <div className="relative flex flex-col items-center text-center">
+          <motion.div
+            initial={{ opacity: 0, y: -8, rotate: -8 }}
+            animate={{ opacity: 1, y: 0, rotate: -4 }}
+            transition={{ duration: 0.5 }}
+            className="qubi-sticker absolute -right-2 -top-10 hidden sm:block"
           >
-            <Icon className="h-3.5 w-3.5" />
-            {!reference && "Payment confirmation"}
-            {reference && stage === "verifying" && "Payment confirmation"}
-            {reference && stage === "success" && copy.chip}
-            {reference && stage === "error" && "Payment failed"}
-          </div>
-
-          <h1 className="display text-balance text-4xl font-bold leading-[1.04] tracking-[-.045em] text-slate-950 sm:text-5xl">
-            {!reference && stage === "verifying" && "Reference missing."}
-            {reference && stage === "verifying" && "Verifying your payment."}
-            {reference && stage === "success" && (
-              <>
-                {copy.headline}{" "}
-                <span className="text-[#0C60FC]">{copy.accentWord}</span>
-              </>
-            )}
-            {reference && stage === "error" && "Verification failed."}
-          </h1>
-
-          <p className="hand mx-auto mt-3 max-w-xl -rotate-1 text-2xl text-[#0C60FC]">
-            {!reference && "we need a reference ↘"}
-            {reference && stage === "verifying" && "talking to Paystack ↘"}
-            {reference && stage === "success" && copy.kicker}
-            {reference && stage === "error" && "let&apos;s try again ↘"}
-          </p>
-
-          <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-slate-600">
-            {!reference &&
-              "No payment reference was found in the URL. Head back to pricing and try again, or contact support if you were charged."}
-            {reference && stage === "verifying" &&
-              "Hold tight — we're confirming your transaction with Paystack. This usually takes a couple of seconds."}
-            {reference && stage === "success" && copy.sub}
-            {reference && stage === "error" &&
-              "We could not verify your payment. If funds were deducted, please contact support with the reference key below."}
-          </p>
-        </div>
-
-        {/* Status card */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="relative mx-auto mt-12 max-w-md overflow-visible rounded-[32px] border border-slate-200 bg-white p-8 shadow-xl shadow-blue-50/50 sm:p-10"
-          style={{ borderRadius: "32px" }}
-        >
-          {/* Qubi sticker */}
-          <div className="qubi-sticker absolute -right-2 -top-14 hidden sm:block">
-            <span className="hand absolute -left-28 top-2 w-28 -rotate-6 text-xl leading-5 text-[#0C60FC]">
-              {!reference && "uh oh!"}
+            <span
+              className={`hand absolute -left-28 top-2 hidden w-28 -rotate-6 text-xl leading-5 sm:block ${copy.accentClass}`}
+            >
+              {missingRef && "uh oh!"}
               {reference && stage === "verifying" && "one sec ↘"}
               {reference && stage === "success" && "nice!"}
               {reference && stage === "error" && "oops!"}
@@ -196,7 +187,7 @@ function PaymentCallbackInner() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={
-                !reference
+                missingRef
                   ? QUBI_RUN_SRC
                   : stage === "success"
                     ? QUBI_WAVE_SRC
@@ -207,30 +198,75 @@ function PaymentCallbackInner() {
               alt="Qubi reacting to your payment"
               className="h-24 w-24 object-contain"
             />
+          </motion.div>
+
+          <div
+            className={`mb-6 inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-bold shadow-sm ${
+              stage === "error"
+                ? "border-rose-200 bg-white text-rose-700"
+                : "border-blue-200 bg-white text-blue-700"
+            }`}
+          >
+            <Icon className="h-3.5 w-3.5" />
+            {chipText}
           </div>
 
+          <h1 className="display text-balance text-5xl font-bold leading-[1.04] tracking-[-.045em] text-slate-950 sm:text-6xl">
+            {missingRef && (
+              <>
+                Reference <span className="scribble">missing.</span>
+              </>
+            )}
+            {reference && stage === "verifying" && (
+              <>
+                Verifying <span className="scribble">payment.</span>
+              </>
+            )}
+            {reference && stage === "success" && (
+              <>
+                <span className="scribble">{copy.headline.replace(/[.!?]$/, "")}</span>
+                <span>.</span>
+              </>
+            )}
+            {reference && stage === "error" && (
+              <>
+                Verification <span className="scribble">failed.</span>
+              </>
+            )}
+          </h1>
+
+          <p className={`hand mx-auto mt-3 max-w-xl -rotate-1 text-2xl ${copy.accentClass}`}>
+            {kickerText}
+          </p>
+
+          <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-slate-600">
+            {subText}
+          </p>
+        </div>
+
+        {/* Inline status pills + CTAs (no card) */}
+        <div className="mx-auto mt-10 flex max-w-md flex-col items-center gap-4">
           {/* Icon */}
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl border border-slate-200 bg-white">
-            {stage === "verifying" && (
+          <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-slate-200 bg-white">
+            {stage === "verifying" ? (
               <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-[#0C60FC]" />
-            )}
-            {stage === "success" && (
-              <CheckCircle2 className="h-10 w-10 text-[#0C60FC]" strokeWidth={2.25} />
-            )}
-            {stage === "error" && (
-              <AlertCircle className="h-10 w-10 text-rose-500" strokeWidth={2.25} />
+            ) : (
+              <StatusIcon
+                className={`h-10 w-10 ${stage === "error" ? "text-rose-500" : copy.accentClass}`}
+                strokeWidth={2.25}
+              />
             )}
           </div>
 
-          <p className="mt-6 text-center text-xs font-extrabold uppercase tracking-[0.2em] text-slate-400">
-            {!reference && "Status · No reference"}
+          <p className="text-center text-xs font-extrabold uppercase tracking-[0.2em] text-slate-400">
+            {missingRef && "Status · No reference"}
             {reference && stage === "verifying" && "Verifying"}
             {reference && stage === "success" && "Status · Success"}
             {reference && stage === "error" && "Status · Failed"}
           </p>
 
           {stage === "error" && reference && (
-            <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
                 Reference key
               </p>
@@ -242,7 +278,7 @@ function PaymentCallbackInner() {
 
           {/* Auto-redirect progress for success */}
           {stage === "success" && (
-            <div className="mt-8">
+            <div className="w-full">
               <div className="relative h-1 w-full overflow-hidden rounded-full bg-slate-100">
                 <motion.div
                   className="absolute inset-y-0 left-0 rounded-full bg-[#0C60FC]"
@@ -258,7 +294,7 @@ function PaymentCallbackInner() {
             </div>
           )}
 
-          <div className="mt-8 flex flex-col gap-3">
+          <div className="flex w-full flex-col gap-3">
             {stage === "success" && (
               <Link
                 href={copy.redirect}
@@ -303,7 +339,7 @@ function PaymentCallbackInner() {
               </Link>
             )}
           </div>
-        </motion.div>
+        </div>
       </div>
     </div>
   );
