@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { ChevronDown, Check, LayoutDashboard, LogOut } from "lucide-react";
+import { ChevronDown, Check, LayoutDashboard, LogOut, Flame, Moon } from "lucide-react";
 import { LOGO_SRC } from "@/lib/constants";
 import { useAuth } from "@/contexts/auth-context";
 import { resolveAvatarUrl } from "@/lib/utils";
@@ -73,8 +73,9 @@ export function LandingHeader() {
   const langRef = useRef<HTMLDivElement>(null);
   const userRef = useRef<HTMLDivElement>(null);
 
-  const { user, isLoading: authLoading, logout } = useAuth();
+  const { user, isLoading: authLoading, logout, isSuperAdminRole } = useAuth();
   const { data: streak } = useStreakStatus();
+  const isSuperAdmin = isSuperAdminRole;
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -137,7 +138,11 @@ export function LandingHeader() {
                   : "bg-slate-100 text-slate-500 ring-1 ring-slate-200"
               }`}
             >
-              <span className="text-sm leading-none">{streak.isActive ? "🔥" : "💤"}</span>
+              {streak.isActive ? (
+                <Flame className="h-3.5 w-3.5" />
+              ) : (
+                <Moon className="h-3.5 w-3.5" />
+              )}
               {streak.current}d
             </div>
           )}
@@ -214,11 +219,25 @@ export function LandingHeader() {
                   <Link
                     href="/app"
                     onClick={() => setIsUserOpen(false)}
-                    className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50"
+                    className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
                   >
                     <LayoutDashboard className="h-4 w-4 text-[#0C60FC]" />
                     Open dashboard
                   </Link>
+                  {isSuperAdmin && (
+                    <>
+                      <div className="my-1 h-px bg-slate-100" />
+                      <Link
+                        href="/admin"
+                        onClick={() => setIsUserOpen(false)}
+                        className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-[#0C60FC] transition hover:bg-blue-50"
+                      >
+                        <LayoutDashboard className="h-4 w-4" />
+                        Admin Panel
+                      </Link>
+                    </>
+                  )}
+                  <div className="my-1 h-px bg-slate-100" />
                   <button
                     type="button"
                     onClick={() => { setIsUserOpen(false); logout?.(); }}

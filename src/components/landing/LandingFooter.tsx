@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
+import { Loader2, Linkedin, Twitter, Github } from "lucide-react";
 import { LOGO_SRC, QUBI_RUN_SRC } from "@/lib/constants";
 import { useAuth } from "@/contexts/auth-context";
 import { useSubscribeNewsletter } from "@/hooks/marketing/use-newsletter";
@@ -114,28 +114,32 @@ export function LandingFooter() {
               <div className="mt-5 flex gap-2">
                 <a
                   href="#"
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-white/8 text-xs font-bold hover:bg-white/15"
+                  aria-label="Qz on LinkedIn"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
                 >
-                  in
+                  <Linkedin className="h-4 w-4" />
                 </a>
                 <a
                   href="#"
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-white/8 text-xs font-bold hover:bg-white/15"
+                  aria-label="Qz on X"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
                 >
-                  𝕏
+                  <Twitter className="h-4 w-4" />
                 </a>
                 <a
                   href="#"
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-white/8 text-xs font-bold hover:bg-white/15"
+                  aria-label="Qz on GitHub"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
                 >
-                  ◎
+                  <Github className="h-4 w-4" />
                 </a>
               </div>
               <form
-                className="mt-6 w-full rounded-2xl bg-white p-2 shadow-[0_12px_35px_rgba(12,96,252,.12)] ring-1 ring-slate-200 lg:max-w-xs"
+                className="relative mt-6 w-full overflow-hidden rounded-[24px] border-2 border-blue-100 bg-[#E8F0FE] p-2 shadow-[0_12px_35px_rgba(12,96,252,.18)] lg:max-w-xs"
                 onSubmit={handleNewsletterSubmit}
                 aria-label="Footer newsletter signup"
               >
+                <div className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-[#DFFF61]/50 blur-2xl" />
                 <label
                   htmlFor="footer-newsletter-email"
                   className="hand block text-sm leading-5 text-[#0C60FC]"
