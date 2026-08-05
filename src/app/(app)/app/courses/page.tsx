@@ -27,12 +27,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-const SEMESTERS = ["Semester 1", "Semester 2", "Summer Session"];
-const ACADEMIC_YEARS = ["2024-2025", "2025-2026", "2026-2027"];
+const SEMESTERS = ["Semester 1", "Semester 2"];
+const ACADEMIC_YEARS = ["2025-2026", "2026-2027"];
 
 export default function MyCoursesPage() {
   const [selectedSemester, setSelectedSemester] = useState("Semester 1");
-  const [selectedYear, setSelectedYear] = useState("2025-2026");
+  const [selectedYear, setSelectedYear] = useState("2026-2027");
 
   const { data: enrollments = [], isLoading: isEnrollmentsLoading } =
     useMyCourses();
@@ -137,21 +137,25 @@ export default function MyCoursesPage() {
               <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 w-20 shrink-0">
                 Year
               </span>
-              {ACADEMIC_YEARS.map((y) => (
-                <button
-                  key={y}
-                  type="button"
-                  onClick={() => setSelectedYear(y)}
-                  className={cn(
-                    "rounded-full px-4 py-2 text-xs font-bold transition",
-                    selectedYear === y
-                      ? "bg-slate-950 text-white"
-                      : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50",
-                  )}
-                >
-                  {y}
-                </button>
-              ))}
+              {ACADEMIC_YEARS.map((y) => {
+                const isPast = y === "2025-2026";
+                return (
+                  <button
+                    key={y}
+                    type="button"
+                    onClick={() => setSelectedYear(y)}
+                    className={cn(
+                      "rounded-full px-4 py-2 text-xs font-bold transition",
+                      isPast && "line-through",
+                      selectedYear === y
+                        ? "bg-slate-950 text-white"
+                        : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50",
+                    )}
+                  >
+                    {y}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -178,7 +182,7 @@ export default function MyCoursesPage() {
             </div>
           ) : enrollments.length > 0 ? (
             <motion.div
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
               variants={{
                 hidden: {},
                 visible: { transition: { staggerChildren: 0.06 } },
@@ -212,12 +216,11 @@ export default function MyCoursesPage() {
               </AnimatePresence>
             </motion.div>
           ) : (
-            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white py-20">
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-20">
               <BookOpen className="mb-4 h-12 w-12 text-slate-300" />
               <p className="text-sm font-bold text-slate-700">No courses yet</p>
-              <p className="mt-1 max-w-sm text-center text-xs font-semibold text-slate-500">
-                Stay organized by tracking the courses you're taking this term —
-                we'll wire them into exam reminders and timetables for you.
+              <p className="mt-1 max-w-xs text-center text-xs font-semibold text-slate-500">
+                Add the courses you're taking this term.
               </p>
               <button
                 type="button"

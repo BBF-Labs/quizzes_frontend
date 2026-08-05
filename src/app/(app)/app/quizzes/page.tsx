@@ -223,7 +223,7 @@ export default function QuizzesPage() {
             </div>
           ) : (
             <motion.div
-              className="grid gap-5 md:grid-cols-2 xl:grid-cols-3"
+              className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
               variants={{
                 hidden: {},
                 visible: { transition: { staggerChildren: 0.06 } },

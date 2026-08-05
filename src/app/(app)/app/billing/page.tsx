@@ -12,7 +12,7 @@ import {
   type PlanDuration,
   type BillingPackage,
 } from "@/hooks";
-import { ReferralCard } from "@/components/common";
+import { ReferralCard, CreditBundleCard } from "@/components/common";
 import { cn } from "@/lib/utils";
 
 const PLAN_TIER_META: Record<
@@ -191,36 +191,6 @@ function buildMissing(pkg: BillingPackage): string[] {
   return m;
 }
 
-// ─── Credit bundle card ────────────────────────────────────────────────────────
-
-function CreditBundleCard({
-  bundle,
-  onSelect,
-}: {
-  bundle: { _id: string; name: string; priceGHS: number; credits: number };
-  onSelect: (id: string) => void;
-}) {
-  return (
-    <article className="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm flex flex-col justify-between">
-      <div>
-        <span className="flex h-10 w-10 mx-auto items-center justify-center rounded-xl bg-blue-50 text-blue-700">
-          <Zap className="h-5 w-5" strokeWidth={2.25} />
-        </span>
-        <h3 className="mt-3 text-base font-extrabold text-slate-950">{bundle.name}</h3>
-        <p className="mt-2 text-2xl font-extrabold text-slate-950">GHS {bundle.priceGHS}</p>
-        <p className="mt-1 text-xs text-slate-500">{bundle.credits} extra generation credits</p>
-      </div>
-      <button
-        type="button"
-        onClick={() => onSelect(bundle._id)}
-        className="mt-5 w-full rounded-xl bg-slate-950 py-2.5 text-xs font-extrabold text-white hover:bg-[#0C60FC] transition"
-      >
-        Buy {bundle.credits} credits
-      </button>
-    </article>
-  );
-}
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function BillingPage() {
@@ -271,10 +241,14 @@ export default function BillingPage() {
             {billingStatus?.planTier ? (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-emerald-700 ring-1 ring-emerald-200">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                On {PLAN_TIER_META[billingStatus.planTier]?.label ?? billingStatus.planTier}
+                On{" "}
+                {PLAN_TIER_META[billingStatus.planTier]?.label ??
+                  billingStatus.planTier}
               </span>
             ) : (
-              <span className="rounded-full bg-slate-100 px-3 py-1.5">Free tier</span>
+              <span className="rounded-full bg-slate-100 px-3 py-1.5">
+                Free tier
+              </span>
             )}
             {billingStatus?.credits?.balance !== undefined && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 text-amber-700 ring-1 ring-amber-200">
@@ -307,7 +281,9 @@ export default function BillingPage() {
                 <span
                   className={cn(
                     "rounded-full px-2 py-0.5 text-[9px] font-extrabold",
-                    duration === d ? "bg-[#DFFF61] text-slate-900" : "bg-[#DFFF61] text-slate-900",
+                    duration === d
+                      ? "bg-[#DFFF61] text-slate-900"
+                      : "bg-[#DFFF61] text-slate-900",
                   )}
                 >
                   Best value
@@ -330,9 +306,12 @@ export default function BillingPage() {
             </div>
           ) : sorted.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white py-20">
-              <p className="text-sm font-bold text-slate-700">No plans available</p>
+              <p className="text-sm font-bold text-slate-700">
+                No plans available
+              </p>
               <p className="mt-1 max-w-sm text-center text-xs font-semibold text-slate-500">
-                We couldn&apos;t find any plans for this cycle. Try a different cycle or check back later.
+                We couldn&apos;t find any plans for this cycle. Try a different
+                cycle or check back later.
               </p>
             </div>
           ) : (
@@ -363,7 +342,8 @@ export default function BillingPage() {
 
           {/* Free-tier note */}
           <p className="mx-auto mt-6 max-w-3xl rounded-2xl bg-[#F7F9FC] px-5 py-4 text-center text-xs font-semibold text-slate-500">
-            Free tier — always available. 1 Z session / day, 2 quizzes / day, 2 flashcard sets / day, 1 mind map / day. No card required.
+            Free tier — always available. 1 Z session / day, 2 quizzes / day, 2
+            flashcard sets / day, 1 mind map / day. No card required.
           </p>
         </div>
       </section>
@@ -373,12 +353,15 @@ export default function BillingPage() {
         <section className="bg-[#F7F9FC] px-6 py-12 lg:px-8">
           <div className="mx-auto max-w-7xl">
             <div className="text-center">
-              <p className="hand text-2xl text-[#0C60FC]">need extra generations? ✦</p>
+              <p className="hand text-2xl text-[#0C60FC]">
+                need extra generations? ✦
+              </p>
               <h2 className="mt-1 text-2xl font-bold text-slate-950 sm:text-3xl">
                 Pay-as-you-go Credits
               </h2>
               <p className="mt-2 text-sm text-slate-600">
-                Credits never expire. Top up anytime for extra quizzes and flashcards.
+                Credits never expire. Top up anytime for extra quizzes and
+                flashcards.
               </p>
             </div>
 
@@ -390,11 +373,13 @@ export default function BillingPage() {
                 </p>
               </div>
             ) : (
-              <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {creditBundles.map((bundle) => (
+              <div className="mt-12 flex flex-wrap justify-center gap-5">
+                {creditBundles.map((bundle, idx) => (
                   <CreditBundleCard
                     key={bundle._id}
                     bundle={bundle}
+                    index={idx}
+                    totalCount={creditBundles.length}
                     onSelect={handleSelectBundle}
                   />
                 ))}
@@ -410,7 +395,9 @@ export default function BillingPage() {
         <div className="pointer-events-none absolute -right-32 bottom-10 h-80 w-80 rounded-full bg-[#DFFF61]/10 blur-3xl" />
         <div className="relative mx-auto max-w-7xl">
           <div className="text-center">
-            <p className="hand text-3xl text-[#DFFF61]">consistency literally pays ✦</p>
+            <p className="hand text-3xl text-[#DFFF61]">
+              consistency literally pays ✦
+            </p>
             <h2 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">
               Discounts &amp; rewards
             </h2>
@@ -423,42 +410,56 @@ export default function BillingPage() {
             <article className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
               <p className="text-3xl font-extrabold text-[#DFFF61]">10% off</p>
               <p className="mt-3 text-sm font-bold text-white">Student</p>
-              <p className="mt-1 text-xs text-slate-400">Verify your university email</p>
+              <p className="mt-1 text-xs text-slate-400">
+                Verify your university email
+              </p>
             </article>
             <article className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
               <p className="text-3xl font-extrabold text-[#DFFF61]">15% off</p>
               <p className="mt-3 text-sm font-bold text-white">Referral</p>
-              <p className="mt-1 text-xs text-slate-400">Earn when a friend subscribes</p>
+              <p className="mt-1 text-xs text-slate-400">
+                Earn when a friend subscribes
+              </p>
             </article>
             <article className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
               <p className="text-3xl font-extrabold text-[#DFFF61]">10% off</p>
               <p className="mt-3 text-sm font-bold text-white">7-day streak</p>
-              <p className="mt-1 text-xs text-slate-400">Keep your streak going</p>
+              <p className="mt-1 text-xs text-slate-400">
+                Keep your streak going
+              </p>
             </article>
             <article className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
               <p className="text-3xl font-extrabold text-[#DFFF61]">20% off</p>
               <p className="mt-3 text-sm font-bold text-white">30-day streak</p>
-              <p className="mt-1 text-xs text-slate-400">On your next renewal</p>
+              <p className="mt-1 text-xs text-slate-400">
+                On your next renewal
+              </p>
             </article>
             <article className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
               <p className="text-3xl font-extrabold text-[#DFFF61]">30% off</p>
               <p className="mt-3 text-sm font-bold text-white">60-day streak</p>
-              <p className="mt-1 text-xs text-slate-400">Or a free week — loyalty milestone</p>
+              <p className="mt-1 text-xs text-slate-400">
+                Or a free week — loyalty milestone
+              </p>
             </article>
             <article className="rounded-2xl bg-[#0C60FC] p-6 shadow-2xl shadow-blue-500/30">
               <p className="text-3xl font-extrabold text-white">15% forever</p>
               <p className="mt-3 text-sm font-bold text-white">90-day streak</p>
-              <p className="mt-1 text-xs text-blue-100">Lifetime loyalty discount</p>
+              <p className="mt-1 text-xs text-blue-100">
+                Lifetime loyalty discount
+              </p>
             </article>
           </div>
 
           {isVerifiedStudent ? (
             <p className="mx-auto mt-10 max-w-3xl text-center text-xs font-semibold text-emerald-300">
-              ✦ Student discount active — your 10% discount is applied automatically at checkout.
+              ✦ Student discount active — your 10% discount is applied
+              automatically at checkout.
             </p>
           ) : (
             <p className="mx-auto mt-10 max-w-3xl text-center text-xs font-semibold text-slate-400">
-              Student discount — verify your university email in settings after signing up.
+              Student discount — verify your university email in settings after
+              signing up.
             </p>
           )}
         </div>
