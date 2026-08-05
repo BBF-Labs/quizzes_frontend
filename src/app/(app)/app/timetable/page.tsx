@@ -27,6 +27,7 @@ import {
   type IExamSessionEntry,
 } from "@/hooks/app/use-timetable";
 import { useMyCourses } from "@/hooks/app/use-user-courses";
+import { useIsMobile } from "@/hooks";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
 
@@ -78,9 +79,8 @@ const WEEK_DAYS = [
   { day: "WED", date: "14", isToday: false, dotColor: "bg-violet-400" },
   { day: "THU", date: "15", isToday: false, dotColor: "bg-amber-400" },
   { day: "FRI", date: "16", isToday: false, dotColor: "bg-emerald-400" },
-  { day: "MON", date: "19", isToday: false, dotColor: "bg-cyan-400" },
-  { day: "WED", date: "21", isToday: false, dotColor: "bg-rose-400" },
-  { day: "FRI", date: "23", isToday: false, dotColor: "bg-amber-400" },
+  { day: "SAT", date: "17", isToday: false, dotColor: "bg-cyan-400" },
+  { day: "SUN", date: "18", isToday: false, dotColor: "bg-rose-400" },
 ];
 
 // Events for the week grid. Each event has a day (1-5 = MON-FRI in the grid)
@@ -184,6 +184,7 @@ const WEEK_DAY_LABELS = ["MON", "TUE", "WED", "THU", "FRI"] as const;
 export default function PrivateTimetablePage() {
   const router = useRouter();
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState<TabView>("week");
   const [selectedSemester, setSelectedSemester] = useState("Semester 1");
   const [selectedYear, setSelectedYear] = useState("2025-2026");
@@ -350,8 +351,9 @@ export default function PrivateTimetablePage() {
                     id="tabs"
                     className="date-rail flex gap-1 overflow-x-auto rounded-xl bg-[#F0F3F8] p-1"
                   >
-                    {(["week", "month", "agenda", "exams"] as TabView[]).map(
-                      (tab) => (
+                    {(["week", "month", "agenda", "exams"] as TabView[])
+                      .filter((tab) => !(isMobile && tab === "month"))
+                      .map((tab) => (
                         <button
                           key={tab}
                           onClick={() => setActiveTab(tab)}
@@ -363,18 +365,17 @@ export default function PrivateTimetablePage() {
                         >
                           {tab}
                         </button>
-                      ),
-                    )}
+                      ))}
                   </div>
                 </div>
               </div>
 
               {/* Date Selector Rail */}
-              <div className="date-rail mt-5 flex gap-2 overflow-x-auto pb-1">
+              <div className="date-rail mt-5 grid grid-cols-7 gap-2 pb-1">
                 {WEEK_DAYS.map((d, idx) => (
                   <div
                     key={idx}
-                    className={`min-w-16 rounded-2xl p-3 text-center transition ${
+                    className={`min-w-0 rounded-2xl p-2 sm:p-3 text-center transition ${
                       d.isToday
                         ? "bg-[#0C60FC] text-white shadow-md"
                         : "bg-slate-50 text-slate-900"
@@ -480,8 +481,58 @@ export default function PrivateTimetablePage() {
                     </div>
                   </div>
 
-                  {/* Mobile-friendly list fallback (visible below `lg`) */}
-                  <div className="mt-5 space-y-3 lg:hidden">
+                  {/* Tablet Timetable Grid (md only) */}
+                  <div className="mt-5 hidden md:block lg:hidden">
+                    <div className="grid grid-cols-[44px_repeat(5,minmax(0,1fr))] gap-1 pb-2 text-center font-bold">
+                      <span />
+                      {WEEK_DAY_LABELS.map((label, idx) => {
+                        const isFirst = idx === 0;
+                        return (
+                          <span
+                            key={label}
+                            className={`rounded-none py-1 text-[10px] ${
+                              isFirst ? "bg-blue-50 text-[#0C60FC]" : "text-slate-500"
+                            }`}
+                          >
+                            {label} {WEEK_DAYS[idx]?.date}
+                          </span>
+                        );
+                      })}
+                    </div>
+
+                    <div className="grid grid-cols-[44px_repeat(5,minmax(0,1fr))] grid-rows-[repeat(10,36px)] gap-1">
+                      {TIME_SLOTS.map((t, i) => (
+                        <span
+                          key={t}
+                          className="text-[9px] font-extrabold uppercase text-slate-400"
+                          style={{ gridColumn: 1, gridRow: i + 1 }}
+                        >
+                          {t}
+                        </span>
+                      ))}
+
+                      {WEEK_EVENTS.map((event, i) => {
+                        const tone = EVENT_TONE_CLS[event.tone];
+                        return (
+                          <div
+                            key={i}
+                            className={`rounded-none px-1.5 py-1 ${tone.bg} ${tone.text} ${tone.ring ?? ""}`}
+                            style={{
+                              gridColumn: event.day + 1,
+                              gridRow: `${event.startRow} / ${event.endRow}`,
+                            }}
+                          >
+                            <b className="block truncate text-[10px] font-bold leading-tight">
+                              {event.title}
+                            </b>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Mobile-friendly list fallback (visible below `md`) */}
+                  <div className="mt-5 space-y-3 md:hidden">
                     {WEEK_EVENTS.length === 0 ? (
                       <p className="rounded-2xl border border-dashed border-slate-200 p-6 text-center text-xs font-semibold text-slate-400">
                         No classes scheduled this week.
@@ -522,7 +573,27 @@ export default function PrivateTimetablePage() {
             )}
 
             {/* TAB 2: MONTH VIEW */}
-            {activeTab === "month" && (
+            {activeTab === "month" && isMobile && (
+              <section className="panel rounded-none border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+                <div className="flex flex-col items-start gap-2">
+                  <h2 className="text-base font-bold text-slate-950">
+                    Month view isn't available on small screens
+                  </h2>
+                  <p className="text-xs font-semibold text-slate-500">
+                    Showing your week instead.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("week")}
+                    className="rounded-none border border-slate-200 bg-[#0C60FC] px-3 py-2 text-[10px] font-extrabold uppercase tracking-wider text-white"
+                  >
+                    Switch to week
+                  </button>
+                </div>
+              </section>
+            )}
+
+            {activeTab === "month" && !isMobile && (
               <section className="panel p-4 sm:p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
@@ -677,11 +748,11 @@ export default function PrivateTimetablePage() {
             {/* TAB 3: AGENDA VIEW */}
             {activeTab === "agenda" && (
               <section className="panel p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-base font-bold text-slate-950">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <h2 className="min-w-0 text-base font-bold text-slate-950">
                     Upcoming Agenda
                   </h2>
-                  <div className="relative w-60">
+                  <div className="relative w-full sm:w-60">
                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                     <input
                       type="text"
@@ -983,7 +1054,7 @@ export default function PrivateTimetablePage() {
 
               {/* Weekly Workload Visual Bar Chart */}
               <div className="space-y-2 pt-1">
-                <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                <p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 sm:text-xs">
                   Daily Study Hours
                 </p>
                 <div className="grid grid-cols-5 gap-2 items-end h-28 pt-4 pb-1 border-b border-slate-100">
@@ -995,14 +1066,14 @@ export default function PrivateTimetablePage() {
                     { day: "Fri", hrs: 2.5, pct: "40%", color: "bg-blue-300" },
                   ].map((bar) => (
                     <div key={bar.day} className="flex flex-col items-center gap-1.5 h-full justify-end">
-                      <span className="text-[9px] font-extrabold text-slate-500">{bar.hrs}h</span>
+                      <span className="text-[10px] font-extrabold text-slate-500 sm:text-xs">{bar.hrs}h</span>
                       <div className="w-full bg-slate-100 rounded-t-lg h-20 flex items-end overflow-hidden">
                         <div
                           className={`w-full rounded-t-lg transition-all duration-500 ${bar.color}`}
                           style={{ height: bar.pct }}
                         />
                       </div>
-                      <span className="text-[9px] font-bold uppercase text-slate-400">{bar.day}</span>
+                      <span className="text-[10px] font-bold uppercase text-slate-400 sm:text-xs">{bar.day}</span>
                     </div>
                   ))}
                 </div>
@@ -1010,7 +1081,7 @@ export default function PrivateTimetablePage() {
 
               {/* Time Allocation Segmented Bar */}
               <div className="space-y-2">
-                <div className="flex justify-between text-[10px] font-extrabold text-slate-500">
+                <div className="flex justify-between text-[11px] font-extrabold text-slate-500 sm:text-xs">
                   <span>Semester Allocation</span>
                   <span>21 hrs / wk</span>
                 </div>
@@ -1019,7 +1090,7 @@ export default function PrivateTimetablePage() {
                   <div className="h-full w-[25%] bg-violet-400" title="Labs 25%" />
                   <div className="h-full w-[20%] rounded-r-full bg-[#DFFF61]" title="Study 20%" />
                 </div>
-                <div className="flex justify-between text-[9px] font-bold text-slate-500 pt-0.5">
+                <div className="flex justify-between text-[10px] font-bold text-slate-500 pt-0.5 sm:text-xs">
                   <span className="flex items-center gap-1">
                     <i className="h-2 w-2 rounded-full bg-[#0C60FC]" /> 55% Lectures
                   </span>
