@@ -18,7 +18,6 @@ import { toast } from "sonner";
 interface Resource {
   id: string;
   libraryItemId?: string; // present for real API items
-  type: "quiz" | "cards" | "map" | "notes";
   badge: string;
   badgeBg: string;
   badgeText: string;
@@ -32,7 +31,6 @@ interface Resource {
 const FALLBACK_RESOURCES: Resource[] = [
   {
     id: "1",
-    type: "quiz",
     badge: "OFFICIAL QUIZ",
     badgeBg: "bg-blue-50",
     badgeText: "text-blue-700",
@@ -52,65 +50,57 @@ const FALLBACK_RESOURCES: Resource[] = [
   },
   {
     id: "2",
-    type: "cards",
-    badge: "FLASHCARDS",
+    badge: "PRACTICE QUIZ",
     badgeBg: "bg-violet-50",
     badgeText: "text-violet-700",
-    title: "Constitutional Law: Key Cases",
-    subtitle: "Law · 84 cards · spaced repetition ready",
-    stats: "Saved by 682",
-    ctaText: "Study deck →",
+    title: "Constitutional Law: Key Cases & Precedents",
+    subtitle: "Law · 25 questions · ~20 min",
+    stats: "4.8 ★ · 850 takes",
+    ctaText: "Take quiz →",
     preview: (
-      <div className="rounded-xl bg-[#F5F0FF] p-3 text-center">
-        <p className="text-[10px] font-extrabold uppercase tracking-wider text-violet-500">
-          Card 12 of 84
-        </p>
-        <p className="mt-1.5 text-xs font-bold">Marbury v. Madison</p>
-        <p className="mt-1 text-[10px] text-slate-400">Tap to reveal the ruling</p>
+      <div className="rounded-xl bg-[#F5F0FF] p-3">
+        <p className="text-[11px] font-bold text-slate-900">Which doctrine was established in Marbury v. Madison?</p>
+        <div className="mt-2 grid grid-cols-2 gap-1.5 text-[9px] font-semibold">
+          <span className="rounded-md bg-white p-1.5 ring-1 ring-slate-200">Federalism</span>
+          <span className="rounded-md bg-violet-600 p-1.5 text-white">Judicial Review ✓</span>
+        </div>
       </div>
     ),
   },
   {
     id: "3",
-    type: "map",
-    badge: "MIND MAP",
+    badge: "CORE QUIZ",
     badgeBg: "bg-lime-100",
     badgeText: "text-lime-800",
-    title: "Data Structures at a Glance",
-    subtitle: "Computer Science · 28 nodes",
-    stats: "Updated 2 days ago",
-    ctaText: "View map →",
+    title: "Data Structures & Algorithm Complexity",
+    subtitle: "Computer Science · 30 questions · ~25 min",
+    stats: "4.9 ★ · 2.4k takes",
+    ctaText: "Take quiz →",
     preview: (
-      <div className="relative h-24 overflow-hidden rounded-xl bg-gradient-to-br from-lime-50 to-cyan-50">
-        <svg className="absolute inset-0 h-full w-full" viewBox="0 0 300 96" fill="none" aria-hidden="true">
-          <path d="M150 48 76 20M150 48 66 78M150 48l84-28M150 48l82 30" stroke="#94A3B8" strokeWidth="1.5" strokeDasharray="4 4" />
-        </svg>
-        <span className="absolute left-1/2 top-1/2 flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-xl bg-slate-950 text-center text-[8px] font-extrabold text-white shadow-md">
-          DATA
-        </span>
-        <span className="absolute left-3 top-2 rounded-md bg-white px-2 py-1 text-[8px] font-bold shadow-sm">Arrays</span>
-        <span className="absolute bottom-2 left-2 rounded-md bg-white px-2 py-1 text-[8px] font-bold shadow-sm">Graphs</span>
-        <span className="absolute right-3 top-2 rounded-md bg-white px-2 py-1 text-[8px] font-bold shadow-sm">Stacks</span>
-        <span className="absolute bottom-2 right-2 rounded-md bg-[#DFFF61] px-2 py-1 text-[8px] font-bold shadow-sm">Trees</span>
+      <div className="rounded-xl bg-lime-50/70 p-3">
+        <p className="text-[11px] font-bold text-slate-900">What is the average time complexity of QuickSort?</p>
+        <div className="mt-2 grid grid-cols-2 gap-1.5 text-[9px] font-semibold">
+          <span className="rounded-md bg-white p-1.5 ring-1 ring-slate-200">O(n²)</span>
+          <span className="rounded-md bg-lime-700 p-1.5 text-white">O(n log n) ✓</span>
+        </div>
       </div>
     ),
   },
   {
     id: "4",
-    type: "notes",
-    badge: "LECTURE NOTES",
+    badge: "EXAM PREP",
     badgeBg: "bg-amber-50",
-    badgeText: "text-amber-700",
-    title: "Thermodynamics Full Notes",
-    subtitle: "Engineering · 32 pages · PDF + summary",
-    stats: "4.7 ★ · 940 saves",
-    ctaText: "Open notes →",
+    badgeText: "text-amber-800",
+    title: "Thermodynamics & Heat Transfer Principles",
+    subtitle: "Engineering · 20 questions · ~15 min",
+    stats: "4.7 ★ · 940 takes",
+    ctaText: "Take quiz →",
     preview: (
-      <div className="space-y-1.5 rounded-xl bg-[#FFF8EF] p-3">
-        <div className="h-2 w-full rounded-full bg-amber-200/70" />
-        <div className="h-2 w-10/12 rounded-full bg-amber-200/50" />
-        <div className="rounded-lg bg-white px-2 py-1.5 text-[10px] font-bold shadow-sm">
-          ΔU = Q − W · first law summary
+      <div className="rounded-xl bg-[#FFF8EF] p-3">
+        <p className="text-[11px] font-bold text-slate-900">Which statement defines the 1st Law of Thermodynamics?</p>
+        <div className="mt-2 grid grid-cols-2 gap-1.5 text-[9px] font-semibold">
+          <span className="rounded-md bg-white p-1.5 ring-1 ring-slate-200">Entropy increases</span>
+          <span className="rounded-md bg-amber-600 p-1.5 text-white">Energy is conserved ✓</span>
         </div>
       </div>
     ),
@@ -119,13 +109,10 @@ const FALLBACK_RESOURCES: Resource[] = [
 
 export default function LibraryPage() {
   const { getParam, getNumberParam, setQueryParams } = useQueryParams();
-  const activeTab = getParam("subject", "all");
   const searchQuery = getParam("search", "");
   const page = Math.max(1, getNumberParam("page", 1));
   const [savedIds, setSavedIds] = useState<Record<string, boolean>>({});
 
-  const setActiveTab = (tab: string) =>
-    setQueryParams({ subject: tab === "all" ? null : tab, page: 1 });
   const setSearchQuery = (q: string) =>
     setQueryParams({ search: q || null, page: 1 });
   const setPage = (p: number) =>
@@ -138,7 +125,6 @@ export default function LibraryPage() {
 
   const filters: LibraryFilters = {
     ...(debouncedSearch ? { search: debouncedSearch } : {}),
-    ...(activeTab !== "all" ? { subject: activeTab } : {}),
     page,
     limit: 12,
   };
@@ -254,25 +240,23 @@ export default function LibraryPage() {
         return {
           id: item._id,
           libraryItemId: item._id,
-          type: "notes" as const,
-          badge: info.label,
-          badgeBg: info.bg,
-          badgeText: info.text,
+          badge: info.label === "PDF" || info.label === "DOCX" ? "COMMUNITY QUIZ" : info.label,
+          badgeBg: "bg-blue-50",
+          badgeText: "text-blue-700",
           title: cleanTitle(item.title),
           subtitle: `${course}${subject} · ${uni}${year}`,
-          stats: uses > 0 ? `${uses.toLocaleString()} uses` : "New",
-          ctaText: "Study with Qubi ?",
+          stats: uses > 0 ? `${uses.toLocaleString()} takes` : "New Quiz",
+          ctaText: "Take quiz →",
           preview: buildPreview(item),
         };
       })
     : FALLBACK_RESOURCES.filter((res) => {
-        const matchesTab = activeTab === "all" || res.type === activeTab;
         const q = searchQuery.trim().toLowerCase();
-        const matchesQ =
+        return (
           !q ||
           res.title.toLowerCase().includes(q) ||
-          res.subtitle.toLowerCase().includes(q);
-        return matchesTab && matchesQ;
+          res.subtitle.toLowerCase().includes(q)
+        );
       });
 
   return (
@@ -293,11 +277,11 @@ export default function LibraryPage() {
                   Borrow a head start.
                 </h1>
                 <p className="hand mt-2 text-2xl text-[#0C60FC]">
-                  quizzes, decks &amp; summaries from top students ✦
+                  quizzes from top students ✦
                 </p>
               </div>
               <p className="text-xs font-semibold text-slate-500">
-                {totalCount.toLocaleString()} community study sets · updated live
+                {totalCount.toLocaleString()} community quizzes · updated live
               </p>
             </div>
 
@@ -316,37 +300,10 @@ export default function LibraryPage() {
                     setSearchQuery(e.target.value);
                     setPage(1);
                   }}
-                  placeholder="Search by topic, course or keyword — e.g. Biology, Law, DCIT…"
+                  placeholder="Search by quiz topic, course or keyword — e.g. Biology, Law, DCIT…"
                   className="w-full rounded-2xl border border-slate-200 bg-white py-4 pl-12 pr-4 text-sm font-semibold outline-none shadow-sm transition placeholder:text-slate-400 focus:border-[#0C60FC] focus:ring-4 focus:ring-blue-100"
                 />
               </div>
-            </div>
-
-            {/* Category Filter Chips */}
-            <div className="mt-6 flex flex-wrap gap-2">
-              {[
-                { id: "all", label: "All types" },
-                { id: "quiz", label: "Quizzes" },
-                { id: "cards", label: "Flashcards" },
-                { id: "map", label: "Mind maps" },
-                { id: "notes", label: "Notes" },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => {
-                    setActiveTab(tab.id);
-                    setPage(1);
-                  }}
-                  className={`rounded-full px-4 py-2 text-xs font-bold transition ${
-                    activeTab === tab.id
-                      ? "bg-slate-950 text-white"
-                      : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
             </div>
           </div>
         </section>
