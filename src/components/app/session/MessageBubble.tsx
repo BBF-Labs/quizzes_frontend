@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import type { ZSessionMessage } from "@/types/session";
+import { format } from "date-fns";
 import {
   MessageSquare,
   Copy,
@@ -269,10 +270,7 @@ function ZMessage({
             {label}
           </span>
           <span className="text-[9px] font-mono text-muted-foreground/50">
-            {new Date(message.timestamp).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
+            {format(new Date(message.timestamp), "HH:mm")}
           </span>
           {message.isStreaming && (
             <span className="text-[9px] font-mono uppercase text-primary/60 animate-pulse">
