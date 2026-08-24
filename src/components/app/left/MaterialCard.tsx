@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { File, FileText, FileType2, Loader2, CheckCircle, XCircle, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { IAppMaterial } from "@/types/session";
-import { useAppLayout } from "@/app/(app)/app/[id]/layout";
+import { useAppLayout } from "@/components/app/layout";
 import { useDeleteAppMaterial } from "@/hooks/app/use-app-actions";
 
 // ─── Helper: escape a string for use in a RegExp ─────────────────────────────

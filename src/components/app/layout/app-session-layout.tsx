@@ -9,7 +9,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { use } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import {
@@ -58,7 +57,7 @@ const RIGHT_PANEL_WIDTH = 360;
 
 // ─── Context ──────────────────────────────────────────────────────────────────
 
-interface AppLayoutContextValue {
+export interface AppLayoutContextValue {
   sessionId: string;
   leftOpen: boolean;
   rightOpen: boolean;
@@ -81,21 +80,19 @@ const AppLayoutContext = createContext<AppLayoutContextValue | null>(null);
 export function useAppLayout(): AppLayoutContextValue {
   const ctx = useContext(AppLayoutContext);
   if (!ctx) {
-    throw new Error("useAppLayout must be used inside AppLayout ([id]/layout)");
+    throw new Error("useAppLayout must be used inside AppSessionLayout");
   }
   return ctx;
 }
 
-// ─── Layout ───────────────────────────────────────────────────────────────────
+// ─── Layout Component ─────────────────────────────────────────────────────────
 
-interface AppLayoutProps {
+export interface AppSessionLayoutProps {
   children: ReactNode;
-  params: Promise<{ id: string }>;
+  sessionId: string;
 }
 
-export default function AppLayout({ children, params }: AppLayoutProps) {
-  const { id: sessionId } = use(params);
-
+export function AppSessionLayout({ children, sessionId }: AppSessionLayoutProps) {
   // ── Panel state — collapsed on mobile, expanded on lg ──────────────────────
   const [leftOpen, setLeftOpen] = useState(false);
   const [rightOpen, setRightOpen] = useState(false);
@@ -690,7 +687,7 @@ export default function AppLayout({ children, params }: AppLayoutProps) {
                       <StudioPanel
                         sessionId={sessionId}
                         app={{
-                          ...app,
+                           ...app,
                           notes: studioNotes,
                           sharedNotes: studioSharedNotes,
                           flashcards: studioFlashcards,

@@ -1,7 +1,6 @@
 "use client";
 
 import { createContext, useContext, useState, type ReactNode, useEffect } from "react";
-import { cn } from "@/lib/utils";
 
 interface StudyRoomLayoutContextType {
   isImmersive: boolean;

@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Paperclip, X, Settings2, Plus, ArrowUp } from "lucide-react";
 import { useAppApprove } from "@/hooks";
 import { useRetryMessage, useRateMessage } from "@/hooks/app/use-app-actions";
-import { useAppLayout } from "./layout";
+import { useAppLayout } from "@/components/app/layout";
 import { cn } from "@/lib/utils";
 import { MessageFeed } from "@/components/app/center/MessageFeed";
 

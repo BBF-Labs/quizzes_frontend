@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Save, Copy, Check, Highlighter } from "lucide-react";
-import { useAppLayout } from "@/app/(app)/app/[id]/layout";
+import { useAppLayout } from "@/components/app/layout";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 

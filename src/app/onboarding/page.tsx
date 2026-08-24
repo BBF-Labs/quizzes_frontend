@@ -65,7 +65,7 @@ export default function OnboardingPage() {
   useEffect(() => {
     if (status) {
       if (status.completed) {
-        router.push("/dashboard");
+        router.push("/app");
       } else if (
         !hasSyncedInitialStep.current &&
         status.currentStep !== undefined &&
@@ -102,7 +102,7 @@ export default function OnboardingPage() {
       if (currentStep < steps.length - 1) {
         setCurrentStep((prev) => prev + 1);
       } else {
-        router.push("/dashboard");
+        router.push("/app");
       }
     } catch (err: unknown) {
       const errorMessage =
