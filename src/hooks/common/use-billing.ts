@@ -84,10 +84,39 @@ interface StreakApiResponse {
 }
 
 export interface StudentVerifyStatus {
-  status: "unverified" | "pending" | "verified" | "expired" | "rejected";
+  status: "none" | "pending" | "verified" | "lapsed" | "revoked";
   studentEmail: string | null;
+  verifiedAt: string | null;
   expiresAt: string | null;
+  abuseFlagged: boolean;
 }
+
+// Mirror of `GHANA_UNIVERSITY_DOMAINS` in
+// `quizzes_backend/src/subscriptions/student-verify/services.ts`.
+// Source of truth stays in the backend; this list keeps the quick-pick
+// pills in the Settings → Student Verification tab in sync.
+export const GHANA_UNIVERSITY_DOMAINS: readonly string[] = [
+  "st.ug.edu.gh",
+  "ug.edu.gh",
+  "st.knust.edu.gh",
+  "knust.edu.gh",
+  "ucc.edu.gh",
+  "uhas.edu.gh",
+  "gimpa.edu.gh",
+  "uenr.edu.gh",
+  "uds.edu.gh",
+  "umat.edu.gh",
+  "uew.edu.gh",
+  "gtuc.edu.gh",
+  "pentvars.edu.gh",
+  "gctu.edu.gh",
+  "aucc.edu.gh",
+  "central.edu.gh",
+  "regent.edu.gh",
+  "ashesi.edu.gh",
+  "upsa.edu.gh",
+  "tttu.edu.gh",
+] as const;
 
 export interface InitiatePaymentResult {
   authorizationUrl: string;
@@ -191,7 +220,16 @@ export function useStudentVerifyStatus() {
     queryKey: queryKeys.billing.studentVerify(),
     queryFn: async () => {
       const res = await api.get<{ data: StudentVerifyStatus | null }>("/subscriptions/student-verify/status");
-      return res.data.data ?? { status: "unverified", studentEmail: null, expiresAt: null } as StudentVerifyStatus;
+      return (
+        res.data.data ??
+        ({
+          status: "none",
+          studentEmail: null,
+          verifiedAt: null,
+          expiresAt: null,
+          abuseFlagged: false,
+        } as StudentVerifyStatus)
+      );
     },
     enabled: !!user,
     staleTime: 1000 * 60 * 5,
