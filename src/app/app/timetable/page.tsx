@@ -71,6 +71,24 @@ const INITIAL_TASKS: TaskItem[] = [
     category: "Mathematics",
     done: false,
   },
+  {
+    id: "t6",
+    title: "Linear Algebra Problem Set 4",
+    category: "Mathematics",
+    done: false,
+  },
+  {
+    id: "t7",
+    title: "Linear Algebra Problem Set 4",
+    category: "Mathematics",
+    done: false,
+  },
+  {
+    id: "t8",
+    title: "Linear Algebra Problem Set 4",
+    category: "Mathematics",
+    done: false,
+  },
 ];
 
 const WEEK_DAYS = [
@@ -158,10 +176,26 @@ const EVENT_TONE_CLS: Record<
   WeekEvent["tone"],
   { bg: string; text: string; ring?: string }
 > = {
-  blue: { bg: "bg-blue-50", text: "text-[#0C60FC]", ring: "ring-1 ring-blue-200" },
-  violet: { bg: "bg-violet-50", text: "text-violet-700", ring: "ring-1 ring-violet-200" },
-  amber: { bg: "bg-amber-50", text: "text-amber-800", ring: "ring-1 ring-amber-200" },
-  cyan: { bg: "bg-cyan-50", text: "text-cyan-800", ring: "ring-1 ring-cyan-200" },
+  blue: {
+    bg: "bg-blue-50",
+    text: "text-[#0C60FC]",
+    ring: "ring-1 ring-blue-200",
+  },
+  violet: {
+    bg: "bg-violet-50",
+    text: "text-violet-700",
+    ring: "ring-1 ring-violet-200",
+  },
+  amber: {
+    bg: "bg-amber-50",
+    text: "text-amber-800",
+    ring: "ring-1 ring-amber-200",
+  },
+  cyan: {
+    bg: "bg-cyan-50",
+    text: "text-cyan-800",
+    ring: "ring-1 ring-cyan-200",
+  },
   slate: { bg: "bg-slate-100", text: "text-slate-700" },
   ink: { bg: "bg-slate-950", text: "text-white" },
 };
@@ -319,7 +353,7 @@ export default function PrivateTimetablePage() {
         </section>
 
         {/* Main 2-Column Grid: Timetable Board + Calendar & Tasks Sidebar */}
-        <div className="grid gap-5 xl:grid-cols-[1fr_380px]">
+        <div className="grid gap-5 xl:grid-cols-[1fr_380px] items-stretch">
           {/* LEFT MAIN AREA */}
           <div className="space-y-4">
             {/* Board & Tab Selector Section */}
@@ -438,7 +472,9 @@ export default function PrivateTimetablePage() {
                           <span
                             key={label}
                             className={`rounded-lg py-1.5 text-[10px] ${
-                              isFirst ? "bg-blue-50 text-[#0C60FC]" : "text-slate-500"
+                              isFirst
+                                ? "bg-blue-50 text-[#0C60FC]"
+                                : "text-slate-500"
                             }`}
                           >
                             {label} {WEEK_DAYS[idx]?.date}
@@ -491,7 +527,9 @@ export default function PrivateTimetablePage() {
                           <span
                             key={label}
                             className={`rounded-none py-1 text-[10px] ${
-                              isFirst ? "bg-blue-50 text-[#0C60FC]" : "text-slate-500"
+                              isFirst
+                                ? "bg-blue-50 text-[#0C60FC]"
+                                : "text-slate-500"
                             }`}
                           >
                             {label} {WEEK_DAYS[idx]?.date}
@@ -631,113 +669,205 @@ export default function PrivateTimetablePage() {
                     <div className="grid grid-cols-7 gap-1.5">
                       {/* Out of month days */}
                       <div className="min-h-[84px] rounded-2xl border border-dashed border-slate-200 p-2 opacity-45">
-                        <span className="text-[11px] font-bold text-slate-400">29</span>
+                        <span className="text-[11px] font-bold text-slate-400">
+                          29
+                        </span>
                       </div>
                       <div className="min-h-[84px] rounded-2xl border border-dashed border-slate-200 p-2 opacity-45">
-                        <span className="text-[11px] font-bold text-slate-400">30</span>
+                        <span className="text-[11px] font-bold text-slate-400">
+                          30
+                        </span>
                       </div>
                       <div className="min-h-[84px] rounded-2xl border border-dashed border-slate-200 p-2 opacity-45">
-                        <span className="text-[11px] font-bold text-slate-400">31</span>
+                        <span className="text-[11px] font-bold text-slate-400">
+                          31
+                        </span>
                       </div>
 
                       {/* Days 1 to 31 */}
                       <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-900">1</span>
-                        <p className="mt-2 rounded-md bg-slate-100 px-1.5 py-1 text-[9px] font-bold text-slate-600">Holiday</p>
+                        <span className="text-[11px] font-bold text-slate-900">
+                          1
+                        </span>
+                        <p className="mt-2 rounded-md bg-slate-100 px-1.5 py-1 text-[9px] font-bold text-slate-600">
+                          Holiday
+                        </p>
                       </div>
                       <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-900">2</span>
+                        <span className="text-[11px] font-bold text-slate-900">
+                          2
+                        </span>
                       </div>
                       <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-400">3</span>
+                        <span className="text-[11px] font-bold text-slate-400">
+                          3
+                        </span>
                       </div>
                       <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-400">4</span>
+                        <span className="text-[11px] font-bold text-slate-400">
+                          4
+                        </span>
                       </div>
 
                       <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-900">5</span>
-                        <p className="mt-2 rounded-md bg-blue-50 px-1.5 py-1 text-[9px] font-bold text-[#0C60FC]">3 classes</p>
+                        <span className="text-[11px] font-bold text-slate-900">
+                          5
+                        </span>
+                        <p className="mt-2 rounded-md bg-blue-50 px-1.5 py-1 text-[9px] font-bold text-[#0C60FC]">
+                          3 classes
+                        </p>
                       </div>
                       <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-900">6</span>
-                        <p className="mt-2 rounded-md bg-violet-50 px-1.5 py-1 text-[9px] font-bold text-violet-700">3 classes</p>
+                        <span className="text-[11px] font-bold text-slate-900">
+                          6
+                        </span>
+                        <p className="mt-2 rounded-md bg-violet-50 px-1.5 py-1 text-[9px] font-bold text-violet-700">
+                          3 classes
+                        </p>
                       </div>
                       <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-900">7</span>
-                        <p className="mt-2 rounded-md bg-blue-50 px-1.5 py-1 text-[9px] font-bold text-[#0C60FC]">2 classes</p>
+                        <span className="text-[11px] font-bold text-slate-900">
+                          7
+                        </span>
+                        <p className="mt-2 rounded-md bg-blue-50 px-1.5 py-1 text-[9px] font-bold text-[#0C60FC]">
+                          2 classes
+                        </p>
                       </div>
                       <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-900">8</span>
-                        <p className="mt-2 rounded-md bg-blue-50 px-1.5 py-1 text-[9px] font-bold text-[#0C60FC]">3 classes</p>
+                        <span className="text-[11px] font-bold text-slate-900">
+                          8
+                        </span>
+                        <p className="mt-2 rounded-md bg-blue-50 px-1.5 py-1 text-[9px] font-bold text-[#0C60FC]">
+                          3 classes
+                        </p>
                       </div>
                       <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-900">9</span>
-                        <p className="mt-2 rounded-md bg-lime-100 px-1.5 py-1 text-[9px] font-bold text-lime-900">Review · Qz</p>
+                        <span className="text-[11px] font-bold text-slate-900">
+                          9
+                        </span>
+                        <p className="mt-2 rounded-md bg-lime-100 px-1.5 py-1 text-[9px] font-bold text-lime-900">
+                          Review · Qz
+                        </p>
                       </div>
                       <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-400">10</span>
+                        <span className="text-[11px] font-bold text-slate-400">
+                          10
+                        </span>
                       </div>
                       <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-400">11</span>
+                        <span className="text-[11px] font-bold text-slate-400">
+                          11
+                        </span>
                       </div>
 
                       {/* Today */}
                       <div className="min-h-[84px] rounded-2xl border border-[#0C60FC] bg-blue-50/60 p-2 ring-2 ring-[#0C60FC]">
-                        <span className="text-[11px] font-extrabold text-[#0C60FC]">12 · Today</span>
-                        <p className="mt-2 rounded-md bg-rose-100 px-1.5 py-1 text-[9px] font-bold text-rose-700">EXAM · DCIT 205</p>
-                        <p className="mt-1 rounded-md bg-white px-1.5 py-1 text-[9px] font-bold text-slate-600">+2 classes</p>
+                        <span className="text-[11px] font-extrabold text-[#0C60FC]">
+                          12 · Today
+                        </span>
+                        <p className="mt-2 rounded-md bg-rose-100 px-1.5 py-1 text-[9px] font-bold text-rose-700">
+                          EXAM · DCIT 205
+                        </p>
+                        <p className="mt-1 rounded-md bg-white px-1.5 py-1 text-[9px] font-bold text-slate-600">
+                          +2 classes
+                        </p>
                       </div>
 
                       <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-900">13</span>
-                        <p className="mt-2 rounded-md bg-rose-100 px-1.5 py-1 text-[9px] font-bold text-rose-700">EXAM · UGRC 210</p>
+                        <span className="text-[11px] font-bold text-slate-900">
+                          13
+                        </span>
+                        <p className="mt-2 rounded-md bg-rose-100 px-1.5 py-1 text-[9px] font-bold text-rose-700">
+                          EXAM · UGRC 210
+                        </p>
                       </div>
                       <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-900">14</span>
-                        <p className="mt-2 rounded-md bg-rose-100 px-1.5 py-1 text-[9px] font-bold text-rose-700">EXAM · DCIT 207</p>
-                        <p className="mt-1 rounded-md bg-violet-50 px-1.5 py-1 text-[9px] font-bold text-violet-700">OS practical</p>
+                        <span className="text-[11px] font-bold text-slate-900">
+                          14
+                        </span>
+                        <p className="mt-2 rounded-md bg-rose-100 px-1.5 py-1 text-[9px] font-bold text-rose-700">
+                          EXAM · DCIT 207
+                        </p>
+                        <p className="mt-1 rounded-md bg-violet-50 px-1.5 py-1 text-[9px] font-bold text-violet-700">
+                          OS practical
+                        </p>
                       </div>
                       <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-900">15</span>
-                        <p className="mt-2 rounded-md bg-rose-100 px-1.5 py-1 text-[9px] font-bold text-rose-700">EXAM · MATH 221</p>
+                        <span className="text-[11px] font-bold text-slate-900">
+                          15
+                        </span>
+                        <p className="mt-2 rounded-md bg-rose-100 px-1.5 py-1 text-[9px] font-bold text-rose-700">
+                          EXAM · MATH 221
+                        </p>
                       </div>
                       <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-900">16</span>
-                        <p className="mt-2 rounded-md bg-rose-100 px-1.5 py-1 text-[9px] font-bold text-rose-700">EXAM · BUSA 301</p>
+                        <span className="text-[11px] font-bold text-slate-900">
+                          16
+                        </span>
+                        <p className="mt-2 rounded-md bg-rose-100 px-1.5 py-1 text-[9px] font-bold text-rose-700">
+                          EXAM · BUSA 301
+                        </p>
                       </div>
                       <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-400">17</span>
-                        <p className="mt-2 rounded-md bg-lime-100 px-1.5 py-1 text-[9px] font-bold text-lime-900">Study block</p>
+                        <span className="text-[11px] font-bold text-slate-400">
+                          17
+                        </span>
+                        <p className="mt-2 rounded-md bg-lime-100 px-1.5 py-1 text-[9px] font-bold text-lime-900">
+                          Study block
+                        </p>
                       </div>
                       <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-400">18</span>
+                        <span className="text-[11px] font-bold text-slate-400">
+                          18
+                        </span>
                       </div>
 
                       <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-900">19</span>
-                        <p className="mt-2 rounded-md bg-rose-100 px-1.5 py-1 text-[9px] font-bold text-rose-700">EXAM · DCIT 201</p>
+                        <span className="text-[11px] font-bold text-slate-900">
+                          19
+                        </span>
+                        <p className="mt-2 rounded-md bg-rose-100 px-1.5 py-1 text-[9px] font-bold text-rose-700">
+                          EXAM · DCIT 201
+                        </p>
                       </div>
                       <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-900">20</span>
-                        <p className="mt-2 rounded-md bg-lime-100 px-1.5 py-1 text-[9px] font-bold text-lime-900">Study block</p>
+                        <span className="text-[11px] font-bold text-slate-900">
+                          20
+                        </span>
+                        <p className="mt-2 rounded-md bg-lime-100 px-1.5 py-1 text-[9px] font-bold text-lime-900">
+                          Study block
+                        </p>
                       </div>
                       <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-900">21</span>
-                        <p className="mt-2 rounded-md bg-rose-100 px-1.5 py-1 text-[9px] font-bold text-rose-700">EXAM · DCIT 203</p>
+                        <span className="text-[11px] font-bold text-slate-900">
+                          21
+                        </span>
+                        <p className="mt-2 rounded-md bg-rose-100 px-1.5 py-1 text-[9px] font-bold text-rose-700">
+                          EXAM · DCIT 203
+                        </p>
                       </div>
                       <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-900">22</span>
-                        <p className="mt-2 rounded-md bg-lime-100 px-1.5 py-1 text-[9px] font-bold text-lime-900">Study block</p>
+                        <span className="text-[11px] font-bold text-slate-900">
+                          22
+                        </span>
+                        <p className="mt-2 rounded-md bg-lime-100 px-1.5 py-1 text-[9px] font-bold text-lime-900">
+                          Study block
+                        </p>
                       </div>
                       <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-900">23</span>
+                        <span className="text-[11px] font-bold text-slate-900">
+                          23
+                        </span>
                       </div>
                       <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-400">24</span>
+                        <span className="text-[11px] font-bold text-slate-400">
+                          24
+                        </span>
                       </div>
                       <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-400">25</span>
+                        <span className="text-[11px] font-bold text-slate-400">
+                          25
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -924,56 +1054,59 @@ export default function PrivateTimetablePage() {
           </div>
 
           {/* RIGHT SIDEBAR: Tasks & Goals Widget */}
-          <aside className="space-y-4">
+          <aside className="flex flex-col gap-4 h-full">
             {/* Tasks & Goals Widget Card with Strikethrough Completed Tasks */}
-            <div className="panel p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-extrabold text-slate-950 flex items-center gap-1.5">
-                    <ListTodo className="h-4 w-4 text-[#0C60FC]" /> Study Tasks
-                  </h3>
-                  <p className="hand text-base text-[#0C60FC] leading-none mt-0.5">
-                    cross them off!
-                  </p>
+            <div className="panel p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm flex-1 flex flex-col gap-3 min-h-0">
+              <div className="space-y-3 shrink-0">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-extrabold text-slate-950 flex items-center gap-1.5">
+                      <ListTodo className="h-4 w-4 text-[#0C60FC]" /> Study
+                      Tasks
+                    </h3>
+                    <p className="hand text-base text-[#0C60FC] leading-none mt-0.5">
+                      cross them off!
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-extrabold text-[#0C60FC]">
+                    {completedCount} / {tasks.length} DONE
+                  </span>
                 </div>
-                <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-extrabold text-[#0C60FC]">
-                  {completedCount} / {tasks.length} DONE
-                </span>
+
+                {/* Progress Bar */}
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[10px] font-extrabold text-slate-500">
+                    <span>Progress</span>
+                    <span>{completionPercentage}%</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-[#0C60FC] transition-all duration-300"
+                      style={{ width: `${completionPercentage}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Filter Pills */}
+                <div className="flex gap-1.5 rounded-xl bg-[#F7F9FC] p-1 text-[10px] font-bold text-slate-600">
+                  {(["all", "active", "completed"] as const).map((f) => (
+                    <button
+                      key={f}
+                      onClick={() => setTaskFilter(f)}
+                      className={`flex-1 py-1.5 text-center rounded-lg capitalize transition cursor-pointer ${
+                        taskFilter === f
+                          ? "bg-white text-slate-950 shadow-2xs font-extrabold"
+                          : "hover:text-slate-900"
+                      }`}
+                    >
+                      {f}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              {/* Progress Bar */}
-              <div className="space-y-1">
-                <div className="flex justify-between text-[10px] font-extrabold text-slate-500">
-                  <span>Progress</span>
-                  <span>{completionPercentage}%</span>
-                </div>
-                <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-[#0C60FC] transition-all duration-300"
-                    style={{ width: `${completionPercentage}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Filter Pills */}
-              <div className="flex gap-1.5 rounded-xl bg-[#F7F9FC] p-1 text-[10px] font-bold text-slate-600">
-                {(["all", "active", "completed"] as const).map((f) => (
-                  <button
-                    key={f}
-                    onClick={() => setTaskFilter(f)}
-                    className={`flex-1 py-1.5 text-center rounded-lg capitalize transition ${
-                      taskFilter === f
-                        ? "bg-white text-slate-950 shadow-2xs font-extrabold"
-                        : "hover:text-slate-900"
-                    }`}
-                  >
-                    {f}
-                  </button>
-                ))}
-              </div>
-
-              {/* Tasks Checklist */}
-              <ul className="space-y-2 max-h-[300px] overflow-y-auto no-scrollbar">
+              {/* Tasks Checklist — fixed height and hidden scrollbar */}
+              <ul className="space-y-2 h-[340px] overflow-y-auto no-scrollbar">
                 <AnimatePresence mode="popLayout">
                   {filteredTasks.map((t) => (
                     <motion.li
@@ -1016,7 +1149,7 @@ export default function PrivateTimetablePage() {
               </ul>
 
               {/* Add New Task Form */}
-              <form onSubmit={handleAddTask} className="pt-2">
+              <form onSubmit={handleAddTask} className="pt-1 shrink-0">
                 <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-[#F7F9FC] px-3 py-1.5 focus-within:bg-white focus-within:ring-2 focus-within:ring-[#0C60FC]/20 transition">
                   <input
                     type="text"
@@ -1027,7 +1160,7 @@ export default function PrivateTimetablePage() {
                   />
                   <button
                     type="submit"
-                    className="rounded-xl bg-slate-950 px-2.5 py-1.5 text-[10px] font-extrabold text-white hover:bg-[#0C60FC] transition"
+                    className="rounded-xl bg-slate-950 px-2.5 py-1.5 text-[10px] font-extrabold text-white hover:bg-[#0C60FC] transition cursor-pointer"
                   >
                     + Add
                   </button>
@@ -1036,69 +1169,94 @@ export default function PrivateTimetablePage() {
             </div>
 
             {/* Weekly Study Metrics & Workload Analytics Widget Card */}
-            <div className="panel p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm space-y-4">
+            <div className="panel p-4.5 rounded-[28px] border border-slate-200 bg-white shadow-sm space-y-3 shrink-0">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-extrabold text-slate-950 flex items-center gap-1.5">
-                    <BarChart3 className="h-4 w-4 text-[#0C60FC]" /> Workload & Metrics
+                  <h3 className="text-xs font-extrabold text-slate-950 flex items-center gap-1.5">
+                    <BarChart3 className="h-3.5 w-3.5 text-[#0C60FC]" />{" "}
+                    Workload & Metrics
                   </h3>
-                  <p className="hand text-base text-[#0C60FC] leading-none mt-0.5">
+                  <p className="hand text-sm text-[#0C60FC] leading-none mt-0.5">
                     weekly breakdown
                   </p>
                 </div>
-                <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-extrabold text-emerald-600">
-                  <Flame className="h-3 w-3" strokeWidth={2.25} />
-                  8 Day Streak
+                <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-extrabold text-emerald-600">
+                  <Flame className="h-2.5 w-2.5" strokeWidth={2.25} />
+                  8d Streak
                 </span>
               </div>
 
               {/* Weekly Workload Visual Bar Chart */}
-              <div className="space-y-2 pt-1">
-                <p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 sm:text-xs">
+              <div className="space-y-1.5 pt-0.5">
+                <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
                   Daily Study Hours
                 </p>
-                <div className="grid grid-cols-5 gap-2 items-end h-28 pt-4 pb-1 border-b border-slate-100">
+                <div className="grid grid-cols-5 gap-1.5 items-end pt-1 pb-2.5 border-b border-slate-100">
                   {[
                     { day: "Mon", hrs: 4.5, pct: "75%", color: "bg-[#0C60FC]" },
-                    { day: "Tue", hrs: 6.0, pct: "100%", color: "bg-[#0C60FC]" },
+                    {
+                      day: "Tue",
+                      hrs: 6.0,
+                      pct: "100%",
+                      color: "bg-[#0C60FC]",
+                    },
                     { day: "Wed", hrs: 4.0, pct: "65%", color: "bg-blue-400" },
                     { day: "Thu", hrs: 3.5, pct: "55%", color: "bg-blue-400" },
                     { day: "Fri", hrs: 2.5, pct: "40%", color: "bg-blue-300" },
                   ].map((bar) => (
-                    <div key={bar.day} className="flex flex-col items-center gap-1.5 h-full justify-end">
-                      <span className="text-[10px] font-extrabold text-slate-500 sm:text-xs">{bar.hrs}h</span>
-                      <div className="w-full bg-slate-100 rounded-t-lg h-20 flex items-end overflow-hidden">
+                    <div
+                      key={bar.day}
+                      className="flex flex-col items-center gap-1 justify-end"
+                    >
+                      <span className="text-[9px] font-extrabold text-slate-600">
+                        {bar.hrs}h
+                      </span>
+                      <div className="w-full bg-slate-100 rounded-t-lg h-14 flex items-end overflow-hidden">
                         <div
                           className={`w-full rounded-t-lg transition-all duration-500 ${bar.color}`}
                           style={{ height: bar.pct }}
                         />
                       </div>
-                      <span className="text-[10px] font-bold uppercase text-slate-400 sm:text-xs">{bar.day}</span>
+                      <span className="text-[9px] font-extrabold uppercase text-slate-400">
+                        {bar.day}
+                      </span>
                     </div>
                   ))}
                 </div>
               </div>
 
               {/* Time Allocation Segmented Bar */}
-              <div className="space-y-2">
-                <div className="flex justify-between text-[11px] font-extrabold text-slate-500 sm:text-xs">
+              <div className="space-y-1.5 pt-0.5">
+                <div className="flex justify-between text-[10px] font-extrabold text-slate-700">
                   <span>Semester Allocation</span>
-                  <span>21 hrs / wk</span>
+                  <span className="text-slate-500">21 hrs / wk</span>
                 </div>
-                <div className="h-2.5 rounded-full bg-slate-100 flex overflow-hidden p-0.5">
-                  <div className="h-full w-[55%] rounded-l-full bg-[#0C60FC]" title="Lectures 55%" />
-                  <div className="h-full w-[25%] bg-violet-400" title="Labs 25%" />
-                  <div className="h-full w-[20%] rounded-r-full bg-[#DFFF61]" title="Study 20%" />
+                <div className="h-2 rounded-full bg-slate-100 flex overflow-hidden p-0.5">
+                  <div
+                    className="h-full w-[55%] rounded-l-full bg-[#0C60FC]"
+                    title="Lectures 55%"
+                  />
+                  <div
+                    className="h-full w-[25%] bg-violet-400"
+                    title="Labs 25%"
+                  />
+                  <div
+                    className="h-full w-[20%] rounded-r-full bg-[#DFFF61]"
+                    title="Study 20%"
+                  />
                 </div>
-                <div className="flex justify-between text-[10px] font-bold text-slate-500 pt-0.5 sm:text-xs">
+                <div className="flex flex-wrap items-center justify-between gap-y-0.5 text-[9px] font-bold text-slate-500 pt-0.5">
                   <span className="flex items-center gap-1">
-                    <i className="h-2 w-2 rounded-full bg-[#0C60FC]" /> 55% Lectures
+                    <i className="h-1.5 w-1.5 rounded-full bg-[#0C60FC]" /> 55%
+                    Lectures
                   </span>
                   <span className="flex items-center gap-1">
-                    <i className="h-2 w-2 rounded-full bg-violet-400" /> 25% Labs
+                    <i className="h-1.5 w-1.5 rounded-full bg-violet-400" /> 25%
+                    Labs
                   </span>
                   <span className="flex items-center gap-1">
-                    <i className="h-2 w-2 rounded-full bg-[#DFFF61]" /> 20% Self Study
+                    <i className="h-1.5 w-1.5 rounded-full bg-[#DFFF61]" /> 20%
+                    Study
                   </span>
                 </div>
               </div>
