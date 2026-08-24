@@ -1,11 +1,6 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
-import {
-  useParams,
-  useRouter,
-  usePathname,
-  useSearchParams,
-} from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
@@ -33,6 +28,7 @@ import {
   useApproveCampaign,
   useSendCampaignPreview,
   useCloneCampaign,
+  useQueryParams,
   ILinkContext,
   INewsletterImage,
   IAudienceFilter,
@@ -103,10 +99,9 @@ function getErrorMessage(error: unknown, fallback: string): string {
 }
 
 export default function CampaignDetailPage() {
-  const params = useParams<{ id: string }>();
   const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const params = useParams<{ id: string }>();
+  const { getParam, setQueryParam } = useQueryParams();
   const id = params.id as string;
 
   const { data: campaign, isLoading, refetch } = useCampaign(id);
@@ -133,9 +128,15 @@ export default function CampaignDetailPage() {
   const [metaDirty, setMetaDirty] = useState(false);
   const [targetDirty, setTargetDirty] = useState(false);
   const [activeTab, setActiveTab] = useState<CampaignTab>(() => {
-    const initialTab = searchParams.get("tab");
+    const initialTab = getParam("tab");
     return isCampaignTab(initialTab) ? initialTab : "configure";
   });
+
+  const handleTabChange = (val: string) => {
+    const tab = val as CampaignTab;
+    setActiveTab(tab);
+    setQueryParam("tab", tab === "configure" ? null : tab);
+  };
   const { theme } = useTheme();
   const isMobile = useIsMobile();
   const { socket } = useSocket();
@@ -410,22 +411,6 @@ export default function CampaignDetailPage() {
         ),
       );
     }
-  };
-
-  const handleTabChange = (value: string) => {
-    const nextTab: CampaignTab = isCampaignTab(value) ? value : "configure";
-    setActiveTab(nextTab);
-
-    const nextParams = new URLSearchParams(searchParams.toString());
-    if (nextTab === "configure") {
-      nextParams.delete("tab");
-    } else {
-      nextParams.set("tab", nextTab);
-    }
-
-    const query = nextParams.toString();
-    const nextUrl = query ? `${pathname}?${query}` : pathname;
-    window.history.replaceState(null, "", nextUrl);
   };
 
   const handleGenerate = async () => {
