@@ -7,6 +7,7 @@ import { Search, Plus, Loader2 } from "lucide-react";
 import { QUBI_WAVE_SRC } from "@/lib/constants";
 import { usePublicTimetables } from "@/hooks/use-public-exams";
 import { useQueryParams } from "@/hooks";
+import { format } from "date-fns";
 
 interface ExamPaper {
   id: string;
@@ -167,10 +168,10 @@ export default function TimetablePage() {
   const formattedPapers: ExamPaper[] = entriesFromApi.length > 0
     ? entriesFromApi.map((entry, idx) => {
         const d = entry.scheduledAt ? new Date(entry.scheduledAt) : new Date();
-        const monthStr = d.toLocaleString("default", { month: "short" });
+        const monthStr = format(d, "MMM");
         const dayStr = String(d.getDate());
-        const dayOfWeekStr = d.toLocaleString("default", { weekday: "short" }).toUpperCase();
-        const timeStr = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        const dayOfWeekStr = format(d, "EEE").toUpperCase();
+        const timeStr = format(d, "HH:mm");
 
         const colors = [
           { colorClass: "border-blue-200 bg-blue-50/40", dateBadgeBg: "bg-[#0C60FC]", dateBadgeText: "text-white" },

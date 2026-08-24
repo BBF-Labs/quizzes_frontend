@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { format } from "date-fns";
 import {
   BookOpen,
   Clock3,
@@ -296,11 +297,7 @@ export default function AllSessionsPage() {
                         {session.startedAt && (
                           <span className="inline-flex items-center gap-1">
                             <Clock3 className="h-3.5 w-3.5 text-slate-400" />
-                            {new Date(session.startedAt).toLocaleDateString(undefined, {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })}
+                            {format(new Date(session.startedAt), "MMM d, yyyy")}
                           </span>
                         )}
                         {session.courseId && (

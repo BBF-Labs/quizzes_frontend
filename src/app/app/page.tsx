@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { format } from "date-fns";
 import {
   BookOpen,
   CalendarDays,
@@ -46,11 +47,7 @@ function getGreeting(name: string): string {
 
 function getFormattedDate(): string {
   const now = new Date();
-  return now.toLocaleDateString("en-GB", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
+  return format(now, "EEEE, d MMMM");
 }
 
 export default function AppHomePage() {

@@ -7,6 +7,7 @@ import { Search, ArrowRight, Loader2, ChevronDown, X } from "lucide-react";
 import { useSystemQuizzes } from "@/hooks/app/use-quizzes";
 import { useDebounce } from "@/hooks/common/use-debounce";
 import { useQueryParams } from "@/hooks";
+import { format } from "date-fns";
 
 interface QuizDisplayItem {
   id: string;
@@ -147,13 +148,7 @@ function formatDate(dateStr?: string): string {
   try {
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return "JUL 2026";
-    return d
-      .toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })
-      .toUpperCase();
+    return format(d, "MMM d, yyyy").toUpperCase();
   } catch {
     return "JUL 2026";
   }

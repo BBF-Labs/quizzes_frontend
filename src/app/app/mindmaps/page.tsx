@@ -20,15 +20,12 @@ import {
 } from "@/hooks/app/use-app-library";
 import { GenerationDialog } from "@/components/app/library/generation-dialog";
 import { useQueryParams } from "@/hooks";
+import { format } from "date-fns";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  return format(new Date(iso), "MMM d, yyyy");
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────

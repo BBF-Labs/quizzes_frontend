@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { format } from "date-fns";
 import {
   Plus,
   Trash2,
@@ -816,10 +817,7 @@ export default function LibraryPage() {
                         {[
                           material.courseCode,
                           formatBytes(material.size),
-                          new Date(material.createdAt).toLocaleDateString(
-                            undefined,
-                            { month: "short", day: "numeric" },
-                          ),
+                          format(new Date(material.createdAt), "MMM d"),
                         ]
                           .filter(Boolean)
                           .join(" · ")}

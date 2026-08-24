@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { format } from "date-fns";
 import {
   MessageSquare,
   BookOpen,
@@ -558,9 +559,10 @@ export default function UsagePage() {
                       {billing.subscriptionEndsAt && (
                         <span className="block text-muted-foreground/50">
                           Until{" "}
-                          {new Date(
-                            billing.subscriptionEndsAt,
-                          ).toLocaleDateString()}
+                          {format(
+                            new Date(billing.subscriptionEndsAt),
+                            "MMM d, yyyy",
+                          )}
                         </span>
                       )}
                     </p>
