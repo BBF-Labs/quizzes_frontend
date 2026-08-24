@@ -630,6 +630,9 @@ export interface MindMapDetail {
   id: string;
   title: string;
   sessionId?: string;
+  sessionName?: string;
+  courseTitle?: string;
+  courseCode?: string;
   mindMap: StudioMindMap;
   createdAt: string;
   updatedAt?: string;

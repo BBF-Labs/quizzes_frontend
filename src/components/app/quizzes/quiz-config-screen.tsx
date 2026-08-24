@@ -11,6 +11,7 @@ import {
   BookOpen,
   Sparkles,
   Check,
+  Minus,
   HelpCircle,
   Play,
   RotateCcw,
@@ -62,7 +63,7 @@ export function QuizConfigScreen({
     initialConfig?.selectedKeys || allTopicKeys(quiz),
   );
   const [feedbackMode, setFeedbackMode] = useState<"immediate" | "deferred">(
-    initialConfig?.feedbackMode || "immediate",
+    initialConfig?.feedbackMode || "deferred",
   );
   const [timerMode, setTimerMode] = useState<"none" | "per_question" | "total">(
     initialConfig?.timerMode || "none",
@@ -124,6 +125,28 @@ export function QuizConfigScreen({
 
   const selectAllTopics = () => {
     setSelectedKeys(allTopicKeys(quiz));
+  };
+
+  const deselectAllTopics = () => {
+    setSelectedKeys([]);
+  };
+
+  const toggleLectureSelection = (lectureIndex: number, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const lecture = quiz.lectures[lectureIndex];
+    if (!lecture) return;
+    const lectureTopicKeys = lecture.topics.map((_, ti) => `${lectureIndex}:${ti}`);
+    const allSelected =
+      lectureTopicKeys.length > 0 &&
+      lectureTopicKeys.every((k) => selectedKeys.includes(k));
+
+    if (allSelected) {
+      // Deselect all topics in this lecture
+      setSelectedKeys((prev) => prev.filter((k) => !lectureTopicKeys.includes(k)));
+    } else {
+      // Select all topics in this lecture
+      setSelectedKeys((prev) => Array.from(new Set([...prev, ...lectureTopicKeys])));
+    }
   };
 
   const toggleLecture = (lectureIndex: number) => {
@@ -218,7 +241,7 @@ export function QuizConfigScreen({
             className="space-y-6"
           >
             <div className="rounded-[28px] border border-slate-200/90 bg-white p-6 sm:p-8 shadow-sm space-y-5">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
                 <div>
                   <p className="text-[10px] font-extrabold uppercase tracking-[.18em] text-[#0C60FC]">
                     01 · Content
@@ -226,18 +249,52 @@ export function QuizConfigScreen({
                   <h2 className="text-xl font-bold text-slate-950 mt-0.5">
                     Choose what to cover
                   </h2>
+                  <p className="text-xs font-semibold text-slate-500 mt-1">
+                    Select entire lectures or expand to pick specific topics.
+                  </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={selectAllTopics}
-                  className="text-xs font-extrabold text-[#0C60FC] hover:underline"
-                >
-                  Select all
-                </button>
+
+                <div className="flex items-center gap-3 self-start sm:self-auto">
+                  <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-extrabold text-slate-600">
+                    {selectedKeys.length} / {allTopicKeys(quiz).length} topics · {totalSelected}Q
+                  </span>
+                  <button
+                    type="button"
+                    onClick={selectAllTopics}
+                    className="text-xs font-extrabold text-[#0C60FC] hover:underline cursor-pointer"
+                  >
+                    Select all
+                  </button>
+                  {selectedKeys.length > 0 && (
+                    <>
+                      <span className="text-slate-300">·</span>
+                      <button
+                        type="button"
+                        onClick={deselectAllTopics}
+                        className="text-xs font-extrabold text-slate-500 hover:text-rose-600 transition cursor-pointer"
+                      >
+                        Clear
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-3">
                 {quiz.lectures.map((lecture, lectureIndex) => {
+                  const lectureTopicKeys = lecture.topics.map(
+                    (_, ti) => `${lectureIndex}:${ti}`,
+                  );
+                  const selectedInLecture = lectureTopicKeys.filter((k) =>
+                    selectedKeys.includes(k),
+                  );
+                  const isAllLectureSelected =
+                    lectureTopicKeys.length > 0 &&
+                    selectedInLecture.length === lectureTopicKeys.length;
+                  const isSomeLectureSelected =
+                    selectedInLecture.length > 0 && !isAllLectureSelected;
+                  const isNoneLectureSelected = selectedInLecture.length === 0;
+
                   const lectureQuestionCount = lecture.topics.reduce(
                     (count, topic) => count + getTopicQuestionCount(topic),
                     0,
@@ -247,38 +304,83 @@ export function QuizConfigScreen({
                   return (
                     <div
                       key={`${lecture.lectureTitle}-${lectureIndex}`}
-                      className="rounded-[24px] border border-slate-200/90 bg-white shadow-xs overflow-hidden"
+                      className={`rounded-[24px] border transition shadow-xs overflow-hidden ${
+                        isAllLectureSelected
+                          ? "border-blue-200 bg-blue-50/20"
+                          : isSomeLectureSelected
+                            ? "border-blue-200/60 bg-white"
+                            : "border-slate-200/90 bg-white"
+                      }`}
                     >
-                      <button
-                        type="button"
-                        onClick={() => toggleLecture(lectureIndex)}
-                        className="w-full flex items-center justify-between p-5 text-left hover:bg-slate-50/60 transition"
+                      {/* Lecture Header Bar */}
+                      <div
+                        onClick={() => toggleLectureSelection(lectureIndex)}
+                        className={`w-full flex items-center justify-between p-4 sm:p-5 gap-3 text-left transition cursor-pointer select-none ${
+                          isAllLectureSelected
+                            ? "hover:bg-blue-50/40"
+                            : "hover:bg-slate-50/70"
+                        }`}
                       >
-                        <div className="flex items-center gap-3">
-                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-[10px] font-extrabold text-[#0C60FC]">
+                        {/* Lecture Number Badge + Lecture Title */}
+                        <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                          {/* Number Badge — blue with white text when selected, light blue with blue text when unselected */}
+                          <div
+                            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl text-xs font-extrabold transition-all select-none ${
+                              isAllLectureSelected
+                                ? "bg-[#0C60FC] text-white shadow-sm ring-2 ring-[#0C60FC]/25"
+                                : isSomeLectureSelected
+                                  ? "bg-blue-100 text-[#0C60FC] border border-[#0C60FC]/40"
+                                  : "bg-blue-50 text-[#0C60FC] border border-blue-100"
+                            }`}
+                          >
                             {String(lectureIndex + 1).padStart(2, "0")}
-                          </span>
-                          <div>
-                            <p className="text-sm font-bold text-slate-950 leading-snug">
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <p
+                              className={`text-sm font-bold leading-snug truncate transition ${
+                                isAllLectureSelected
+                                  ? "text-[#0C60FC]"
+                                  : "text-slate-950"
+                              }`}
+                            >
                               {lecture.lectureTitle}
                             </p>
                             <p className="text-[10px] font-semibold text-slate-400 mt-0.5">
-                              {lecture.topics.length} topics ·{" "}
-                              {lectureQuestionCount} questions
+                              {isAllLectureSelected
+                                ? `All ${lecture.topics.length} topics selected · ${lectureQuestionCount} questions`
+                                : isSomeLectureSelected
+                                  ? `${selectedInLecture.length} of ${lecture.topics.length} topics selected · ${lectureQuestionCount} questions`
+                                  : `0 of ${lecture.topics.length} topics selected (${lectureQuestionCount} questions)`}
                             </p>
                           </div>
                         </div>
-                        <span
-                          className={`text-slate-400 transition-transform ${
-                            isOpen ? "rotate-180" : ""
-                          }`}
-                        >
-                          <ChevronRight className="h-4 w-4" />
-                        </span>
-                      </button>
 
+                        {/* Right: Dropdown Expander for Picky Topic Selection */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleLecture(lectureIndex);
+                          }}
+                          className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-xl text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition cursor-pointer"
+                          title={isOpen ? "Collapse topics" : "Expand to pick topics"}
+                          aria-label={isOpen ? "Collapse topics" : "Expand to pick topics"}
+                        >
+                          <span className="text-[11px] font-bold hidden sm:inline text-slate-500">
+                            {isOpen ? "Hide topics" : "Pick topics"}
+                          </span>
+                          <ChevronRight
+                            className={`h-4 w-4 transition-transform duration-200 ${
+                              isOpen ? "rotate-90 text-[#0C60FC]" : ""
+                            }`}
+                          />
+                        </button>
+                      </div>
+
+                      {/* Expanded Topics List */}
                       {isOpen && (
-                        <div className="border-t border-slate-100 divide-y divide-slate-100">
+                        <div className="border-t border-slate-100 divide-y divide-slate-100 bg-slate-50/40">
                           {lecture.topics.map((topic, topicIndex) => {
                             const key = `${lectureIndex}:${topicIndex}`;
                             const isSelected = selectedKeys.includes(key);
@@ -289,27 +391,23 @@ export function QuizConfigScreen({
                                 key={key}
                                 type="button"
                                 onClick={() => toggleTopic(key)}
-                                className={`w-full flex items-center justify-between gap-4 px-5 py-4 text-left transition ${
+                                className={`w-full flex items-center justify-between gap-4 px-5 py-3.5 text-left transition cursor-pointer ${
                                   isSelected
-                                    ? "bg-blue-50/40"
-                                    : "bg-white hover:bg-slate-50/70"
+                                    ? "bg-blue-50/60"
+                                    : "bg-white hover:bg-slate-50/80"
                                 }`}
                               >
                                 <div className="flex items-center gap-3 min-w-0">
                                   <span
-                                    className={`flex size-5 shrink-0 items-center justify-center rounded-full border transition ${
+                                    className={`flex size-4.5 shrink-0 items-center justify-center rounded-md border transition ${
                                       isSelected
-                                        ? "border-[#0C60FC] bg-[#0C60FC]"
+                                        ? "border-[#0C60FC] bg-[#0C60FC] text-white"
                                         : "border-slate-300 bg-white"
                                     }`}
                                   >
-                                    <span
-                                      className={`size-2 rounded-full transition ${
-                                        isSelected
-                                          ? "bg-white"
-                                          : "bg-transparent"
-                                      }`}
-                                    />
+                                    {isSelected && (
+                                      <Check className="size-3 stroke-[3]" />
+                                    )}
                                   </span>
                                   <div className="min-w-0">
                                     <p className="text-xs font-bold text-slate-900 truncate">
@@ -343,7 +441,8 @@ export function QuizConfigScreen({
               <button
                 type="button"
                 onClick={handleNextStep}
-                className="rounded-2xl bg-slate-950 px-7 py-3.5 text-xs font-extrabold text-white hover:bg-[#0C60FC] transition shadow-md"
+                disabled={selectedKeys.length === 0}
+                className="rounded-2xl bg-slate-950 px-7 py-3.5 text-xs font-extrabold text-white hover:bg-[#0C60FC] disabled:opacity-30 disabled:cursor-not-allowed transition shadow-md cursor-pointer"
               >
                 Continue →
               </button>
@@ -571,6 +670,26 @@ export function QuizConfigScreen({
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
+                {/* Immediate Feedback Switch */}
+                <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-[#F7F9FC] p-4">
+                  <div>
+                    <p className="text-xs font-bold text-slate-950">
+                      Immediate feedback
+                    </p>
+                    <p className="text-[10px] font-semibold text-slate-500 mt-0.5">
+                      {feedbackMode === "immediate"
+                        ? "Know immediately if your answer is correct or not"
+                        : "Feedback shown after completing the quiz"}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={feedbackMode === "immediate"}
+                    onCheckedChange={(checked) =>
+                      setFeedbackMode(checked ? "immediate" : "deferred")
+                    }
+                  />
+                </div>
+
                 <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-[#F7F9FC] p-4">
                   <div>
                     <p className="text-xs font-bold text-slate-950">
@@ -747,9 +866,9 @@ export function QuizConfigScreen({
                       </b>
                     </div>
                     <div className="flex justify-between pt-2.5">
-                      <span>Mode</span>
-                      <b className="text-slate-950 font-bold capitalize">
-                        {feedbackMode}
+                      <span>Feedback</span>
+                      <b className="text-slate-950 font-bold">
+                        {feedbackMode === "immediate" ? "Immediate" : "After quiz"}
                       </b>
                     </div>
                     {showZGrading && (
