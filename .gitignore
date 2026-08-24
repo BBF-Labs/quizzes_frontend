@@ -47,3 +47,6 @@ yarn.lock
 *.log
 *.txt
 *.tmp
+
+# package lockk
+package-lock.json
