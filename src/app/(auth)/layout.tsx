@@ -1,5 +1,6 @@
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
+import { AuthGuard } from "@/components/common";
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
-  return <>{children}</>;
+  return <AuthGuard unauthenticatedOnly>{children}</AuthGuard>;
 }
