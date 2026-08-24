@@ -31,6 +31,7 @@ import {
   useStudentVerifyStatus,
   useInitiateStudentVerify,
   useConfirmStudentVerify,
+  GHANA_UNIVERSITY_DOMAINS,
   type IUpload,
 } from "@/hooks";
 import { toast } from "sonner";
@@ -360,19 +361,19 @@ export default function SettingsPage() {
       bg: "bg-amber-50 border-amber-200",
       text: "text-amber-700",
     },
-    expired: {
+    lapsed: {
       icon: XCircle,
-      label: "Verification Expired",
+      label: "Verification Lapsed",
       bg: "bg-rose-50 border-rose-200",
       text: "text-rose-700",
     },
-    rejected: {
+    revoked: {
       icon: XCircle,
-      label: "Rejected",
+      label: "Verification Revoked",
       bg: "bg-rose-50 border-rose-200",
       text: "text-rose-700",
     },
-    unverified: {
+    none: {
       icon: GraduationCap,
       label: "Not Verified",
       bg: "bg-slate-100 border-slate-200",
@@ -381,9 +382,14 @@ export default function SettingsPage() {
   };
 
   const verifyCfg =
-    STATUS_CONFIG[verifyStatus?.status ?? "unverified"] ??
-    STATUS_CONFIG.unverified;
+    STATUS_CONFIG[verifyStatus?.status ?? "none"] ??
+    STATUS_CONFIG.none;
   const VerifyIcon = verifyCfg.icon;
+
+  const POPULAR_DOMAINS = ["st.ug.edu.gh", "ug.edu.gh", "st.knust.edu.gh", "knust.edu.gh", "ashesi.edu.gh", "ucc.edu.gh"];
+  const OTHER_DOMAINS = GHANA_UNIVERSITY_DOMAINS.filter(
+    (d) => !POPULAR_DOMAINS.includes(d),
+  );
 
   const tabs: { key: TabKey; label: string; icon: React.ElementType }[] = [
     { key: "profile", label: "Profile", icon: User },
@@ -729,15 +735,88 @@ export default function SettingsPage() {
                       <BadgeCheck className="size-4 text-emerald-600" />
                       <span>Verified as: {verifyStatus.studentEmail}</span>
                     </div>
-                    {verifyStatus.expiresAt && (
+                    {(verifyStatus.verifiedAt || verifyStatus.expiresAt) && (
                       <p className="text-[11px] font-semibold text-emerald-700">
-                        Student discount valid until {new Date(verifyStatus.expiresAt).toLocaleDateString(undefined, {
-                          month: "long",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
+                        {verifyStatus.verifiedAt && (
+                          <>
+                            Verified since{" "}
+                            {new Date(verifyStatus.verifiedAt).toLocaleDateString(undefined, {
+                              month: "long",
+                              day: "numeric",
+                              year: "numeric",
+                            })}
+                          </>
+                        )}
+                        {verifyStatus.verifiedAt && verifyStatus.expiresAt && " · "}
+                        {verifyStatus.expiresAt && (
+                          <>
+                            Student discount valid until{" "}
+                            {new Date(verifyStatus.expiresAt).toLocaleDateString(undefined, {
+                              month: "long",
+                              day: "numeric",
+                              year: "numeric",
+                            })}
+                          </>
+                        )}
                       </p>
                     )}
+                  </div>
+                )}
+
+                {/* Verification lapsed — re-verify CTA */}
+                {verifyStatus?.status === "lapsed" && (
+                  <div className="rounded-2xl border border-rose-200 bg-rose-50/60 p-5 space-y-3">
+                    <div className="flex items-center gap-2 text-xs font-extrabold text-rose-900">
+                      <XCircle className="size-4 text-rose-600" />
+                      <span>Verification Lapsed</span>
+                    </div>
+                    <p className="text-xs font-semibold text-rose-800">
+                      Your student discount paused because the semester ended. Re-verify to reactivate it.
+                    </p>
+                    {verifyStatus.studentEmail && (
+                      <div className="flex flex-wrap items-center gap-3 pt-2">
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const email = verifyStatus.studentEmail || "";
+                            setStudentEmailInput(email);
+                            try {
+                              await initiateVerify.mutateAsync(email);
+                              toast.success("Verification link sent! Check your university inbox.");
+                            } catch (err: unknown) {
+                              const msg =
+                                err && typeof err === "object" && "response" in err
+                                  ? (err as { response?: { data?: { message?: string } } }).response
+                                      ?.data?.message
+                                  : undefined;
+                              toast.error(msg ?? "Failed to send verification email.");
+                            }
+                          }}
+                          disabled={initiateVerify.isPending}
+                          className="inline-flex items-center gap-1.5 rounded-xl bg-rose-100 px-3.5 py-1.5 text-xs font-bold text-rose-900 hover:bg-rose-200 transition cursor-pointer"
+                        >
+                          {initiateVerify.isPending ? (
+                            <Loader2 className="size-3.5 animate-spin" />
+                          ) : (
+                            <RotateCcw className="size-3.5" />
+                          )}
+                          <span>Re-verify now</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Verification revoked — admin-only, no re-verify CTA */}
+                {verifyStatus?.status === "revoked" && (
+                  <div className="rounded-2xl border border-rose-200 bg-rose-50/60 p-5 space-y-2">
+                    <div className="flex items-center gap-2 text-xs font-extrabold text-rose-900">
+                      <XCircle className="size-4 text-rose-600" />
+                      <span>Verification Revoked</span>
+                    </div>
+                    <p className="text-xs font-semibold text-rose-800">
+                      Student verification was revoked on this account.
+                    </p>
                   </div>
                 )}
 
@@ -780,9 +859,9 @@ export default function SettingsPage() {
                   </div>
                 )}
 
-                {/* Unverified / Expired Verification Form */}
-                {(verifyStatus?.status === "unverified" ||
-                  verifyStatus?.status === "expired" ||
+                {/* Unverified / Lapsed (no prior email) Verification Form */}
+                {(verifyStatus?.status === "none" ||
+                  (verifyStatus?.status === "lapsed" && !verifyStatus.studentEmail) ||
                   !verifyStatus) && (
                   <form onSubmit={handleStudentVerifySubmit} className="space-y-4">
                     <div className="space-y-2">
@@ -815,31 +894,44 @@ export default function SettingsPage() {
                         </button>
                       </div>
 
-                      {/* Quick Domain Selector Pills for Easy Testing */}
-                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                        <span className="text-[10px] font-bold text-slate-400">
-                          Supported domains:
-                        </span>
-                        {[
-                          "st.ug.edu.gh",
-                          "st.knust.edu.gh",
-                          "ashesi.edu.gh",
-                          "ucc.edu.gh",
-                          "upsa.edu.gh",
-                          "gimpa.edu.gh",
-                        ].map((domain) => (
-                          <button
-                            key={domain}
-                            type="button"
-                            onClick={() => {
-                              const usernamePart = studentEmailInput.split("@")[0] || "student";
-                              setStudentEmailInput(`${usernamePart}@${domain}`);
-                            }}
-                            className="rounded-lg bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 hover:bg-blue-50 hover:text-[#0C60FC] transition cursor-pointer"
-                          >
-                            @{domain}
-                          </button>
-                        ))}
+                      {/* Quick Domain Selector Pills — full GH allowlist */}
+                      <div className="space-y-2 pt-1">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="text-[10px] font-bold text-slate-400">
+                            Popular:
+                          </span>
+                          {POPULAR_DOMAINS.map((domain) => (
+                            <button
+                              key={domain}
+                              type="button"
+                              onClick={() => {
+                                const usernamePart = studentEmailInput.split("@")[0] || "student";
+                                setStudentEmailInput(`${usernamePart}@${domain}`);
+                              }}
+                              className="rounded-lg bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 hover:bg-blue-50 hover:text-[#0C60FC] transition cursor-pointer"
+                            >
+                              @{domain}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="text-[10px] font-bold text-slate-400">
+                            All Ghanaian universities:
+                          </span>
+                          {OTHER_DOMAINS.map((domain) => (
+                            <button
+                              key={domain}
+                              type="button"
+                              onClick={() => {
+                                const usernamePart = studentEmailInput.split("@")[0] || "student";
+                                setStudentEmailInput(`${usernamePart}@${domain}`);
+                              }}
+                              className="rounded-lg bg-slate-50 px-2 py-0.5 text-[10px] font-bold text-slate-500 hover:bg-blue-50 hover:text-[#0C60FC] transition cursor-pointer"
+                            >
+                              @{domain}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </form>
