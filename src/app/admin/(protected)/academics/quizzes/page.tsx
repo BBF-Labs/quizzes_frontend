@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import {
@@ -42,6 +42,7 @@ import {
   useAdminCourses,
   useAdminAddQuizQuestion,
 } from "@/hooks/admin/use-academics";
+import { useQueryParams } from "@/hooks";
 import { PaginationController } from "@/components/common/pagination-controller";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -684,28 +685,11 @@ export default function AdminQuizzesPage() {
   const deleteMutation = useAdminDeleteQuiz();
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
-  const search = searchParams.get("search") ?? "";
-  const statusFilter = searchParams.get("status") ?? "";
+  const { getParam, getNumberParam, updateQueryParams } = useQueryParams();
+  const page = Math.max(1, getNumberParam("page", 1));
+  const search = getParam("search", "");
+  const statusFilter = getParam("status", "");
   const pageSize = 10;
-
-  const updateQueryParams = (updates: Record<string, string | null>) => {
-    const params = new URLSearchParams(searchParams.toString());
-    for (const [key, value] of Object.entries(updates)) {
-      if (!value) {
-        params.delete(key);
-      } else {
-        params.set(key, value);
-      }
-    }
-    const query = params.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname, {
-      scroll: false,
-    });
-  };
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
