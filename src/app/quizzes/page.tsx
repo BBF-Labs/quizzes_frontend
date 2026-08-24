@@ -2,11 +2,11 @@
 
 import { useState, useMemo, Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { QuizCard } from "@/components/app/quizzes/quiz-card";
 import { Search, ArrowRight, Loader2, ChevronDown, X } from "lucide-react";
 import { useSystemQuizzes } from "@/hooks/app/use-quizzes";
 import { useDebounce } from "@/hooks/common/use-debounce";
+import { useQueryParams } from "@/hooks";
 
 interface QuizDisplayItem {
   id: string;
@@ -174,20 +174,21 @@ function getCodeStyles(code: string) {
 }
 
 function QuizzesPageContent() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const { getParam, getNumberParam, setQueryParams } = useQueryParams();
 
-  const [searchQuery, setSearchQuery] = useState(
-    searchParams.get("search") ?? "",
-  );
-  const [activeCategory, setActiveCategory] = useState(
-    searchParams.get("category") ?? "all",
-  );
-  const [sortBy, setSortBy] = useState("newest");
-  const [page, setPage] = useState(
-    Number(searchParams.get("page") ?? "1") || 1,
-  );
+  const searchQuery = getParam("search", "");
+  const activeCategory = getParam("category", "all");
+  const sortBy = getParam("sort", "newest");
+  const page = Math.max(1, getNumberParam("page", 1));
+
+  const setSearchQuery = (val: string) =>
+    setQueryParams({ search: val || null, page: 1 });
+  const setActiveCategory = (val: string) =>
+    setQueryParams({ category: val === "all" ? null : val, page: 1 });
+  const setSortBy = (val: string) =>
+    setQueryParams({ sort: val === "newest" ? null : val });
+  const setPage = (p: number) =>
+    setQueryParams({ page: p > 1 ? p : null });
 
   const debouncedSearch = useDebounce(searchQuery, 350);
 
@@ -290,14 +291,10 @@ function QuizzesPageContent() {
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("page", String(newPage));
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
   const handleCategoryClick = (cat: string) => {
     setActiveCategory(cat);
-    setPage(1);
   };
 
   return (
