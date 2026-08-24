@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Loader2, Linkedin, Twitter, Github } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { LinkedinIcon, TwitterIcon, GithubIcon } from "@/components/common/social-icons";
 import { LOGO_SRC, QUBI_RUN_SRC } from "@/lib/constants";
 import { useAuth } from "@/contexts/auth-context";
 import { useSubscribeNewsletter } from "@/hooks/marketing/use-newsletter";
@@ -118,21 +119,21 @@ export function LandingFooter() {
                   aria-label="Qz on LinkedIn"
                   className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
                 >
-                  <Linkedin className="h-4 w-4" />
+                  <LinkedinIcon className="h-4 w-4" />
                 </a>
                 <a
                   href="#"
                   aria-label="Qz on X"
                   className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
                 >
-                  <Twitter className="h-4 w-4" />
+                  <TwitterIcon className="h-4 w-4" />
                 </a>
                 <a
                   href="#"
                   aria-label="Qz on GitHub"
                   className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
                 >
-                  <Github className="h-4 w-4" />
+                  <GithubIcon className="h-4 w-4" />
                 </a>
               </div>
               <form
