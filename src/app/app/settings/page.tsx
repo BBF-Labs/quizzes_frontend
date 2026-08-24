@@ -188,24 +188,6 @@ export default function SettingsPage() {
   const initiateVerify = useInitiateStudentVerify();
   const confirmVerify = useConfirmStudentVerify();
 
-  // Auto-confirm token from URL query params if present
-  useEffect(() => {
-    const token = searchParams.get("token");
-    if (token) {
-      setActiveTab("verification");
-      confirmVerify
-        .mutateAsync(token)
-        .then(() => {
-          toast.success("Student verification confirmed! 10% discount applied.");
-        })
-        .catch((err) => {
-          toast.error(
-            err?.response?.data?.message || "Verification token expired or invalid",
-          );
-        });
-    }
-  }, [searchParams, confirmVerify]);
-
   // Username & Password Live Checks
   const {
     mutate: checkMutation,
