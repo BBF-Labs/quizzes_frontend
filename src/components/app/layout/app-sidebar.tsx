@@ -169,10 +169,10 @@ export function AppSidebar() {
     <Sidebar
       collapsible="icon"
       variant="sidebar"
-      className="border-r border-slate-200 bg-white"
+      className="border-r border-slate-200/90 bg-white text-slate-900 [&_[data-slot=sidebar-inner]]:bg-white"
     >
       {/* Brand & Animated Qubi Mascot Header */}
-      <SidebarHeader className="h-18 border-b border-slate-100 bg-gradient-to-br from-blue-50/60 via-white to-indigo-50/30 relative overflow-hidden shrink-0 p-3">
+      <SidebarHeader className="h-18 border-b border-slate-100 bg-white relative overflow-hidden shrink-0 p-3">
         {/* Qubi Mascot — links to the landing page (/) */}
         <Link
           href="/"
@@ -216,7 +216,7 @@ export function AppSidebar() {
       </SidebarHeader>
 
       {/* Main Navigation Scroll Area */}
-      <SidebarContent className="p-3 gap-4 no-scrollbar">
+      <SidebarContent className="p-3 gap-4 no-scrollbar bg-white">
         {/* New Session CTA */}
         <button
           onClick={handleNewSession}
@@ -256,7 +256,7 @@ export function AppSidebar() {
                       "nav-link flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs transition font-semibold",
                       isActive
                         ? "bg-blue-50 text-[#0C60FC] font-extrabold"
-                        : "text-slate-500 hover:bg-[#F0F4FA] hover:text-slate-900"
+                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"
                     )}
                   >
                     <Icon className="h-4 w-4 shrink-0" strokeWidth={2.25} />
@@ -275,8 +275,8 @@ export function AppSidebar() {
       </SidebarContent>
 
       {/* User Profile Widget Footer */}
-      <SidebarFooter className="border-t border-slate-100 p-3 shrink-0">
-        <div className="rounded-2xl bg-[#F7F9FC] p-3">
+      <SidebarFooter className="border-t border-slate-100 p-3 shrink-0 bg-white">
+        <div className="rounded-2xl bg-[#F7F9FC] border border-slate-200/60 p-3">
           <button
             type="button"
             onClick={() => setProfileExpanded((v) => !v)}
