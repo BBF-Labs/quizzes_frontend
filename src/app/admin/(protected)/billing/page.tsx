@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { format } from "date-fns";
 import {
   Plus,
   X,
@@ -181,7 +182,7 @@ function PromoCodeCard({ code }: { code: AdminPromoCode }) {
             )}
           >
             {code.expiresAt
-              ? new Date(code.expiresAt).toLocaleDateString()
+              ? format(new Date(code.expiresAt), "MMM d, yyyy")
               : "Never"}
           </span>
         </div>
@@ -1246,7 +1247,7 @@ function PaymentsTab() {
                   {p.type}
                 </span>
                 <span className="text-[10px] font-mono text-muted-foreground/50 w-24">
-                  {new Date(p.createdAt).toLocaleDateString()}
+                  {format(new Date(p.createdAt), "MMM d, yyyy")}
                 </span>
                 <span
                   className={cn(

@@ -8,15 +8,12 @@ import { MarkdownContent } from "@/components/common/MarkdownContent";
 import { useDeleteLibraryNote, useLibraryNotes } from "@/hooks/app";
 import { cn } from "@/lib/utils";
 import type { NoteSummary } from "@/types/session";
+import { format } from "date-fns";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  return format(new Date(iso), "MMM d, yyyy");
 }
 
 // ─── Single note row ──────────────────────────────────────────────────────────

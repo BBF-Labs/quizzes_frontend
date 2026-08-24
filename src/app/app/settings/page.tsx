@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { setSession } from "@/lib/session";
+import { format } from "date-fns";
 import {
   useProfileCheck,
   useProfileUpdate,
@@ -186,24 +187,6 @@ export default function SettingsPage() {
     useStudentVerifyStatus();
   const initiateVerify = useInitiateStudentVerify();
   const confirmVerify = useConfirmStudentVerify();
-
-  // Auto-confirm token from URL query params if present
-  useEffect(() => {
-    const token = searchParams.get("token");
-    if (token) {
-      setActiveTab("verification");
-      confirmVerify
-        .mutateAsync(token)
-        .then(() => {
-          toast.success("Student verification confirmed! 10% discount applied.");
-        })
-        .catch((err) => {
-          toast.error(
-            err?.response?.data?.message || "Verification token expired or invalid",
-          );
-        });
-    }
-  }, [searchParams, confirmVerify]);
 
   // Username & Password Live Checks
   const {
@@ -740,22 +723,14 @@ export default function SettingsPage() {
                         {verifyStatus.verifiedAt && (
                           <>
                             Verified since{" "}
-                            {new Date(verifyStatus.verifiedAt).toLocaleDateString(undefined, {
-                              month: "long",
-                              day: "numeric",
-                              year: "numeric",
-                            })}
+                            {format(new Date(verifyStatus.verifiedAt), "MMMM d, yyyy")}
                           </>
                         )}
                         {verifyStatus.verifiedAt && verifyStatus.expiresAt && " · "}
                         {verifyStatus.expiresAt && (
                           <>
                             Student discount valid until{" "}
-                            {new Date(verifyStatus.expiresAt).toLocaleDateString(undefined, {
-                              month: "long",
-                              day: "numeric",
-                              year: "numeric",
-                            })}
+                            {format(new Date(verifyStatus.expiresAt), "MMMM d, yyyy")}
                           </>
                         )}
                       </p>

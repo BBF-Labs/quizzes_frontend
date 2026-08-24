@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { format } from "date-fns";
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -941,13 +942,7 @@ export default function PrivateTimetablePage() {
                             FINAL EXAM
                           </span>
                           <span className="text-xs font-extrabold text-slate-400">
-                            {new Date(entry.scheduledAt).toLocaleDateString(
-                              "en-GB",
-                              {
-                                day: "numeric",
-                                month: "short",
-                              },
-                            )}
+                            {format(new Date(entry.scheduledAt), "d MMM")}
                           </span>
                         </div>
 
@@ -961,13 +956,7 @@ export default function PrivateTimetablePage() {
                         <div className="mt-5 space-y-2 text-xs font-semibold text-slate-600">
                           <p className="flex items-center gap-2">
                             <Clock className="h-3.5 w-3.5 text-slate-400" />
-                            {new Date(entry.scheduledAt).toLocaleTimeString(
-                              "en-GB",
-                              {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              },
-                            )}{" "}
+                            {format(new Date(entry.scheduledAt), "HH:mm")}{" "}
                             · {entry.durationMinutes} mins
                           </p>
                           <p className="flex items-center gap-2">

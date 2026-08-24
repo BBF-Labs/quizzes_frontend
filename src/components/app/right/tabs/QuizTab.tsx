@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { format } from "date-fns";
 import { CheckCircle, BookCheck, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -97,7 +98,7 @@ export function QuizTab({
                   {quiz.questionCount} Qs
                 </Badge>
                 <span className="text-[9px] font-mono text-muted-foreground/40">
-                  {new Date(quiz.generatedAt).toLocaleDateString()}
+                  {format(new Date(quiz.generatedAt), "MMM d, yyyy")}
                 </span>
               </div>
 

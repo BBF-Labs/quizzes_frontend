@@ -8,6 +8,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { CheckCircle2, AlertTriangle, XCircle, Clock, Zap } from "lucide-react";
+import { format } from "date-fns";
 import type {
   ComponentIncidents,
   ComponentState,
@@ -344,11 +345,11 @@ function fmtClock(iso: string): string {
 }
 
 function monthDay(d: Date): string {
-  return d.toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    timeZone: "UTC",
-  });
+  // Render the UTC calendar fields, independent of host timezone.
+  return format(
+    new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())),
+    "d MMM",
+  );
 }
 
 function pad(n: number): string {

@@ -9,14 +9,12 @@ import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import type { StudioNote, SharedNote } from "@/types/session";
+import { format } from "date-fns";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return format(new Date(iso), "HH:mm");
 }
 
 // ─── Props ────────────────────────────────────────────────────────────────────

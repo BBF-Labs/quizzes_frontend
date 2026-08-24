@@ -6,6 +6,7 @@ import { Download, FileText, FileCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import type { StudioExport } from "@/types/session";
+import { format } from "date-fns";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -18,11 +19,7 @@ interface ExportTabProps {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString([], {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  return format(new Date(iso), "MMM d, yyyy");
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────

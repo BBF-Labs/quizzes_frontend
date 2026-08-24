@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { format } from "date-fns";
 import {
   Brain,
   Copy,
@@ -429,10 +430,7 @@ function ZMessageBubble({
             Z
           </span>
           <span className="text-[9px] font-mono text-muted-foreground/50">
-            {new Date(message.timestamp).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
+            {format(new Date(message.timestamp), "HH:mm")}
           </span>
           {isStreaming && (
             <span className="text-[9px] font-mono uppercase text-primary/60 animate-pulse">

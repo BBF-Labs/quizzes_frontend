@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { format } from "date-fns";
 import {
   Zap,
   Activity,
@@ -209,7 +210,7 @@ export default function EventsPage() {
                           {event.type}
                         </span>
                         <span className="text-[10px] text-muted-foreground/40">
-                          {new Date(event.timestamp).toLocaleTimeString()}
+                          {format(new Date(event.timestamp), "HH:mm:ss")}
                         </span>
                       </div>
                       <div className="bg-black/20 p-2 border border-border/5 overflow-x-auto">

@@ -1,5 +1,6 @@
 import type { GlobalState } from "@/hooks/common/use-status";
 import { QUBI_PEEK_SRC, QUBI_STUDY_SRC, QUBI_RUN_SRC } from "@/lib/constants";
+import { format } from "date-fns";
 
 interface StatusBannerProps {
   state: GlobalState;
@@ -57,11 +58,19 @@ export function StatusBanner({ state, label, generatedAt }: StatusBannerProps) {
   const copy = STATE_COPY[state];
   const date = new Date(generatedAt);
 
-  const time = date.toLocaleTimeString("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "UTC",
-  });
+  const time = format(
+    new Date(
+      Date.UTC(
+        date.getUTCFullYear(),
+        date.getUTCMonth(),
+        date.getUTCDate(),
+        date.getUTCHours(),
+        date.getUTCMinutes(),
+        date.getUTCSeconds(),
+      ),
+    ),
+    "HH:mm",
+  );
 
   return (
     <div
