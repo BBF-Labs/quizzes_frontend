@@ -12,6 +12,7 @@ import {
 import { GenerationDialog } from "@/components/app/library/generation-dialog";
 
 import { QuizCard } from "@/components/app/quizzes/quiz-card";
+import { useQueryParams } from "@/hooks";
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -24,9 +25,15 @@ export default function QuizzesPage() {
   const deleteMutation = useDeleteLibraryQuiz();
   const generateQuizMutation = useGenerateQuiz();
 
-  const [search, setSearch] = useState("");
-  const [courseFilter, setCourseFilter] = useState("");
+  const { getParam, setQueryParams } = useQueryParams();
+  const search = getParam("search", "");
+  const courseFilter = getParam("course", "");
   const [isGenerationDialogOpen, setIsGenerationDialogOpen] = useState(false);
+
+  const setSearch = (val: string) =>
+    setQueryParams({ search: val || null });
+  const setCourseFilter = (val: string) =>
+    setQueryParams({ course: val || null });
 
   // Client-side filtering
   const searchRe = useMemo(
