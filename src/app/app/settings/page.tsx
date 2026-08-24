@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { setSession } from "@/lib/session";
+import { format } from "date-fns";
 import {
   useProfileCheck,
   useProfileUpdate,
@@ -740,22 +741,14 @@ export default function SettingsPage() {
                         {verifyStatus.verifiedAt && (
                           <>
                             Verified since{" "}
-                            {new Date(verifyStatus.verifiedAt).toLocaleDateString(undefined, {
-                              month: "long",
-                              day: "numeric",
-                              year: "numeric",
-                            })}
+                            {format(new Date(verifyStatus.verifiedAt), "MMMM d, yyyy")}
                           </>
                         )}
                         {verifyStatus.verifiedAt && verifyStatus.expiresAt && " · "}
                         {verifyStatus.expiresAt && (
                           <>
                             Student discount valid until{" "}
-                            {new Date(verifyStatus.expiresAt).toLocaleDateString(undefined, {
-                              month: "long",
-                              day: "numeric",
-                              year: "numeric",
-                            })}
+                            {format(new Date(verifyStatus.expiresAt), "MMMM d, yyyy")}
                           </>
                         )}
                       </p>
