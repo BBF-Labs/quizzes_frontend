@@ -11,14 +11,13 @@ import {
   Newspaper,
   Building2,
   MessageSquare,
-  Github,
-  Twitter,
   Globe,
   Clock,
   CheckCircle2,
   MapPin,
   MessageCircle,
 } from "lucide-react";
+import { TwitterIcon, GithubIcon } from "@/components/common/social-icons";
 import { LandingHeader, LandingFooter, MobileNav } from "@/components/landing";
 import { QUBI_PEEK_SRC } from "@/lib/constants";
 
@@ -332,7 +331,7 @@ export default function ContactPage() {
                     className="squishy flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold transition hover:border-white/30 hover:bg-white/10"
                   >
                     <span className="flex items-center gap-2.5">
-                      <Twitter className="h-4 w-4" /> @bflabs on X
+                      <TwitterIcon className="h-4 w-4" /> @bflabs on X
                     </span>
                     <ArrowRight className="h-4 w-4" />
                   </a>
@@ -343,7 +342,7 @@ export default function ContactPage() {
                     className="squishy flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold transition hover:border-white/30 hover:bg-white/10"
                   >
                     <span className="flex items-center gap-2.5">
-                      <Github className="h-4 w-4" /> bflabs on GitHub
+                      <GithubIcon className="h-4 w-4" /> bflabs on GitHub
                     </span>
                     <ArrowRight className="h-4 w-4" />
                   </a>
