@@ -1,4 +1,4 @@
-import { intervalToDuration } from "date-fns";
+import { intervalToDuration, format } from "date-fns";
 
 export const formatNextAttemptWindow = (nextAttemptAt: string): string | null => {
   const next = new Date(nextAttemptAt);
@@ -27,6 +27,6 @@ export const formatNextAttemptWindow = (nextAttemptAt: string): string | null =>
 export const formatNextAttemptTime = (nextAttemptAt: string): string | null => {
   const next = new Date(nextAttemptAt);
   if (Number.isNaN(next.getTime())) return null;
-  return next.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return format(next, "HH:mm");
 };
 
