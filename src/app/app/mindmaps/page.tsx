@@ -19,6 +19,7 @@ import {
   useGenerateMindMap,
 } from "@/hooks/app/use-app-library";
 import { GenerationDialog } from "@/components/app/library/generation-dialog";
+import { useQueryParams } from "@/hooks";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -41,9 +42,15 @@ export default function MindMapsPage() {
   const deleteMutation = useDeleteLibraryMindMap();
   const generateMindMapMutation = useGenerateMindMap();
 
-  const [search, setSearch] = useState("");
-  const [courseFilter, setCourseFilter] = useState("");
+  const { getParam, setQueryParams } = useQueryParams();
+  const search = getParam("search", "");
+  const courseFilter = getParam("course", "");
   const [isGenerationDialogOpen, setIsGenerationDialogOpen] = useState(false);
+
+  const setSearch = (val: string) =>
+    setQueryParams({ search: val || null });
+  const setCourseFilter = (val: string) =>
+    setQueryParams({ course: val || null });
 
   // Filter client-side
   const searchRe = useMemo(

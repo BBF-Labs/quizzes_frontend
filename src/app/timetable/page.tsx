@@ -6,6 +6,7 @@ import { LandingHeader, LandingFooter, MobileNav } from "@/components/landing";
 import { Search, Plus, Loader2 } from "lucide-react";
 import { QUBI_WAVE_SRC } from "@/lib/constants";
 import { usePublicTimetables } from "@/hooks/use-public-exams";
+import { useQueryParams } from "@/hooks";
 
 interface ExamPaper {
   id: string;
@@ -147,8 +148,14 @@ const FALLBACK_PAPERS: ExamPaper[] = [
 ];
 
 export default function TimetablePage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [page, setPage] = useState(1);
+  const { getParam, getNumberParam, setQueryParams } = useQueryParams();
+  const searchQuery = getParam("search", "");
+  const page = Math.max(1, getNumberParam("page", 1));
+
+  const setSearchQuery = (val: string) =>
+    setQueryParams({ search: val || null, page: 1 });
+  const setPage = (p: number) =>
+    setQueryParams({ page: p > 1 ? p : null });
 
   // TanStack Query integration
   const { data: apiData, isLoading } = usePublicTimetables(searchQuery, "", page, 20);
