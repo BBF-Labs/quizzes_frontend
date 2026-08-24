@@ -20,13 +20,13 @@ import "reactflow/dist/style.css";
 import { cn } from "@/lib/utils";
 import type { MindMapContent, MindMapNode, MindMapEdge } from "@/types/session";
 import { nanoid } from "nanoid";
-import { PlusIcon } from "lucide-react";
+import { Plus } from "lucide-react";
 import dagre from "dagre";
 
 // ─── Layout logic ─────────────────────────────────────────────────────────────
 
-const nodeWidth = 220; // safe max-width for our nodes
-const nodeHeight = 60;
+const nodeWidth = 240;
+const nodeHeight = 64;
 
 const getLayoutedElements = (
   nodes: Node[],
@@ -35,8 +35,7 @@ const getLayoutedElements = (
 ) => {
   const dagreGraph = new dagre.graphlib.Graph();
   dagreGraph.setDefaultEdgeLabel(() => ({}));
-  // Increase ranksep (horizontal gap) to prevent squishing text, nodesep for vertical
-  dagreGraph.setGraph({ rankdir: direction, ranksep: 120, nodesep: 50 });
+  dagreGraph.setGraph({ rankdir: direction, ranksep: 140, nodesep: 60 });
 
   nodes.forEach((node) => {
     dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
@@ -52,8 +51,8 @@ const getLayoutedElements = (
     const nodeWithPosition = dagreGraph.node(node.id);
     return {
       ...node,
-      targetPosition: "left" as Position,
-      sourcePosition: "right" as Position,
+      targetPosition: Position.Left,
+      sourcePosition: Position.Right,
       position: {
         x: nodeWithPosition.x - nodeWidth / 2,
         y: nodeWithPosition.y - nodeHeight / 2,
@@ -81,10 +80,13 @@ function MindMapNodeComponent({
 
   const colorClass: Record<MindMapNode["type"], string> = {
     concept:
-      "border-primary/60 bg-primary/10 text-primary shadow-[0_0_15px_rgba(var(--primary),0.1)]",
-    topic: "border-border/60 bg-card/60 text-foreground",
-    detail: "border-border/30 bg-card/20 text-muted-foreground",
-    question: "border-yellow-500/50 bg-yellow-500/10 text-yellow-400",
+      "border-[#0C60FC] bg-blue-50/90 text-[#0C60FC] shadow-sm ring-2 ring-blue-500/20 font-extrabold",
+    topic:
+      "border-indigo-200/90 bg-indigo-50/80 text-indigo-900 font-bold shadow-2xs",
+    detail:
+      "border-slate-200 bg-white text-slate-800 font-semibold shadow-2xs hover:border-slate-300",
+    question:
+      "border-amber-300 bg-amber-50/90 text-amber-900 font-bold shadow-2xs",
   };
 
   const handleDoubleClick = () => {
@@ -113,10 +115,10 @@ function MindMapNodeComponent({
       id: newNodeId,
       type: "mindMapNode",
       position: {
-        x: parentNode.position.x + 250,
-        y: parentNode.position.y + 50,
+        x: parentNode.position.x + 280,
+        y: parentNode.position.y + 60,
       },
-      data: { label: "New Detail", type: "detail" },
+      data: { label: "New Concept", type: "detail" },
     };
 
     const newEdge: Edge = {
@@ -125,11 +127,11 @@ function MindMapNodeComponent({
       target: newNodeId,
       type: "smoothstep",
       animated: true,
-      style: { stroke: "hsl(var(--primary) / 0.6)", strokeWidth: 2 },
+      style: { stroke: "#0C60FC", strokeWidth: 2 },
       labelStyle: {
         fontSize: 10,
-        fontFamily: "monospace",
-        fill: "hsl(var(--muted-foreground))",
+        fontWeight: 600,
+        fill: "#64748B",
       },
     };
 
@@ -140,10 +142,10 @@ function MindMapNodeComponent({
   return (
     <div
       className={cn(
-        "px-4 py-2 border text-[11px] font-mono leading-tight max-w-45 text-center transition-all duration-300 relative group",
-        "rounded-lg",
+        "px-4 py-2.5 border text-xs leading-relaxed max-w-55 text-center transition-all duration-200 relative group select-none",
+        "rounded-2xl",
         colorClass[data.type] ?? colorClass.topic,
-        selected && "ring-2 ring-primary ring-offset-2 ring-offset-background",
+        selected && "ring-2 ring-[#0C60FC] ring-offset-2 ring-offset-white shadow-md",
       )}
       onDoubleClick={handleDoubleClick}
     >
@@ -151,17 +153,17 @@ function MindMapNodeComponent({
         type="target"
         position={Position.Left}
         style={{
-          width: 10,
-          height: 10,
-          background: "hsl(var(--primary))",
-          border: "2px solid hsl(var(--background))",
+          width: 9,
+          height: 9,
+          background: "#0C60FC",
+          border: "2px solid #FFFFFF",
           left: -5,
         }}
       />
       {isEditing ? (
         <input
           autoFocus
-          className="bg-transparent border-none outline-none text-center w-full font-mono text-[11px] text-inherit"
+          className="bg-transparent border-none outline-none text-center w-full text-xs font-bold text-inherit"
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onBlur={handleBlur}
@@ -170,27 +172,30 @@ function MindMapNodeComponent({
           }}
         />
       ) : (
-        <div className="select-none pointer-events-none">{data.label}</div>
+        <div className="select-none pointer-events-none line-clamp-3">
+          {data.label}
+        </div>
       )}
       <Handle
         type="source"
         position={Position.Right}
         style={{
-          width: 10,
-          height: 10,
-          background: "hsl(var(--primary))",
-          border: "2px solid hsl(var(--background))",
+          width: 9,
+          height: 9,
+          background: "#0C60FC",
+          border: "2px solid #FFFFFF",
           right: -5,
         }}
       />
 
       {/* Quick Add Button */}
       <button
+        type="button"
         onClick={handleAddChild}
-        className="absolute -right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-primary text-primary-foreground rounded-full p-1 shadow-md hover:scale-110 active:scale-95 z-10"
-        title="Add Child"
+        className="absolute -right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-[#0C60FC] text-white rounded-full p-1 shadow-md hover:scale-115 active:scale-95 z-10 cursor-pointer"
+        title="Add connected node"
       >
-        <PlusIcon className="w-3 h-3" />
+        <Plus className="size-3 stroke-[2.5]" />
       </button>
     </div>
   );
@@ -200,13 +205,12 @@ const nodeTypes: NodeTypes = {
   mindMapNode: MindMapNodeComponent,
 };
 
-// ─── Inner graph (requires ReactFlowProvider above) ───────────────────────────
+// ─── Inner graph ──────────────────────────────────────────────────────────────
 
 function MindMapGraph({ content }: { content: MindMapContent }) {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
-  // Initialize state once when content first loaded or drastically changes (e.g. new generation)
   useEffect(() => {
     let initialNodes: Node[] = [];
     let initialEdges: Edge[] = [];
@@ -225,7 +229,6 @@ function MindMapGraph({ content }: { content: MindMapContent }) {
 
     if (content.edges) {
       initialEdges = content.edges.reduce((acc: Edge[], e: MindMapEdge) => {
-        // Robust check for LLM graph hallucinations: resolve IDs if the LLM provided a label string instead of real ID
         let validSource = initialNodes.find(
           (n) => n.id === String(e.source),
         )?.id;
@@ -252,12 +255,11 @@ function MindMapGraph({ content }: { content: MindMapContent }) {
             label: e.label,
             type: "smoothstep",
             animated: true,
-            className: "stroke-primary opacity-60",
-            style: { strokeWidth: 2 },
+            style: { stroke: "#0C60FC", strokeWidth: 2, opacity: 0.7 },
             labelStyle: {
               fontSize: 10,
-              fontFamily: "monospace",
-              fill: "hsl(var(--muted-foreground))",
+              fontWeight: 600,
+              fill: "#64748B",
             },
           } as Edge);
         }
@@ -274,7 +276,7 @@ function MindMapGraph({ content }: { content: MindMapContent }) {
       setNodes([]);
       setEdges([]);
     }
-  }, [content, setNodes, setEdges]); // WARNING: Ensure `content` doesn't change reference on every parent render.
+  }, [content, setNodes, setEdges]);
 
   const onConnect = useCallback(
     (params: Connection | Edge) =>
@@ -284,7 +286,7 @@ function MindMapGraph({ content }: { content: MindMapContent }) {
             ...params,
             type: "smoothstep",
             animated: true,
-            style: { stroke: "hsl(var(--primary) / 0.6)", strokeWidth: 2 },
+            style: { stroke: "#0C60FC", strokeWidth: 2, opacity: 0.7 },
           },
           eds,
         ),
@@ -306,19 +308,19 @@ function MindMapGraph({ content }: { content: MindMapContent }) {
       nodesConnectable={true}
       elementsSelectable={true}
       panOnScroll
-      className="bg-transparent"
+      className="bg-[#F7F9FC]"
     >
       <Background
-        color="hsl(var(--border))"
+        color="#CBD5E1"
         gap={20}
-        size={0.5}
-        style={{ opacity: 0.2 }}
+        size={1}
+        style={{ opacity: 0.4 }}
       />
       <Controls
         showZoom
         showFitView
         showInteractive={true}
-        className="[&>button]:bg-card/80 [&>button]:border-border/40 [&>button]:text-muted-foreground hover:[&>button]:text-primary transition-colors"
+        className="rounded-2xl border border-slate-200 bg-white p-1 shadow-sm [&>button]:rounded-xl [&>button]:border-none [&>button]:text-slate-600 hover:[&>button]:text-[#0C60FC] hover:[&>button]:bg-slate-50 transition-colors"
       />
     </ReactFlow>
   );
@@ -329,18 +331,17 @@ function MindMapGraph({ content }: { content: MindMapContent }) {
 export function MindMapVisualizer({ content }: { content: MindMapContent }) {
   if (!content || !content.nodes || content.nodes.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-muted-foreground/40 font-mono text-xs uppercase tracking-widest bg-card/5 border border-dashed border-border/20">
+      <div className="flex flex-col items-center justify-center h-full text-slate-400 font-bold text-xs uppercase tracking-wider bg-slate-50/50 border border-dashed border-slate-200 rounded-[28px]">
         Empty Mind Map
       </div>
     );
   }
 
   return (
-    <div className="w-full h-full min-h-125 border border-border/40 bg-card/20 relative overflow-hidden group">
+    <div className="w-full h-full min-h-125 border border-slate-200/80 bg-white rounded-[28px] relative overflow-hidden group shadow-xs">
       <div className="absolute top-4 left-4 z-10 flex flex-col gap-1 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
-        <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest bg-background/80 px-2 py-0.5 rounded-sm border border-border/20 backdrop-blur-sm">
-          Interactive Canvas Active — Double click nodes to edit, drag handles
-          to connect
+        <span className="text-[10px] font-bold text-slate-600 bg-white/90 px-3 py-1 rounded-full border border-slate-200/80 shadow-2xs backdrop-blur-sm">
+          Interactive Canvas · Double-click to edit text · Drag handles to connect concepts
         </span>
       </div>
       <ReactFlowProvider>
