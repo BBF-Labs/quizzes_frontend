@@ -1,6 +1,5 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Users, Search, Download, Shield, GraduationCap } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,7 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
-import { useUsers } from "@/hooks";
+import { useUsers, useQueryParams } from "@/hooks";
 import { useUpdateUser } from "@/hooks/admin/use-admin";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -114,28 +113,12 @@ function BanDialog({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function UsersPage() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
-  const search = searchParams.get("search") ?? "";
-  const roleFilter = searchParams.get("role") ?? "";
-  const banFilter = searchParams.get("isBanned") ?? "";
-
-  const updateQueryParams = (updates: Record<string, string | null>) => {
-    const params = new URLSearchParams(searchParams.toString());
-    for (const [key, value] of Object.entries(updates)) {
-      if (!value) {
-        params.delete(key);
-      } else {
-        params.set(key, value);
-      }
-    }
-    const query = params.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname, {
-      scroll: false,
-    });
-  };
+  const { searchParams, getParam, getNumberParam, updateQueryParams } =
+    useQueryParams();
+  const page = Math.max(1, getNumberParam("page", 1));
+  const search = getParam("search", "");
+  const roleFilter = getParam("role", "");
+  const banFilter = getParam("isBanned", "");
 
   const { data: usersData, isLoading } = useUsers({
     page,
