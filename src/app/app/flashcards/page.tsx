@@ -3,8 +3,7 @@
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { ArrowUpRight, Layers, Search, Trash2, X, Plus } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Layers, Search, Trash2, X, Plus, ArrowRight, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 import {
   useLibraryFlashcards,
@@ -12,7 +11,6 @@ import {
   useGenerateFlashcards,
 } from "@/hooks/app/use-app-library";
 import { GenerationDialog } from "@/components/app/library/generation-dialog";
-
 import { format } from "date-fns";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -23,6 +21,19 @@ function formatDate(iso: string): string {
   } catch {
     return iso;
   }
+}
+
+const COURSE_COLOR_MAP: Record<string, { bg: string; text: string }> = {
+  DCIT: { bg: "bg-blue-50", text: "text-blue-700" },
+  MATH: { bg: "bg-purple-50", text: "text-purple-700" },
+  UGRC: { bg: "bg-emerald-50", text: "text-emerald-700" },
+  STAT: { bg: "bg-amber-50", text: "text-amber-700" },
+  ECON: { bg: "bg-rose-50", text: "text-rose-700" },
+};
+
+function getCourseBadgeStyle(code = "") {
+  const prefix = code.split(" ")[0]?.toUpperCase() || "";
+  return COURSE_COLOR_MAP[prefix] ?? { bg: "bg-blue-50", text: "text-blue-700" };
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -61,7 +72,8 @@ export default function FlashcardsPage() {
     new Set(sets.map((s) => s.courseCode).filter(Boolean)),
   ) as string[];
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, title: string) => {
+    if (!window.confirm(`Delete "${title}"? This cannot be undone.`)) return;
     try {
       await deleteMutation.mutateAsync(id);
       toast.success("Flashcard set deleted");
@@ -75,82 +87,59 @@ export default function FlashcardsPage() {
   };
 
   return (
-    <div className="min-h-full px-4 py-8">
-      <div className="mx-auto max-w-5xl">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-6 rounded-lg border border-border/40 bg-card/30 p-4 md:p-5"
-        >
-          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div>
-              <p className="text-[10px] font-mono uppercase tracking-[0.25em] text-primary/80">
-                Study Library
-              </p>
-              <h1 className="mt-1 text-2xl font-black tracking-tight">
-                Flashcards
-              </h1>
-              <p className="mt-2 text-sm font-mono text-muted-foreground/70">
-                Browse, filter, and generate new flashcard sets.
-              </p>
-            </div>
-            <div className="flex flex-col gap-3 items-end">
-              <div className="grid grid-cols-2 gap-2 text-center w-full sm:w-auto">
-                <div className="rounded-lg border border-border/40 bg-background/40 px-3 py-2">
-                  <p className="text-xs font-mono font-semibold text-foreground">
-                    {sets.length}
-                  </p>
-                  <p className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/60">
-                    Sets
-                  </p>
-                </div>
-                <div className="rounded-lg border border-border/40 bg-background/40 px-3 py-2">
-                  <p className="text-xs font-mono font-semibold text-foreground">
-                    {totalCards}
-                  </p>
-                  <p className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/60">
-                    Cards
-                  </p>
-                </div>
-              </div>
-
-              <button
-                onClick={() => setIsGenerationDialogOpen(true)}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-primary px-4 py-2 rounded-lg text-[11px] font-mono uppercase tracking-widest text-primary-foreground hover:opacity-90 transition-all font-bold"
-              >
-                <Plus className="size-3.5" />
-                Generate Flashcards
-              </button>
-            </div>
+    <div className="qz-app min-h-full bg-[#F7F9FC] text-slate-900 antialiased pb-24">
+      {/* Header / Hero */}
+      <header className="border-b border-slate-200 bg-white px-6 pt-8 pb-6 lg:px-8">
+        <div className="mx-auto flex max-w-7xl flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-extrabold uppercase tracking-[.22em] text-[#0C60FC]">
+              My Library
+            </p>
+            <h1 className="display mt-2 text-3xl font-bold leading-tight sm:text-4xl">
+              Your flashcards.
+            </h1>
+            <p className="hand mt-1 text-xl text-[#0C60FC]">
+              flip, memorize, repeat ✦
+            </p>
           </div>
-        </motion.div>
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
+            <span className="rounded-full bg-slate-100 px-3 py-1.5">
+              {sets.length} {sets.length === 1 ? "set" : "sets"}
+            </span>
+            <span className="rounded-full bg-blue-50 px-3 py-1.5 text-[#0C60FC]">
+              {totalCards} total cards
+            </span>
+          </div>
+        </div>
 
-        <div className="mb-6 rounded-lg border border-border/40 bg-card/20 p-3">
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/50" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search sets…"
-                className="w-full rounded-lg border border-border/50 bg-background/50 pl-9 pr-9 py-2.5 text-[12px] font-mono placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50 transition-colors"
-              />
-              {search && (
-                <button
-                  type="button"
-                  onClick={() => setSearch("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-muted-foreground"
-                >
-                  <X className="size-3.5" />
-                </button>
-              )}
-            </div>
+        {/* Search + Generate row */}
+        <div className="mx-auto mt-6 flex max-w-7xl flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative max-w-3xl flex-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search flashcards by title or course…"
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 pl-10 pr-9 py-2.5 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:border-[#0C60FC] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0C60FC]/10 transition"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                <X className="size-3.5" />
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
             {courses.length > 0 && (
               <select
                 value={courseFilter}
                 onChange={(e) => setCourseFilter(e.target.value)}
-                className="rounded-lg border border-border/50 bg-background/50 px-3 py-2.5 text-[12px] font-mono text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors"
+                className="rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-700 focus:outline-none focus:border-[#0C60FC] transition"
               >
                 <option value="">All courses</option>
                 {courses.map((c) => (
@@ -160,141 +149,167 @@ export default function FlashcardsPage() {
                 ))}
               </select>
             )}
+
+            <button
+              onClick={() => setIsGenerationDialogOpen(true)}
+              className="flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-2.5 text-xs font-extrabold text-white shadow-sm hover:bg-[#0C60FC] transition-all shrink-0"
+            >
+              <Plus className="size-4" />
+              Generate Flashcards
+            </button>
           </div>
         </div>
+      </header>
 
-        {/* Loading */}
-        {isLoading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[...Array(6)].map((_, i) => (
-              <div
-                key={i}
-                className="h-40 rounded-lg animate-pulse bg-card/40 border border-border/30"
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Error */}
-        {!isLoading && queryError && (
-          <div className="border border-destructive/40 bg-destructive/5 px-4 py-3 font-mono text-sm text-destructive">
-            Failed to load flashcard sets.
-          </div>
-        )}
-
-        {/* Empty */}
-        {!isLoading && !queryError && filtered.length === 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex flex-col items-center gap-4 py-20 text-center"
-          >
-            <div className="flex size-14 items-center justify-center rounded-lg border border-primary/20 bg-primary/5">
-              <Layers className="size-6 text-primary/60" />
-            </div>
-            <p className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground/50">
-              {search || courseFilter
-                ? "No sets match your filters"
-                : "No flashcard sets yet. Generate some from your study materials."}
-            </p>
-          </motion.div>
-        )}
-
-        {/* Grid */}
-        {!isLoading && !queryError && filtered.length > 0 && (
-          <motion.div
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-            variants={{
-              hidden: {},
-              visible: { transition: { staggerChildren: 0.06 } },
-            }}
-            initial="hidden"
-            animate="visible"
-          >
-            <AnimatePresence>
-              {filtered.map((set) => (
-                <motion.div
-                  key={set.id}
-                  variants={{
-                    hidden: { opacity: 0, y: 12 },
-                    visible: {
-                      opacity: 1,
-                      y: 0,
-                      transition: { duration: 0.22 },
-                    },
-                  }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="group relative rounded-lg border border-border/40 bg-card/30 hover:border-primary/40 hover:bg-primary/5 transition-all overflow-hidden"
-                >
-                  <div className="pointer-events-none absolute inset-x-0 top-0 h-10 bg-linear-to-b from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-
-                  {/* Delete button */}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleDelete(set.id);
-                    }}
-                    disabled={deleteMutation.isPending}
-                    className="absolute top-2 right-2 p-1 text-muted-foreground/30 hover:text-destructive opacity-0 group-hover:opacity-100 transition-all disabled:opacity-20"
-                    aria-label="Delete set"
-                  >
-                    <Trash2 className="size-3.5" />
-                  </button>
-
-                  <Link
-                    href={`/app/flashcards/${set.id}`}
-                    className="block p-4 pr-6"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="font-mono font-bold text-sm text-foreground line-clamp-2 pr-2">
-                        {set.title}
-                      </p>
-                      <ArrowUpRight className="mt-0.5 size-3.5 shrink-0 text-muted-foreground/40 group-hover:text-primary transition-colors" />
-                    </div>
-
-                    <p className="mt-1 text-[10px] font-mono text-muted-foreground/60 min-h-4">
-                      {[set.courseTitle, set.courseCode]
-                        .filter(Boolean)
-                        .join(" · ") || "General"}
-                    </p>
-
-                    <div className="mt-3 flex items-center gap-2 flex-wrap">
-                      <Badge
-                        variant="outline"
-                        className="rounded-lg text-[9px] font-mono h-4 px-1.5"
-                      >
-                        {set.cardCount} cards
-                      </Badge>
-                      {set.tags?.slice(0, 2).map((tag) => (
-                        <Badge
-                          key={tag}
-                          variant="secondary"
-                          className="rounded-lg text-[9px] font-mono h-4 px-1.5"
-                        >
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-
-                    <p className="mt-3 text-[9px] font-mono text-muted-foreground/40">
-                      {formatDate(set.createdAt)}
-                    </p>
-                  </Link>
-                </motion.div>
+      {/* Content Grid */}
+      <section className="px-6 py-8 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          {/* Loading */}
+          {isLoading && (
+            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+              {[...Array(6)].map((_, i) => (
+                <div
+                  key={i}
+                  className="h-56 rounded-[28px] animate-pulse bg-white border border-slate-200/80 p-6"
+                />
               ))}
-            </AnimatePresence>
-          </motion.div>
-        )}
+            </div>
+          )}
 
-        {/* Count */}
-        {!isLoading && sets.length > 0 && (
-          <p className="mt-8 text-center text-[10px] font-mono uppercase tracking-widest text-muted-foreground/30">
-            {filtered.length} of {sets.length}{" "}
-            {sets.length === 1 ? "set" : "sets"}
-          </p>
-        )}
-      </div>
+          {/* Error */}
+          {!isLoading && queryError && (
+            <div className="rounded-[28px] border border-rose-200 bg-rose-50/50 p-8 text-center text-sm font-semibold text-rose-700">
+              Failed to load flashcard sets.
+            </div>
+          )}
+
+          {/* Empty */}
+          {!isLoading && !queryError && filtered.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col items-center justify-center rounded-[28px] border border-dashed border-slate-300 bg-white py-20 px-6 text-center shadow-sm"
+            >
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-[#0C60FC] ring-1 ring-blue-200">
+                <Layers className="size-8" />
+              </div>
+              <h3 className="mt-5 text-base font-bold text-slate-900">
+                {search || courseFilter
+                  ? "No flashcard sets match your filter"
+                  : "No flashcard sets yet"}
+              </h3>
+              <p className="mt-1.5 max-w-sm text-xs font-semibold text-slate-500">
+                {search || courseFilter
+                  ? "Try searching for a different keyword or reset your course filter."
+                  : "Generate active recall flashcards from your uploaded lecture notes and study materials."}
+              </p>
+              {!search && !courseFilter && (
+                <button
+                  type="button"
+                  onClick={() => setIsGenerationDialogOpen(true)}
+                  className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-xs font-extrabold text-white shadow-sm hover:bg-[#0C60FC] transition-all"
+                >
+                  <Plus className="size-4" />
+                  Generate your first set
+                </button>
+              )}
+            </motion.div>
+          )}
+
+          {/* Cards Grid */}
+          {!isLoading && !queryError && filtered.length > 0 && (
+            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+              <AnimatePresence mode="popLayout">
+                {filtered.map((set) => {
+                  const courseBadge = getCourseBadgeStyle(set.courseCode);
+                  const code = set.courseCode || set.courseTitle || "FLASHCARDS";
+
+                  return (
+                    <motion.article
+                      key={set.id}
+                      layout
+                      initial={{ opacity: 0, scale: 0.96 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.96 }}
+                      transition={{ duration: 0.18 }}
+                      className="play-card group relative flex flex-col justify-between rounded-[28px] border border-slate-200/80 bg-white p-6 shadow-sm hover:shadow-md hover:border-slate-300 transition-all min-w-0"
+                      style={{ borderRadius: "28px" }}
+                    >
+                      {/* Top Header */}
+                      <div>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span
+                              className={`rounded-full px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider ${courseBadge.bg} ${courseBadge.text}`}
+                            >
+                              {code}
+                            </span>
+                            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-extrabold text-slate-700">
+                              {set.cardCount} {set.cardCount === 1 ? "card" : "cards"}
+                            </span>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleDelete(set.id, set.title);
+                            }}
+                            disabled={deleteMutation.isPending}
+                            className="p-1.5 text-slate-300 hover:text-rose-600 transition-colors disabled:opacity-20 shrink-0"
+                            title="Delete set"
+                            aria-label="Delete set"
+                          >
+                            <Trash2 className="size-4" />
+                          </button>
+                        </div>
+
+                        {/* Title */}
+                        <Link href={`/app/flashcards/${set.id}`} className="block mt-4 group">
+                          <h3 className="text-xl font-bold leading-snug text-slate-950 group-hover:text-[#0C60FC] transition-colors line-clamp-2">
+                            {set.title}
+                          </h3>
+                        </Link>
+
+                        <p className="mt-1 text-xs font-semibold text-slate-500">
+                          {[set.courseTitle, formatDate(set.createdAt)]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </p>
+
+                        {/* Visual Deck Preview */}
+                        <div className="mt-4 rounded-xl bg-slate-50 border border-slate-100 p-3 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Layers className="size-4 text-[#0C60FC]" />
+                            <span className="text-[11px] font-bold text-slate-600">
+                              Interactive 3D Deck
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-extrabold text-[#0C60FC] uppercase tracking-wider">
+                            Ready
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Bottom Action */}
+                      <div className="mt-6 pt-4 border-t border-slate-100">
+                        <Link
+                          href={`/app/flashcards/${set.id}`}
+                          className="flex h-9 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 text-xs font-extrabold text-white transition hover:bg-[#0C60FC]"
+                        >
+                          <span>Study Flashcards</span>
+                          <ArrowRight className="size-3.5" />
+                        </Link>
+                      </div>
+                    </motion.article>
+                  );
+                })}
+              </AnimatePresence>
+            </div>
+          )}
+        </div>
+      </section>
 
       <GenerationDialog
         isOpen={isGenerationDialogOpen}
@@ -307,3 +322,4 @@ export default function FlashcardsPage() {
     </div>
   );
 }
+
