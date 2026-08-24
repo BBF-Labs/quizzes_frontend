@@ -12,6 +12,7 @@ import {
 } from "@/hooks/app/use-public-library";
 import { useDebounce } from "@/hooks/common/use-debounce";
 import { useAuth } from "@/contexts/auth-context";
+import { useQueryParams } from "@/hooks";
 import { toast } from "sonner";
 
 interface Resource {
@@ -117,10 +118,18 @@ const FALLBACK_RESOURCES: Resource[] = [
 ];
 
 export default function LibraryPage() {
-  const [activeTab, setActiveTab] = useState<string>("all");
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  const { getParam, getNumberParam, setQueryParams } = useQueryParams();
+  const activeTab = getParam("subject", "all");
+  const searchQuery = getParam("search", "");
+  const page = Math.max(1, getNumberParam("page", 1));
   const [savedIds, setSavedIds] = useState<Record<string, boolean>>({});
-  const [page, setPage] = useState<number>(1);
+
+  const setActiveTab = (tab: string) =>
+    setQueryParams({ subject: tab === "all" ? null : tab, page: 1 });
+  const setSearchQuery = (q: string) =>
+    setQueryParams({ search: q || null, page: 1 });
+  const setPage = (p: number) =>
+    setQueryParams({ page: p > 1 ? p : null });
 
   const { user } = useAuth();
   const importMutation = useImportMaterial();
