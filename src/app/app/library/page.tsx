@@ -6,7 +6,9 @@ import {
   Plus,
   Trash2,
   BookOpen,
-  Sparkles,
+  Layers,
+  ListChecks,
+  Network,
   RefreshCw,
   Search,
   CheckCircle2,
@@ -41,14 +43,67 @@ function cleanTitle(raw: string) {
 
 function mimeInfo(mime = "") {
   if (mime.includes("pdf"))
-    return { label: "PDF", icon: FileText, bg: "bg-rose-50", text: "text-rose-700", ring: "ring-rose-200", previewBg: "bg-rose-50", accent: "text-rose-500" };
-  if (mime.includes("word") || mime.includes("docx") || mime.includes("document"))
-    return { label: "DOCX", icon: FileText, bg: "bg-blue-50", text: "text-blue-700", ring: "ring-blue-200", previewBg: "bg-blue-50", accent: "text-blue-500" };
-  if (mime.includes("presentation") || mime.includes("pptx") || mime.includes("powerpoint"))
-    return { label: "PPTX", icon: FileText, bg: "bg-orange-50", text: "text-orange-700", ring: "ring-orange-200", previewBg: "bg-orange-50", accent: "text-orange-500" };
+    return {
+      label: "PDF",
+      icon: FileText,
+      bg: "bg-rose-50",
+      text: "text-rose-700",
+      lineBg: "bg-rose-200/50",
+      ring: "ring-rose-200",
+      previewBg: "bg-rose-50",
+      accent: "text-rose-500",
+    };
+  if (
+    mime.includes("word") ||
+    mime.includes("docx") ||
+    mime.includes("document")
+  )
+    return {
+      label: "DOCX",
+      icon: FileText,
+      bg: "bg-blue-50",
+      text: "text-blue-700",
+      lineBg: "bg-blue-200/50",
+      ring: "ring-blue-200",
+      previewBg: "bg-blue-50",
+      accent: "text-blue-500",
+    };
+  if (
+    mime.includes("presentation") ||
+    mime.includes("pptx") ||
+    mime.includes("powerpoint")
+  )
+    return {
+      label: "PPTX",
+      icon: FileText,
+      bg: "bg-orange-50",
+      text: "text-orange-700",
+      lineBg: "bg-orange-200/50",
+      ring: "ring-orange-200",
+      previewBg: "bg-orange-50",
+      accent: "text-orange-500",
+    };
   if (mime.includes("sheet") || mime.includes("xlsx") || mime.includes("csv"))
-    return { label: "XLSX", icon: FileText, bg: "bg-green-50", text: "text-green-700", ring: "ring-green-200", previewBg: "bg-green-50", accent: "text-green-500" };
-  return { label: "FILE", icon: FileText, bg: "bg-violet-50", text: "text-violet-700", ring: "ring-violet-200", previewBg: "bg-violet-50", accent: "text-violet-500" };
+    return {
+      label: "XLSX",
+      icon: FileText,
+      bg: "bg-green-50",
+      text: "text-green-700",
+      lineBg: "bg-green-200/50",
+      ring: "ring-green-200",
+      previewBg: "bg-green-50",
+      accent: "text-green-500",
+    };
+  return {
+    label: "FILE",
+    icon: FileText,
+    bg: "bg-violet-50",
+    text: "text-violet-700",
+    lineBg: "bg-violet-200/50",
+    ring: "ring-violet-200",
+    previewBg: "bg-violet-50",
+    accent: "text-violet-500",
+  };
 }
 
 function formatBytes(bytes: number) {
@@ -260,7 +315,9 @@ function SubmitToLibraryModal({
                         }}
                         className="w-full border-b border-slate-100 px-3 py-2 text-left text-[12px] font-semibold transition last:border-0 hover:bg-slate-50"
                       >
-                        <span className="font-bold text-[#0C60FC]">{c.code}</span>
+                        <span className="font-bold text-[#0C60FC]">
+                          {c.code}
+                        </span>
                         <span className="ml-2 text-slate-600">{c.title}</span>
                       </button>
                     ))}
@@ -273,7 +330,10 @@ function SubmitToLibraryModal({
           {/* Tags */}
           <div>
             <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-widest text-slate-500">
-              Tags <span className="text-slate-300">(comma-separated, optional)</span>
+              Tags{" "}
+              <span className="text-slate-300">
+                (comma-separated, optional)
+              </span>
             </label>
             <div className="relative">
               <Tag className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
@@ -628,18 +688,16 @@ export default function LibraryPage() {
 
         {/* Status filter chips */}
         <div className="mx-auto mt-5 flex max-w-7xl flex-wrap gap-2">
-          {(
-            [
-              { id: "all" as const, label: "All", count: counts.total },
-              { id: "ready" as const, label: "Ready", count: counts.ready },
-              {
-                id: "processing" as const,
-                label: "Processing",
-                count: counts.processing,
-              },
-              { id: "failed" as const, label: "Failed", count: counts.failed },
-            ]
-          ).map((tab) => (
+          {[
+            { id: "all" as const, label: "All", count: counts.total },
+            { id: "ready" as const, label: "Ready", count: counts.ready },
+            {
+              id: "processing" as const,
+              label: "Processing",
+              count: counts.processing,
+            },
+            { id: "failed" as const, label: "Failed", count: counts.failed },
+          ].map((tab) => (
             <button
               key={tab.id}
               type="button"
@@ -702,7 +760,7 @@ export default function LibraryPage() {
               )}
             </div>
           ) : (
-            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
               <AnimatePresence mode="popLayout">
                 {filteredMaterials.map((material) => {
                   const info = mimeInfo(material.mimeType);
@@ -727,7 +785,7 @@ export default function LibraryPage() {
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.96 }}
                       transition={{ duration: 0.18 }}
-                      className="play-card flex flex-col rounded-[26px] border border-slate-200 bg-white p-6 shadow-sm"
+                      className="play-card flex flex-col rounded-[26px] border border-slate-200 bg-white p-6 shadow-sm min-w-0"
                       style={{ borderRadius: "26px" }}
                     >
                       {/* Top row: MIME badge + delete */}
@@ -735,7 +793,7 @@ export default function LibraryPage() {
                         <span
                           className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-extrabold ${info.bg} ${info.text}`}
                         >
-                          <TitleIcon className="h-3 w-3" strokeWidth={2.25} />
+                          <TitleIcon className="h-3 w-3 shrink-0" strokeWidth={2.25} />
                           {info.label}
                         </span>
                         <button
@@ -751,7 +809,7 @@ export default function LibraryPage() {
                       </div>
 
                       {/* Title + meta */}
-                      <h3 className="mt-4 truncate text-base font-bold text-slate-900">
+                      <h3 className="mt-4 truncate text-base font-bold text-slate-900" title={cleanTitle(material.title)}>
                         {cleanTitle(material.title)}
                       </h3>
                       <p className="mt-1 truncate text-xs font-semibold text-slate-500">
@@ -779,15 +837,15 @@ export default function LibraryPage() {
                               aria-hidden="true"
                             />
                           </span>
-                          <div className="min-w-0 flex-1 space-y-1.5">
+                          <div className="min-w-0 flex-1 space-y-1.5 pt-0.5">
                             <div
-                              className={`h-2 w-full rounded-full ${info.bg} opacity-80`}
+                              className={`h-2 w-full rounded-full ${info.lineBg}`}
                             />
                             <div
-                              className={`h-2 w-10/12 rounded-full ${info.bg} opacity-60`}
+                              className={`h-2 w-10/12 rounded-full ${info.lineBg} opacity-75`}
                             />
                             <div
-                              className={`h-2 w-7/12 rounded-full ${info.bg} opacity-40`}
+                              className={`h-2 w-7/12 rounded-full ${info.lineBg} opacity-50`}
                             />
                           </div>
                         </div>
@@ -832,28 +890,28 @@ export default function LibraryPage() {
                           </button>
                         ) : (
                           <>
-                            <div className="grid grid-cols-3 gap-1.5">
+                            <div className="grid grid-cols-3 gap-2 min-w-0">
                               <button
                                 type="button"
                                 onClick={() =>
                                   handleGenerateFlashcards(material.id)
                                 }
                                 disabled={!canGenerate}
-                                className="inline-flex items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white px-2 py-2 text-[10px] font-extrabold uppercase tracking-widest text-slate-600 transition hover:border-[#0C60FC]/40 hover:bg-blue-50 hover:text-[#0C60FC] disabled:cursor-not-allowed disabled:opacity-40"
+                                className="inline-flex h-9 min-w-0 items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white px-2 text-[11px] font-bold text-slate-700 transition hover:border-[#0C60FC]/40 hover:bg-blue-50 hover:text-[#0C60FC] disabled:cursor-not-allowed disabled:opacity-40"
                                 title="Generate flashcards"
                               >
-                                <Sparkles className="h-3 w-3" />
-                                Cards
+                                <Layers className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+                                <span className="truncate">Cards</span>
                               </button>
                               <button
                                 type="button"
                                 onClick={() => handleGenerateQuiz(material.id)}
                                 disabled={!canGenerate}
-                                className="inline-flex items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white px-2 py-2 text-[10px] font-extrabold uppercase tracking-widest text-slate-600 transition hover:border-[#0C60FC]/40 hover:bg-blue-50 hover:text-[#0C60FC] disabled:cursor-not-allowed disabled:opacity-40"
+                                className="inline-flex h-9 min-w-0 items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white px-2 text-[11px] font-bold text-slate-700 transition hover:border-[#0C60FC]/40 hover:bg-blue-50 hover:text-[#0C60FC] disabled:cursor-not-allowed disabled:opacity-40"
                                 title="Generate quiz"
                               >
-                                <Sparkles className="h-3 w-3" />
-                                Quiz
+                                <ListChecks className="h-3.5 w-3.5 shrink-0 text-[#0C60FC]" />
+                                <span className="truncate">Quiz</span>
                               </button>
                               <button
                                 type="button"
@@ -861,21 +919,21 @@ export default function LibraryPage() {
                                   handleGenerateMindMap(material.id)
                                 }
                                 disabled={!canGenerate}
-                                className="inline-flex items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white px-2 py-2 text-[10px] font-extrabold uppercase tracking-widest text-slate-600 transition hover:border-[#0C60FC]/40 hover:bg-blue-50 hover:text-[#0C60FC] disabled:cursor-not-allowed disabled:opacity-40"
+                                className="inline-flex h-9 min-w-0 items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white px-2 text-[11px] font-bold text-slate-700 transition hover:border-[#0C60FC]/40 hover:bg-blue-50 hover:text-[#0C60FC] disabled:cursor-not-allowed disabled:opacity-40"
                                 title="Generate mind map"
                               >
-                                <Sparkles className="h-3 w-3" />
-                                Map
+                                <Network className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                                <span className="truncate">Map</span>
                               </button>
                             </div>
                             {canShare && (
                               <button
                                 type="button"
                                 onClick={() => setSubmitTarget(material)}
-                                className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-slate-200 px-3 py-2 text-[10px] font-extrabold uppercase tracking-widest text-slate-500 transition hover:border-[#0C60FC]/40 hover:bg-blue-50/50 hover:text-[#0C60FC]"
+                                className="mt-2 flex h-8 w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-slate-200 px-3 text-[11px] font-bold text-slate-500 transition hover:border-[#0C60FC]/40 hover:bg-blue-50/50 hover:text-[#0C60FC]"
                               >
-                                <Globe className="h-3 w-3" />
-                                Share to Public Library
+                                <Globe className="h-3.5 w-3.5 shrink-0" />
+                                <span className="truncate">Share to Public Library</span>
                               </button>
                             )}
                           </>
