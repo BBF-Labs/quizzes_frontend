@@ -1,6 +1,5 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Database,
@@ -19,7 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PaginationController } from "@/components/common";
-import { useMigrations, useRunMigrations } from "@/hooks";
+import { useMigrations, useRunMigrations, useQueryParams } from "@/hooks";
 import { useSocket } from "@/hooks/common/use-socket";
 import { cn } from "@/lib/utils";
 import { format, formatDistance } from "date-fns";
@@ -28,27 +27,9 @@ import { toast } from "sonner";
 import { Suspense, useEffect } from "react";
 
 function MigrationsContent() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
-  const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
-  const search = searchParams.get("search") ?? "";
-
-  const updateQueryParams = (updates: Record<string, string | null>) => {
-    const params = new URLSearchParams(searchParams.toString());
-    for (const [key, value] of Object.entries(updates)) {
-      if (!value) {
-        params.delete(key);
-      } else {
-        params.set(key, value);
-      }
-    }
-    const query = params.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname, {
-      scroll: false,
-    });
-  };
+  const { getParam, getNumberParam, updateQueryParams } = useQueryParams();
+  const page = Math.max(1, getNumberParam("page", 1));
+  const search = getParam("search", "");
 
   const {
     data: status,
