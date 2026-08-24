@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion, Variants } from "framer-motion";
 import { Plus, ArrowRight, RefreshCw, Check } from "lucide-react";
@@ -16,6 +15,7 @@ import {
 import {
   useCampaigns,
   useCreateCampaign,
+  useQueryParams,
   ICampaign,
   ILinkContext,
   INewsletterImage,
@@ -62,27 +62,10 @@ const itemVariants: Variants = {
 };
 
 export default function AdminPage() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
-  const search = searchParams.get("search") ?? "";
-  const statusFilter = searchParams.get("status") ?? "";
-
-  const updateQueryParams = (updates: Record<string, string | null>) => {
-    const params = new URLSearchParams(searchParams.toString());
-    for (const [key, value] of Object.entries(updates)) {
-      if (!value) {
-        params.delete(key);
-      } else {
-        params.set(key, value);
-      }
-    }
-    const query = params.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname, {
-      scroll: false,
-    });
-  };
+  const { getParam, getNumberParam, updateQueryParams } = useQueryParams();
+  const page = Math.max(1, getNumberParam("page", 1));
+  const search = getParam("search", "");
+  const statusFilter = getParam("status", "");
 
   const {
     data: campaignsData,
