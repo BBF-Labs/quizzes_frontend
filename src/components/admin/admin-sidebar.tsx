@@ -17,6 +17,7 @@ import {
   CreditCard,
   Library,
   Zap,
+  Flag,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import {
@@ -129,8 +130,13 @@ const navigation = [
     ],
   },
   {
-    title: "Infrastructure",
+    title: "System",
     items: [
+      {
+        title: "Feature Flags",
+        url: "/admin/system/features",
+        icon: Flag,
+      },
       {
         title: "Migrations",
         url: "/admin/migrations",
