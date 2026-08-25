@@ -55,8 +55,6 @@ import {
 } from "@/components/ui/resizable";
 import { useIsMobile } from "@/hooks";
 import { useSocket } from "@/hooks";
-import { loadUiPreferences, UI_PALETTES } from "@/lib/ui-preferences";
-
 const STATUS_CLASS: Record<string, string> = {
   draft: "border-border text-muted-foreground",
   generating: "bg-blue-400/10 border-blue-400/50 text-blue-400 animate-pulse",
@@ -140,15 +138,6 @@ export default function CampaignDetailPage() {
   const { theme } = useTheme();
   const isMobile = useIsMobile();
   const { socket } = useSocket();
-
-  // Load UI preferences for preview
-  const [uiPrefs, setUiPrefs] = useState(() => loadUiPreferences());
-
-  const themeColor =
-    uiPrefs.palette === "custom"
-      ? uiPrefs.customColors.primary
-      : UI_PALETTES[uiPrefs.palette].primary;
-  const borderRadius = uiPrefs.radiusRem;
 
   // Debounce refetch to prevent socket + polling simultaneous requests
   const refetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -999,8 +988,6 @@ export default function CampaignDetailPage() {
                               url: `${l.baseUrl}${l.pathTemplate}`,
                             }))}
                             name="Admin (Preview)"
-                            themeColor={themeColor}
-                            borderRadius={borderRadius}
                             className="border-none! p-0! sm:p-8!"
                           />
                         </div>
