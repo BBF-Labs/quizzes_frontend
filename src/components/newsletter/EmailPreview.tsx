@@ -19,8 +19,6 @@ interface EmailPreviewProps {
   markdownBody?: string;
   links?: { label: string; url: string }[];
   name?: string;
-  themeColor?: string;
-  borderRadius?: number;
   className?: string;
 }
 
@@ -64,14 +62,12 @@ export function EmailPreview({
   markdownBody,
   links = [],
   name,
-  themeColor,
-  borderRadius = 0,
   className,
 }: EmailPreviewProps) {
   const config = typeConfigs[type] || typeConfigs.update;
 
-  const currentThemeColor = themeColor || "#006eff";
-  const radius = `${borderRadius}rem`;
+  const currentThemeColor = "#0C60FC";
+  const radius = "0rem";
 
   return (
     <div
@@ -80,25 +76,25 @@ export function EmailPreview({
         className,
       )}
     >
-      <div 
+      <div
         className="w-full max-w-150 mx-auto bg-white dark:bg-zinc-900 border-2 border-black dark:border-zinc-800 shadow-[8px_8px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_rgba(255,255,255,0.05)]"
         style={{ borderRadius: radius }}
       >
         <div className="p-5 sm:p-8">
           {/* Badge */}
           <div
-            className={cn("border px-2 py-1 inline-block mb-6", !themeColor && config.border)}
-            style={{ 
-              borderColor: themeColor ? currentThemeColor : undefined,
-              borderRadius: radius
+            className={cn("border px-2 py-1 inline-block mb-6", config.border)}
+            style={{
+              borderColor: currentThemeColor,
+              borderRadius: radius,
             }}
           >
             <span
               className={cn(
                 "text-[11px] font-mono font-bold tracking-widest uppercase",
-                !themeColor && config.color,
+                config.color,
               )}
-              style={themeColor ? { color: currentThemeColor } : {}}
+              style={{ color: currentThemeColor }}
             >
               {category === "newsletter" ? "NEWSLETTER" : config.label}
             </span>
@@ -108,9 +104,9 @@ export function EmailPreview({
           <div
             className={cn(
               "bg-[#f8fafc] dark:bg-zinc-800/50 border-l-4 p-4 mb-5",
-              !themeColor && config.border,
+              config.border,
             )}
-            style={themeColor ? { borderLeftColor: currentThemeColor } : {}}
+            style={{ borderLeftColor: currentThemeColor }}
           >
             <h1 className="text-[22px] sm:text-[24px] font-black leading-[1.15] m-0 text-black dark:text-white uppercase tracking-tight">
               {title}
@@ -119,10 +115,7 @@ export function EmailPreview({
 
           <div className="text-[13px] font-bold text-black dark:text-white mb-3 tracking-wide font-mono">
             Greetings{" "}
-            <span 
-              className={cn(!themeColor && "text-[#006eff]")}
-              style={themeColor ? { color: currentThemeColor } : {}}
-            >
+            <span style={{ color: currentThemeColor }}>
               {name || "Subscriber"}
             </span>,
           </div>
@@ -143,7 +136,7 @@ export function EmailPreview({
                 rehypePlugins={[rehypeKatex]}
                 components={{
                   a: ({ children, href }) => (
-                    <a 
+                    <a
                       href={href}
                       className="underline"
                       style={{ color: currentThemeColor }}
@@ -181,11 +174,10 @@ export function EmailPreview({
                   href={link.url}
                   className={cn(
                     "text-white text-[13px] font-mono font-bold text-center block py-3 px-4 tracking-[0.15em] uppercase border-2 border-black dark:border-white/10 hover:translate-x-0.5 hover:translate-y-0.5 transition-transform",
-                    !themeColor && "bg-[#006eff]"
                   )}
-                  style={{ 
+                  style={{
                     backgroundColor: currentThemeColor,
-                    borderRadius: radius
+                    borderRadius: radius,
                   }}
                 >
                   {link.label}

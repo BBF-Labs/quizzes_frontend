@@ -5,7 +5,6 @@ export * from "./use-onboarding";
 export * from "./useSourceHighlight";
 export * from "./use-debounce";
 export * from "./use-courses";
-export * from "./use-ui-preferences";
 export * from "./use-profile";
 export * from "./use-billing";
 export * from "./use-donations";
