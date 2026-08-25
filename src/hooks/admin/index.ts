@@ -3,3 +3,4 @@ export * from "./use-academics";
 export * from "./use-migrations";
 export * from "./use-admin-library";
 export * from "./use-public-generation";
+export * from "./use-feature-flags";
