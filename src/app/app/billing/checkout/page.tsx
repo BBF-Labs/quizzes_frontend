@@ -6,9 +6,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import {
   Tag,
-  Zap,
   Loader2,
-  Lock,
   CheckCircle2,
   GraduationCap,
   X,
@@ -19,7 +17,6 @@ import {
 import {
   usePackages,
   useCreditBundles,
-  useBillingStatus,
   useStudentVerifyStatus,
   useInitiatePlanPayment,
   useInitiateCreditPayment,
@@ -161,18 +158,21 @@ function CheckoutContent() {
     };
   }, [packageId, bundleId, appliedPromo?.code, appliedReferral?.code, isStudentVerified]);
 
-  // Compute final price with full fallback support
+  // Compute final price with full fallback support and rounded percentages
   const { finalPrice, totalDiscountPercentage, totalSavings, hasDiscount, activeDiscounts } = useMemo(() => {
     if (discountResult?.finalAmountGHS != null) {
       const finalAmount = Number(discountResult.finalAmountGHS);
-      const discountPct = Number(discountResult.totalDiscountPercentage || 0);
+      const discountPct = Math.round(Number(discountResult.totalDiscountPercentage || 0));
       const savings = Math.max(0, Number((basePrice - finalAmount).toFixed(2)));
       return {
         finalPrice: finalAmount,
         totalDiscountPercentage: discountPct,
         totalSavings: savings,
         hasDiscount: finalAmount < basePrice,
-        activeDiscounts: discountResult.discounts || [],
+        activeDiscounts: (discountResult.discounts || []).map((d: any) => ({
+          ...d,
+          percentage: Math.round(Number(d.percentage || 0)),
+        })),
       };
     }
 
@@ -185,23 +185,25 @@ function CheckoutContent() {
       fallbackList.push({ type: "student", label: "Student discount", percentage: 10 });
     }
     if (appliedPromo) {
-      fallbackPct += appliedPromo.discountPercent;
+      const promoPct = Math.round(appliedPromo.discountPercent);
+      fallbackPct += promoPct;
       fallbackList.push({
         type: "promo",
         label: `Promo: ${appliedPromo.code}`,
-        percentage: appliedPromo.discountPercent,
+        percentage: promoPct,
       });
     }
     if (appliedReferral) {
-      fallbackPct += appliedReferral.discountPercent;
+      const refPct = Math.round(appliedReferral.discountPercent);
+      fallbackPct += refPct;
       fallbackList.push({
         type: "referral",
         label: "Referral discount",
-        percentage: appliedReferral.discountPercent,
+        percentage: refPct,
       });
     }
 
-    const cappedPct = Math.min(fallbackPct, 80);
+    const cappedPct = Math.min(Math.round(fallbackPct), 80);
     const computedFinal = cappedPct > 0 ? Number((basePrice * (1 - cappedPct / 100)).toFixed(2)) : basePrice;
     const savings = Math.max(0, Number((basePrice - computedFinal).toFixed(2)));
 
@@ -252,21 +254,23 @@ function CheckoutContent() {
 
       if (type === "promo") {
         if (promoDiscount) {
+          const roundedPromo = Math.round(Number(promoDiscount.percentage || 0));
           setAppliedPromo({
             code: promoCode.trim().toUpperCase(),
-            discountPercent: promoDiscount.percentage,
+            discountPercent: roundedPromo,
           });
-          toast.success(`Promo applied: ${promoDiscount.percentage}% off`);
+          toast.success(`Promo applied: ${roundedPromo}% off`);
         } else {
           toast.error("Invalid or expired promo code");
         }
       } else if (type === "referral") {
         if (referralDiscount) {
+          const roundedRef = Math.round(Number(referralDiscount.percentage || 0));
           setAppliedReferral({
             code: referralCode.trim().toUpperCase(),
-            discountPercent: referralDiscount.percentage,
+            discountPercent: roundedRef,
           });
-          toast.success(`Referral applied: ${referralDiscount.percentage}% off`);
+          toast.success(`Referral applied: ${roundedRef}% off`);
         } else {
           toast.error("Invalid or already used referral code");
         }
@@ -411,11 +415,11 @@ function CheckoutContent() {
                 <div className="mt-6 flex flex-wrap items-baseline gap-2">
                   <span className="text-sm font-bold text-slate-400">GHS</span>
                   {hasDiscount && (
-                    <span className="display text-2xl sm:text-3xl font-bold text-slate-400 line-through">
+                    <span className="display text-2xl sm:text-3xl font-bold text-slate-400 line-through whitespace-nowrap">
                       {basePrice.toFixed(2)}
                     </span>
                   )}
-                  <span className="display text-4xl sm:text-5xl font-extrabold tracking-tight text-[#0C60FC]">
+                  <span className="display text-4xl sm:text-5xl font-extrabold tracking-tight text-[#0C60FC] whitespace-nowrap">
                     {finalPrice.toFixed(2)}
                   </span>
                   <span className="text-xs font-bold text-slate-400">
@@ -424,8 +428,8 @@ function CheckoutContent() {
                       : "one-time"}
                   </span>
                   {hasDiscount && (
-                    <span className="ml-2 inline-flex items-center rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 text-xs font-extrabold">
-                      {totalDiscountPercentage}% OFF
+                    <span className="ml-2 inline-flex items-center rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 text-xs font-extrabold whitespace-nowrap">
+                      {Math.round(totalDiscountPercentage)}% OFF
                     </span>
                   )}
                 </div>
@@ -491,19 +495,19 @@ function CheckoutContent() {
 
                 {/* Summary Card Details with Strikethrough Item Row */}
                 <div className="mt-6 rounded-2xl border border-slate-100 bg-slate-50/70 p-4 sm:p-5 space-y-3 text-xs sm:text-sm">
-                  <div className="flex items-center justify-between text-slate-700">
-                    <span className="font-semibold">
+                  <div className="flex items-center justify-between text-slate-700 gap-2">
+                    <span className="font-semibold truncate">
                       {selectedPackage
                         ? `${TIER_LABELS[selectedPackage.tier]} (${DURATION_LABELS[selectedPackage.durationType]})`
                         : `${selectedBundle?.name} Credits`}
                     </span>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 shrink-0 whitespace-nowrap">
                       {hasDiscount && (
-                        <span className="text-xs text-slate-400 line-through">
+                        <span className="text-xs text-slate-400 line-through whitespace-nowrap">
                           GHS {basePrice.toFixed(2)}
                         </span>
                       )}
-                      <span className="font-bold text-slate-950">
+                      <span className="font-bold text-slate-950 whitespace-nowrap">
                         GHS {finalPrice.toFixed(2)}
                       </span>
                     </div>
@@ -512,24 +516,28 @@ function CheckoutContent() {
                   {/* Active Discounts Breakdown */}
                   {activeDiscounts.length > 0 && (
                     <div className="pt-3 border-t border-slate-200/60 space-y-2">
-                      {activeDiscounts.map((d: any, i: number) => (
-                        <div
-                          key={i}
-                          className="flex items-center justify-between text-emerald-700 bg-emerald-50/80 rounded-xl p-2.5 px-3 font-semibold text-xs border border-emerald-100"
-                        >
-                          <span className="flex items-center gap-1.5">
-                            {d.type === "student" ? (
-                              <GraduationCap className="h-4 w-4 text-emerald-600 shrink-0" />
-                            ) : (
-                              <Tag className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                            )}
-                            {d.label} ({d.percentage}% OFF)
-                          </span>
-                          <span className="font-bold">
-                            − GHS {((basePrice * d.percentage) / 100).toFixed(2)}
-                          </span>
-                        </div>
-                      ))}
+                      {activeDiscounts.map((d: any, i: number) => {
+                        const pct = Math.round(Number(d.percentage || 0));
+                        const discountVal = Number(((basePrice * d.percentage) / 100).toFixed(2));
+                        return (
+                          <div
+                            key={i}
+                            className="flex items-center justify-between text-emerald-700 bg-emerald-50/80 rounded-xl p-2.5 px-3 font-semibold text-xs border border-emerald-100 gap-2"
+                          >
+                            <span className="flex items-center gap-1.5 min-w-0">
+                              {d.type === "student" ? (
+                                <GraduationCap className="h-4 w-4 text-emerald-600 shrink-0" />
+                              ) : (
+                                <Tag className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                              )}
+                              <span className="truncate">{d.label} ({pct}% OFF)</span>
+                            </span>
+                            <span className="font-bold shrink-0 whitespace-nowrap">
+                              − GHS {discountVal.toFixed(2)}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -541,7 +549,7 @@ function CheckoutContent() {
                       <div className="flex items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-bold text-emerald-800">
                         <div className="flex items-center gap-1.5">
                           <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-                          <span>PROMO: {appliedPromo.code} ({appliedPromo.discountPercent}% OFF)</span>
+                          <span>PROMO: {appliedPromo.code} ({Math.round(appliedPromo.discountPercent)}% OFF)</span>
                         </div>
                         <button
                           type="button"
@@ -599,7 +607,7 @@ function CheckoutContent() {
                       </button>
                     ) : appliedReferral ? (
                       <div className="flex items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50 p-2.5 text-xs font-bold text-emerald-800">
-                        <span>REFERRAL: {appliedReferral.code} ({appliedReferral.discountPercent}% OFF)</span>
+                        <span>REFERRAL: {appliedReferral.code} ({Math.round(appliedReferral.discountPercent)}% OFF)</span>
                         <button
                           type="button"
                           onClick={() => handleRemoveCode("referral")}
@@ -636,24 +644,24 @@ function CheckoutContent() {
                 )}
 
                 {/* Final Total Amount with Strikethrough & Savings Tag */}
-                <div className="mt-8 pt-5 border-t border-slate-200 flex items-end justify-between">
-                  <div>
+                <div className="mt-8 pt-5 border-t border-slate-200 flex items-end justify-between gap-4">
+                  <div className="min-w-0">
                     <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">
                       Total due today
                     </span>
                     {hasDiscount && (
                       <span className="text-xs font-bold text-emerald-600 mt-0.5 block">
-                        Saved GHS {totalSavings.toFixed(2)} ({totalDiscountPercentage}% OFF)
+                        Saved GHS {totalSavings.toFixed(2)} ({Math.round(totalDiscountPercentage)}% OFF)
                       </span>
                     )}
                   </div>
-                  <div className="text-right flex items-baseline gap-2">
+                  <div className="text-right flex items-baseline gap-2 shrink-0 whitespace-nowrap">
                     {hasDiscount && (
-                      <span className="text-base sm:text-lg font-bold text-slate-400 line-through">
+                      <span className="text-base sm:text-lg font-bold text-slate-400 line-through whitespace-nowrap">
                         GHS {basePrice.toFixed(2)}
                       </span>
                     )}
-                    <span className="display text-3xl sm:text-4xl font-extrabold text-[#0C60FC]">
+                    <span className="display text-3xl sm:text-4xl font-extrabold text-[#0C60FC] whitespace-nowrap">
                       GHS {finalPrice.toFixed(2)}
                     </span>
                   </div>
