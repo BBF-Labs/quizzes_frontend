@@ -79,9 +79,9 @@ export function GlowingOrb({
                 scale: [1, 1.15, 1],
                 rotate: [0, 180, 360],
                 filter: [
-                  "drop-shadow(0 4px 14px rgba(255, 107, 74, 0.5))",
-                  "drop-shadow(0 8px 22px rgba(138, 43, 226, 0.6))",
-                  "drop-shadow(0 4px 14px rgba(255, 107, 74, 0.5))",
+                  "drop-shadow(0 4px 14px rgba(12, 96, 252, 0.55))",
+                  "drop-shadow(0 8px 24px rgba(6, 182, 212, 0.65))",
+                  "drop-shadow(0 4px 14px rgba(12, 96, 252, 0.55))",
                 ],
               }
             : isTyping
@@ -89,19 +89,19 @@ export function GlowingOrb({
                 scale: [1.05, 1.16, 1.08],
                 rotate: typingRotate,
                 filter: [
-                  "drop-shadow(0 6px 18px rgba(99, 102, 241, 0.6))",
-                  "drop-shadow(0 8px 24px rgba(236, 72, 153, 0.6))",
-                  "drop-shadow(0 6px 18px rgba(99, 102, 241, 0.6))",
+                  "drop-shadow(0 6px 18px rgba(12, 96, 252, 0.6))",
+                  "drop-shadow(0 8px 24px rgba(99, 102, 241, 0.6))",
+                  "drop-shadow(0 6px 18px rgba(12, 96, 252, 0.6))",
                 ],
               }
             : position === "user"
             ? {
                 scale: [1, 1.04, 1],
-                filter: "drop-shadow(0 4px 12px rgba(59, 130, 246, 0.4))",
+                filter: "drop-shadow(0 4px 12px rgba(12, 96, 252, 0.4))",
               }
             : {
                 scale: [1, 1.05, 1],
-                filter: "drop-shadow(0 4px 14px rgba(255, 87, 34, 0.45))",
+                filter: "drop-shadow(0 4px 14px rgba(12, 96, 252, 0.5))",
               }
         }
         transition={{
@@ -116,10 +116,10 @@ export function GlowingOrb({
         style={{
           background:
             isTyping
-              ? "radial-gradient(circle at 35% 30%, #EC4899 0%, #8B5CF6 40%, #3B82F6 80%, #06B6D4 100%)"
+              ? "radial-gradient(circle at 35% 30%, #38BDF8 0%, #0C60FC 40%, #6366F1 80%, #9333EA 100%)"
               : position === "user"
-              ? "radial-gradient(circle at 35% 30%, #60A5FA 0%, #3B82F6 40%, #8B5CF6 75%, #4F46E5 100%)"
-              : "radial-gradient(circle at 32% 28%, #FF7A50 0%, #FF4500 35%, #9333EA 75%, #3B4CCA 100%)",
+              ? "radial-gradient(circle at 35% 30%, #93C5FD 0%, #3B82F6 45%, #1D4ED8 80%, #0F172A 100%)"
+              : "radial-gradient(circle at 32% 28%, #60A5FA 0%, #0C60FC 35%, #4338CA 75%, #1E1B4B 100%)",
         }}
       >
         {/* Ambient atmospheric halo */}
@@ -128,14 +128,14 @@ export function GlowingOrb({
           style={{
             background:
               isTyping
-                ? "radial-gradient(circle, #EC4899 0%, #8B5CF6 70%, transparent 100%)"
+                ? "radial-gradient(circle, #38BDF8 0%, #0C60FC 70%, transparent 100%)"
                 : position === "user"
-                ? "radial-gradient(circle, #3B82F6 0%, #8B5CF6 70%, transparent 100%)"
-                : "radial-gradient(circle, #FF5722 0%, #7C3AED 70%, transparent 100%)",
+                ? "radial-gradient(circle, #3B82F6 0%, #1D4ED8 70%, transparent 100%)"
+                : "radial-gradient(circle, #0C60FC 0%, #4338CA 70%, transparent 100%)",
           }}
         />
         {/* Soft specular light dot */}
-        <div className="absolute top-1.5 left-2 h-2.5 w-2.5 rounded-full bg-white/70 blur-[0.6px]" />
+        <div className="absolute top-1.5 left-2 h-2.5 w-2.5 rounded-full bg-white/80 blur-[0.6px]" />
       </motion.div>
     </motion.div>
   );
