@@ -338,7 +338,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="relative flex flex-col h-full overflow-hidden bg-[#FAF9F6] antialiased selection:bg-[#0C60FC] selection:text-white">
+    <div className="relative flex flex-col h-full overflow-hidden bg-[#FAF9F6] bg-[linear-gradient(to_right,#EAE8E1_1px,transparent_1px),linear-gradient(to_bottom,#EAE8E1_1px,transparent_1px)] bg-[size:26px_26px] antialiased selection:bg-[#0C60FC] selection:text-white">
       {/* 
         Transparent Floating Header:
         NO BACKGROUND on the header bar itself, only individual floating divs!
@@ -390,12 +390,14 @@ export default function ChatPage() {
       </header>
 
       {/* Main Canvas Middle Content (Padded at top for transparent header) */}
-      <div className="flex-1 flex flex-col min-h-0 pt-18 overflow-y-auto">
+      <div className="flex-1 flex flex-col min-h-0 pt-18 overflow-y-auto scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none]">
         {activeView === "session" && (
           <MessageFeed
             messages={messages}
             citations={citations}
             activeDirectiveMessageId={activeDirectiveMessageId}
+            isTyping={input.trim().length > 0}
+            inputLength={input.length}
             onOpenSource={handleOpenSource}
             onSubmitAnswer={handleSubmitAnswer}
             onApprove={handleApprove}
@@ -468,33 +470,45 @@ export default function ChatPage() {
         <div className="max-w-2xl w-full mx-auto pointer-events-auto space-y-2.5">
           {/* Quick Feedback & Continue Action Pills (in Session mode) */}
           {activeView === "session" && (
-            <div className="flex items-center justify-center gap-2">
+            <div className="flex flex-col items-center gap-2">
+              {/* Scroll Indicator button */}
               <button
                 type="button"
-                onClick={() => sendMessage("Too easy")}
-                className="rounded-full bg-white/95 hover:bg-white border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-xs hover:scale-102 transition cursor-pointer flex items-center gap-1.5"
+                onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" })}
+                className="h-7 w-7 rounded-full bg-white border border-slate-200 shadow-xs flex items-center justify-center text-slate-500 hover:text-slate-800 transition cursor-pointer"
+                title="Scroll down"
               >
-                <span>🤯</span>
-                <span>Too easy</span>
+                <ArrowUp className="h-3.5 w-3.5 rotate-180" />
               </button>
 
-              <button
-                type="button"
-                onClick={() => sendMessage("Too hard")}
-                className="rounded-full bg-white/95 hover:bg-white border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-xs hover:scale-102 transition cursor-pointer flex items-center gap-1.5"
-              >
-                <span>🤯</span>
-                <span>Too hard</span>
-              </button>
+              <div className="flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => sendMessage("Too easy")}
+                  className="rounded-full bg-white/95 hover:bg-white border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-xs hover:scale-102 transition cursor-pointer flex items-center gap-1.5"
+                >
+                  <span>🤯</span>
+                  <span>Too easy</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={handleContinue}
-                className="rounded-full bg-slate-950 hover:bg-[#0C60FC] px-4 py-1.5 text-xs font-extrabold text-white shadow-md hover:scale-102 transition cursor-pointer flex items-center gap-1.5"
-              >
-                <span>Continue</span>
-                <ArrowRight className="h-3.5 w-3.5" />
-              </button>
+                <button
+                  type="button"
+                  onClick={() => sendMessage("Too hard")}
+                  className="rounded-full bg-white/95 hover:bg-white border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-xs hover:scale-102 transition cursor-pointer flex items-center gap-1.5"
+                >
+                  <span>🤯</span>
+                  <span>Too hard</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleContinue}
+                  className="rounded-full bg-slate-950 hover:bg-[#0C60FC] px-4.5 py-1.5 text-xs font-extrabold text-white shadow-md hover:scale-102 transition cursor-pointer flex items-center gap-1.5"
+                >
+                  <span>Continue</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
           )}
 
@@ -591,7 +605,7 @@ export default function ChatPage() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask Alice / Qubi anything…"
+                placeholder="Ask Alice"
                 rows={1}
                 disabled={messageMutation.isPending || !sessionId}
                 className="w-full resize-none bg-transparent px-2 text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-400 outline-none disabled:opacity-50 scrollbar-none leading-relaxed"

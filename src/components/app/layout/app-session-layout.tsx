@@ -9,16 +9,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import Link from "next/link";
-import {
-  PanelLeftOpen,
-  PanelRightOpen,
-  X,
-  Users,
-  Sparkles,
-  Loader2,
-} from "lucide-react";
+import { AnimatePresence } from "framer-motion";
+import { Users, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { nanoid } from "nanoid";
 import { api } from "@/lib/api";
@@ -31,13 +23,7 @@ import {
 } from "@/hooks/app/use-app-actions";
 import { useAppStream } from "@/hooks/app/use-app-stream";
 import { useSocket } from "@/hooks";
-import { StudioPanel } from "@/components/app/right";
-import { SourcesPanel } from "@/components/app/left/SourcesPanel";
 import { DocumentReader } from "@/components/app/center/DocumentReader";
-import { UserProfileDropdown } from "@/components/common";
-import { useAuth } from "@/contexts/auth-context";
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
 import type {
   ZAppMessage,
   IZStudyPartnerApp,
@@ -49,11 +35,6 @@ import type {
   StudioExport,
   SessionCitation,
 } from "@/types/session";
-
-// ─── Panel dimensions ─────────────────────────────────────────────────────────
-
-const LEFT_PANEL_WIDTH = 320;
-const RIGHT_PANEL_WIDTH = 360;
 
 // ─── Context ──────────────────────────────────────────────────────────────────
 
@@ -93,279 +74,163 @@ export interface AppSessionLayoutProps {
 }
 
 export function AppSessionLayout({ children, sessionId }: AppSessionLayoutProps) {
-  // ── Panel state — collapsed on mobile, expanded on lg ──────────────────────
-  const [leftOpen, setLeftOpen] = useState(false);
-  const [rightOpen, setRightOpen] = useState(false);
-  const [isLg, setIsLg] = useState(false);
-
-  // Mobile split-view tab toggle: "document" | "chat"
-  const [readerView, setReaderView] = useState<"document" | "chat">("document");
-
-  useEffect(() => {
-    const mql = window.matchMedia("(min-width: 1024px)");
-    const onMqlChange = ({ matches }: MediaQueryListEvent | MediaQueryList) => {
-      setLeftOpen(matches);
-      setRightOpen(matches);
-      setIsLg(matches);
-    };
-    mql.addEventListener("change", onMqlChange);
-    onMqlChange(mql);
-    return () => mql.removeEventListener("change", onMqlChange);
-  }, []);
-
   const [activeMaterialId, setActiveMaterialId] = useState<string | null>(null);
+  const [localCitations, setLocalCitations] = useState<SessionCitation[]>([]);
 
-  // Reset to document view whenever a new material is opened
-  useEffect(() => {
-    if (activeMaterialId) setReaderView("document");
-  }, [activeMaterialId]);
+  const queryClient = useQueryClient();
+  const { data: app, isLoading, error } = useApp(sessionId);
+  const renameMutation = useRenameApp();
+  const createNoteMutation = useCreateStudioNote(sessionId);
+  const messageAction = useAppMessage();
+  const { socket } = useSocket();
 
-  const toggleLeft = useCallback(() => setLeftOpen((v) => !v), []);
-  const toggleRight = useCallback(() => setRightOpen((v) => !v), []);
-
-  // ── Queries and Mutations ────────────────────────────────────────────────────
-  const { user, logout } = useAuth();
-  const { data: app, isLoading, error } = useApp(sessionId, !!sessionId);
+  // Handle invitation join if 403 partner
   const [joining, setJoining] = useState(false);
-
   const handleJoin = async () => {
-    setJoining(true);
     try {
+      setJoining(true);
       await api.post(`/app/${sessionId}/join`);
-      toast.success("Joined session!");
-      window.location.reload();
+      queryClient.invalidateQueries({ queryKey: queryKeys.app.detail(sessionId) });
     } catch {
-      toast.error("Failed to join session.");
+      toast.error("Failed to join session");
     } finally {
       setJoining(false);
     }
   };
 
-  const renameAction = useRenameApp();
-  const messageAction = useAppMessage();
-  const createStudioNoteAction = useCreateStudioNote(sessionId);
-  const queryClient = useQueryClient();
-
-  const [localCitations, setLocalCitations] = useState<SessionCitation[]>([]);
-
-  // Keep localCitations in sync when the query refetches
+  // Sync session name
+  const [appName, setAppName] = useState("");
   useEffect(() => {
-    if (app?.citations) {
-      setLocalCitations(app.citations);
-    }
-  }, [app?.citations]);
+    if (app?.title) setAppName(app.title);
+    else if (app?.name) setAppName(app.name);
+  }, [app?.name, app?.title]);
 
-  const stream = useAppStream(sessionId, app?.zMessages || [], !!sessionId, {
-    onCitationsUpdate: (citations) => {
-      setLocalCitations(citations as SessionCitation[]);
-    },
-    onRequestRefetch: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.app.detail(sessionId),
-      });
-    },
-  });
-  const { isConnected: isSocketConnected } = useSocket();
-
-  // ── Studio workspace state ──────────────────────────────────────────────────
+  // Session state collections
   const [studioNotes, setStudioNotes] = useState<StudioNote[]>([]);
   const [studioSharedNotes, setStudioSharedNotes] = useState<SharedNote[]>([]);
-  const [studioFlashcards, setStudioFlashcards] = useState<StudioFlashcard[]>(
-    [],
-  );
+  const [studioFlashcards, setStudioFlashcards] = useState<StudioFlashcard[]>([]);
   const [studioQuizzes, setStudioQuizzes] = useState<StudioQuiz[]>([]);
-  const [studioMindMap, setStudioMindMap] = useState<StudioMindMap | undefined>(
-    undefined,
-  );
+  const [studioMindMap, setStudioMindMap] = useState<StudioMindMap | null>(null);
   const [studioExports, setStudioExports] = useState<StudioExport[]>([]);
 
-  const handleSessionChange = useCallback(
-    (updated: Partial<IZStudyPartnerApp>) => {
-      if (updated.notes !== undefined) setStudioNotes(updated.notes);
-      if (updated.sharedNotes !== undefined)
-        setStudioSharedNotes(updated.sharedNotes);
-      if (updated.flashcards !== undefined)
-        setStudioFlashcards(updated.flashcards);
-      if (updated.quizzes !== undefined) setStudioQuizzes(updated.quizzes);
-      if (updated.mindMap !== undefined) setStudioMindMap(updated.mindMap);
-      if (updated.exports !== undefined) setStudioExports(updated.exports);
-    },
-    [],
-  );
-
-  // ── Sync artifacts from session data ────────────────────────────────────────
   useEffect(() => {
-    if (app?.artifacts) {
-      // Sync mindmap
-      const mmArtifact = (app.artifacts ?? []).find(
-        (a) => a.type === "mindmap",
-      );
-      if (mmArtifact) {
-        setStudioMindMap(mmArtifact.content as StudioMindMap);
-      }
+    if (!app) return;
+    const partner = app as IZStudyPartnerApp;
+    setStudioNotes(app.notes ?? []);
+    setStudioSharedNotes(partner.sharedNotes ?? []);
+    setStudioFlashcards(partner.flashcards ?? []);
+    setStudioQuizzes(partner.quizzes ?? []);
+    setStudioMindMap(partner.mindMap ?? null);
+    setStudioExports(partner.exports ?? []);
+    if (app.citations) {
+      setLocalCitations(app.citations);
+    }
+  }, [app]);
 
-      // Sync quizzes
-      const quizArtifacts = (app.artifacts ?? [])
-        .filter((a) => a.type === "quiz")
-        .map((a) => {
-          const content = a.content as {
-            topicTitle?: string;
-            questions?: unknown[];
-            savedToPersonalQuizId?: string;
-          };
-          return {
-            id: a.artifactId,
-            title: a.title,
-            topicTitle: content.topicTitle || "Quiz",
-            questionCount: content.questions?.length || 0,
-            generatedAt: a.createdAt,
-            savedToBank: !!content.savedToPersonalQuizId,
-          };
-        }) as StudioQuiz[];
+  // Socket listener for dynamic live stream signals
+  useEffect(() => {
+    if (!socket || !sessionId) return;
 
-      if (quizArtifacts.length > 0) {
-        setStudioQuizzes(quizArtifacts);
-      }
+    function handleSignal(payload: {
+      type: string;
+      data: any;
+      sessionId?: string;
+    }) {
+      if (payload.sessionId && payload.sessionId !== sessionId) return;
 
-      // Sync flashcards
-      const fcArtifacts = (app.artifacts ?? [])
-        .filter((a) => a.type === "flashcard_set")
-        .flatMap(
-          (a) => (a.content as { cards?: unknown[] }).cards || [],
-        ) as StudioFlashcard[];
-
-      if (fcArtifacts.length > 0) {
-        setStudioFlashcards(fcArtifacts);
-      }
-
-      // Sync notes
-      const notes = (app.artifacts ?? [])
-        .filter((a) => a.type === "notes")
-        .flatMap((a) =>
-          (
-            (
-              a.content as {
-                sections?: {
-                  id?: string;
-                  title?: string;
-                  body?: string;
-                  content?: string;
-                }[];
-              }
-            ).sections || []
-          ).map((s) => ({
-            id: s.id || nanoid(),
-            title: s.title || "Untitled",
-            content: s.content || s.body || "",
-            generatedByZ: true,
-            createdAt: a.createdAt,
-            updatedAt: a.updatedAt,
-          })),
-        ) as StudioNote[];
-
-      if (notes.length > 0) {
-        setStudioNotes(notes);
-      }
-
-      // Sync shared notes and exports from app studio
-      if (app.studio?.exportedFiles) {
-        setStudioExports(app.studio.exportedFiles as unknown as StudioExport[]);
-      }
-      if (app.studio?.notes) {
-        setStudioNotes(app.studio.notes as unknown as StudioNote[]);
-      }
-      if (app.sharedNotes) {
-        setStudioSharedNotes(app.sharedNotes as unknown as SharedNote[]);
+      switch (payload.type) {
+        case "citations:update":
+          if (Array.isArray(payload.data)) {
+            setLocalCitations(payload.data);
+          }
+          break;
+        case "notes:update":
+          if (Array.isArray(payload.data)) setStudioNotes(payload.data);
+          break;
+        case "flashcards:update":
+          if (Array.isArray(payload.data)) setStudioFlashcards(payload.data);
+          break;
+        case "quizzes:update":
+          if (Array.isArray(payload.data)) setStudioQuizzes(payload.data);
+          break;
+        case "mindmap:update":
+          setStudioMindMap(payload.data ?? null);
+          break;
+        case "exports:update":
+          if (Array.isArray(payload.data)) setStudioExports(payload.data);
+          break;
       }
     }
-  }, [
-    app?.artifacts,
-    app?.studio?.exportedFiles,
-    app?.studio?.notes,
-    app?.sharedNotes,
-  ]);
 
-  // ── Inline session name editing ─────────────────────────────────────────────
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [nameInput, setNameInput] = useState("");
+    socket.on("app:signal", handleSignal);
+    return () => {
+      socket.off("app:signal", handleSignal);
+    };
+  }, [socket, sessionId]);
 
-  const appName = app?.name || app?.title || "New App";
+  // Stream Hook
+  const stream = useAppStream(sessionId);
 
-  function handleNameClick() {
-    setNameInput(appName);
-    setIsEditingName(true);
-  }
-
-  async function handleNameBlur() {
-    setIsEditingName(false);
-    const trimmed = nameInput.trim();
-    if (!trimmed || trimmed === appName) return;
-    try {
-      await renameAction.mutateAsync({ sessionId, name: trimmed });
-    } catch {
-      // silent — optimistic rename
-    }
-  }
-
-  // ── Send a plain-text message ────────────────────────────────────────────────
+  // Send message
   const sendMessage = useCallback(
     async (content: string, retryId?: string) => {
       const trimmed = content.trim();
-      if (!trimmed || messageAction.isPending) return;
+      if (!trimmed) return;
 
-      let msgId: string;
-      if (retryId) {
-        msgId = retryId;
-        stream.truncateAfter(retryId);
-        stream.updateMessage(msgId, { status: "sending" });
-      } else {
-        msgId = Date.now().toString();
-        stream.pushMessage({
-          id: msgId,
-          messageId: msgId,
-          role: "user",
-          type: "text",
-          content: trimmed,
-          timestamp: new Date().toISOString(),
-          status: "sending",
-        });
+      const userMsgId = retryId ?? nanoid();
+      const userMsg: ZAppMessage = {
+        id: userMsgId,
+        messageId: userMsgId,
+        role: "user",
+        type: "text",
+        content: trimmed,
+        timestamp: new Date().toISOString(),
+        status: "sending",
+      };
+
+      if (!retryId) {
+        stream.pushMessage(userMsg);
       }
 
       try {
         await messageAction.mutateAsync({
           sessionId,
           message: trimmed,
-          messageId: msgId,
         });
-        stream.updateMessage(msgId, { status: "sent" });
-      } catch (err) {
-        console.error("[useAppLayout] sendMessage failed", err);
-        stream.updateMessage(msgId, { status: "error" });
+      } catch (err: unknown) {
+        const errorMsg =
+          err instanceof Error
+            ? err.message
+            : "Failed to send message. Please try again.";
+        toast.error(errorMsg);
+        stream.pushMessage({
+          id: nanoid(),
+          messageId: nanoid(),
+          role: "z",
+          type: "text",
+          content: `⚠️ Error: ${errorMsg}`,
+          timestamp: new Date().toISOString(),
+          status: "error",
+        });
       }
     },
-    [sessionId, messageAction, stream],
+    [messageAction, sessionId, stream],
   );
 
   const addNote = useCallback(
-    async (title: string, content: string) => {
-      try {
-        await createStudioNoteAction.mutateAsync({ title, content });
-        toast.success("Note saved to snippet collection.");
-      } catch (err) {
-        console.error("[useAppLayout] addNote failed", err);
-        toast.error("Failed to save note.");
-      }
+    (title: string, content: string) => {
+      createNoteMutation.mutate({ title, content });
     },
-    [createStudioNoteAction],
+    [createNoteMutation],
   );
 
-  // ── Context value ───────────────────────────────────────────────────────────
+  // Context value (no sidebars)
   const contextValue: AppLayoutContextValue = {
     sessionId,
-    leftOpen,
-    rightOpen,
-    toggleLeft,
-    toggleRight,
+    leftOpen: false,
+    rightOpen: false,
+    toggleLeft: () => {},
+    toggleRight: () => {},
     messages: stream.messages,
     citations: localCitations,
     pushMessage: stream.pushMessage,
@@ -380,148 +245,63 @@ export function AppSessionLayout({ children, sessionId }: AppSessionLayoutProps)
 
   return (
     <AppLayoutContext.Provider value={contextValue}>
-      <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden">
-        <div className="flex flex-1 min-h-0 overflow-hidden relative">
-          {/* ── Left slide-over panel (Sources / Materials) ───────────────────────── */}
-          <AnimatePresence>
-            {leftOpen && (
-              <>
-                <motion.div
-                  key="left-backdrop"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="fixed inset-0 z-50 bg-slate-950/30 backdrop-blur-xs"
-                  onClick={toggleLeft}
-                />
-                <motion.div
-                  key="left-panel"
-                  initial={{ x: -LEFT_PANEL_WIDTH }}
-                  animate={{ x: 0 }}
-                  exit={{ x: -LEFT_PANEL_WIDTH }}
-                  transition={{ type: "spring", damping: 25, stiffness: 280 }}
-                  className="fixed left-0 top-0 bottom-0 z-50 w-full max-w-xs sm:max-w-sm bg-white border-r border-slate-200 shadow-2xl flex flex-col overflow-hidden"
-                >
-                  <div className="h-full flex flex-col">
-                    <SourcesPanel
-                      sessionId={sessionId}
-                      activeCitationId={null}
-                      onClose={toggleLeft}
-                    />
-                  </div>
-                </motion.div>
-              </>
-            )}
-          </AnimatePresence>
-
-          {/* ── Center Canvas panel ──────────────────────────────────────────────── */}
-          <div className="flex-1 min-w-0 flex flex-col overflow-hidden relative">
-            <div className="flex-1 flex flex-col min-h-0 bg-[#FAF9F6] relative">
-              {isLoading ? (
-                <div className="flex-1 flex flex-col items-center justify-center p-8 gap-4">
-                  <Loader2 className="size-8 animate-spin text-primary/40" />
-                  <p className="text-xs font-mono text-muted-foreground animate-pulse">
-                    Connecting to study partner session...
-                  </p>
-                </div>
-              ) : error &&
-                (error as { response?: { status: number } }).response
-                  ?.status === 403 ? (
-                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center max-w-md mx-auto">
-                  <div className="size-20 rounded-2xl bg-primary/5 flex items-center justify-center mb-6 shadow-sm border border-primary/10">
-                    <Users className="size-10 text-primary/60" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-foreground mb-2">
-                    Study Partner Session
-                  </h2>
-                  <p className="text-sm text-muted-foreground mb-8 leading-relaxed">
-                    This is a private study session. You&apos;ve been invited to
-                    join as a partner to collaborate on notes and chat with Z.
-                  </p>
-                  <button
-                    onClick={handleJoin}
-                    disabled={joining}
-                    className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3 px-6 rounded-xl font-semibold hover:bg-primary/90 transition-all shadow-md active:scale-[0.98] disabled:opacity-50 cursor-pointer"
-                  >
-                    {joining ? (
-                      <Loader2 className="size-5 animate-spin" />
-                    ) : (
-                      <>
-                        <Sparkles className="size-5" />
-                        Join Collaborative Session
-                      </>
-                    )}
-                  </button>
-                </div>
-              ) : error ? (
-                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-                  <p className="text-sm text-destructive font-mono">
-                    Failed to load session.
-                  </p>
-                </div>
+      <div className="flex flex-col h-screen bg-[#FAF9F6] text-foreground overflow-hidden">
+        {isLoading ? (
+          <div className="flex-1 flex flex-col items-center justify-center p-8 gap-4">
+            <Loader2 className="size-8 animate-spin text-primary/40" />
+            <p className="text-xs font-mono text-muted-foreground animate-pulse">
+              Connecting to study partner session...
+            </p>
+          </div>
+        ) : error &&
+          (error as { response?: { status: number } }).response
+            ?.status === 403 ? (
+          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center max-w-md mx-auto">
+            <div className="size-20 rounded-2xl bg-primary/5 flex items-center justify-center mb-6 shadow-sm border border-primary/10">
+              <Users className="size-10 text-primary/60" />
+            </div>
+            <h2 className="text-2xl font-bold text-foreground mb-2">
+              Study Partner Session
+            </h2>
+            <p className="text-sm text-muted-foreground mb-8 leading-relaxed">
+              This is a private study session. You&apos;ve been invited to
+              join as a partner to collaborate on notes and chat with Z.
+            </p>
+            <button
+              onClick={handleJoin}
+              disabled={joining}
+              className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3 px-6 rounded-xl font-semibold hover:bg-primary/90 transition-all shadow-md active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+            >
+              {joining ? (
+                <Loader2 className="size-5 animate-spin" />
               ) : (
                 <>
-                  {children}
-                  <AnimatePresence>
-                    {activeMaterialId && (
-                      <DocumentReader
-                        materialId={activeMaterialId}
-                        sessionId={sessionId}
-                        onClose={() => setActiveMaterialId(null)}
-                      />
-                    )}
-                  </AnimatePresence>
+                  <Sparkles className="size-5" />
+                  Join Collaborative Session
                 </>
               )}
-            </div>
+            </button>
           </div>
-
-          {/* ── Right slide-over panel (Studio) ──────────────────────────────────── */}
-          <AnimatePresence>
-            {rightOpen && (
-              <>
-                <motion.div
-                  key="right-backdrop"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="fixed inset-0 z-50 bg-slate-950/30 backdrop-blur-xs"
-                  onClick={toggleRight}
+        ) : error ? (
+          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+            <p className="text-sm text-destructive font-mono">
+              Failed to load session.
+            </p>
+          </div>
+        ) : (
+          <>
+            {children}
+            <AnimatePresence>
+              {activeMaterialId && (
+                <DocumentReader
+                  materialId={activeMaterialId}
+                  sessionId={sessionId}
+                  onClose={() => setActiveMaterialId(null)}
                 />
-                <motion.div
-                  key="right-panel"
-                  initial={{ x: RIGHT_PANEL_WIDTH }}
-                  animate={{ x: 0 }}
-                  exit={{ x: RIGHT_PANEL_WIDTH }}
-                  transition={{ type: "spring", damping: 25, stiffness: 280 }}
-                  className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-sm sm:max-w-md bg-white border-l border-slate-200 shadow-2xl flex flex-col overflow-hidden"
-                >
-                  <div className="h-full flex flex-col bg-background">
-                    {app && (
-                      <StudioPanel
-                        sessionId={sessionId}
-                        app={{
-                          ...app,
-                          notes: studioNotes,
-                          sharedNotes: studioSharedNotes,
-                          flashcards: studioFlashcards,
-                          quizzes: studioQuizzes,
-                          mindMap: studioMindMap,
-                          exports: studioExports,
-                        }}
-                        onSendMessage={sendMessage}
-                        onSessionChange={handleSessionChange}
-                        onClose={toggleRight}
-                      />
-                    )}
-                  </div>
-                </motion.div>
-              </>
-            )}
-          </AnimatePresence>
-        </div>
+              )}
+            </AnimatePresence>
+          </>
+        )}
       </div>
     </AppLayoutContext.Provider>
   );

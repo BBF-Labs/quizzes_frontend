@@ -10,8 +10,6 @@ import {
   FileText,
   ThumbsUp,
   ThumbsDown,
-  Sparkles,
-  ExternalLink,
   AlignLeft,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -24,16 +22,14 @@ import type { ZAppMessage, SessionCitation } from "@/types/session";
 import { DirectiveCard } from "@/components/app/session/DirectiveCard";
 import type { DirectiveCardCallbacks } from "@/components/app/session/DirectiveCard";
 import { GlowingOrb } from "@/components/app/session/GlowingOrb";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { KnowledgePathway } from "@/components/app/session/KnowledgePathway";
 
 export interface MessageFeedProps extends DirectiveCardCallbacks {
   messages: ZAppMessage[];
   citations?: SessionCitation[];
   activeDirectiveMessageId: string | null;
+  isTyping?: boolean;
+  inputLength?: number;
   onOpenSource?: (materialId: string, pageNumber?: number) => void;
   onRetryMessage?: (id: string, content: string) => void;
   onEditMessage?: (id: string, newContent: string) => void;
@@ -44,6 +40,8 @@ export function MessageFeed({
   messages,
   citations = [],
   activeDirectiveMessageId,
+  isTyping = false,
+  inputLength = 0,
   onOpenSource,
   onSubmitAnswer,
   onApprove,
@@ -72,24 +70,53 @@ export function MessageFeed({
 
   if (messages.length === 0) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-4 py-20 px-6 text-center max-w-lg mx-auto">
-        <GlowingOrb size="lg" position="center" isThinking={false} />
-        <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-          Ready when you are.
-        </h2>
-        <p className="text-xs sm:text-sm text-slate-500 max-w-sm leading-relaxed">
-          Ask a question, review the study plan, or upload lecture materials to begin your personalized learning session.
-        </p>
+      <div className="flex flex-1 flex-col items-center gap-6 py-4 px-4 sm:px-8 max-w-2xl w-full mx-auto">
+        {/* Knowledge Pathway matching user screenshot */}
+        <KnowledgePathway />
+
+        {/* Narrative text intro - NO BACKGROUND */}
+        <div className="w-full text-left self-start px-1 font-normal space-y-1">
+          <p className="text-sm sm:text-base text-slate-800 leading-relaxed font-serif">
+            Glad to see you&apos;re ready to move forward! Now that we know why we need to test for primality, let&apos;s look at one of the most famous methods for doing it with absolute certainty.
+          </p>
+        </div>
+
+        {/* Left Glowing Orb that moves as the student types */}
+        <div className="w-full flex justify-start pl-1">
+          <GlowingOrb
+            position="ai"
+            size="md"
+            isThinking={false}
+            isTyping={isTyping}
+            inputLength={inputLength}
+          />
+        </div>
+
+        {/* Exposition Section matching user screenshot - NO BG */}
+        <div className="w-full space-y-2 text-slate-800 px-1">
+          <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400">
+            <AlignLeft className="h-3.5 w-3.5" />
+            <span>Exposition</span>
+          </div>
+
+          <div className="text-sm sm:text-base leading-relaxed text-slate-900 font-serif">
+            <p>
+              The <strong>AKS test</strong>, named after its creators Agrawal, Kayal, and Saxena, is a landmark discovery in number theory. It is a <strong>deterministic primality test</strong>, meaning it can prove whether a number is prime with absolute mathematical certainty in polynomial time.
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-4 sm:px-8 py-8 max-w-3xl w-full mx-auto scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none]">
-      {/* Gliding animated orb tracking the current active turn */}
-      <div className="w-full flex justify-center sticky top-2 z-20 pointer-events-none">
+    <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-4 sm:px-8 py-6 max-w-3xl w-full mx-auto scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none]">
+      {/* Gliding animated orb tracking the current active turn & typing */}
+      <div className="w-full flex justify-start sticky top-2 z-20 pointer-events-none pl-2">
         <GlowingOrb
           isThinking={isAiStreaming}
+          isTyping={isTyping}
+          inputLength={inputLength}
           position={isUserTurn ? "user" : "ai"}
           size="md"
         />
@@ -137,7 +164,7 @@ export function MessageFeed({
           );
         }
 
-        /* ── Z text messages / narration ── */
+        /* ── Z text messages / narration (NO BACKGROUND) ── */
         return (
           <ZMessageCanvasNode
             key={msg.id || index}
@@ -328,7 +355,7 @@ function CitationChip({
   );
 }
 
-// ─── Z Message Canvas Node ──────────────────────────────────────────────────
+// ─── Z Message Canvas Node (NO BACKGROUND) ───────────────────────────────────
 
 function ZMessageCanvasNode({
   message,
@@ -353,12 +380,6 @@ function ZMessageCanvasNode({
     (c) => c.messageId === message.messageId || c.messageId === message.id
   );
 
-  // Check if content looks like a structured explanation
-  const isExplanation =
-    message.content.toLowerCase().includes("active recall") ||
-    message.content.toLowerCase().includes("explanation") ||
-    message.content.length > 250;
-
   function copyContent() {
     navigator.clipboard.writeText(message.content).then(() => {
       setCopied(true);
@@ -371,65 +392,34 @@ function ZMessageCanvasNode({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="w-full flex flex-col items-center gap-3 my-2"
+      className="w-full flex flex-col items-start gap-2 my-2 bg-transparent"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {/* Content Rendering: Elevated Explanation Card vs Conversational Text */}
-      {isExplanation && !isStreaming ? (
-        <div className="w-full rounded-[28px] border border-slate-200/80 bg-white p-5 sm:p-7 shadow-md shadow-slate-200/40 space-y-3.5 text-slate-800">
-          <div className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
-            <AlignLeft className="h-3.5 w-3.5" />
-            <span>Explanation</span>
+      {/* Pure text on canvas — NO BACKGROUND */}
+      <div className="w-full text-left text-slate-900 text-sm sm:text-base leading-relaxed font-serif prose prose-slate max-w-none bg-transparent">
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm, remarkMath]}
+          rehypePlugins={[rehypeRaw, rehypeKatex]}
+        >
+          {message.content}
+        </ReactMarkdown>
+        {isStreaming && (
+          <span className="inline-block h-2 w-2 rounded-full bg-[#0C60FC] animate-ping ml-1" />
+        )}
+
+        {relevantCitations.length > 0 && (
+          <div className="pt-2 flex flex-wrap gap-2">
+            {relevantCitations.map((cit, i) => (
+              <CitationChip
+                key={i}
+                citation={cit}
+                onOpenSource={onOpenSource}
+              />
+            ))}
           </div>
-
-          <div className="text-xs sm:text-sm leading-relaxed text-slate-800 prose prose-slate max-w-none">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm, remarkMath]}
-              rehypePlugins={[rehypeRaw, rehypeKatex]}
-            >
-              {message.content}
-            </ReactMarkdown>
-          </div>
-
-          {/* Citations at bottom right matching Screenshot 1 & 7 */}
-          {relevantCitations.length > 0 && (
-            <div className="pt-2 border-t border-slate-100 flex flex-wrap justify-end gap-2">
-              {relevantCitations.map((cit, i) => (
-                <CitationChip
-                  key={i}
-                  citation={cit}
-                  onOpenSource={onOpenSource}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="w-full max-w-2xl px-2 sm:px-4 text-center sm:text-left text-slate-800 text-xs sm:text-sm leading-relaxed prose prose-slate max-w-none">
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm, remarkMath]}
-            rehypePlugins={[rehypeRaw, rehypeKatex]}
-          >
-            {message.content}
-          </ReactMarkdown>
-          {isStreaming && (
-            <span className="inline-block h-2 w-2 rounded-full bg-[#0C60FC] animate-ping ml-1" />
-          )}
-
-          {relevantCitations.length > 0 && (
-            <div className="pt-2 flex flex-wrap gap-2">
-              {relevantCitations.map((cit, i) => (
-                <CitationChip
-                  key={i}
-                  citation={cit}
-                  onOpenSource={onOpenSource}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Action controls */}
       <div
