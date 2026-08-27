@@ -36,7 +36,7 @@ export function DocumentReader({
   materialId,
   sessionId,
   onClose,
-  referencePage = 17,
+  referencePage,
 }: DocumentReaderProps) {
   const material = useAppMaterial(sessionId, materialId);
   const {
@@ -46,16 +46,15 @@ export function DocumentReader({
   const { data: highlights = [] } = useAppHighlights(sessionId);
   const addHighlight = useAddHighlight(sessionId);
 
-  const [numPages, setNumPages] = useState<number | null>(20);
-  const [currentPage, setCurrentPage] = useState(referencePage || 17);
+  const [numPages, setNumPages] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(referencePage || 1);
   const [scale, setScale] = useState<number>(1.0);
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  // Filename display matching screenshot
-  const rawName = material?.filename || "Chapter8_MoreNumberTheory";
+  const rawName = material?.filename || (material as any)?.title || "Document";
   const displayName = rawName.replace(/\.pdf$/i, "");
 
   // Safe object URL management
@@ -297,44 +296,21 @@ export function DocumentReader({
                 );
               })}
             </Document>
+          ) : isLoadingBlob ? (
+            <div className="flex flex-col items-center justify-center p-16 space-y-3">
+              <div className="h-6 w-6 rounded-full border-2 border-[#0C60FC] border-t-transparent animate-spin" />
+              <span className="text-xs text-slate-500 font-medium">Loading document…</span>
+            </div>
           ) : (
-            /* Mock / Fallback Pages matching the exact screenshot layout */
-            [17, 18].map((pageNum) => {
-              const isReference = pageNum === (referencePage || 17);
-
-              return (
-                <div key={pageNum} className="flex flex-col items-center w-full max-w-2xl mb-8">
-                  {/* Page Label Centered */}
-                  <span className="text-[11px] font-medium text-slate-400 mb-2 select-none">
-                    Page {pageNum}
-                  </span>
-
-                  {/* Page Container Box */}
-                  <div
-                    ref={(el) => {
-                      pageRefs.current[pageNum - 1] = el;
-                    }}
-                    data-page-number={pageNum}
-                    className={cn(
-                      "relative w-full rounded-[20px] bg-white transition-all overflow-hidden",
-                      isReference
-                        ? "border-2 border-[#FF5722] shadow-md p-4 min-h-[580px] flex flex-col items-center justify-center"
-                        : "border border-slate-200 shadow-sm p-4 min-h-[580px] flex flex-col items-center justify-center"
-                    )}
-                  >
-                    {/* Orange Reference Badge embedded on top-left */}
-                    {isReference && (
-                      <div className="absolute top-2.5 left-2.5 z-30 inline-flex items-center rounded-full bg-[#FF5722] text-white px-3 py-0.5 text-[10.5px] font-bold tracking-wide shadow-xs">
-                        Reference
-                      </div>
-                    )}
-
-                    {/* Centered subtle loader spinner matching screenshot */}
-                    <div className="h-5 w-5 rounded-full border-2 border-slate-300 border-t-transparent animate-spin opacity-60" />
-                  </div>
-                </div>
-              );
-            })
+            <div className="flex flex-col items-center justify-center p-12 text-center max-w-md bg-white rounded-3xl border border-slate-200 shadow-xs space-y-3 my-auto">
+              <div className="h-10 w-10 rounded-2xl bg-blue-50 text-[#0C60FC] flex items-center justify-center font-bold text-sm">
+                PDF
+              </div>
+              <h4 className="text-sm font-bold text-slate-900">{displayName}</h4>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Document preview is loading or content is being prepared.
+              </p>
+            </div>
           )}
         </div>
       </motion.div>
