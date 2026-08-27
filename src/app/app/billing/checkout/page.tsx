@@ -9,7 +9,6 @@ import {
   Zap,
   Loader2,
   Lock,
-  ShieldCheck,
   CheckCircle2,
   GraduationCap,
   X,
@@ -69,7 +68,7 @@ function buildKeyEntitlements(pkg: BillingPackage): string[] {
   );
   f.push(
     pkg.limits.quizGenerationsPerDay === null
-      ? "Unlimited AI quiz generation"
+      ? "Unlimited AI quiz generations"
       : `${pkg.limits.quizGenerationsPerDay} quiz generations / day`,
   );
   f.push(
@@ -82,8 +81,8 @@ function buildKeyEntitlements(pkg: BillingPackage): string[] {
       ? "Unlimited lecture slide & PDF uploads"
       : `${pkg.limits.materialUploadsPerDay} uploads / day`,
   );
-  if (pkg.limits.pdfExport) f.push("PDF & study summary export");
-  if (pkg.tier === "locked_in") f.push("Priority queue & instant support");
+  if (pkg.limits.pdfExport) f.push("PDF & summary export");
+  if (pkg.tier === "locked_in") f.push("Priority processing & instant support");
   if (pkg.limits.bonusCreditsOnSignup > 0)
     f.push(`${pkg.limits.bonusCreditsOnSignup} bonus generation credits`);
   return f;
@@ -301,7 +300,7 @@ function CheckoutContent() {
 
   return (
     <div className="min-h-full px-4 py-8 sm:px-6 lg:px-8 text-slate-900 bg-[#F7F9FC]">
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto max-w-6xl">
         {/* Main Combined Checkout Card */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -310,25 +309,19 @@ function CheckoutContent() {
           className="rounded-[32px] border border-slate-200/80 bg-white shadow-xl shadow-slate-200/40 overflow-hidden"
           style={{ borderRadius: "32px" }}
         >
-          <div className="grid lg:grid-cols-[1fr_1.1fr] divide-y lg:divide-y-0 lg:divide-x divide-slate-100">
+          <div className="grid lg:grid-cols-[1.1fr_1fr] divide-y lg:divide-y-0 lg:divide-x divide-slate-100">
             {/* Left Column: Plan & Entitlements Overview */}
-            <div className="p-7 sm:p-9 bg-slate-50/60 flex flex-col justify-between">
+            <div className="p-7 sm:p-10 lg:p-12 bg-slate-50/50 flex flex-col justify-between">
               <div>
-                {/* Header Kicker */}
-                <div className="inline-flex items-center gap-1.5 rounded-full bg-white border border-slate-200/80 px-3 py-1 text-[11px] font-extrabold text-[#0C60FC] shadow-sm mb-4">
-                  <ShieldCheck className="h-3.5 w-3.5 text-[#0C60FC]" />
-                  <span>Qz Upgrade</span>
-                </div>
-
-                {/* Plan Title & Slogan */}
-                <h1 className="display text-2xl sm:text-3xl font-bold tracking-tight text-slate-950">
+                {/* Plan Title & Duration */}
+                <h1 className="display text-3xl sm:text-4xl font-bold tracking-tight text-slate-950">
                   {selectedPackage
                     ? `${TIER_LABELS[selectedPackage.tier] ?? selectedPackage.tier}`
                     : selectedBundle
                       ? `${selectedBundle.name} Credits`
                       : "Order"}
                 </h1>
-                <p className="mt-1 text-xs text-slate-500 leading-relaxed">
+                <p className="mt-1.5 text-sm text-slate-500 leading-relaxed">
                   {selectedPackage
                     ? `${DURATION_LABELS[selectedPackage.durationType]} · ${TIER_TAGLINES[selectedPackage.tier]}`
                     : selectedBundle
@@ -350,29 +343,29 @@ function CheckoutContent() {
                 </div>
 
                 {/* Feature Entitlements List */}
-                <div className="mt-8 space-y-3">
+                <div className="mt-8 space-y-3.5">
                   <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
                     What&apos;s included
                   </p>
-                  <ul className="space-y-2.5 text-xs text-slate-600">
+                  <ul className="space-y-3 text-xs sm:text-sm text-slate-600">
                     {selectedPackage &&
                       features.map((item, idx) => (
-                        <li key={idx} className="flex items-center gap-2.5">
+                        <li key={idx} className="flex items-center gap-3">
                           <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
                           <span>{item}</span>
                         </li>
                       ))}
                     {selectedBundle && (
                       <>
-                        <li className="flex items-center gap-2.5">
+                        <li className="flex items-center gap-3">
                           <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
                           <span>{selectedBundle.credits} generation credits for your account</span>
                         </li>
-                        <li className="flex items-center gap-2.5">
+                        <li className="flex items-center gap-3">
                           <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
                           <span>Usable across AI Tutor, Mind Maps, and Quizzes</span>
                         </li>
-                        <li className="flex items-center gap-2.5">
+                        <li className="flex items-center gap-3">
                           <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
                           <span>Credits never expire</span>
                         </li>
@@ -383,51 +376,51 @@ function CheckoutContent() {
               </div>
 
               {/* Instant Activation Mascot Note */}
-              <div className="mt-8 pt-6 border-t border-slate-200/70 flex items-center gap-3">
+              <div className="mt-10 pt-6 border-t border-slate-200/70 flex items-center gap-3.5">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={QUBI_STUDY_SRC}
                   alt="Qubi"
-                  className="h-10 w-10 object-contain shrink-0"
+                  className="h-11 w-11 object-contain shrink-0"
                 />
-                <p className="text-[11px] text-slate-500">
-                  <strong className="text-slate-900 font-bold">Instant activation:</strong> Your account is immediately upgraded the second payment completes.
+                <p className="text-xs text-slate-500">
+                  <strong className="text-slate-900 font-bold">Instant activation:</strong> Your study privileges unlock automatically as soon as payment is confirmed.
                 </p>
               </div>
             </div>
 
             {/* Right Column: Order Breakdown, Discounts & Pay Button */}
-            <div className="p-7 sm:p-9 bg-white flex flex-col justify-between space-y-6">
+            <div className="p-7 sm:p-10 lg:p-12 bg-white flex flex-col justify-between space-y-6">
               <div>
-                <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-                  <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-                    Checkout Summary
+                <div className="flex items-center justify-between pb-5 border-b border-slate-100">
+                  <h2 className="display text-xl font-bold text-slate-950">
+                    Order Summary
                   </h2>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500">
-                    <Lock className="h-3 w-3 text-slate-400" /> Paystack Secured
+                  <span className="text-xs font-semibold text-slate-400">
+                    Paystack
                   </span>
                 </div>
 
-                {/* Cost Breakdown */}
-                <div className="mt-5 space-y-3 text-xs">
-                  <div className="flex items-center justify-between text-slate-600">
-                    <span>
+                {/* Summary Card Details */}
+                <div className="mt-6 rounded-2xl border border-slate-100 bg-slate-50/70 p-4 sm:p-5 space-y-3 text-xs sm:text-sm">
+                  <div className="flex items-center justify-between text-slate-700">
+                    <span className="font-semibold">
                       {selectedPackage
                         ? `${TIER_LABELS[selectedPackage.tier]} (${DURATION_LABELS[selectedPackage.durationType]})`
                         : `${selectedBundle?.name} Credits`}
                     </span>
-                    <span className="font-bold text-slate-900">
+                    <span className="font-bold text-slate-950">
                       GHS {basePrice.toFixed(2)}
                     </span>
                   </div>
 
                   {/* Discounts Line Items */}
                   {discountResult?.discounts && discountResult.discounts.length > 0 && (
-                    <div className="pt-2 border-t border-slate-100 space-y-2">
+                    <div className="pt-3 border-t border-slate-200/60 space-y-2">
                       {discountResult.discounts.map((d: any, i: number) => (
                         <div
                           key={i}
-                          className="flex items-center justify-between text-emerald-600 font-semibold"
+                          className="flex items-center justify-between text-emerald-600 font-semibold text-xs"
                         >
                           <span className="flex items-center gap-1.5">
                             <Tag className="h-3.5 w-3.5" />
@@ -441,9 +434,9 @@ function CheckoutContent() {
 
                   {/* Student Discount Auto-Detection Notice */}
                   {isStudentVerified && !discountResult?.discounts?.some((d: any) => d.type === "student") && (
-                    <div className="flex items-center justify-between text-emerald-700 bg-emerald-50/80 rounded-xl p-2 px-3 font-semibold text-[11px]">
+                    <div className="flex items-center justify-between text-emerald-700 bg-emerald-100/60 rounded-xl p-2.5 px-3 font-semibold text-xs">
                       <span className="flex items-center gap-1.5">
-                        <GraduationCap className="h-3.5 w-3.5" /> Student discount applied
+                        <GraduationCap className="h-4 w-4" /> Student discount active
                       </span>
                       <span>10% OFF</span>
                     </div>
@@ -452,7 +445,7 @@ function CheckoutContent() {
 
                 {/* Promo Code Input Section */}
                 {!isCredits && (
-                  <div className="mt-6 pt-4 border-t border-slate-100">
+                  <div className="mt-5 space-y-2">
                     {appliedPromo ? (
                       <div className="flex items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-bold text-emerald-800">
                         <div className="flex items-center gap-1.5">
@@ -480,12 +473,12 @@ function CheckoutContent() {
                           value={promoCode}
                           onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
                           placeholder="PROMO CODE"
-                          className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-900 outline-none focus:bg-white focus:border-[#0C60FC] focus:ring-4 focus:ring-blue-100"
+                          className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-900 outline-none focus:bg-white focus:border-[#0C60FC] focus:ring-4 focus:ring-blue-100"
                         />
                         <button
                           type="submit"
                           disabled={!promoCode.trim() || validatePromo.isPending}
-                          className="rounded-2xl bg-slate-950 px-4 py-2.5 text-xs font-extrabold text-white transition hover:bg-[#0C60FC] disabled:opacity-50 flex items-center justify-center cursor-pointer disabled:cursor-not-allowed"
+                          className="rounded-2xl bg-slate-950 px-5 py-3 text-xs font-extrabold text-white transition hover:bg-[#0C60FC] disabled:opacity-50 flex items-center justify-center cursor-pointer disabled:cursor-not-allowed"
                         >
                           {validatePromo.isPending ? (
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -500,7 +493,7 @@ function CheckoutContent() {
                         onClick={() => setShowPromoInput(true)}
                         className="text-xs font-bold text-[#0C60FC] hover:underline cursor-pointer flex items-center gap-1"
                       >
-                        + Add promotion code
+                        + Add promo code
                       </button>
                     )}
 
@@ -509,12 +502,12 @@ function CheckoutContent() {
                       <button
                         type="button"
                         onClick={() => setShowReferralInput(true)}
-                        className="mt-2 text-[11px] font-semibold text-slate-400 hover:text-slate-600 hover:underline cursor-pointer block"
+                        className="text-[11px] font-semibold text-slate-400 hover:text-slate-600 hover:underline cursor-pointer block"
                       >
                         Have a friend&apos;s referral code?
                       </button>
                     ) : appliedReferral ? (
-                      <div className="mt-2 flex items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50 p-2.5 text-xs font-bold text-emerald-800">
+                      <div className="flex items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50 p-2.5 text-xs font-bold text-emerald-800">
                         <span>REFERRAL: {appliedReferral.code} ({appliedReferral.discountPercent}% OFF)</span>
                         <button
                           type="button"
@@ -530,19 +523,19 @@ function CheckoutContent() {
                           e.preventDefault();
                           handleApplyCodes("referral");
                         }}
-                        className="mt-2 flex gap-2"
+                        className="flex gap-2 pt-1"
                       >
                         <input
                           type="text"
                           value={referralCode}
                           onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
                           placeholder="REFERRAL CODE"
-                          className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-slate-900 outline-none focus:bg-white focus:border-[#0C60FC] focus:ring-4 focus:ring-blue-100"
+                          className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-900 outline-none focus:bg-white focus:border-[#0C60FC] focus:ring-4 focus:ring-blue-100"
                         />
                         <button
                           type="submit"
                           disabled={!referralCode.trim() || validatePromo.isPending}
-                          className="rounded-2xl bg-slate-950 px-3.5 py-2 text-xs font-extrabold text-white transition hover:bg-[#0C60FC] disabled:opacity-50"
+                          className="rounded-2xl bg-slate-950 px-5 py-3 text-xs font-extrabold text-white transition hover:bg-[#0C60FC] disabled:opacity-50"
                         >
                           Apply
                         </button>
@@ -552,24 +545,24 @@ function CheckoutContent() {
                 )}
 
                 {/* Final Total Amount */}
-                <div className="mt-6 pt-4 border-t border-slate-200 flex items-end justify-between">
+                <div className="mt-8 pt-5 border-t border-slate-200 flex items-end justify-between">
                   <div>
                     <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">
                       Total due today
                     </span>
                     {totalSavings > 0 && (
-                      <span className="text-[11px] font-bold text-emerald-600">
+                      <span className="text-xs font-bold text-emerald-600 mt-0.5 block">
                         Saved GHS {totalSavings.toFixed(2)}
                       </span>
                     )}
                   </div>
                   <div className="text-right">
                     {totalSavings > 0 && (
-                      <span className="text-xs font-semibold text-slate-400 line-through mr-2">
+                      <span className="text-sm font-semibold text-slate-400 line-through mr-2">
                         GHS {basePrice.toFixed(2)}
                       </span>
                     )}
-                    <span className="display text-3xl font-extrabold text-[#0C60FC]">
+                    <span className="display text-3xl sm:text-4xl font-extrabold text-[#0C60FC]">
                       GHS {finalPrice.toFixed(2)}
                     </span>
                   </div>
@@ -577,12 +570,12 @@ function CheckoutContent() {
               </div>
 
               {/* Pay Button and Payment Channels */}
-              <div className="space-y-4 pt-2">
+              <div className="space-y-4 pt-4">
                 <button
                   type="button"
                   onClick={handleCheckout}
                   disabled={isLoading}
-                  className="w-full rounded-2xl bg-[#0C60FC] px-5 py-4 text-sm font-extrabold text-white shadow-lg shadow-blue-200 transition hover:-translate-y-0.5 hover:bg-blue-700 disabled:opacity-70 flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
+                  className="w-full rounded-2xl bg-[#0C60FC] py-4 px-6 text-sm font-extrabold text-white shadow-xl shadow-blue-500/20 transition hover:-translate-y-0.5 hover:bg-blue-600 disabled:opacity-70 flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
                 >
                   {isLoading ? (
                     <>
@@ -600,15 +593,15 @@ function CheckoutContent() {
                 {/* Supported Payment Channels */}
                 <div className="text-center">
                   <div className="flex flex-wrap items-center justify-center gap-2 text-[10px] font-bold text-slate-500">
-                    <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2 py-1">
+                    <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1">
                       <Smartphone className="h-3 w-3 text-slate-700" /> MoMo / Telecel / AT
                     </span>
-                    <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2 py-1">
+                    <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1">
                       <CreditCard className="h-3 w-3 text-slate-700" /> Visa / Mastercard
                     </span>
                   </div>
-                  <p className="mt-2 text-[10px] text-slate-400">
-                    256-bit encrypted checkout · Powered by Paystack
+                  <p className="mt-2.5 text-[11px] font-medium text-slate-400">
+                    Powered by Paystack
                   </p>
                 </div>
               </div>
