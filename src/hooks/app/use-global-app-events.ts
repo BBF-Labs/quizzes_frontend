@@ -76,6 +76,60 @@ export function useGlobalAppEvents() {
           });
           break;
 
+        // Study Plan
+        case "ai:generate_study_plan:completed":
+          toast.success("Study Plan Ready!", {
+            description: "Your personalized study roadmap has been generated.",
+          });
+          if ((signal.payload as any)?.sessionId) {
+            queryClient.invalidateQueries({
+              queryKey: queryKeys.app.detail((signal.payload as any).sessionId),
+            });
+          }
+          queryClient.invalidateQueries({
+            queryKey: queryKeys.app.details(),
+          });
+          break;
+        case "ai:generate_study_plan:failed":
+          toast.error("Study Plan Error", {
+            description:
+              (signal.payload as any)?.reason ||
+              "There was a problem generating your study plan.",
+          });
+          break;
+
+        // Course Summary
+        case "ai:generate_course_summary:completed":
+          toast.success("Course Summary Ready!", {
+            description: "Editorial course summary and topic deep dives are available.",
+          });
+          if ((signal.payload as any)?.sessionId) {
+            queryClient.invalidateQueries({
+              queryKey: queryKeys.app.detail((signal.payload as any).sessionId),
+            });
+          }
+          queryClient.invalidateQueries({
+            queryKey: queryKeys.app.details(),
+          });
+          break;
+        case "ai:generate_course_summary:failed":
+          toast.error("Course Summary Error", {
+            description:
+              (signal.payload as any)?.reason ||
+              "There was a problem synthesizing your course summary.",
+          });
+          break;
+        case "course_summary_updated":
+          if ((signal.payload as any)?.sessionId) {
+            queryClient.invalidateQueries({
+              queryKey: queryKeys.app.detail((signal.payload as any).sessionId),
+            });
+          }
+          queryClient.invalidateQueries({
+            queryKey: queryKeys.app.details(),
+          });
+          break;
+
         // Material Processing
         case "material:process_text:completed":
         case "material:process_image:completed":
@@ -104,10 +158,33 @@ export function useGlobalAppEvents() {
       }
     };
 
+    const handleStudyPlanUpdated = (payload: { sessionId: string }) => {
+      if (payload?.sessionId) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.app.detail(payload.sessionId),
+        });
+      }
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.app.details(),
+      });
+    };
+
+    const handleBlockCompleted = (payload: { sessionId: string }) => {
+      if (payload?.sessionId) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.app.detail(payload.sessionId),
+        });
+      }
+    };
+
     socket.on("app:signal", handleAppSignal);
+    socket.on("app:study_plan_updated", handleStudyPlanUpdated);
+    socket.on("app:block_completed", handleBlockCompleted);
 
     return () => {
       socket.off("app:signal", handleAppSignal);
+      socket.off("app:study_plan_updated", handleStudyPlanUpdated);
+      socket.off("app:block_completed", handleBlockCompleted);
     };
   }, [socket, isConnected, queryClient]);
 }
