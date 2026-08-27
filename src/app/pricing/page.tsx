@@ -100,24 +100,14 @@ export default function PricingPage() {
       (p) => p.tier === tier && p.durationType === cycle
     );
     const targetUrl = matchedPkg
-      ? `/app/billing/checkout?packageId=${matchedPkg._id}`
-      : `/app/billing`;
-
-    if (!user) {
-      router.push(`/login?redirect=${encodeURIComponent(targetUrl)}`);
-      return;
-    }
+      ? `/checkout?packageId=${matchedPkg._id}`
+      : `/pricing`;
 
     router.push(targetUrl);
   };
 
   const handleBuyCreditBundle = (bundleId: string) => {
-    const targetUrl = `/app/billing/checkout?bundleId=${bundleId}`;
-    if (!user) {
-      router.push(`/login?redirect=${encodeURIComponent(targetUrl)}`);
-      return;
-    }
-    router.push(targetUrl);
+    router.push(`/checkout?bundleId=${bundleId}`);
   };
 
   const cookedAction = getPlanButton("cooked");

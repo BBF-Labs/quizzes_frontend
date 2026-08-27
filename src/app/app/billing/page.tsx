@@ -215,13 +215,11 @@ export default function BillingPage() {
   function handleSelectPlan(pkg: BillingPackage) {
     if (loadingTier) return;
     setLoadingTier(pkg.tier);
-    // Match the public pricing flow: route to checkout. The page
-    // pre-resolves the package id (matches `useInitiatePlanPayment`).
-    router.push(`/app/billing/checkout?packageId=${pkg._id}`);
+    router.push(`/checkout?packageId=${pkg._id}`);
   }
 
   function handleSelectBundle(bundleId: string) {
-    router.push(`/app/billing/checkout?bundleId=${bundleId}`);
+    router.push(`/checkout?bundleId=${bundleId}`);
   }
 
   const isVerifiedStudent = studentStatus?.status === "verified";

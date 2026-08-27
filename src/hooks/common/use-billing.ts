@@ -283,10 +283,15 @@ export function useInitiatePlanPayment() {
 
 export function useInitiateCreditPayment() {
   return useMutation({
-    mutationFn: async (input: { bundleId: string; email: string }) => {
+    mutationFn: async (input: {
+      bundleId: string;
+      email: string;
+      promoCode?: string;
+      referralCode?: string;
+    }) => {
       const res = await api.post<{ data: InitiatePaymentResult }>(
-        "/subscriptions/credits/initiate",
-        input,
+        "/subscriptions/payments/initiate",
+        { type: "credits", ...input },
       );
       return res.data.data;
     },
