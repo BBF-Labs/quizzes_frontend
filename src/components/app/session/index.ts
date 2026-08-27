@@ -12,3 +12,5 @@ export * from "./PathDrawer";
 export * from "./StudyPlanView";
 export * from "./MaterialsView";
 export * from "./NotesView";
+export * from "./TopicOverviewCard";
+export * from "./ExamsView";

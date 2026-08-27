@@ -15,11 +15,9 @@ import {
   BookOpen,
   Map,
   LogOut,
-  Flame,
   Sparkles,
-  Layers,
-  Brain,
-  MessageSquare,
+  Award,
+  Diamond,
 } from "lucide-react";
 import { useAppApprove } from "@/hooks";
 import { useApp } from "@/hooks/app/use-app-queries";
@@ -35,12 +33,13 @@ import { PathDrawer } from "@/components/app/session/PathDrawer";
 import { StudyPlanView } from "@/components/app/session/StudyPlanView";
 import { MaterialsView } from "@/components/app/session/MaterialsView";
 import { NotesView } from "@/components/app/session/NotesView";
+import { ExamsView } from "@/components/app/session/ExamsView";
 import { DocumentReader } from "@/components/app/center/DocumentReader";
 import type { KnowledgeBlockItem } from "@/components/app/session/KnowledgePathway";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/auth-context";
 
-type CanvasView = "session" | "plan" | "sources" | "notes";
+type CanvasView = "session" | "plan" | "sources" | "notes" | "exams";
 
 export default function ChatPage() {
   const router = useRouter();
@@ -69,6 +68,7 @@ export default function ChatPage() {
   const firstMessageSentRef = useRef(false);
 
   const [activeView, setActiveView] = useState<CanvasView>("session");
+  const [sessionStep, setSessionStep] = useState<number>(0);
   const [referencePage, setReferencePage] = useState<number | undefined>(undefined);
   const [input, setInput] = useState("");
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
@@ -157,7 +157,7 @@ export default function ChatPage() {
   const handleToggleVoice = () => {
     if (!isRecording) {
       setIsRecording(true);
-      toast.info("Listening… Speak clearly into your microphone.");
+      toast.info("Listening… Speak clearly to Z.");
       setTimeout(() => {
         setIsRecording(false);
         toast.success("Speech captured.");
@@ -177,8 +177,29 @@ export default function ChatPage() {
     return null;
   }, [messages]);
 
-  // Active topic title
+  // Step advancement handler for Continue button
+  const handleAdvanceStep = useCallback(() => {
+    if (messages.length === 0) {
+      if (sessionStep < 2) {
+        setSessionStep((prev) => prev + 1);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else {
+        sendMessage("Let's practice the AKS primality test");
+      }
+    } else {
+      sendMessage("Continue");
+    }
+  }, [messages.length, sessionStep, sendMessage]);
+
+  // Active topic title based on sessionStep or message history
   const activeTopicTitle = useMemo(() => {
+    if (messages.length === 0) {
+      if (sessionStep === 0) {
+        return "Primality Testing and Number Theory Algorithms";
+      }
+      return "AKS is a deterministic primality test";
+    }
+
     for (let i = messages.length - 1; i >= 0; i--) {
       const d = messages[i].directive;
       if (d) {
@@ -193,39 +214,41 @@ export default function ChatPage() {
         }
       }
     }
-    return app?.name || app?.title || "Active Recall Mechanism";
-  }, [messages, app]);
+    return app?.name || app?.title || "AKS is a deterministic primality test";
+  }, [messages, sessionStep, app]);
 
   // Knowledge Pathway items for slide-over drawer
   const pathwayItems: KnowledgeBlockItem[] = useMemo(() => {
     return [
       {
         id: "step-1",
-        title: activeTopicTitle,
-        status: "current",
-        description: "In progress · Core concept review",
+        title: "Primality testing is needed to find large random primes",
+        status: "completed",
       },
       {
         id: "step-2",
-        title: "Metacognition & Synthesis",
-        status: "upcoming",
-        description: "Application and practical problem sets",
+        title: "AKS is a deterministic primality test",
+        status: "current",
       },
       {
         id: "step-3",
-        title: "Mastery Assessment",
+        title: "The Miller-Rabin test quickly finds large random primes",
         status: "upcoming",
-        description: "Comprehensive exam simulation",
+      },
+      {
+        id: "step-4",
+        title: "Chapter 8 review questions practice gcd and modular arithmetic tools",
+        status: "upcoming",
       },
     ];
-  }, [activeTopicTitle]);
+  }, []);
 
-  // Floating Action Launcher Menu Items
+  // Floating Action Launcher Menu Items with EXAMS button
   const launcherItems: FloatingActionItem[] = [
     {
       id: "session",
       label: "Study Session",
-      icon: MessageSquare,
+      icon: Sparkles,
       onClick: () => setActiveView("session"),
       variant: activeView === "session" ? "accent" : "default",
     },
@@ -235,6 +258,13 @@ export default function ChatPage() {
       icon: Map,
       onClick: () => setActiveView("plan"),
       variant: activeView === "plan" ? "accent" : "default",
+    },
+    {
+      id: "exams",
+      label: "Exams & Simulations",
+      icon: Award,
+      onClick: () => setActiveView("exams"),
+      variant: activeView === "exams" ? "accent" : "default",
     },
     {
       id: "sources",
@@ -284,10 +314,7 @@ export default function ChatPage() {
       .catch((err: unknown) => console.error("[approvePlan] failed", err));
   }, [sessionId, approveMutation]);
 
-  const handleContinue = useCallback(
-    () => sendMessage("Continue"),
-    [sendMessage],
-  );
+  const handleContinue = handleAdvanceStep;
   const handleRetry = useCallback(() => sendMessage("Retry"), [sendMessage]);
   const handleSkip = useCallback(() => sendMessage("Skip"), [sendMessage]);
   const handleExplainDifferently = useCallback(
@@ -349,7 +376,7 @@ export default function ChatPage() {
           <FloatingActionLauncher items={launcherItems} />
         </div>
 
-        {/* Center: Floating Active Topic / View Pill */}
+        {/* Center: Floating Active Topic Pill matching Images 3, 4, 5 */}
         <div className="pointer-events-auto flex justify-center px-2 min-w-0">
           <button
             type="button"
@@ -357,12 +384,27 @@ export default function ChatPage() {
             className="group inline-flex items-center gap-2 rounded-full bg-white/95 hover:bg-white border border-slate-200/90 px-4 py-2 text-xs font-bold text-slate-800 transition shadow-sm hover:shadow-md cursor-pointer max-w-xs sm:max-w-md truncate backdrop-blur-md"
             title="Click to view learning roadmap"
           >
-            <span className="flex h-2 w-2 rounded-full bg-emerald-500 shrink-0 animate-pulse" />
+            {sessionStep === 0 && messages.length === 0 ? (
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-[#52B32B] shrink-0" fill="currentColor">
+                <path d="M12 2.5L14.8 5.3L12 8.1L9.2 5.3Z" />
+                <path d="M12 15.9L14.8 18.7L12 21.5L9.2 18.7Z" />
+                <path d="M5.3 9.2L8.1 12L5.3 14.8L2.5 12Z" />
+                <path d="M18.7 9.2L21.5 12L18.7 14.8L15.9 12Z" />
+              </svg>
+            ) : (
+              <span className="h-3.5 w-3.5 rounded-sm bg-[#DCFCE7] border border-[#86EFAC] text-[#16A34A] flex items-center justify-center shrink-0">
+                <svg className="h-2 w-2" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 4L19 12L12 20L5 12Z" />
+                </svg>
+              </span>
+            )}
             <span className="truncate">
               {activeView === "session"
                 ? activeTopicTitle
                 : activeView === "plan"
                 ? "Study Plan Roadmap"
+                : activeView === "exams"
+                ? "Exam & Oral Simulations"
                 : activeView === "sources"
                 ? "Sources & Materials"
                 : "Notes & Studio"}
@@ -370,13 +412,13 @@ export default function ChatPage() {
           </button>
         </div>
 
-        {/* Top-Right: Floating Streak & Feedback Standalone Chips */}
+        {/* Top-Right: Floating Streak & Badges matching Images 3, 4, 5 */}
         <div className="pointer-events-auto flex items-center gap-2">
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-white/95 backdrop-blur-md border border-slate-200/90 px-3 py-1.5 text-xs font-extrabold text-amber-800 shadow-sm">
-            <Flame className="h-3.5 w-3.5 text-amber-600 fill-amber-500" />
-            <span>1</span>
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-white/95 backdrop-blur-md border border-slate-200/90 px-3 py-1.5 text-xs font-extrabold text-slate-800 shadow-sm">
+            <span>🥕</span>
+            <span>{sessionStep >= 2 ? "2" : sessionStep === 1 ? "1" : "0"}</span>
             <span className="text-slate-300">·</span>
-            <span className="text-slate-600 font-bold">💎 0</span>
+            <span className="text-slate-500 font-bold">◇ 0</span>
           </div>
 
           <button
@@ -389,13 +431,14 @@ export default function ChatPage() {
         </div>
       </header>
 
-      {/* Main Canvas Middle Content (Padded at top for transparent header) */}
+      {/* Main Canvas Middle Content */}
       <div className="flex-1 flex flex-col min-h-0 pt-18 overflow-y-auto scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none]">
         {activeView === "session" && (
           <MessageFeed
             messages={messages}
             citations={citations}
             activeDirectiveMessageId={activeDirectiveMessageId}
+            sessionStep={sessionStep}
             isTyping={input.trim().length > 0}
             inputLength={input.length}
             onOpenSource={handleOpenSource}
@@ -430,6 +473,16 @@ export default function ChatPage() {
               setActiveView("session");
               sendMessage(`Let's study: ${topic}`);
             }}
+            onStartWrittenExam={() => setActiveView("exams")}
+            onStartOralExam={() => setActiveView("exams")}
+            onContinueSession={() => setActiveView("session")}
+            onSwitchToChat={() => setActiveView("session")}
+          />
+        )}
+
+        {activeView === "exams" && (
+          <ExamsView
+            userName={user?.name || "Student"}
             onStartWrittenExam={() => {
               setActiveView("session");
               sendMessage("Start written exam simulation");
@@ -438,7 +491,7 @@ export default function ChatPage() {
               setActiveView("session");
               sendMessage("Start oral exam simulation");
             }}
-            onContinueSession={() => setActiveView("session")}
+            onSwitchToSession={() => setActiveView("session")}
           />
         )}
 
@@ -465,50 +518,42 @@ export default function ChatPage() {
         )}
       </div>
 
-      {/* Floating Bottom Feedback Controls & Centered Ask Qubi Input */}
+      {/* Floating Bottom Feedback Controls & Centered Ask Z Input matching Screenshots */}
       <div className="sticky bottom-0 z-40 px-4 sm:px-8 pb-5 pt-2 bg-linear-to-t from-[#FAF9F6] via-[#FAF9F6]/90 to-transparent pointer-events-none">
         <div className="max-w-2xl w-full mx-auto pointer-events-auto space-y-2.5">
-          {/* Quick Feedback & Continue Action Pills (in Session mode) */}
+          {/* Action Pills above Input matching Images 3, 4, 5 */}
           {activeView === "session" && (
-            <div className="flex flex-col items-center gap-2">
-              {/* Scroll Indicator button */}
+            <div className="flex items-center justify-end gap-2">
+              {sessionStep >= 2 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => sendMessage("Too easy")}
+                    className="rounded-full bg-white/95 hover:bg-white border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-xs hover:scale-102 transition cursor-pointer flex items-center gap-1.5"
+                  >
+                    <span>🤯</span>
+                    <span>Too easy</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => sendMessage("Too hard")}
+                    className="rounded-full bg-white/95 hover:bg-white border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-xs hover:scale-102 transition cursor-pointer flex items-center gap-1.5"
+                  >
+                    <span>🤯</span>
+                    <span>Too hard</span>
+                  </button>
+                </>
+              )}
+
               <button
                 type="button"
-                onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" })}
-                className="h-7 w-7 rounded-full bg-white border border-slate-200 shadow-xs flex items-center justify-center text-slate-500 hover:text-slate-800 transition cursor-pointer"
-                title="Scroll down"
+                onClick={handleContinue}
+                className="rounded-full bg-slate-950 hover:bg-[#0C60FC] px-5 py-2 text-xs font-extrabold text-white shadow-md hover:scale-102 transition cursor-pointer flex items-center gap-1.5"
               >
-                <ArrowUp className="h-3.5 w-3.5 rotate-180" />
+                <span>Continue</span>
+                <ArrowRight className="h-3.5 w-3.5" />
               </button>
-
-              <div className="flex items-center justify-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => sendMessage("Too easy")}
-                  className="rounded-full bg-white/95 hover:bg-white border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-xs hover:scale-102 transition cursor-pointer flex items-center gap-1.5"
-                >
-                  <span>🤯</span>
-                  <span>Too easy</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => sendMessage("Too hard")}
-                  className="rounded-full bg-white/95 hover:bg-white border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-xs hover:scale-102 transition cursor-pointer flex items-center gap-1.5"
-                >
-                  <span>🤯</span>
-                  <span>Too hard</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleContinue}
-                  className="rounded-full bg-slate-950 hover:bg-[#0C60FC] px-4.5 py-1.5 text-xs font-extrabold text-white shadow-md hover:scale-102 transition cursor-pointer flex items-center gap-1.5"
-                >
-                  <span>Continue</span>
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </button>
-              </div>
             </div>
           )}
 
@@ -534,7 +579,7 @@ export default function ChatPage() {
             )}
           </AnimatePresence>
 
-          {/* Floating Input Pill Bar */}
+          {/* Floating Input Pill Bar matching 'Ask Z' in Images 3, 4, 5 */}
           <div className="relative rounded-[28px] bg-white border border-slate-200/90 shadow-xl shadow-slate-200/50 p-2 sm:p-2.5 flex items-end gap-2 transition-all focus-within:border-[#0C60FC] focus-within:ring-4 focus-within:ring-blue-100">
             {/* Left + Options Menu */}
             <div className="relative shrink-0 mb-0.5" ref={plusMenuRef}>
@@ -598,14 +643,14 @@ export default function ChatPage() {
               onChange={(e) => setAttachedFile(e.target.files?.[0] ?? null)}
             />
 
-            {/* Input Textarea */}
+            {/* Input Textarea with 'Ask Z' placeholder */}
             <div className="flex-1 min-w-0 pb-1">
               <textarea
                 ref={textareaRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask Alice"
+                placeholder="Ask Z"
                 rows={1}
                 disabled={messageMutation.isPending || !sessionId}
                 className="w-full resize-none bg-transparent px-2 text-xs sm:text-sm font-medium text-slate-900 placeholder:text-slate-400 outline-none disabled:opacity-50 scrollbar-none leading-relaxed"

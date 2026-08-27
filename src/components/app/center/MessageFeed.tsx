@@ -11,6 +11,8 @@ import {
   ThumbsUp,
   ThumbsDown,
   AlignLeft,
+  Volume2,
+  Diamond,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -23,11 +25,14 @@ import { DirectiveCard } from "@/components/app/session/DirectiveCard";
 import type { DirectiveCardCallbacks } from "@/components/app/session/DirectiveCard";
 import { GlowingOrb } from "@/components/app/session/GlowingOrb";
 import { KnowledgePathway } from "@/components/app/session/KnowledgePathway";
+import { TopicOverviewCard } from "@/components/app/session/TopicOverviewCard";
+import { toast } from "sonner";
 
 export interface MessageFeedProps extends DirectiveCardCallbacks {
   messages: ZAppMessage[];
   citations?: SessionCitation[];
   activeDirectiveMessageId: string | null;
+  sessionStep?: number;
   isTyping?: boolean;
   inputLength?: number;
   onOpenSource?: (materialId: string, pageNumber?: number) => void;
@@ -40,6 +45,7 @@ export function MessageFeed({
   messages,
   citations = [],
   activeDirectiveMessageId,
+  sessionStep = 0,
   isTyping = false,
   inputLength = 0,
   onOpenSource,
@@ -58,59 +64,189 @@ export function MessageFeed({
   onRateMessage,
 }: MessageFeedProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length]);
+  }, [messages.length, sessionStep]);
 
   // Determine current speaker turn for the single gliding orb
   const lastMessage = messages[messages.length - 1];
   const isAiStreaming = !!lastMessage?.isStreaming;
   const isUserTurn = lastMessage?.role === "user" && !isAiStreaming;
 
+  const handleSpeakText = (text: string) => {
+    if ("speechSynthesis" in window) {
+      if (isPlayingAudio) {
+        window.speechSynthesis.cancel();
+        setIsPlayingAudio(false);
+      } else {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 1.0;
+        utterance.onend = () => setIsPlayingAudio(false);
+        utterance.onerror = () => setIsPlayingAudio(false);
+        window.speechSynthesis.speak(utterance);
+        setIsPlayingAudio(true);
+        toast.info("Playing audio explanation…");
+      }
+    } else {
+      toast.error("Text-to-speech not supported on this browser.");
+    }
+  };
+
+  // If there are no custom messages yet, render the initial structured tutorial steps (Images 3, 4, 5)
   if (messages.length === 0) {
     return (
-      <div className="flex flex-1 flex-col items-center gap-6 py-4 px-4 sm:px-8 max-w-2xl w-full mx-auto">
-        {/* Knowledge Pathway matching user screenshot */}
-        <KnowledgePathway />
+      <div className="flex flex-1 flex-col items-center gap-6 py-4 px-4 sm:px-8 max-w-2xl w-full mx-auto pb-32">
+        {/* Step 0: Overview Accordion Card matching Image 3 */}
+        {sessionStep === 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="w-full space-y-6 flex flex-col items-center"
+          >
+            {/* Center Glowing Orb */}
+            <div className="flex justify-center my-2">
+              <GlowingOrb
+                position="center"
+                size="lg"
+                isThinking={false}
+                isTyping={isTyping}
+                inputLength={inputLength}
+              />
+            </div>
 
-        {/* Narrative text intro - NO BACKGROUND */}
-        <div className="w-full text-left self-start px-1 font-normal space-y-1">
-          <p className="text-sm sm:text-base text-slate-800 leading-relaxed font-serif">
-            Glad to see you&apos;re ready to move forward! Now that we know why we need to test for primality, let&apos;s look at one of the most famous methods for doing it with absolute certainty.
-          </p>
-        </div>
+            {/* Narrative greeting matching Image 3 */}
+            <div className="text-center max-w-xl space-y-3 px-2">
+              <p className="text-sm sm:text-base text-slate-800 leading-relaxed font-serif">
+                It&apos;s great to see you again! We&apos;re moving into some fascinating territory today as we build on your understanding of how large primes are identified for secure communication.
+              </p>
+              <p className="text-sm sm:text-base text-slate-800 leading-relaxed font-serif">
+                Take a look at the overview below to see what we&apos;ll be tackling.
+              </p>
+            </div>
 
-        {/* Left Glowing Orb that moves as the student types */}
-        <div className="w-full flex justify-start pl-1">
-          <GlowingOrb
-            position="ai"
-            size="md"
-            isThinking={false}
-            isTyping={isTyping}
-            inputLength={inputLength}
-          />
-        </div>
+            {/* Topic Overview Card */}
+            <TopicOverviewCard />
+          </motion.div>
+        )}
 
-        {/* Exposition Section matching user screenshot - NO BG */}
-        <div className="w-full space-y-2 text-slate-800 px-1">
-          <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400">
-            <AlignLeft className="h-3.5 w-3.5" />
-            <span>Exposition</span>
-          </div>
+        {/* Step 1: Knowledge Pathway with thinking state matching Image 4 */}
+        {sessionStep === 1 && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="w-full space-y-4"
+          >
+            <div className="w-full flex justify-start pl-2">
+              <GlowingOrb
+                position="ai"
+                size="md"
+                isThinking={true}
+                isTyping={isTyping}
+                inputLength={inputLength}
+              />
+            </div>
 
-          <div className="text-sm sm:text-base leading-relaxed text-slate-900 font-serif">
-            <p>
-              The <strong>AKS test</strong>, named after its creators Agrawal, Kayal, and Saxena, is a landmark discovery in number theory. It is a <strong>deterministic primality test</strong>, meaning it can prove whether a number is prime with absolute mathematical certainty in polynomial time.
-            </p>
-          </div>
-        </div>
+            {/* Slalom Knowledge Pathway */}
+            <KnowledgePathway />
+          </motion.div>
+        )}
+
+        {/* Step 2+: Exposition / Concept Deep Dive matching Image 5 */}
+        {sessionStep >= 2 && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="w-full space-y-5"
+          >
+            {/* Top Right Floating Active Node Pill matching Image 5 */}
+            <div className="w-full flex justify-end">
+              <div className="inline-flex items-center gap-2.5 rounded-full bg-white border border-slate-200/90 px-4 py-2 text-xs font-bold text-slate-900 shadow-xs">
+                <span className="h-5 w-5 rounded-md bg-[#DCFCE7] border border-[#86EFAC] text-[#16A34A] flex items-center justify-center">
+                  <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 4L19 12L12 20L5 12Z" />
+                  </svg>
+                </span>
+                <span>AKS is a deterministic primality test</span>
+              </div>
+            </div>
+
+            {/* Narrative text intro - NO BACKGROUND */}
+            <div className="w-full text-left px-1">
+              <p className="text-sm sm:text-base text-slate-800 leading-relaxed font-serif">
+                Great! Let&apos;s dive into our first concept. To truly understand how we secure digital communication, we need to look at how we verify the &quot;building blocks&quot; of encryption: prime numbers.
+              </p>
+            </div>
+
+            {/* Left Glowing Orb */}
+            <div className="w-full flex justify-start pl-1">
+              <GlowingOrb
+                position="ai"
+                size="md"
+                isThinking={false}
+                isTyping={isTyping}
+                inputLength={inputLength}
+              />
+            </div>
+
+            {/* Exposition Card matching Image 5 */}
+            <div className="w-full rounded-[32px] border border-slate-200/90 bg-white p-6 sm:p-7 shadow-md shadow-slate-200/30 space-y-4 text-slate-900">
+              <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
+                <AlignLeft className="h-3.5 w-3.5" />
+                <span>Exposition</span>
+              </div>
+
+              <div className="text-sm sm:text-base leading-relaxed space-y-3 font-serif">
+                <p>
+                  The <strong>AKS primality test</strong>, published in 2002 by Agrawal, Kayal, and Saxena, was a major breakthrough in computer science. It is a <strong>deterministic algorithm</strong>, meaning it can prove whether a number is prime with 100% certainty, rather than just high probability.
+                </p>
+                <p>
+                  One of its most important features is that it runs in <strong>polynomial time</strong>. This means the time it takes to check a number doesn&apos;t explode uncontrollably as the numbers get larger, making it theoretically efficient.
+                </p>
+                <p>
+                  However, in the practical world of cryptography, there is a trade-off. While AKS is mathematically &quot;perfect,&quot; it is significantly <strong>slower in practice</strong> than probabilistic tests like Miller-Rabin. Because of this, it is rarely used for tasks like generating encryption keys where speed is essential.
+                </p>
+              </div>
+
+              {/* Bottom Card Controls: Audio & Citation Pill */}
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleSpeakText(
+                      "The AKS primality test, published in 2002 by Agrawal, Kayal, and Saxena, was a major breakthrough in computer science. It is a deterministic algorithm that runs in polynomial time."
+                    )
+                  }
+                  className={cn(
+                    "flex h-8 w-8 items-center justify-center rounded-full hover:bg-slate-100 transition cursor-pointer",
+                    isPlayingAudio ? "text-[#0C60FC] bg-blue-50 animate-pulse" : "text-slate-400 hover:text-slate-700"
+                  )}
+                  title="Read aloud"
+                >
+                  <Volume2 className="h-4 w-4" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onOpenSource?.("chapter-8", 11)}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100/90 hover:bg-slate-200/90 border border-slate-200/80 px-2.5 py-1 text-[11px] font-semibold text-slate-700 transition cursor-pointer shadow-2xs"
+                >
+                  <FileText className="h-3 w-3 text-slate-500" />
+                  <span className="truncate max-w-44">Chapter8_MoreNumberTheory...</span>
+                  <span className="text-slate-400 font-bold">· Page 11</span>
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
       </div>
     );
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-4 sm:px-8 py-6 max-w-3xl w-full mx-auto scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none]">
+    <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-4 sm:px-8 py-6 max-w-3xl w-full mx-auto scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] pb-32">
       {/* Gliding animated orb tracking the current active turn & typing */}
       <div className="w-full flex justify-start sticky top-2 z-20 pointer-events-none pl-2">
         <GlowingOrb
