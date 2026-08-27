@@ -16,8 +16,6 @@ import {
   ArrowLeft,
   Lock,
   Flame,
-  Zap,
-  ShieldCheck,
   Check,
 } from "lucide-react";
 import {
@@ -36,7 +34,6 @@ import { toast } from "sonner";
 import {
   LOGO_SRC,
   QUBI_WAVE_SRC,
-  QUBI_STUDY_SRC,
   QUBI_RUN_SRC,
 } from "@/lib/constants";
 
@@ -431,8 +428,8 @@ function CheckoutContent() {
     <div className="qz-auth min-h-screen w-full bg-[#F7F9FC] antialiased selection:bg-[#0C60FC] selection:text-white">
       {/* Full-width, Full-height Grid Layout matching Auth / Login Page */}
       <main className="grid min-h-screen lg:grid-cols-[1.08fr_.92fr]">
-        {/* Left Brand Banner: Royal Blue Theme matching Login Page with Back button at top */}
-        <section className="relative overflow-hidden bg-[#0C60FC] p-8 sm:p-12 lg:p-14 xl:p-16 text-white flex flex-col justify-between">
+        {/* Left Brand Banner: Royal Blue Theme with Qubi beside the title */}
+        <section className="relative overflow-hidden bg-[#0C60FC] p-6 sm:p-8 lg:p-10 xl:p-12 text-white flex flex-col justify-between">
           {/* Decorative geometric blur orbs matching auth banner */}
           <div className="absolute -left-24 top-1/3 h-80 w-80 rounded-full border-[70px] border-white/5 pointer-events-none" />
           <div className="absolute -right-24 -top-20 h-80 w-80 rounded-full bg-[#DFFF61]/15 blur-3xl pointer-events-none" />
@@ -443,92 +440,112 @@ function CheckoutContent() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="relative flex items-center justify-between z-10 mb-8 sm:mb-12"
+            className="relative flex items-center justify-between z-10 mb-5 lg:mb-6"
           >
             <button
               type="button"
               onClick={() => router.back()}
-              className="group inline-flex items-center gap-2 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 px-4 py-2.5 text-xs font-extrabold text-white transition hover:bg-white/20 cursor-pointer shadow-sm"
+              className="group inline-flex items-center gap-2 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 px-3.5 py-2 text-xs font-extrabold text-white transition hover:bg-white/20 cursor-pointer shadow-sm"
             >
               <ArrowLeft className="h-4 w-4 transition group-hover:-translate-x-0.5" />
               <span>Back</span>
             </button>
-            <Link href="/" className="flex items-center gap-3">
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-md">
+            <Link href="/" className="flex items-center gap-2.5">
+              <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-white shadow-md">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={LOGO_SRC} alt="Qz" className="h-8 w-8 object-contain" />
+                <img src={LOGO_SRC} alt="Qz" className="h-7 w-7 object-contain" />
               </span>
-              <span className="display text-xl font-bold text-white tracking-tight">Qz</span>
+              <span className="display text-lg font-bold text-white tracking-tight">Qz</span>
             </Link>
           </motion.div>
 
-          {/* Product / Plan Title, Price & Entitlements */}
-          <div className="relative z-10 max-w-xl">
-            {/* Cycle / Tier Pill Badge */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, delay: 0.05 }}
-              className="mb-6 inline-flex items-center gap-2 rounded-full bg-white/12 backdrop-blur-md px-3.5 py-1.5 text-xs font-extrabold text-[#DFFF61] border border-white/10"
-            >
-              <Flame className="h-3.5 w-3.5 text-[#DFFF61]" />
-              <span>
-                {selectedPackage
-                  ? `${DURATION_LABELS[selectedPackage.durationType]} · ${selectedPackage.tier.toUpperCase()}`
-                  : "CREDIT PACK"}
-              </span>
-            </motion.div>
+          {/* Product / Plan Title, Price & Entitlements + Qubi Mascot beside the title */}
+          <div className="relative z-10 max-w-xl my-auto">
+            {/* Header row with Title & Waving Qubi aligned together on the right */}
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                {/* Cycle / Tier Pill Badge */}
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.05 }}
+                  className="mb-2.5 inline-flex items-center gap-1.5 rounded-full bg-white/12 backdrop-blur-md px-3 py-1 text-[11px] font-extrabold text-[#DFFF61] border border-white/10"
+                >
+                  <Flame className="h-3 w-3 text-[#DFFF61]" />
+                  <span>
+                    {selectedPackage
+                      ? `${DURATION_LABELS[selectedPackage.durationType]} · ${selectedPackage.tier.toUpperCase()}`
+                      : "CREDIT PACK"}
+                  </span>
+                </motion.div>
 
-            {/* Plan Headline */}
-            <motion.h1
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.1 }}
-              className="text-balance text-4xl sm:text-5xl lg:text-6xl font-black leading-tight tracking-tight text-white"
-            >
-              {selectedPackage
-                ? `${TIER_LABELS[selectedPackage.tier] ?? selectedPackage.tier}`
-                : selectedBundle
-                  ? `${selectedBundle.name} Credits`
-                  : "Checkout"}
-            </motion.h1>
+                {/* Plan Headline */}
+                <motion.h1
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.35, delay: 0.1 }}
+                  className="text-balance text-3xl sm:text-4xl lg:text-5xl font-black leading-tight tracking-tight text-white"
+                >
+                  {selectedPackage
+                    ? `${TIER_LABELS[selectedPackage.tier] ?? selectedPackage.tier}`
+                    : selectedBundle
+                      ? `${selectedBundle.name} Credits`
+                      : "Checkout"}
+                </motion.h1>
 
-            <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.15 }}
-              className="mt-3 max-w-lg text-base sm:text-lg leading-relaxed text-blue-100"
-            >
-              {selectedPackage
-                ? TIER_TAGLINES[selectedPackage.tier]
-                : selectedBundle
-                  ? `${selectedBundle.credits} generation credits for AI study tools with no expiration.`
-                  : ""}
-            </motion.p>
+                <motion.p
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.35, delay: 0.15 }}
+                  className="mt-1.5 max-w-md text-xs sm:text-sm leading-relaxed text-blue-100"
+                >
+                  {selectedPackage
+                    ? TIER_TAGLINES[selectedPackage.tier]
+                    : selectedBundle
+                      ? `${selectedBundle.credits} generation credits for AI study tools with no expiration.`
+                      : ""}
+                </motion.p>
+              </div>
+
+              {/* Qubi Mascot positioned in the upper right alongside the title */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.85, rotate: -4 }}
+                animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                transition={{ duration: 0.4, delay: 0.15 }}
+                className="shrink-0 hidden sm:flex flex-col items-center"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={QUBI_WAVE_SRC}
+                  alt="Qubi waving"
+                  className="h-20 w-20 lg:h-24 lg:w-24 object-contain qubi-bob drop-shadow-md"
+                />
+              </motion.div>
+            </div>
 
             {/* Hero Price Display */}
             <motion.div
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4, delay: 0.2 }}
-              className="mt-8 flex flex-wrap items-baseline gap-3"
+              transition={{ duration: 0.35, delay: 0.2 }}
+              className="mt-5 lg:mt-6 flex flex-wrap items-baseline gap-2.5"
             >
-              <span className="text-sm font-bold text-blue-200">GHS</span>
+              <span className="text-xs font-bold text-blue-200">GHS</span>
               {hasDiscount && (
-                <span className="display text-2xl sm:text-3xl font-bold text-blue-200/70 line-through whitespace-nowrap">
+                <span className="display text-xl sm:text-2xl font-bold text-blue-200/70 line-through whitespace-nowrap">
                   {basePrice.toFixed(2)}
                 </span>
               )}
-              <span className="display text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white whitespace-nowrap">
+              <span className="display text-4xl sm:text-5xl font-black tracking-tight text-white whitespace-nowrap">
                 {finalPrice.toFixed(2)}
               </span>
-              <span className="text-xs sm:text-sm font-bold text-blue-200">
+              <span className="text-xs font-bold text-blue-200">
                 {selectedPackage
                   ? DURATION_SUFFIX[selectedPackage.durationType]
                   : "one-time"}
               </span>
               {hasDiscount && (
-                <span className="ml-2 inline-flex items-center rounded-full bg-[#DFFF61] text-slate-950 px-3 py-1 text-xs font-black whitespace-nowrap shadow-sm">
+                <span className="ml-1.5 inline-flex items-center rounded-full bg-[#DFFF61] text-slate-950 px-2.5 py-0.5 text-xs font-black whitespace-nowrap shadow-sm">
                   {Math.round(totalDiscountPercentage)}% OFF
                 </span>
               )}
@@ -536,41 +553,41 @@ function CheckoutContent() {
 
             {/* Entitlements Checklist */}
             <motion.div
-              initial={{ opacity: 0, y: 15 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, delay: 0.25 }}
-              className="mt-8 space-y-3"
+              transition={{ duration: 0.4, delay: 0.25 }}
+              className="mt-5 lg:mt-6 space-y-2.5"
             >
-              <p className="text-[11px] font-extrabold uppercase tracking-widest text-blue-200">
+              <p className="text-[10px] font-extrabold uppercase tracking-widest text-blue-200">
                 Included with this {isCredits ? "pack" : "pass"}
               </p>
-              <ul className="space-y-2.5 text-xs sm:text-sm text-blue-50">
+              <ul className="space-y-2 text-xs sm:text-sm text-blue-50">
                 {selectedPackage &&
                   features.map((item, idx) => (
-                    <li key={idx} className="flex items-center gap-3">
-                      <div className="h-5 w-5 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-                        <Check className="h-3 w-3 text-[#DFFF61]" />
+                    <li key={idx} className="flex items-center gap-2.5">
+                      <div className="h-4 w-4 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                        <Check className="h-2.5 w-2.5 text-[#DFFF61]" />
                       </div>
                       <span>{item}</span>
                     </li>
                   ))}
                 {selectedBundle && (
                   <>
-                    <li className="flex items-center gap-3">
-                      <div className="h-5 w-5 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-                        <Check className="h-3 w-3 text-[#DFFF61]" />
+                    <li className="flex items-center gap-2.5">
+                      <div className="h-4 w-4 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                        <Check className="h-2.5 w-2.5 text-[#DFFF61]" />
                       </div>
                       <span>{selectedBundle.credits} generation credits added to your balance</span>
                     </li>
-                    <li className="flex items-center gap-3">
-                      <div className="h-5 w-5 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-                        <Check className="h-3 w-3 text-[#DFFF61]" />
+                    <li className="flex items-center gap-2.5">
+                      <div className="h-4 w-4 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                        <Check className="h-2.5 w-2.5 text-[#DFFF61]" />
                       </div>
                       <span>Usable across AI Tutor, Mind Maps, and Quiz Generator</span>
                     </li>
-                    <li className="flex items-center gap-3">
-                      <div className="h-5 w-5 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-                        <Check className="h-3 w-3 text-[#DFFF61]" />
+                    <li className="flex items-center gap-2.5">
+                      <div className="h-4 w-4 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                        <Check className="h-2.5 w-2.5 text-[#DFFF61]" />
                       </div>
                       <span>Credits never expire</span>
                     </li>
@@ -578,46 +595,23 @@ function CheckoutContent() {
                 )}
               </ul>
             </motion.div>
-
-            {/* Mascot Qubi Speech Bubble matching Auth Page */}
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, delay: 0.3 }}
-              className="mt-8 flex items-end gap-3.5"
-            >
-              <div className="qubi-cycle h-20 w-20 shrink-0">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={QUBI_WAVE_SRC}
-                  alt="Qubi"
-                  className="qubi-bob h-20 w-20 object-contain"
-                />
-              </div>
-              <div className="rounded-2xl rounded-bl-sm bg-white/15 backdrop-blur-md border border-white/20 px-4 py-3 text-white shadow-xl">
-                <p className="hand text-xl text-[#DFFF61]">Instant Access</p>
-                <p className="text-xs font-medium text-blue-100">
-                  Privileges &amp; credits unlock automatically on payment.
-                </p>
-              </div>
-            </motion.div>
           </div>
 
           {/* Bottom Footer Note in Left Pane */}
-          <p className="relative z-10 text-xs text-blue-200 mt-8 pt-4 border-t border-white/10">
-            Study smarter. Know your rank. Master it all.
+          <p className="relative z-10 text-[11px] text-blue-200/80 mt-4 pt-3 border-t border-white/10">
+            Instant activation · Study smarter · Master it all.
           </p>
         </section>
 
-        {/* Right Column: Interactive Checkout Form & Pay Actions */}
-        <section className="bg-white p-6 sm:p-10 lg:p-14 xl:p-16 flex flex-col justify-between min-h-full">
+        {/* Right Column: Clean, Focused Checkout Form without Account Box */}
+        <section className="bg-white p-6 sm:p-8 lg:p-10 xl:p-12 flex flex-col justify-between min-h-full">
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, delay: 0.1 }}
-            className="max-w-md w-full mx-auto my-auto space-y-6"
+            className="max-w-md w-full mx-auto my-auto space-y-4 sm:space-y-5"
           >
-            <div className="flex items-center justify-between pb-5 border-b border-slate-100">
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
               <h2 className="display text-xl sm:text-2xl font-bold text-slate-950">
                 Order Summary
               </h2>
@@ -626,42 +620,8 @@ function CheckoutContent() {
               </span>
             </div>
 
-            {/* Account Info Card / Sign-in Prompt */}
-            {user ? (
-              <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4 flex items-center justify-between">
-                <div className="min-w-0 pr-2">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                    Account
-                  </span>
-                  <span className="text-xs sm:text-sm font-extrabold text-slate-900 truncate block">
-                    {user.email}
-                  </span>
-                </div>
-                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 shrink-0">
-                  <CheckCircle2 className="h-3 w-3" /> Signed In
-                </span>
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-blue-200 bg-blue-50/70 p-4 text-xs">
-                <div className="flex items-center justify-between gap-2">
-                  <div>
-                    <p className="font-bold text-slate-900">Have a Qz account?</p>
-                    <p className="text-slate-500 text-[11px] mt-0.5">
-                      Sign in to apply student discounts and link access.
-                    </p>
-                  </div>
-                  <Link
-                    href={`/login?redirect=${encodeURIComponent(currentCheckoutUrl)}`}
-                    className="rounded-xl bg-[#0C60FC] px-3.5 py-2 text-xs font-extrabold text-white transition hover:bg-blue-700 shrink-0"
-                  >
-                    Sign in
-                  </Link>
-                </div>
-              </div>
-            )}
-
             {/* Order Item Summary */}
-            <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 sm:p-5 space-y-3 text-xs sm:text-sm">
+            <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 space-y-2.5 text-xs sm:text-sm">
               <div className="flex items-center justify-between text-slate-700 gap-2">
                 <span className="font-semibold truncate">
                   {selectedPackage
@@ -687,7 +647,7 @@ function CheckoutContent() {
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
-                    className="pt-3 border-t border-slate-200/60 space-y-2 overflow-hidden"
+                    className="pt-2.5 border-t border-slate-200/60 space-y-1.5 overflow-hidden"
                   >
                     {activeDiscounts.map((d: any, i: number) => {
                       const pct = Math.round(Number(d.percentage || 0));
@@ -695,13 +655,13 @@ function CheckoutContent() {
                       return (
                         <div
                           key={i}
-                          className="flex items-center justify-between text-emerald-700 bg-emerald-50/80 rounded-xl p-2.5 px-3 font-semibold text-xs border border-emerald-100 gap-2"
+                          className="flex items-center justify-between text-emerald-700 bg-emerald-50/80 rounded-xl p-2 px-2.5 font-semibold text-xs border border-emerald-100 gap-2"
                         >
                           <span className="flex items-center gap-1.5 min-w-0">
                             {d.type === "student" ? (
-                              <GraduationCap className="h-4 w-4 text-emerald-600 shrink-0" />
+                              <GraduationCap className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
                             ) : (
-                              <Tag className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                              <Tag className="h-3 w-3 text-emerald-600 shrink-0" />
                             )}
                             <span className="truncate">{d.label} ({pct}% OFF)</span>
                           </span>
@@ -719,9 +679,9 @@ function CheckoutContent() {
             {/* Promo Code & Referral Code Section */}
             <div className="space-y-2">
               {appliedPromo ? (
-                <div className="flex items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-bold text-emerald-800">
+                <div className="flex items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50 p-2.5 text-xs font-bold text-emerald-800">
                   <div className="flex items-center gap-1.5">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
                     <span>PROMO: {appliedPromo.code} ({Math.round(appliedPromo.discountPercent)}% OFF)</span>
                   </div>
                   <button
@@ -729,7 +689,7 @@ function CheckoutContent() {
                     onClick={() => handleRemoveCode("promo")}
                     className="text-xs text-rose-600 hover:text-rose-800 font-extrabold flex items-center gap-0.5 cursor-pointer"
                   >
-                    <X className="h-3.5 w-3.5" /> Remove
+                    <X className="h-3 w-3" /> Remove
                   </button>
                 </div>
               ) : showPromoInput ? (
@@ -745,12 +705,12 @@ function CheckoutContent() {
                     value={promoCode}
                     onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
                     placeholder="PROMO CODE"
-                    className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-900 outline-none focus:bg-white focus:border-[#0C60FC] focus:ring-4 focus:ring-blue-100"
+                    className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-900 outline-none focus:bg-white focus:border-[#0C60FC] focus:ring-4 focus:ring-blue-100"
                   />
                   <button
                     type="submit"
                     disabled={!promoCode.trim() || validatePromo.isPending}
-                    className="rounded-2xl bg-slate-950 px-5 py-3 text-xs font-extrabold text-white transition hover:bg-[#0C60FC] disabled:opacity-50 flex items-center justify-center cursor-pointer disabled:cursor-not-allowed"
+                    className="rounded-2xl bg-slate-950 px-4 py-2.5 text-xs font-extrabold text-white transition hover:bg-[#0C60FC] disabled:opacity-50 flex items-center justify-center cursor-pointer disabled:cursor-not-allowed"
                   >
                     {validatePromo.isPending ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -779,7 +739,7 @@ function CheckoutContent() {
                   Have a friend&apos;s referral code?
                 </button>
               ) : appliedReferral ? (
-                <div className="flex items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50 p-2.5 text-xs font-bold text-emerald-800">
+                <div className="flex items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50 p-2 text-xs font-bold text-emerald-800">
                   <span>REFERRAL: {appliedReferral.code} ({Math.round(appliedReferral.discountPercent)}% OFF)</span>
                   <button
                     type="button"
@@ -795,19 +755,19 @@ function CheckoutContent() {
                     e.preventDefault();
                     handleApplyCodes("referral");
                   }}
-                  className="flex gap-2 pt-1"
+                  className="flex gap-2 pt-0.5"
                 >
                   <input
                     type="text"
                     value={referralCode}
                     onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
                     placeholder="REFERRAL CODE"
-                    className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-900 outline-none focus:bg-white focus:border-[#0C60FC] focus:ring-4 focus:ring-blue-100"
+                    className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-900 outline-none focus:bg-white focus:border-[#0C60FC] focus:ring-4 focus:ring-blue-100"
                   />
                   <button
                     type="submit"
                     disabled={!referralCode.trim() || validatePromo.isPending}
-                    className="rounded-2xl bg-slate-950 px-5 py-3 text-xs font-extrabold text-white transition hover:bg-[#0C60FC] disabled:opacity-50 cursor-pointer"
+                    className="rounded-2xl bg-slate-950 px-4 py-2.5 text-xs font-extrabold text-white transition hover:bg-[#0C60FC] disabled:opacity-50 cursor-pointer"
                   >
                     Apply
                   </button>
@@ -816,9 +776,9 @@ function CheckoutContent() {
             </div>
 
             {/* Final Total Amount with Strikethrough & Savings Tag */}
-            <div className="pt-5 border-t border-slate-200 flex items-end justify-between gap-4">
+            <div className="pt-3.5 border-t border-slate-200 flex items-end justify-between gap-4">
               <div className="min-w-0">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
                   Total due today
                 </span>
                 {hasDiscount && (
@@ -829,7 +789,7 @@ function CheckoutContent() {
               </div>
               <div className="text-right flex items-baseline gap-2 shrink-0 whitespace-nowrap">
                 {hasDiscount && (
-                  <span className="text-base sm:text-lg font-bold text-slate-400 line-through whitespace-nowrap">
+                  <span className="text-sm sm:text-base font-bold text-slate-400 line-through whitespace-nowrap">
                     GHS {basePrice.toFixed(2)}
                   </span>
                 )}
@@ -840,13 +800,13 @@ function CheckoutContent() {
             </div>
 
             {/* Pay Button & Payment Channels */}
-            <div className="space-y-4 pt-4">
+            <div className="space-y-3 pt-2">
               {user ? (
                 <button
                   type="button"
                   onClick={handleCheckout}
                   disabled={isLoading}
-                  className="w-full rounded-2xl bg-[#0C60FC] py-4 px-6 text-sm font-extrabold text-white shadow-xl shadow-blue-500/20 transition hover:-translate-y-0.5 hover:bg-blue-600 disabled:opacity-70 flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
+                  className="w-full rounded-2xl bg-[#0C60FC] py-3.5 px-6 text-sm font-extrabold text-white shadow-xl shadow-blue-500/20 transition hover:-translate-y-0.5 hover:bg-blue-600 disabled:opacity-70 flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
                 >
                   {isLoading ? (
                     <>
@@ -867,7 +827,7 @@ function CheckoutContent() {
               ) : (
                 <Link
                   href={`/login?redirect=${encodeURIComponent(currentCheckoutUrl)}`}
-                  className="w-full rounded-2xl bg-[#0C60FC] py-4 px-6 text-sm font-extrabold text-white shadow-xl shadow-blue-500/20 transition hover:-translate-y-0.5 hover:bg-blue-600 flex items-center justify-center gap-2 text-center"
+                  className="w-full rounded-2xl bg-[#0C60FC] py-3.5 px-6 text-sm font-extrabold text-white shadow-xl shadow-blue-500/20 transition hover:-translate-y-0.5 hover:bg-blue-600 flex items-center justify-center gap-2 text-center"
                 >
                   <span>Sign in to Pay GHS {finalPrice.toFixed(2)}</span>
                   <ArrowRight className="h-4 w-4" />
@@ -885,7 +845,7 @@ function CheckoutContent() {
                       <CreditCard className="h-3 w-3 text-slate-700" /> Visa / Mastercard
                     </span>
                   </div>
-                  <p className="mt-2 text-[11px] font-medium text-slate-400">
+                  <p className="mt-2 text-[10px] font-medium text-slate-400">
                     Powered by Paystack
                   </p>
                 </div>
@@ -898,7 +858,7 @@ function CheckoutContent() {
           </motion.div>
 
           {/* Subtle bottom note */}
-          <div className="pt-8 text-center text-[11px] text-slate-400 max-w-md w-full mx-auto">
+          <div className="pt-4 text-center text-[10px] text-slate-400 max-w-md w-full mx-auto">
             <span>Guaranteed safe &amp; secure checkout · </span>
             <Link href="/contact" className="hover:underline text-slate-500 font-semibold">
               Contact support
