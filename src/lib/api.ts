@@ -100,7 +100,7 @@ api.interceptors.response.use(
               action: {
                 label: "Billing",
                 onClick: () => {
-                  window.location.href = "/app/billing/checkout";
+                  window.location.href = "/app/billing";
                 },
               },
             },
