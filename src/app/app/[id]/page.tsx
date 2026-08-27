@@ -7,7 +7,6 @@ import {
   Loader2,
   Paperclip,
   X,
-  Plus,
   ArrowUp,
   ArrowRight,
   Mic,
@@ -18,6 +17,7 @@ import {
   Sparkles,
   Award,
   Diamond,
+  ChevronDown,
 } from "lucide-react";
 import { useAppApprove } from "@/hooks";
 import { useApp } from "@/hooks/app/use-app-queries";
@@ -73,24 +73,21 @@ export default function ChatPage() {
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const plusMenuRef = useRef<HTMLDivElement>(null);
   const firstMessageSentRef = useRef(false);
 
   const searchParams = useSearchParams();
   const topicParam = searchParams.get("topic");
   const stepParam = searchParams.get("step");
   const chapterParam = searchParams.get("chapter");
+  const blockParam = searchParams.get("block");
 
   const [activeView, setActiveView] = useState<CanvasView>("session");
   const [sessionStep, setSessionStep] = useState<number>(0);
   const [referencePage, setReferencePage] = useState<number | undefined>(undefined);
   const [input, setInput] = useState("");
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
-  const [showPlusMenu, setShowPlusMenu] = useState(false);
   const [isPathDrawerOpen, setIsPathDrawerOpen] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const [courseNote, setCourseNote] = useState("");
-  const [enableHints, setEnableHints] = useState(true);
   const [pendingAutoSend, setPendingAutoSend] = useState<string | null>(null);
 
   const activeTopic = useMemo(() => {
@@ -99,16 +96,19 @@ export default function ChatPage() {
         if (chapterParam && String(ch.chapterId || (ch as any)._id) !== chapterParam) continue;
         const steps = (ch.steps || ch.goals || []) as any[];
         for (const step of steps) {
+          const currentActiveStep = (app as any)?.activeStepId;
           if (
             (stepParam && String(step.stepId || step.goalId || step._id) === stepParam) ||
             (topicParam && step.title?.toLowerCase() === topicParam.toLowerCase()) ||
-            (!stepParam && !topicParam && (step.stepId === app.activeStepId || step._id === app.activeStepId))
+            (!stepParam && !topicParam && (step.stepId === currentActiveStep || step._id === currentActiveStep))
           ) {
+            const blocks = (step.knowledgeBlocks || step.prerequisites || []) as any[];
             return {
               title: step.title,
               coreIdea: step.coreIdea || step.description,
               whyItMatters: step.whyItMatters,
-              prerequisites: step.prerequisites || step.knowledgeBlocks || [],
+              knowledgeBlocks: blocks,
+              prerequisites: step.prerequisites || [],
             };
           }
         }
@@ -120,7 +120,26 @@ export default function ChatPage() {
       };
     }
     return undefined;
-  }, [app?.studyPlan, app?.activeStepId, chapterParam, stepParam, topicParam]);
+  }, [app?.studyPlan, (app as any)?.activeStepId, chapterParam, stepParam, topicParam]);
+
+  const activeBlock = useMemo(() => {
+    if (activeTopic?.knowledgeBlocks && activeTopic.knowledgeBlocks.length > 0) {
+      if (blockParam) {
+        const found = activeTopic.knowledgeBlocks.find(
+          (b: any) =>
+            String(b.blockId || b.id || b._id) === blockParam ||
+            b.concept === blockParam ||
+            b.title === blockParam
+        );
+        if (found) return found;
+      }
+      const uncompleted = activeTopic.knowledgeBlocks.find(
+        (b: any) => !b.completed && !b.isCompleted
+      );
+      return uncompleted || activeTopic.knowledgeBlocks[0];
+    }
+    return undefined;
+  }, [activeTopic, blockParam]);
 
   // Auto-grow textarea
   useEffect(() => {
@@ -130,19 +149,17 @@ export default function ChatPage() {
     el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
   }, [input]);
 
-  // Close plus menu on outside click
+  // Prompt Z for initial topic orientation inference if no messages exist yet
   useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (
-        plusMenuRef.current &&
-        !plusMenuRef.current.contains(e.target as Node)
-      ) {
-        setShowPlusMenu(false);
-      }
+    if (!sessionId || sessionId === "undefined" || messages.length > 0 || firstMessageSentRef.current) {
+      return;
     }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
+    firstMessageSentRef.current = true;
+    const promptText = activeTopic?.title
+      ? `Give a very short, warm 1-sentence intro welcoming me to explore ${activeTopic.title}.`
+      : `Give a very short 1-sentence intro welcoming me to start our session.`;
+    sendMessage(promptText, undefined, true);
+  }, [sessionId, messages.length, activeTopic?.title, sendMessage]);
 
   // Send message
   const handleSend = useCallback(async () => {
@@ -220,27 +237,81 @@ export default function ChatPage() {
     return null;
   }, [messages]);
 
-  // Step advancement handler for Continue button
-  const handleAdvanceStep = useCallback(() => {
+  const isOpenEndedQuestionActive = useMemo(() => {
+    if (activeDirectiveMessageId) {
+      const activeMsg = messages.find(
+        (m) => m.messageId === activeDirectiveMessageId
+      );
+      if (activeMsg?.directive?.type === "ASK_QUESTION") {
+        const payload = activeMsg.directive.payload as any;
+        if (!payload?.options || payload.options.length === 0) {
+          return true;
+        }
+      }
+      if (activeMsg?.artifact?.type === "question") {
+        const payload = (activeMsg.artifact.content || {}) as any;
+        if (!payload?.options || payload.options.length === 0) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }, [messages, activeDirectiveMessageId]);
+
+  // Check if an artifact has been returned in the session
+  const hasArtifactReturned = useMemo(() => {
+    return messages.some((m) => Boolean(m.artifact || m.directive));
+  }, [messages]);
+
+  // Check if the most recent active artifact is a recap / summary
+  const isRecapActive = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const msg = messages[i];
+      if (msg.artifact) {
+        const artType = String(msg.artifact.type || "").toLowerCase();
+        return artType === "recap" || artType === "summary";
+      }
+      if (msg.directive) {
+        const dirType = String(msg.directive.type || "").toUpperCase();
+        return dirType === "SHOW_SUMMARY" || dirType === "RECAP";
+      }
+    }
+    return false;
+  }, [messages]);
+
+  // Step advancement handler for Continue / Keep going button
+  const handleContinue = useCallback(() => {
     if (messages.length === 0) {
       if (sessionStep < 2) {
         setSessionStep((prev) => prev + 1);
         window.scrollTo({ top: 0, behavior: "smooth" });
-      } else {
-        sendMessage("Let's practice the AKS primality test");
       }
     } else {
-      sendMessage("Continue");
+      // If recap is active, send "Keep going", otherwise "Continue"
+      sendMessage(isRecapActive ? "Keep going" : "Continue", undefined, true);
     }
-  }, [messages.length, sessionStep, sendMessage]);
+  }, [messages.length, sessionStep, sendMessage, isRecapActive]);
+
+  const handleKeepGoing = useCallback(() => {
+    sendMessage("Keep going", undefined, true);
+  }, [sendMessage]);
+
+  const handleFeedback = useCallback((type: "too_easy" | "too_hard") => {
+    if (type === "too_easy") {
+      toast.success("Pacing adjusted: Diving straight into deeper mastery!");
+      setSessionStep((prev) => Math.min(prev + 1, 4));
+    } else {
+      toast.info("Pacing adjusted: Providing extra foundational context.");
+    }
+  }, []);
 
   // Active topic title based on sessionStep or message history
   const activeTopicTitle = useMemo(() => {
     if (messages.length === 0) {
       if (sessionStep === 0) {
-        return "Primality Testing and Number Theory Algorithms";
+        return activeTopic?.title || app?.name || "Topic Overview";
       }
-      return "AKS is a deterministic primality test";
+      return activeBlock?.concept || activeBlock?.title || activeTopic?.title || "Active Concept";
     }
 
     for (let i = messages.length - 1; i >= 0; i--) {
@@ -257,34 +328,89 @@ export default function ChatPage() {
         }
       }
     }
-    return app?.name || app?.title || "AKS is a deterministic primality test";
-  }, [messages, sessionStep, app]);
+    return activeBlock?.concept || activeBlock?.title || activeTopic?.title || app?.name || "Learning Session";
+  }, [messages, sessionStep, activeTopic, activeBlock, app]);
 
-  // Knowledge Pathway items for slide-over drawer
+  // Knowledge Pathway items for entire roadmap across the session
   const pathwayItems: KnowledgeBlockItem[] = useMemo(() => {
-    return [
-      {
-        id: "step-1",
-        title: "Primality testing is needed to find large random primes",
-        status: "completed",
-      },
-      {
-        id: "step-2",
-        title: "AKS is a deterministic primality test",
-        status: "current",
-      },
-      {
-        id: "step-3",
-        title: "The Miller-Rabin test quickly finds large random primes",
-        status: "upcoming",
-      },
-      {
-        id: "step-4",
-        title: "Chapter 8 review questions practice gcd and modular arithmetic tools",
-        status: "upcoming",
-      },
-    ];
-  }, []);
+    const items: KnowledgeBlockItem[] = [];
+
+    if (app?.studyPlan?.chapters && app.studyPlan.chapters.length > 0) {
+      let foundCurrent = false;
+
+      for (const ch of app.studyPlan.chapters) {
+        const steps = (ch.steps || ch.goals || []) as any[];
+        for (const step of steps) {
+          const blocks = (step.knowledgeBlocks || step.prerequisites || []) as any[];
+          if (blocks.length > 0) {
+            for (const b of blocks) {
+              const isCompleted = Boolean(b.completed || b.isCompleted);
+              const isCurrent =
+                !foundCurrent &&
+                ((activeBlock?.blockId && (activeBlock.blockId === b.blockId || activeBlock.blockId === b.id)) ||
+                 (activeBlock?.concept && activeBlock.concept === b.concept) ||
+                 (activeTopic?.title && step.title === activeTopic.title));
+
+              if (isCurrent) {
+                foundCurrent = true;
+              }
+
+              items.push({
+                id: String(b.blockId || b.id || b._id || items.length),
+                title: b.concept || b.title || step.title || `Concept ${items.length + 1}`,
+                status: isCompleted ? "completed" : isCurrent ? "current" : "upcoming",
+                description: b.summary || b.description || step.description,
+              });
+            }
+          } else {
+            const isCompleted = Boolean(step.isCompleted || step.completed);
+            const isCurrent =
+              !foundCurrent &&
+              (activeTopic?.title === step.title || (!activeTopic && items.length === 0));
+
+            if (isCurrent) {
+              foundCurrent = true;
+            }
+
+            items.push({
+              id: String(step.stepId || step.goalId || step._id || items.length),
+              title: step.title || `Topic ${items.length + 1}`,
+              status: isCompleted ? "completed" : isCurrent ? "current" : "upcoming",
+              description: step.description || step.coreIdea,
+            });
+          }
+        }
+      }
+
+      if (!foundCurrent && items.length > 0) {
+        const firstUncompletedIdx = items.findIndex((it) => it.status !== "completed");
+        const targetIdx = firstUncompletedIdx >= 0 ? firstUncompletedIdx : 0;
+        items[targetIdx].status = "current";
+      }
+
+      return items;
+    }
+
+    // Fallback: activeTopic knowledgeBlocks
+    if (activeTopic?.knowledgeBlocks && activeTopic.knowledgeBlocks.length > 0) {
+      return activeTopic.knowledgeBlocks.map((b: any, idx: number) => {
+        const isCurrent =
+          (activeBlock?.blockId && activeBlock.blockId === b.blockId) ||
+          (activeBlock?._id && activeBlock._id === b._id) ||
+          (activeBlock?.concept && activeBlock.concept === b.concept) ||
+          (!activeBlock && idx === 0);
+        const isCompleted = Boolean(b.completed || b.isCompleted);
+        return {
+          id: String(b.blockId || b._id || idx),
+          title: b.concept || b.title || b.summary || `Concept ${idx + 1}`,
+          status: isCompleted ? "completed" : isCurrent ? "current" : "upcoming",
+          description: b.summary || b.description,
+        };
+      });
+    }
+
+    return [];
+  }, [app?.studyPlan, activeTopic, activeBlock]);
 
   // Floating Action Launcher Menu Items with EXAMS button
   const launcherItems: FloatingActionItem[] = [
@@ -357,27 +483,34 @@ export default function ChatPage() {
       .catch((err: unknown) => console.error("[approvePlan] failed", err));
   }, [sessionId, approveMutation]);
 
-  const handleContinue = handleAdvanceStep;
-  const handleRetry = useCallback(() => sendMessage("Retry"), [sendMessage]);
-  const handleSkip = useCallback(() => sendMessage("Skip"), [sendMessage]);
+  const handleRetry = useCallback(
+    () => sendMessage("Retry", undefined, true),
+    [sendMessage],
+  );
+  const handleSkip = useCallback(
+    () => sendMessage("Skip", undefined, true),
+    [sendMessage],
+  );
   const handleExplainDifferently = useCallback(
-    () => sendMessage("Explain this differently"),
+    () => sendMessage("Explain this differently", undefined, true),
     [sendMessage],
   );
   const handleTestMe = useCallback(
-    (topicTitle: string) => sendMessage(`Test me on ${topicTitle}`),
+    (topicTitle: string) =>
+      sendMessage(`Test me on ${topicTitle}`, undefined, true),
     [sendMessage],
   );
   const handleTryMyself = useCallback(
-    (topicTitle: string) => sendMessage(`I'll try ${topicTitle} myself`),
+    (topicTitle: string) =>
+      sendMessage(`I'll try ${topicTitle} myself`, undefined, true),
     [sendMessage],
   );
   const handleAction = useCallback(
-    (actionType: string) => sendMessage(actionType),
+    (actionType: string) => sendMessage(actionType, undefined, true),
     [sendMessage],
   );
   const handlePomodoroResume = useCallback(
-    () => sendMessage("Pomodoro done, ready to continue"),
+    () => sendMessage("Pomodoro done, ready to continue", undefined, true),
     [sendMessage],
   );
 
@@ -417,55 +550,47 @@ export default function ChatPage() {
         {/* Top-Left Floating Action Launcher Pill */}
         <div className="pointer-events-auto">
           <FloatingActionLauncher items={launcherItems} />
-        </div>
-
-        {/* Center: Floating Active Topic Pill matching Images 3, 4, 5 */}
+        </div>        {/* Center: Floating Active Topic Pill with smooth entry animation */}
         <div className="pointer-events-auto flex justify-center px-2 min-w-0">
-          <button
-            type="button"
-            onClick={() => setIsPathDrawerOpen(true)}
-            className="group inline-flex items-center gap-2 rounded-full bg-white/95 hover:bg-white border border-slate-200/90 px-4 py-2 text-xs font-bold text-slate-800 transition shadow-sm hover:shadow-md cursor-pointer max-w-xs sm:max-w-md truncate backdrop-blur-md"
-            title="Click to view learning roadmap"
-          >
-            {sessionStep === 0 && messages.length === 0 ? (
-              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-[#52B32B] shrink-0" fill="currentColor">
-                <path d="M12 2.5L14.8 5.3L12 8.1L9.2 5.3Z" />
-                <path d="M12 15.9L14.8 18.7L12 21.5L9.2 18.7Z" />
-                <path d="M5.3 9.2L8.1 12L5.3 14.8L2.5 12Z" />
-                <path d="M18.7 9.2L21.5 12L18.7 14.8L15.9 12Z" />
-              </svg>
-            ) : (
-              <span className="h-3.5 w-3.5 rounded-sm bg-[#DCFCE7] border border-[#86EFAC] text-[#16A34A] flex items-center justify-center shrink-0">
-                <svg className="h-2 w-2" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 4L19 12L12 20L5 12Z" />
-                </svg>
-              </span>
+          <AnimatePresence mode="wait">
+            {(sessionStep >= 2 || messages.length > 0 || activeView !== "session") && (
+              <motion.button
+                key="active-topic-pill"
+                initial={{ opacity: 0, y: -16, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -16, scale: 0.95 }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
+                type="button"
+                onClick={() => setIsPathDrawerOpen(true)}
+                className="group inline-flex items-center gap-2 rounded-full bg-white/95 hover:bg-white border border-slate-200/90 px-4 py-2 text-xs font-bold text-slate-800 transition shadow-sm hover:shadow-md cursor-pointer max-w-xs sm:max-w-md truncate backdrop-blur-md"
+                title="Click to view learning roadmap"
+              >
+                <span className="h-3.5 w-3.5 rounded-sm bg-[#DCFCE7] border border-[#86EFAC] text-[#16A34A] flex items-center justify-center shrink-0">
+                  <svg className="h-2 w-2" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 4L19 12L12 20L5 12Z" />
+                  </svg>
+                </span>
+                <span className="truncate">
+                  {activeView === "session"
+                    ? activeTopicTitle
+                    : activeView === "plan"
+                    ? "Study Plan Roadmap"
+                    : activeView === "update-plan"
+                    ? "Building Your Study Plan"
+                    : activeView === "exams"
+                    ? "Exam & Oral Simulations"
+                    : activeView === "sources"
+                    ? "Sources & Materials"
+                    : "Notes & Studio"}
+                </span>
+                <ChevronDown className="h-3 w-3 text-slate-400 group-hover:text-slate-700 shrink-0" />
+              </motion.button>
             )}
-            <span className="truncate">
-              {activeView === "session"
-                ? activeTopicTitle
-                : activeView === "plan"
-                ? "Study Plan Roadmap"
-                : activeView === "update-plan"
-                ? "Building Your Study Plan"
-                : activeView === "exams"
-                ? "Exam & Oral Simulations"
-                : activeView === "sources"
-                ? "Sources & Materials"
-                : "Notes & Studio"}
-            </span>
-          </button>
+          </AnimatePresence>
         </div>
 
-        {/* Top-Right: Floating Streak & Badges matching Images 3, 4, 5 */}
+        {/* Top-Right: Feedback Button */}
         <div className="pointer-events-auto flex items-center gap-2">
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-white/95 backdrop-blur-md border border-slate-200/90 px-3 py-1.5 text-xs font-extrabold text-slate-800 shadow-sm">
-            <span>🥕</span>
-            <span>{sessionStep >= 2 ? "2" : sessionStep === 1 ? "1" : "0"}</span>
-            <span className="text-slate-300">·</span>
-            <span className="text-slate-500 font-bold">◇ 0</span>
-          </div>
-
           <button
             type="button"
             onClick={() => toast.success("Thanks for studying with Qz! Send suggestions to feedback@qz.com")}
@@ -487,10 +612,14 @@ export default function ChatPage() {
             isTyping={input.trim().length > 0}
             inputLength={input.length}
             activeTopic={activeTopic}
+            activeBlock={activeBlock}
+            pathwayItems={pathwayItems}
             onOpenSource={handleOpenSource}
             onSubmitAnswer={handleSubmitAnswer}
             onApprove={handleApprove}
             onContinue={handleContinue}
+            onKeepGoing={handleKeepGoing}
+            onFeedback={handleFeedback}
             onRetry={handleRetry}
             onSkip={handleSkip}
             onExplainDifferently={handleExplainDifferently}
@@ -514,7 +643,9 @@ export default function ChatPage() {
 
         {activeView === "plan" && (
           <StudyPlanView
-            userName={user?.name || "Michael"}
+            sessionId={sessionId}
+            userName={user?.name || "Student"}
+            courseTitle={app?.name || app?.title || "Study Plan"}
             onSelectTopic={(topic: any) => {
               setActiveView("session");
               sendMessage(`Let's study: ${topic}`);
@@ -529,8 +660,9 @@ export default function ChatPage() {
 
         {activeView === "update-plan" && (
           <UpdateStudyPlanView
-            userName={user?.name || "Michael"}
-            courseTitle={app?.name || app?.title || "Foundations of Cognitive Learning"}
+            sessionId={sessionId}
+            userName={user?.name || "Student"}
+            courseTitle={app?.name || app?.title || "Study Plan"}
             onStartNow={() => {
               setActiveView("session");
               setSessionStep(0);
@@ -544,6 +676,7 @@ export default function ChatPage() {
 
         {activeView === "exams" && (
           <ExamsView
+            sessionId={sessionId}
             userName={user?.name || "Student"}
             onStartWrittenExam={() => {
               setActiveView("session");
@@ -586,7 +719,7 @@ export default function ChatPage() {
           {/* Action Pills above Input matching Images 3, 4, 5 */}
           {activeView === "session" && (
             <div className="flex items-center justify-end gap-2">
-              {sessionStep >= 2 && (
+              {hasArtifactReturned && (
                 <>
                   <button
                     type="button"
@@ -613,7 +746,7 @@ export default function ChatPage() {
                 onClick={handleContinue}
                 className="rounded-full bg-black hover:bg-slate-800 px-4 py-1.5 text-[11.5px] font-bold text-white shadow-xs hover:scale-102 transition cursor-pointer flex items-center gap-1.5"
               >
-                <span>Continue</span>
+                <span>{isRecapActive ? "Keep going" : "Continue"}</span>
                 <ArrowRight className="h-3 w-3" />
               </button>
             </div>
@@ -642,61 +775,13 @@ export default function ChatPage() {
           </AnimatePresence>
 
           {/* Floating Input Pill Bar matching 'Ask Z' in Images 3, 4, 5 */}
-          <div className="relative rounded-[28px] bg-white border border-slate-200/90 shadow-xl shadow-slate-200/50 p-2 sm:p-2.5 flex items-end gap-2 transition-all focus-within:border-[#0C60FC] focus-within:ring-4 focus-within:ring-blue-100">
-            {/* Left + Options Menu */}
-            <div className="relative shrink-0 mb-0.5" ref={plusMenuRef}>
-              <button
-                type="button"
-                onClick={() => setShowPlusMenu((v) => !v)}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition cursor-pointer"
-                title="Options"
-              >
-                <Plus className="h-4 w-4" />
-              </button>
-
-              <AnimatePresence>
-                {showPlusMenu && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 6, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 6, scale: 0.95 }}
-                    className="absolute bottom-full left-0 mb-2 z-50 w-64 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl text-xs space-y-3"
-                  >
-                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
-                      Session Options
-                    </p>
-
-                    <div>
-                      <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                        Course Context
-                      </label>
-                      <input
-                        type="text"
-                        value={courseNote}
-                        onChange={(e) => setCourseNote(e.target.value)}
-                        placeholder="e.g. Exam chapter 8 review"
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-900 outline-none focus:bg-white focus:border-[#0C60FC]"
-                      />
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => setEnableHints((prev) => !prev)}
-                      className={cn(
-                        "w-full flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold border transition cursor-pointer",
-                        enableHints
-                          ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-                          : "bg-slate-50 border-slate-200 text-slate-600"
-                      )}
-                    >
-                      <span>Study Hints</span>
-                      <span>{enableHints ? "ENABLED" : "DISABLED"}</span>
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
+          <div
+            className={cn(
+              "relative rounded-[28px] bg-white border border-slate-200/90 shadow-xl shadow-slate-200/50 p-2 sm:p-2.5 flex items-end gap-2 transition-all focus-within:border-[#0C60FC] focus-within:ring-4 focus-within:ring-blue-100",
+              isOpenEndedQuestionActive &&
+                "ring-2 ring-amber-400 border-amber-300 shadow-amber-200/50 animate-pulse"
+            )}
+          >
             {/* Hidden File Input */}
             <input
               ref={fileInputRef}
@@ -759,16 +844,12 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {/* Slide-over Knowledge Pathway Drawer */}
+      {/* Slide-over Knowledge Pathway Drawer (Read-only Progress Track) */}
       <PathDrawer
         isOpen={isPathDrawerOpen}
         onClose={() => setIsPathDrawerOpen(false)}
         items={pathwayItems}
         chapterTitle={app?.title || "Foundations of Cognitive Learning"}
-        onSelectBlock={(block) => {
-          setActiveView("session");
-          sendMessage(`Let's focus on ${block.title}`);
-        }}
       />
 
       {/* Document Reader Lightbox Modal */}
