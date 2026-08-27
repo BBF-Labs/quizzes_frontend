@@ -65,54 +65,101 @@ export function KnowledgePathway({
 
       {/* ── Relative Card Stack with Continuous Flowing Dotted S-Curve Track ── */}
       <div className="relative">
-        {/* Full-width S-Curve Dotted Track running behind cards */}
+        {/* S-Curve Track with Green Active Segment and Dotted Upcoming Segment */}
         <svg
           className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-visible"
           viewBox="0 0 100 100"
           preserveAspectRatio="none"
           fill="none"
         >
-          <motion.path
+          {/* Base Dotted Upcoming Path */}
+          <path
             d="M 50 -2 L 50 10 C 50 18, 20 18, 20 28 C 20 38, 85 40, 85 54 C 85 64, 20 68, 20 80 C 20 88, 16 94, 14 100"
             stroke="#CBD5E1"
             strokeWidth="1.8"
             strokeDasharray="2.5 3"
             strokeLinecap="round"
             vectorEffect="non-scaling-stroke"
-            animate={{ strokeDashoffset: [0, -22] }}
-            transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+          />
+
+          {/* Flowing Solid Green Active Path */}
+          <motion.path
+            d="M 50 -2 L 50 10 C 50 18, 20 18, 20 28 C 20 38, 85 40, 85 54"
+            stroke="#84CC16"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            vectorEffect="non-scaling-stroke"
+            initial={{ pathLength: 0 }}
+            animate={{ pathLength: 1 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
           />
         </svg>
 
-        {/* Stack of 3 Pill Cards matching screenshot */}
+        {/* Stack of Pill Cards matching screenshot 2 (Read-only progress display) */}
         <div className="relative z-10 space-y-3.5">
           {blocks.map((block, idx) => {
+            const isCurrent = block.status === "current" || (idx === 0 && !blocks.some((b) => b.status === "current"));
+            const isCompleted = block.status === "completed";
+
             return (
-              <motion.button
+              <div
                 key={block.id || idx}
-                type="button"
-                whileHover={{ scale: 1.008 }}
-                whileTap={{ scale: 0.992 }}
-                onClick={() => onSelectBlock?.(block)}
-                className="w-full text-left rounded-full bg-white border border-slate-200/90 px-3.5 py-3 sm:py-3.5 flex items-center gap-3.5 shadow-2xs hover:border-slate-300 transition cursor-pointer select-none"
+                className={cn(
+                  "w-full text-left rounded-full bg-white border px-3.5 py-3 sm:py-3.5 flex items-center gap-3.5 shadow-2xs select-none",
+                  isCurrent
+                    ? "border-emerald-300/90 ring-1 ring-emerald-500/20 shadow-xs"
+                    : isCompleted
+                      ? "border-slate-300/80 bg-slate-50/70"
+                      : "border-slate-200/90"
+                )}
               >
-                {/* Round Node Disc with Outline Diamond */}
-                <div className="h-8 w-8 rounded-full bg-slate-50 border border-slate-200/90 flex items-center justify-center shrink-0 shadow-2xs">
+                {/* Round Node Disc with Diamond */}
+                <div
+                  className={cn(
+                    "h-8.5 w-8.5 rounded-full border flex items-center justify-center shrink-0 shadow-2xs transition",
+                    isCompleted
+                      ? "bg-linear-to-br from-[#84CC16] to-[#65A30D] border-[#4D7C0F] shadow-sm"
+                      : isCurrent
+                        ? "bg-[#ECFDF5] border-[#A7F3D0]"
+                        : "bg-slate-50 border-slate-200/90"
+                  )}
+                >
                   <svg viewBox="0 0 14 18" className="h-3.5 w-2.5 shrink-0" fill="none">
                     <path
                       d="M7 1L13 9L7 17L1 9Z"
-                      fill="#FFFFFF"
-                      stroke="#64748B"
-                      strokeWidth="1.4"
+                      fill={
+                        isCompleted
+                          ? "#FFFFFF"
+                          : isCurrent
+                            ? "#84CC16"
+                            : "#FFFFFF"
+                      }
+                      stroke={
+                        isCompleted
+                          ? "#FFFFFF"
+                          : isCurrent
+                            ? "#4D7C0F"
+                            : "#94A3B8"
+                      }
+                      strokeWidth={isCompleted ? "1.6" : "1.3"}
                     />
                   </svg>
                 </div>
 
                 {/* Step Title */}
-                <span className="text-xs sm:text-[12.5px] font-medium text-slate-700 leading-snug line-clamp-2">
+                <span
+                  className={cn(
+                    "text-xs sm:text-[12.5px] leading-snug line-clamp-2 transition",
+                    isCurrent
+                      ? "font-bold text-slate-950"
+                      : isCompleted
+                        ? "font-semibold text-slate-800"
+                        : "font-medium text-slate-600"
+                  )}
+                >
                   {block.title}
                 </span>
-              </motion.button>
+              </div>
             );
           })}
         </div>
