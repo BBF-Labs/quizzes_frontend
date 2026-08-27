@@ -159,14 +159,36 @@ export function AppSessionLayout({ children, sessionId }: AppSessionLayoutProps)
         case "exports:update":
           if (Array.isArray(payload.data)) setStudioExports(payload.data);
           break;
+        case "course_summary_updated":
+          queryClient.invalidateQueries({
+            queryKey: queryKeys.app.detail(sessionId),
+          });
+          break;
       }
     }
 
+    const handleStudyPlanUpdated = () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.app.detail(sessionId),
+      });
+    };
+
+    const handleBlockCompleted = () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.app.detail(sessionId),
+      });
+    };
+
     socket.on("app:signal", handleSignal);
+    socket.on("app:study_plan_updated", handleStudyPlanUpdated);
+    socket.on("app:block_completed", handleBlockCompleted);
+
     return () => {
       socket.off("app:signal", handleSignal);
+      socket.off("app:study_plan_updated", handleStudyPlanUpdated);
+      socket.off("app:block_completed", handleBlockCompleted);
     };
-  }, [socket, sessionId]);
+  }, [socket, sessionId, queryClient]);
 
   // Stream Hook
   const stream = useAppStream(sessionId);
