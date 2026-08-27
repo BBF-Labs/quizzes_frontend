@@ -447,93 +447,8 @@ export function AppSessionLayout({ children, sessionId }: AppSessionLayoutProps)
 
           {/* ── Center panel (Chat) ──────────────────────────────────────────────── */}
           <div className="flex-1 min-w-0 flex flex-col overflow-hidden relative">
-            {/* Center Header Overlay */}
-            <div className="absolute top-0 inset-x-0 h-14 flex items-center justify-between px-4 z-40 bg-linear-to-b from-background/90 to-transparent pointer-events-none">
-              {/* Left controls: Open Sources if closed */}
-              <div className="flex items-center gap-3 pointer-events-auto">
-                {!leftOpen && (
-                  <button
-                    onClick={toggleLeft}
-                    className="flex size-8 items-center justify-center rounded-md border border-border/40 bg-card/60 backdrop-blur-md text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors shadow-sm"
-                    title="Open Sources"
-                  >
-                    <PanelLeftOpen className="size-4.5" />
-                  </button>
-                )}
-                {!leftOpen && (
-                  <div className="flex items-center gap-2 min-w-0 flex-1 ml-2">
-                    <Link
-                      href="/app/all"
-                      className="flex items-center gap-1.5 shrink-0 hover:opacity-80 transition-opacity"
-                    >
-                      <span className="text-xl font-bold tracking-widest text-foreground">
-                        Qz.
-                      </span>
-                    </Link>
-                    <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/60 shrink-0">
-                      / APP
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Session Title (Center) */}
-              <div className="flex flex-1 justify-center items-center pointer-events-auto">
-                {isEditingName ? (
-                  <Input
-                    autoFocus
-                    value={nameInput}
-                    onChange={(e) => setNameInput(e.target.value)}
-                    onBlur={handleNameBlur}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") e.currentTarget.blur();
-                      if (e.key === "Escape") setIsEditingName(false);
-                    }}
-                    className="h-8 text-sm font-semibold max-w-75 border-primary/40 text-center bg-card/60 backdrop-blur-md shadow-sm"
-                  />
-                ) : (
-                  <button
-                    onClick={handleNameClick}
-                    className="text-sm font-semibold text-foreground/80 hover:text-foreground transition-colors truncate max-w-75 px-3 py-1.5 rounded-md hover:bg-muted/40"
-                    title="Click to rename"
-                  >
-                    {appName}
-                  </button>
-                )}
-              </div>
-
-              {/* Right controls: Badges & Open Studio if closed */}
-              <div className="flex items-center gap-2 pointer-events-auto">
-                <div className="hidden md:flex rounded-lg border border-border/40 bg-card/60 backdrop-blur-md h-8 px-2.5 items-center gap-1.5 shadow-sm">
-                  <div
-                    className={cn(
-                      "size-2 rounded-full",
-                      isSocketConnected
-                        ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]"
-                        : "bg-destructive animate-pulse",
-                    )}
-                  />
-                  <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/80">
-                    Socket
-                  </p>
-                </div>
-
-                <UserProfileDropdown user={user} onLogout={logout} />
-
-                {!rightOpen && (
-                  <button
-                    onClick={toggleRight}
-                    className="flex size-8 items-center justify-center rounded-md border border-border/40 bg-card/60 backdrop-blur-md text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors shadow-sm"
-                    title="Open Studio"
-                  >
-                    <PanelRightOpen className="size-4.5" />
-                  </button>
-                )}
-              </div>
-            </div>
-
             {/* Main Chat Page Content */}
-            <div className="flex-1 pt-14 flex flex-col min-h-0 bg-background">
+            <div className="flex-1 flex flex-col min-h-0 bg-[#FAF9F6] relative">
               {isLoading ? (
                 <div className="flex-1 flex flex-col items-center justify-center p-8 gap-4">
                   <Loader2 className="size-8 animate-spin text-primary/40" />
@@ -558,7 +473,7 @@ export function AppSessionLayout({ children, sessionId }: AppSessionLayoutProps)
                   <button
                     onClick={handleJoin}
                     disabled={joining}
-                    className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3 px-6 rounded-xl font-semibold hover:bg-primary/90 transition-all shadow-md active:scale-[0.98] disabled:opacity-50"
+                    className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3 px-6 rounded-xl font-semibold hover:bg-primary/90 transition-all shadow-md active:scale-[0.98] disabled:opacity-50 cursor-pointer"
                   >
                     {joining ? (
                       <Loader2 className="size-5 animate-spin" />
@@ -576,71 +491,19 @@ export function AppSessionLayout({ children, sessionId }: AppSessionLayoutProps)
                     Failed to load session.
                   </p>
                 </div>
-              ) : activeMaterialId ? (
-                <div className="flex-1 flex flex-col min-h-0">
-                  {/* Mobile tab bar — shown only when document reader is active */}
-                  <div className="md:hidden flex shrink-0 border-b border-border/40">
-                    <button
-                      onClick={() => setReaderView("document")}
-                      className={cn(
-                        "flex-1 py-2.5 text-[11px] font-mono uppercase tracking-widest transition-colors border-b-2 -mb-px",
-                        readerView === "document"
-                          ? "text-primary border-primary"
-                          : "text-muted-foreground border-transparent hover:text-foreground",
-                      )}
-                    >
-                      Document
-                    </button>
-                    <button
-                      onClick={() => setReaderView("chat")}
-                      className={cn(
-                        "flex-1 py-2.5 text-[11px] font-mono uppercase tracking-widest transition-colors border-b-2 -mb-px",
-                        readerView === "chat"
-                          ? "text-primary border-primary"
-                          : "text-muted-foreground border-transparent hover:text-foreground",
-                      )}
-                    >
-                      Chat
-                    </button>
-                  </div>
-
-                  <div className="flex-1 flex min-h-0">
-                    {/* Document Reader: full-width on mobile (toggled), flex-1 on md+ */}
-                    <div
-                      className={cn(
-                        "relative flex-col border-r border-border/40",
-                        readerView === "document" ? "flex flex-1" : "hidden",
-                        "md:flex md:flex-1",
-                      )}
-                    >
-                      <button
-                        onClick={() => setActiveMaterialId(null)}
-                        className="absolute top-4 right-4 z-50 size-8 flex items-center justify-center rounded-full bg-background/80 hover:bg-background border border-border shadow-sm text-muted-foreground hover:text-foreground transition-all"
-                        title="Close Reader"
-                      >
-                        <X className="size-4" />
-                      </button>
+              ) : (
+                <>
+                  {children}
+                  <AnimatePresence>
+                    {activeMaterialId && (
                       <DocumentReader
                         materialId={activeMaterialId}
                         sessionId={sessionId}
+                        onClose={() => setActiveMaterialId(null)}
                       />
-                    </div>
-
-                    {/* Chat panel: full-width on mobile (toggled), fixed width on md+ */}
-                    <div
-                      className={cn(
-                        "flex-col min-w-0",
-                        readerView === "chat" ? "flex flex-1" : "hidden",
-                        "md:flex md:w-80 md:flex-none md:min-w-70",
-                        "lg:w-112.5 lg:min-w-[320px]",
-                      )}
-                    >
-                      {children}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                children
+                    )}
+                  </AnimatePresence>
+                </>
               )}
             </div>
           </div>

@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle2,
   ChevronRight,
   ClipboardList,
   Coffee,
-  FlaskConical,
   HelpCircle,
   Lightbulb,
   RotateCcw,
@@ -15,13 +14,19 @@ import {
   Timer,
   Trophy,
   Unlock,
+  ThumbsDown,
+  ThumbsUp,
+  FileText,
+  Sparkles,
+  ArrowRight,
+  Brain,
+  Check,
 } from "lucide-react";
-import { SquareLoader } from "@/components/ui/square-loader";
 import {
   QuestionMarkdown,
   QuizOptionBtn,
 } from "@/components/app/quizzes/question-renderer";
-
+import { KnowledgePathway, type KnowledgeBlockItem } from "./KnowledgePathway";
 import { cn } from "@/lib/utils";
 import type {
   ZAskQuestionPayload,
@@ -36,13 +41,14 @@ import type {
   ZUnlockTopicPayload,
 } from "@/types/session";
 
-// ─── Shared sub-components ────────────────────────────────────────────────────
+// ─── Shared Sub-Components ───────────────────────────────────────────────────
 
 interface ActionButtonProps {
   onClick: () => void;
   children: React.ReactNode;
-  variant?: "primary" | "secondary" | "danger";
+  variant?: "primary" | "secondary" | "danger" | "ghost";
   className?: string;
+  disabled?: boolean;
 }
 
 function ActionButton({
@@ -50,24 +56,30 @@ function ActionButton({
   children,
   variant = "secondary",
   className,
+  disabled = false,
 }: ActionButtonProps) {
   return (
-    <button
+    <motion.button
       type="button"
+      whileHover={!disabled ? { scale: 1.02 } : undefined}
+      whileTap={!disabled ? { scale: 0.98 } : undefined}
       onClick={onClick}
+      disabled={disabled}
       className={cn(
-        "rounded-lg text-[10px] font-mono uppercase tracking-widest px-3 py-1.5 border transition-colors",
+        "rounded-2xl text-xs font-bold px-4 py-2.5 transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed",
         variant === "primary" &&
-          "border-primary/60 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground",
+          "bg-slate-950 text-white hover:bg-[#0C60FC] shadow-slate-900/10",
         variant === "secondary" &&
-          "border-border/50 bg-transparent text-muted-foreground hover:border-primary/40 hover:text-foreground",
+          "bg-slate-100/90 text-slate-700 hover:bg-slate-200/80 border border-slate-200/60",
         variant === "danger" &&
-          "border-destructive/40 bg-transparent text-destructive/70 hover:border-destructive hover:text-destructive",
+          "bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200",
+        variant === "ghost" &&
+          "bg-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-100/60",
         className,
       )}
     >
       {children}
-    </button>
+    </motion.button>
   );
 }
 
@@ -75,32 +87,61 @@ interface CardWrapperProps {
   resolved: boolean;
   icon: React.ReactNode;
   label: string;
+  badge?: string;
+  citation?: string;
   children: React.ReactNode;
+  className?: string;
 }
 
-function CardWrapper({ resolved, icon, label, children }: CardWrapperProps) {
+function CardWrapper({
+  resolved,
+  icon,
+  label,
+  badge,
+  citation,
+  children,
+  className,
+}: CardWrapperProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
+      transition={{ duration: 0.3 }}
       className={cn(
-        "rounded-lg border border-amber-500/40 bg-amber-500/5 px-4 py-3 space-y-3 transition-opacity",
-        resolved && "opacity-50",
+        "w-full max-w-xl mx-auto rounded-[28px] border border-slate-200/80 bg-white p-5 sm:p-7 shadow-lg shadow-slate-200/40 space-y-4 transition-all text-slate-900",
+        resolved && "opacity-60 bg-slate-50/70 shadow-none border-slate-200/60",
+        className,
       )}
     >
-      <div className="flex items-center gap-2">
-        <span className="text-amber-500">{icon}</span>
-        <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-amber-500">
-          {label}
-        </span>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="text-slate-400">{icon}</span>
+          <span className="text-[11px] font-extrabold uppercase tracking-widest text-slate-400">
+            {label}
+          </span>
+        </div>
+        {badge && (
+          <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200/60">
+            {badge}
+          </span>
+        )}
       </div>
-      {children}
+
+      <div className="space-y-3">{children}</div>
+
+      {citation && (
+        <div className="pt-2 flex justify-end">
+          <span className="text-[11px] font-semibold text-slate-400 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200/60 flex items-center gap-1.5">
+            <FileText className="h-3 w-3 text-slate-400" />
+            <span>{citation}</span>
+          </span>
+        </div>
+      )}
     </motion.div>
   );
 }
 
-// ─── Q:A resolved display (shared by question-type directives) ─────────────────
+// ─── Q:A Resolved Display ───────────────────────────────────────────────────
 
 interface QAEntryProps {
   question: string;
@@ -113,24 +154,23 @@ function QAResolvedCard({ entries }: { entries: QAEntryProps[] }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.2 }}
-      className="rounded-lg border border-border/25 bg-muted/10 px-4 py-3 font-mono text-xs divide-y divide-border/20"
+      className="w-full max-w-xl mx-auto rounded-2xl border border-slate-200 bg-slate-50/80 p-4 text-xs divide-y divide-slate-200/60 space-y-3"
     >
       {entries.map((e, i) => (
-        <div key={i} className="py-3 first:pt-0 last:pb-0 space-y-2">
-          <div>
-            <span className="text-[9px] uppercase tracking-widest text-muted-foreground/50 block mb-1">
-              Q
+        <div key={i} className="pt-2 first:pt-0 space-y-1.5">
+          <div className="flex items-start gap-2">
+            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mt-0.5">
+              Q:
             </span>
-            <QuestionMarkdown
-              content={e.question}
-              className="text-muted-foreground leading-relaxed"
-            />
+            <div className="text-slate-700 font-medium leading-relaxed">
+              <QuestionMarkdown content={e.question} />
+            </div>
           </div>
-          <div>
-            <span className="text-[9px] uppercase tracking-widest text-primary/60 block mb-1">
-              A
+          <div className="flex items-start gap-2 bg-white rounded-xl p-2.5 border border-slate-200/70">
+            <span className="text-[10px] font-extrabold text-emerald-600 uppercase tracking-widest mt-0.5">
+              A:
             </span>
-            <p className="text-foreground leading-relaxed">{e.answer || "—"}</p>
+            <p className="text-slate-900 font-bold leading-relaxed">{e.answer || "—"}</p>
           </div>
         </div>
       ))}
@@ -138,7 +178,18 @@ function QAResolvedCard({ entries }: { entries: QAEntryProps[] }) {
   );
 }
 
-// ─── ASK_QUESTION ─────────────────────────────────────────────────────────────
+// ─── True / False Helper Check ───────────────────────────────────────────────
+
+function isTrueFalseOptions(options?: string[]): boolean {
+  if (!options || options.length !== 2) return false;
+  const lower = options.map((o) => o.trim().toLowerCase());
+  return (
+    (lower.includes("true") && lower.includes("false")) ||
+    (lower.includes("yes") && lower.includes("no"))
+  );
+}
+
+// ─── ASK_QUESTION ────────────────────────────────────────────────────────────
 
 interface AskQuestionCardProps {
   payload: ZAskQuestionPayload;
@@ -159,8 +210,10 @@ function AskQuestionCard({
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const submittedAnswerRef = useRef<string>("");
 
-  const handleSubmit = () => {
-    const ans = payload.options ? selectedOption : textAnswer.trim();
+  const isTF = isTrueFalseOptions(payload.options);
+
+  const handleSubmit = (choice?: string) => {
+    const ans = choice ?? (payload.options ? selectedOption : textAnswer.trim());
     if (ans) {
       submittedAnswerRef.current = ans;
       onSubmitAnswer([ans], [payload.question]);
@@ -180,57 +233,130 @@ function AskQuestionCard({
     );
   }
 
+  // Specialized True / False Card View
+  if (isTF && payload.options) {
+    const falseOpt = payload.options.find((o) =>
+      ["false", "no"].includes(o.trim().toLowerCase())
+    ) || payload.options[1];
+    const trueOpt = payload.options.find((o) =>
+      ["true", "yes"].includes(o.trim().toLowerCase())
+    ) || payload.options[0];
+
+    return (
+      <CardWrapper
+        resolved={resolved}
+        icon={<HelpCircle className="h-4 w-4 text-[#0C60FC]" />}
+        label="True / False"
+      >
+        <div className="py-2">
+          <QuestionMarkdown
+            content={payload.question}
+            className="text-base sm:text-lg font-bold text-slate-900 leading-snug"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 pt-2">
+          <motion.button
+            type="button"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => handleSubmit(falseOpt)}
+            className="rounded-2xl border border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 p-4 flex items-center justify-center gap-2 text-sm font-bold text-slate-800 shadow-xs transition-all cursor-pointer"
+          >
+            <span>👎</span>
+            <span>{falseOpt}</span>
+          </motion.button>
+
+          <motion.button
+            type="button"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => handleSubmit(trueOpt)}
+            className="rounded-2xl border border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 p-4 flex items-center justify-center gap-2 text-sm font-bold text-slate-800 shadow-xs transition-all cursor-pointer"
+          >
+            <span>👍</span>
+            <span>{trueOpt}</span>
+          </motion.button>
+        </div>
+      </CardWrapper>
+    );
+  }
+
   return (
     <CardWrapper
       resolved={resolved}
-      icon={<HelpCircle className="size-3" />}
-      label="Question"
+      icon={<HelpCircle className="h-4 w-4 text-[#0C60FC]" />}
+      label="Concept Check"
     >
-      <QuestionMarkdown content={payload.question} />
+      <div className="py-1">
+        <QuestionMarkdown
+          content={payload.question}
+          className="text-sm sm:text-base font-bold text-slate-900 leading-snug"
+        />
+      </div>
 
       {payload.options ? (
-        <div className="flex flex-col gap-1.5">
-          {payload.options.map((opt, i) => (
-            <QuizOptionBtn
-              key={opt}
-              opt={opt}
-              index={i}
-              selected={selectedOption === opt}
-              feedbackState={null}
-              isCorrectOption={false}
-              disabled={false}
-              onClick={() => setSelectedOption(opt)}
-            />
-          ))}
+        <div className="flex flex-col gap-2 pt-2">
+          {payload.options.map((opt, i) => {
+            const isSelected = selectedOption === opt;
+            const letter = String.fromCharCode(65 + i);
+            return (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => setSelectedOption(opt)}
+                className={cn(
+                  "w-full text-left rounded-2xl p-3.5 sm:p-4 text-xs sm:text-sm font-semibold transition-all border flex items-center gap-3 cursor-pointer shadow-xs",
+                  isSelected
+                    ? "border-[#0C60FC] bg-blue-50/70 text-[#0C60FC] ring-2 ring-blue-500/20"
+                    : "border-slate-200/80 bg-slate-50/50 text-slate-700 hover:bg-white hover:border-slate-300"
+                )}
+              >
+                <span
+                  className={cn(
+                    "h-6 w-6 rounded-lg text-xs font-bold flex items-center justify-center shrink-0 transition-colors",
+                    isSelected
+                      ? "bg-[#0C60FC] text-white"
+                      : "bg-white text-slate-500 border border-slate-200"
+                  )}
+                >
+                  {letter}
+                </span>
+                <span className="flex-1">{opt}</span>
+              </button>
+            );
+          })}
         </div>
       ) : (
-        <textarea
-          value={textAnswer}
-          onChange={(e) => setTextAnswer(e.target.value)}
-          placeholder="Type your answer…"
-          rows={3}
-          className="rounded-lg w-full resize-none border border-border/50 bg-background/50 px-3 py-2 font-mono text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:outline-none"
-        />
+        <div className="pt-2">
+          <textarea
+            value={textAnswer}
+            onChange={(e) => setTextAnswer(e.target.value)}
+            placeholder="Type your explanation or answer here…"
+            rows={3}
+            className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-xs sm:text-sm font-medium text-slate-900 outline-none focus:bg-white focus:border-[#0C60FC] focus:ring-4 focus:ring-blue-100"
+          />
+        </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-2">
-        <ActionButton onClick={handleSubmit} variant="primary">
-          Submit Answer
-        </ActionButton>
-        <ActionButton onClick={onRetry}>
-          <RotateCcw className="inline size-2.5 mr-1" />
-          Retry
-        </ActionButton>
-        <ActionButton onClick={onSkip} variant="danger">
-          <SkipForward className="inline size-2.5 mr-1" />
+      <div className="flex items-center justify-end gap-2 pt-2">
+        <ActionButton onClick={onSkip} variant="ghost">
           Skip
+        </ActionButton>
+        <ActionButton
+          onClick={() => handleSubmit()}
+          disabled={payload.options ? !selectedOption : !textAnswer.trim()}
+          variant="primary"
+        >
+          <span>Submit answer</span>
+          <ArrowRight className="h-3.5 w-3.5" />
         </ActionButton>
       </div>
     </CardWrapper>
   );
 }
 
-// ─── ASK_QUESTIONS ────────────────────────────────────────────────────────────
+// ─── ASK_QUESTIONS ───────────────────────────────────────────────────────────
 
 interface AskQuestionsCardProps {
   payload: ZAskQuestionsPayload;
@@ -245,21 +371,36 @@ function AskQuestionsCard({
   onSubmitAnswer,
   onSkip,
 }: AskQuestionsCardProps) {
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const submittedAnswersRef = useRef<string[]>([]);
+  const [answers, setAnswers] = useState<string[]>(
+    payload.questions.map(() => ""),
+  );
+  const submittedRef = useRef<string[]>([]);
 
-  const setAnswer = (id: string, value: string) =>
-    setAnswers((prev) => ({ ...prev, [id]: value }));
+  const handleTextChange = (idx: number, val: string) => {
+    setAnswers((prev) => {
+      const next = [...prev];
+      next[idx] = val;
+      return next;
+    });
+  };
+
+  const handleOptionSelect = (idx: number, opt: string) => {
+    setAnswers((prev) => {
+      const next = [...prev];
+      next[idx] = opt;
+      return next;
+    });
+  };
+
+  const allAnswered = answers.every((a) => a.trim().length > 0);
 
   const handleSubmit = () => {
-    const all = payload.questions.map((q) => answers[q.id] ?? "");
-    if (all.some((a) => a.trim())) {
-      submittedAnswersRef.current = all;
-      onSubmitAnswer(
-        all,
-        payload.questions.map((q) => q.question),
-      );
-    }
+    if (!allAnswered) return;
+    submittedRef.current = [...answers];
+    onSubmitAnswer(
+      answers,
+      payload.questions.map((q) => q.question),
+    );
   };
 
   if (resolved) {
@@ -267,7 +408,7 @@ function AskQuestionsCard({
       <QAResolvedCard
         entries={payload.questions.map((q, i) => ({
           question: q.question,
-          answer: submittedAnswersRef.current[i] ?? "—",
+          answer: submittedRef.current[i] || "—",
         }))}
       />
     );
@@ -276,60 +417,86 @@ function AskQuestionsCard({
   return (
     <CardWrapper
       resolved={resolved}
-      icon={<ClipboardList className="size-3" />}
-      label="Questions"
+      icon={<ClipboardList className="h-4 w-4 text-[#0C60FC]" />}
+      label="Practice Set"
+      badge={`${payload.questions.length} Questions`}
     >
-      <div className="space-y-4">
-        {payload.questions.map((q, i) => (
-          <div key={q.id} className="space-y-2">
-            <div className="flex gap-2">
-              <span className="font-mono text-[10px] text-muted-foreground shrink-0 mt-0.5">
-                {i + 1}.
+      <div className="space-y-5 divide-y divide-slate-100">
+        {payload.questions.map((q, idx) => (
+          <div key={idx} className="pt-4 first:pt-0 space-y-2.5">
+            <div className="flex items-baseline gap-2">
+              <span className="text-xs font-extrabold text-[#0C60FC]">
+                #{idx + 1}
               </span>
-              <QuestionMarkdown content={q.question} />
+              <QuestionMarkdown
+                content={q.question}
+                className="text-xs sm:text-sm font-bold text-slate-900 leading-snug"
+              />
             </div>
+
             {q.options ? (
-              <div className="flex flex-col gap-1">
-                {q.options.map((opt, oi) => (
-                  <QuizOptionBtn
-                    key={opt}
-                    opt={opt}
-                    index={oi}
-                    selected={answers[q.id] === opt}
-                    feedbackState={null}
-                    isCorrectOption={false}
-                    disabled={false}
-                    onClick={() => setAnswer(q.id, opt)}
-                  />
-                ))}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {q.options.map((opt, optIdx) => {
+                  const isSelected = answers[idx] === opt;
+                  const letter = String.fromCharCode(65 + optIdx);
+                  return (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => handleOptionSelect(idx, opt)}
+                      className={cn(
+                        "text-left rounded-xl p-3 text-xs font-semibold transition-all border flex items-center gap-2.5 cursor-pointer",
+                        isSelected
+                          ? "border-[#0C60FC] bg-blue-50 text-[#0C60FC]"
+                          : "border-slate-200 bg-slate-50/50 text-slate-700 hover:bg-white"
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "h-5 w-5 rounded-md text-[10px] font-bold flex items-center justify-center shrink-0",
+                          isSelected
+                            ? "bg-[#0C60FC] text-white"
+                            : "bg-white text-slate-500 border border-slate-200"
+                        )}
+                      >
+                        {letter}
+                      </span>
+                      <span className="truncate">{opt}</span>
+                    </button>
+                  );
+                })}
               </div>
             ) : (
               <input
                 type="text"
-                value={answers[q.id] ?? ""}
-                onChange={(e) => setAnswer(q.id, e.target.value)}
-                placeholder="Your answer…"
-                className="rounded-lg w-full border border-border/50 bg-background/50 px-3 py-1.5 font-mono text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:outline-none"
+                value={answers[idx] || ""}
+                onChange={(e) => handleTextChange(idx, e.target.value)}
+                placeholder="Type your response…"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2.5 text-xs font-medium text-slate-900 outline-none focus:bg-white focus:border-[#0C60FC]"
               />
             )}
           </div>
         ))}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <ActionButton onClick={handleSubmit} variant="primary">
-          Submit All
-        </ActionButton>
-        <ActionButton onClick={onSkip} variant="danger">
-          <SkipForward className="inline size-2.5 mr-1" />
+      <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+        <ActionButton onClick={onSkip} variant="ghost">
           Skip
+        </ActionButton>
+        <ActionButton
+          onClick={handleSubmit}
+          disabled={!allAnswered}
+          variant="primary"
+        >
+          <span>Submit all</span>
+          <ArrowRight className="h-3.5 w-3.5" />
         </ActionButton>
       </div>
     </CardWrapper>
   );
 }
 
-// ─── SHOW_QUIZ ────────────────────────────────────────────────────────────────
+// ─── SHOW_QUIZ ───────────────────────────────────────────────────────────────
 
 interface ShowQuizCardProps {
   payload: ZShowQuizPayload;
@@ -344,26 +511,35 @@ function ShowQuizCard({
   onSubmitAnswer,
   onSkip,
 }: ShowQuizCardProps) {
-  const [selected, setSelected] = useState<Record<string, string>>({});
-  const submittedRef = useRef<Record<string, string>>({});
+  const { questions } = payload;
+  const [answers, setAnswers] = useState<string[]>(questions.map(() => ""));
+  const submittedRef = useRef<string[]>([]);
+
+  const handleOptionSelect = (qIdx: number, opt: string) => {
+    setAnswers((prev) => {
+      const next = [...prev];
+      next[qIdx] = opt;
+      return next;
+    });
+  };
+
+  const allAnswered = answers.every((a) => a.trim().length > 0);
 
   const handleSubmit = () => {
-    const answers = payload.questions.map((q) => selected[q.id] ?? "");
-    if (answers.some((a) => a)) {
-      submittedRef.current = selected;
-      onSubmitAnswer(
-        answers,
-        payload.questions.map((q) => q.question),
-      );
-    }
+    if (!allAnswered) return;
+    submittedRef.current = [...answers];
+    onSubmitAnswer(
+      answers,
+      questions.map((q) => q.question),
+    );
   };
 
   if (resolved) {
     return (
       <QAResolvedCard
-        entries={payload.questions.map((q) => ({
+        entries={questions.map((q, i) => ({
           question: q.question,
-          answer: submittedRef.current[q.id] ?? "—",
+          answer: submittedRef.current[i] || "—",
         }))}
       />
     );
@@ -372,52 +548,76 @@ function ShowQuizCard({
   return (
     <CardWrapper
       resolved={resolved}
-      icon={<FlaskConical className="size-3" />}
-      label="Quiz"
+      icon={<Sparkles className="h-4 w-4 text-[#0C60FC]" />}
+      label="Quiz Challenge"
+      badge={`${questions.length} Questions`}
     >
-      <div className="space-y-4">
-        {payload.questions.map((q, i) => (
-          <div key={q.id} className="space-y-2">
-            <div className="flex gap-2">
-              <span className="font-mono text-[10px] text-muted-foreground shrink-0 mt-0.5">
-                Q{i + 1}.
+      <div className="space-y-5 divide-y divide-slate-100">
+        {questions.map((q, qIdx) => (
+          <div key={qIdx} className="pt-4 first:pt-0 space-y-3">
+            <div className="flex items-baseline gap-2">
+              <span className="text-xs font-extrabold text-[#0C60FC]">
+                Question {qIdx + 1}
               </span>
-              <QuestionMarkdown content={q.question} />
+              <QuestionMarkdown
+                content={q.question}
+                className="text-xs sm:text-sm font-bold text-slate-900 leading-snug"
+              />
             </div>
-            <div className="flex flex-col gap-1">
-              {q.options.map((opt, oi) => (
-                <QuizOptionBtn
-                  key={opt}
-                  opt={opt}
-                  index={oi}
-                  selected={selected[q.id] === opt}
-                  feedbackState={null}
-                  isCorrectOption={false}
-                  disabled={false}
-                  onClick={() =>
-                    setSelected((prev) => ({ ...prev, [q.id]: opt }))
-                  }
-                />
-              ))}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {q.options.map((opt, oIdx) => {
+                const isSelected = answers[qIdx] === opt;
+                const letter = String.fromCharCode(65 + oIdx);
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => handleOptionSelect(qIdx, opt)}
+                    className={cn(
+                      "text-left rounded-xl p-3 text-xs font-semibold transition-all border flex items-center gap-2.5 cursor-pointer",
+                      isSelected
+                        ? "border-[#0C60FC] bg-blue-50 text-[#0C60FC] ring-2 ring-blue-500/20"
+                        : "border-slate-200 bg-slate-50/50 text-slate-700 hover:bg-white"
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "h-5 w-5 rounded-md text-[10px] font-bold flex items-center justify-center shrink-0",
+                        isSelected
+                          ? "bg-[#0C60FC] text-white"
+                          : "bg-white text-slate-500 border border-slate-200"
+                      )}
+                    >
+                      {letter}
+                    </span>
+                    <span className="truncate">{opt}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         ))}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <ActionButton onClick={handleSubmit} variant="primary">
-          Submit Quiz
-        </ActionButton>
-        <ActionButton onClick={onSkip} variant="danger">
-          <SkipForward className="inline size-2.5 mr-1" />
+      <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+        <ActionButton onClick={onSkip} variant="ghost">
           Skip
+        </ActionButton>
+        <ActionButton
+          onClick={handleSubmit}
+          disabled={!allAnswered}
+          variant="primary"
+        >
+          <span>Complete Quiz</span>
+          <ArrowRight className="h-3.5 w-3.5" />
         </ActionButton>
       </div>
     </CardWrapper>
   );
 }
 
-// ─── SHOW_PLAN ────────────────────────────────────────────────────────────────
+// ─── SHOW_PLAN ───────────────────────────────────────────────────────────────
 
 interface ShowPlanCardProps {
   payload: ZShowPlanPayload;
@@ -432,162 +632,54 @@ function ShowPlanCard({
   onApprove,
   onSkip,
 }: ShowPlanCardProps) {
-  const steps = payload.steps ?? [];
-  const total = steps.length;
-  const completedCount = steps.filter((s) => s.status === "completed").length;
-  const progressPct =
-    total > 0 ? Math.round((completedCount / total) * 100) : 0;
-  // True once Z starts populating statuses (implementation phase re-emissions)
-  const hasStatuses = steps.some((s) => s.status !== undefined);
+  const { title = "Structured Study Plan", steps = [] } = payload;
 
-  // Compact resolved snapshot — shows progress at the time this card was emitted
-  if (resolved) {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.2 }}
-        className="rounded-lg border border-border/25 bg-card/10 overflow-hidden font-mono text-xs"
-      >
-        <div className="px-4 py-2.5 flex items-center gap-3">
-          <div className="w-5 h-5 border border-primary/25 bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0 rounded-lg text-[9px]">
-            Z
-          </div>
-          <span className="text-[10px] uppercase tracking-widest text-muted-foreground/60 flex-1 truncate">
-            {payload.title || "Study Plan"}
-          </span>
-          {hasStatuses && (
-            <span className="text-[10px] text-muted-foreground/40 uppercase tracking-widest shrink-0">
-              {completedCount}/{total} done
-            </span>
-          )}
-        </div>
-        {hasStatuses && total > 0 && (
-          <div className="px-4 pb-2.5">
-            <div className="h-px bg-border/30 overflow-hidden">
-              <div
-                className="h-full bg-primary/50 transition-all duration-500"
-                style={{ width: `${progressPct}%` }}
-              />
-            </div>
-          </div>
-        )}
-      </motion.div>
-    );
-  }
+  const pathwayItems: KnowledgeBlockItem[] = steps.map((step, idx) => ({
+    id: step.id || String(idx),
+    title: step.title,
+    status:
+      step.status === "completed"
+        ? "completed"
+        : step.status === "active" || idx === 0
+        ? "current"
+        : "upcoming",
+    description: step.description,
+  }));
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
-      className="rounded-lg border border-border/50 overflow-hidden font-mono text-xs"
+    <CardWrapper
+      resolved={resolved}
+      icon={<ClipboardList className="h-4 w-4 text-emerald-600" />}
+      label="Structured Study Plan"
+      badge={`${steps.length} Steps`}
     >
-      {/* Header bar */}
-      <div className="px-4 py-3 border-b border-border/50 bg-background/80 flex items-center gap-3">
-        <div className="w-6 h-6 border border-primary/40 bg-primary/20 flex items-center justify-center text-primary font-bold shrink-0 rounded-lg">
-          Z
-        </div>
-        <div className="font-bold text-foreground uppercase tracking-widest flex items-center gap-2 flex-1">
-          <span className="w-1.5 h-1.5 bg-primary block animate-pulse shrink-0" />
-          <span>{payload.title || "Study Plan"}</span>
-        </div>
-        <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest shrink-0">
-          {total} steps
-        </span>
+      <div className="space-y-2">
+        <h3 className="text-base sm:text-lg font-black text-slate-950">
+          {title}
+        </h3>
+        <p className="text-xs text-slate-500">
+          Here is the suggested learning pathway tailored for your session:
+        </p>
       </div>
 
-      {/* Step list */}
-      <div className="px-5 py-4 space-y-3 bg-card/20">
-        {steps.map((step, i) => {
-          const isDone = step.status === "completed";
-          const isActive = step.status === "active";
-          return (
-            <motion.div
-              key={step.id ?? i}
-              initial={{ opacity: 0, x: -8 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.07, duration: 0.25 }}
-              className="flex items-start gap-3"
-            >
-              <div
-                className={cn(
-                  "mt-0.5 w-4 h-4 border shrink-0 rounded-lg flex items-center justify-center",
-                  isDone
-                    ? "border-primary/60 bg-primary/20"
-                    : isActive
-                      ? "border-primary/40 bg-primary/5"
-                      : "border-muted-foreground/30",
-                )}
-              >
-                {isDone && <CheckCircle2 className="size-2.5 text-primary" />}
-                {isActive && (
-                  <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <span
-                  className={cn(
-                    "uppercase tracking-wider text-[11px]",
-                    isDone
-                      ? "text-muted-foreground/35 line-through"
-                      : isActive
-                        ? "text-foreground font-bold"
-                        : "text-muted-foreground/50",
-                  )}
-                >
-                  {step.title}
-                </span>
-                {step.description && !isDone && (
-                  <QuestionMarkdown
-                    content={step.description}
-                    className="text-[10px] italic text-muted-foreground/60 mt-0.5"
-                  />
-                )}
-              </div>
-            </motion.div>
-          );
-        })}
-      </div>
+      <KnowledgePathway items={pathwayItems} compact />
 
-      {/* Progress bar */}
-      <div className="px-5 py-3 border-t border-border/50 bg-background/50">
-        <div className="flex justify-between text-[10px] text-muted-foreground mb-2 font-bold uppercase tracking-widest">
-          <span>System Progress</span>
-          <span
-            className={
-              completedCount > 0 ? "text-primary" : "text-muted-foreground/40"
-            }
-          >
-            {progressPct}% Complete
-          </span>
-        </div>
-        <div className="h-px bg-border/50 overflow-hidden">
-          <div
-            className="h-full bg-primary transition-all duration-500"
-            style={{ width: `${progressPct}%` }}
-          />
-        </div>
-      </div>
-
-      {/* Actions — only shown for initial planning-phase emission (no statuses yet) */}
-      {!hasStatuses && (
-        <div className="px-5 py-3 border-t border-border/50 flex items-center gap-2">
-          <ActionButton onClick={onApprove} variant="primary">
-            <CheckCircle2 className="inline size-2.5 mr-1" />
-            Approve Plan
+      {!resolved && (
+        <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+          <ActionButton onClick={onSkip} variant="ghost">
+            Adjust plan
           </ActionButton>
-          <ActionButton onClick={onSkip} variant="danger">
-            <SkipForward className="inline size-2.5 mr-1" />
-            Skip
+          <ActionButton onClick={onApprove} variant="primary">
+            <span>Approve &amp; Start</span>
+            <ArrowRight className="h-3.5 w-3.5" />
           </ActionButton>
         </div>
       )}
-    </motion.div>
+    </CardWrapper>
   );
 }
 
-// ─── UNLOCK_TOPIC ─────────────────────────────────────────────────────────────
+// ─── UNLOCK_TOPIC ────────────────────────────────────────────────────────────
 
 interface UnlockTopicCardProps {
   payload: ZUnlockTopicPayload;
@@ -595,24 +687,35 @@ interface UnlockTopicCardProps {
 }
 
 function UnlockTopicCard({ payload, resolved }: UnlockTopicCardProps) {
+  const { topicTitle, description } = payload;
+
   return (
     <CardWrapper
       resolved={resolved}
-      icon={<Unlock className="size-3" />}
-      label="Topic Unlocked"
+      icon={<Unlock className="h-4 w-4 text-emerald-600" />}
+      label="Milestone Completed"
+      className="bg-emerald-50/40 border-emerald-200"
     >
-      <p className="text-sm font-bold text-foreground">{payload.topicTitle}</p>
-      {payload.description && (
-        <QuestionMarkdown
-          content={payload.description}
-          className="text-sm text-muted-foreground leading-relaxed"
-        />
-      )}
+      <div className="flex items-center gap-3 py-1">
+        <div className="h-10 w-10 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 shadow-xs">
+          <Check className="h-5 w-5 stroke-[2.5]" />
+        </div>
+        <div>
+          <h4 className="text-sm sm:text-base font-extrabold text-slate-900">
+            {topicTitle}
+          </h4>
+          {description && (
+            <p className="text-xs text-slate-500 mt-0.5">
+              {description}
+            </p>
+          )}
+        </div>
+      </div>
     </CardWrapper>
   );
 }
 
-// ─── SHOW_RESULT ──────────────────────────────────────────────────────────────
+// ─── SHOW_RESULT ─────────────────────────────────────────────────────────────
 
 interface ShowResultCardProps {
   payload: ZShowResultPayload;
@@ -620,49 +723,54 @@ interface ShowResultCardProps {
 }
 
 function ShowResultCard({ payload, resolved }: ShowResultCardProps) {
-  const hasScore =
-    typeof payload.score === "number" && typeof payload.total === "number";
+  const { score = 0, total = 1, message, topicTitle } = payload;
+  const pct = Math.round((score / Math.max(total, 1)) * 100);
+  const passed = pct >= 70;
 
   return (
     <CardWrapper
       resolved={resolved}
-      icon={<Trophy className="size-3" />}
-      label="Result"
+      icon={<Trophy className="h-4 w-4 text-amber-500" />}
+      label="Quiz Results"
+      badge={topicTitle}
     >
-      {hasScore && (
-        <div className="flex items-center gap-2">
-          <span className="text-3xl font-black text-primary">
-            {payload.score}
-          </span>
-          <span className="text-muted-foreground font-mono text-sm">
-            / {payload.total}
+      <div className="flex items-center gap-4 py-2">
+        <div
+          className={cn(
+            "h-16 w-16 rounded-2xl flex flex-col items-center justify-center shrink-0 shadow-sm border",
+            passed
+              ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+              : "bg-rose-50 border-rose-200 text-rose-700"
+          )}
+        >
+          <span className="text-xl font-black">{pct}%</span>
+          <span className="text-[10px] font-extrabold uppercase">
+            {score}/{total}
           </span>
         </div>
-      )}
-      {payload.topicTitle && (
-        <p className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
-          {payload.topicTitle}
-        </p>
-      )}
-      {payload.message && (
-        <QuestionMarkdown
-          content={payload.message}
-          className="text-sm text-foreground leading-relaxed"
-        />
-      )}
+
+        <div className="space-y-1 flex-1">
+          <h4 className="text-sm sm:text-base font-extrabold text-slate-900">
+            {passed ? "Great understanding!" : "Keep practicing!"}
+          </h4>
+          {message && (
+            <p className="text-xs text-slate-600 leading-relaxed">{message}</p>
+          )}
+        </div>
+      </div>
     </CardWrapper>
   );
 }
 
-// ─── SHOW_SUGGESTION ──────────────────────────────────────────────────────────
+// ─── SHOW_SUGGESTION ─────────────────────────────────────────────────────────
 
 interface ShowSuggestionCardProps {
   payload: ZShowSuggestionPayload;
   resolved: boolean;
-  onExplainDifferently: (topicTitle: string) => void;
-  onTestMe: (topicTitle: string) => void;
-  onTryMyself: (topicTitle: string) => void;
-  onAction: (actionType: string) => void;
+  onExplainDifferently: (topic: string) => void;
+  onTestMe: (topic: string) => void;
+  onTryMyself: (topic: string) => void;
+  onAction: (action: string) => void;
 }
 
 function ShowSuggestionCard({
@@ -673,74 +781,54 @@ function ShowSuggestionCard({
   onTryMyself,
   onAction,
 }: ShowSuggestionCardProps) {
-  return (
-    <CardWrapper
-      resolved={resolved}
-      icon={<Lightbulb className="size-3" />}
-      label="Suggestion"
-    >
-      {payload.topicTitle && (
-        <p className="text-sm font-bold text-foreground">
-          {payload.topicTitle}
-        </p>
-      )}
-      {payload.description && (
-        <QuestionMarkdown
-          content={payload.description}
-          className="text-sm text-muted-foreground leading-relaxed"
-        />
-      )}
+  const { topicTitle, suggestions } = payload;
 
-      {!resolved && (
-        <div className="flex flex-wrap items-center gap-2">
-          {payload.topicTitle && (
-            <>
-              <ActionButton
-                onClick={() => onExplainDifferently(payload.topicTitle!)}
-                variant="secondary"
-              >
-                Explain differently
-              </ActionButton>
-              <ActionButton
-                onClick={() => onTestMe(payload.topicTitle!)}
-                variant="secondary"
-              >
-                Test me
-              </ActionButton>
-              <ActionButton
-                onClick={() => onTryMyself(payload.topicTitle!)}
-                variant="secondary"
-              >
-                Try myself
-              </ActionButton>
-            </>
-          )}
-          {payload.suggestions?.map((s) => (
-            <ActionButton
-              key={s.actionType}
-              onClick={() => onAction(s.actionType)}
-              variant="secondary"
-            >
-              {s.label}
-            </ActionButton>
-          ))}
-          {!payload.topicTitle &&
-            !payload.suggestions?.length &&
-            payload.actionType && (
-              <ActionButton
-                onClick={() => onAction(payload.actionType!)}
-                variant="primary"
-              >
-                {payload.label ?? payload.actionType}
-              </ActionButton>
-            )}
-        </div>
+  if (resolved) return null;
+
+  return (
+    <div className="w-full max-w-xl mx-auto flex flex-wrap items-center justify-center gap-2 py-3">
+      {suggestions?.map((s, i) => (
+        <button
+          key={i}
+          type="button"
+          onClick={() => onAction(s.actionType || s.label)}
+          className="rounded-full bg-white border border-slate-200/90 hover:border-slate-300 hover:bg-slate-50 px-4 py-2 text-xs font-bold text-slate-700 shadow-xs transition-all hover:scale-102 cursor-pointer flex items-center gap-1.5"
+        >
+          <span>{s.label}</span>
+          <ChevronRight className="h-3 w-3 text-slate-400" />
+        </button>
+      ))}
+
+      {!suggestions && topicTitle && (
+        <>
+          <button
+            type="button"
+            onClick={() => onExplainDifferently(topicTitle)}
+            className="rounded-full bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-xs transition cursor-pointer"
+          >
+            Explain differently
+          </button>
+          <button
+            type="button"
+            onClick={() => onTestMe(topicTitle)}
+            className="rounded-full bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-xs transition cursor-pointer"
+          >
+            Test me
+          </button>
+          <button
+            type="button"
+            onClick={() => onTryMyself(topicTitle)}
+            className="rounded-full bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-xs transition cursor-pointer"
+          >
+            I&apos;ll try myself
+          </button>
+        </>
       )}
-    </CardWrapper>
+    </div>
   );
 }
 
-// ─── SHOW_SUMMARY ─────────────────────────────────────────────────────────────
+// ─── SHOW_SUMMARY ────────────────────────────────────────────────────────────
 
 interface ShowSummaryCardProps {
   payload: ZShowSummaryPayload;
@@ -748,81 +836,42 @@ interface ShowSummaryCardProps {
 }
 
 function ShowSummaryCard({ payload, resolved }: ShowSummaryCardProps) {
+  const { topicTitle = "Session Summary", content, keyPoints } = payload;
+
   return (
     <CardWrapper
       resolved={resolved}
-      icon={<ClipboardList className="size-3" />}
-      label="Summary"
+      icon={<Lightbulb className="h-4 w-4 text-amber-500" />}
+      label="Session Recap"
+      badge={topicTitle}
     >
-      {payload.topicTitle && (
-        <p className="text-sm font-bold text-foreground">
-          {payload.topicTitle}
-        </p>
-      )}
-      {payload.content && (
-        <QuestionMarkdown
-          content={payload.content}
-          className="text-sm text-foreground leading-relaxed"
-        />
-      )}
-      {payload.keyPoints && payload.keyPoints.length > 0 && (
-        <ul className="space-y-1">
-          {payload.keyPoints.map((point, i) => (
-            <li
-              key={i}
-              className="flex items-start gap-2 text-sm text-foreground"
-            >
-              <ChevronRight className="mt-0.5 size-3 shrink-0 text-primary" />
-              <QuestionMarkdown content={point} className="flex-1" />
-            </li>
-          ))}
-        </ul>
-      )}
-    </CardWrapper>
-  );
-}
+      <div className="space-y-3">
+        <h3 className="text-base sm:text-lg font-black text-slate-950">
+          {topicTitle}
+        </h3>
 
-// ─── UNKNOWN_DIRECTIVE (Fallback) ─────────────────────────────────────────────
+        {content && (
+          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+            {content}
+          </p>
+        )}
 
-function UnknownDirectiveCard({
-  type,
-  payload,
-  resolved,
-  onContinue,
-}: {
-  type: string;
-  payload: any;
-  resolved: boolean;
-  onContinue: () => void;
-}) {
-  return (
-    <CardWrapper
-      resolved={resolved}
-      icon={<HelpCircle className="size-3" />}
-      label={`Action: ${type}`}
-    >
-      <div className="space-y-2">
-        <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest italic">
-          New system action received. Some controls may be limited.
-        </p>
-        <div className="rounded-lg border border-border/40 bg-muted/20 p-2 overflow-auto max-h-40">
-          <pre className="text-[10px] font-mono text-muted-foreground leading-tight">
-            {JSON.stringify(payload, null, 2)}
-          </pre>
-        </div>
+        {keyPoints && keyPoints.length > 0 && (
+          <ul className="space-y-2 text-xs sm:text-sm text-slate-700 pt-1">
+            {keyPoints.map((k: string, i: number) => (
+              <li key={i} className="flex items-start gap-2.5">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                <span>{k}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
-
-      {!resolved && (
-        <ActionButton onClick={onContinue} variant="primary">
-          <ChevronRight className="inline size-2.5 mr-1" />
-          Got it
-        </ActionButton>
-      )}
     </CardWrapper>
   );
 }
 
-// ─── POMODORO ─────────────────────────────────────────────────────────────────
+// ─── POMODORO ────────────────────────────────────────────────────────────────
 
 type PomodoroPhase = "work" | "short_break" | "long_break" | "done";
 
@@ -855,13 +904,11 @@ function PomodoroCard({ payload, resolved, onResume }: PomodoroCardProps) {
     return 0;
   };
 
-  // Tick
   useEffect(() => {
     if (!running || phase === "done") return;
     tickRef.current = setInterval(() => {
       setSecondsLeft((s) => {
         if (s <= 1) {
-          // Advance phase
           setPhase((prev) => {
             if (prev === "work") {
               const nextInterval = interval + 1;
@@ -876,7 +923,6 @@ function PomodoroCard({ payload, resolved, onResume }: PomodoroCardProps) {
                 return "short_break";
               }
             }
-            // break → back to work
             setSecondsLeft(workMinutes * 60);
             return "work";
           });
@@ -900,131 +946,86 @@ function PomodoroCard({ payload, resolved, onResume }: PomodoroCardProps) {
 
   const mm = String(Math.floor(secondsLeft / 60)).padStart(2, "0");
   const ss = String(secondsLeft % 60).padStart(2, "0");
-
   const total = phaseDuration(phase) || 1;
   const progress = ((total - secondsLeft) / total) * 100;
 
-  const phaseLabel =
-    phase === "work"
-      ? `Work · Round ${interval}`
-      : phase === "short_break"
-        ? "Short Break"
-        : phase === "long_break"
-          ? "Long Break"
-          : "Done";
-
   const isBreak = phase === "short_break" || phase === "long_break";
 
-  if (resolved) {
-    return (
-      <div className="rounded-lg border border-border/25 bg-card/10 px-4 py-2.5 flex items-center gap-3 font-mono text-xs opacity-50">
-        <Timer className="size-3 text-muted-foreground/50 shrink-0" />
-        <span className="text-muted-foreground/60 uppercase tracking-widest truncate flex-1">
-          Pomodoro · {topicTitle}
-        </span>
-        <span className="text-muted-foreground/40 uppercase tracking-widest shrink-0">
-          {workMinutes}m / {shortBreakMinutes}m
-        </span>
-      </div>
-    );
-  }
-
   return (
-    <div
-      className={cn(
-        "rounded-lg border font-mono text-xs",
-        isBreak
-          ? "border-emerald-500/30 bg-emerald-500/5"
-          : "border-primary/30 bg-primary/5",
-      )}
+    <CardWrapper
+      resolved={resolved}
+      icon={<Timer className="h-4 w-4 text-[#0C60FC]" />}
+      label={`Pomodoro Focus · ${topicTitle}`}
     >
-      {/* Header */}
-      <div className="px-4 py-3 border-b border-border/30 flex items-center gap-3">
-        {isBreak ? (
-          <Coffee className="size-3.5 text-emerald-400 shrink-0" />
-        ) : (
-          <Timer className="size-3.5 text-primary shrink-0" />
-        )}
-        <span
-          className={cn(
-            "text-[9px] font-bold uppercase tracking-widest flex-1",
-            isBreak ? "text-emerald-400" : "text-primary",
-          )}
-        >
-          {phaseLabel}
-        </span>
-        <span className="text-[10px] text-muted-foreground/50 uppercase tracking-widest shrink-0 truncate max-w-32">
-          {topicTitle}
-        </span>
-      </div>
-
-      {/* Countdown */}
-      <div className="px-4 py-8 flex flex-col items-center gap-5">
-        <span
-          className={cn(
-            "text-6xl font-black tabular-nums tracking-tight leading-none",
-            isBreak ? "text-emerald-400" : "text-primary",
-          )}
-        >
+      <div className="py-6 flex flex-col items-center gap-4">
+        <span className="text-5xl sm:text-6xl font-black tabular-nums tracking-tight text-slate-900 leading-none">
           {mm}:{ss}
         </span>
 
-        {/* Progress bar */}
-        <div className="w-full h-1 bg-border/30 rounded-full">
+        {/* Progress line */}
+        <div className="w-full max-w-xs h-1.5 bg-slate-100 rounded-full overflow-hidden">
           <div
             className={cn(
-              "h-full rounded-full transition-[width] duration-1000 ease-linear",
-              isBreak ? "bg-emerald-400" : "bg-primary",
+              "h-full rounded-full transition-all duration-1000",
+              isBreak ? "bg-emerald-500" : "bg-[#0C60FC]"
             )}
             style={{ width: `${progress}%` }}
           />
         </div>
 
-        {/* Interval dots */}
-        <div className="flex items-center gap-2">
-          {Array.from({ length: intervalsBeforeLongBreak }).map((_, i) => (
-            <div
-              key={i}
-              className={cn(
-                "w-2 h-2 rounded-full transition-colors duration-300",
-                i < interval
-                  ? isBreak
-                    ? "bg-emerald-400"
-                    : "bg-primary"
-                  : "bg-border/50",
-              )}
-            />
-          ))}
-          <span className="ml-1 text-[9px] uppercase tracking-widest text-muted-foreground/40">
-            until long break
-          </span>
-        </div>
+        <p className="text-xs font-extrabold uppercase tracking-widest text-slate-400">
+          {isBreak ? "Break Time" : `Focus Round ${interval} of ${intervalsBeforeLongBreak}`}
+        </p>
+
+        {note && <p className="text-xs italic text-slate-500 text-center">{note}</p>}
       </div>
 
-      {/* Note */}
-      {note && (
-        <div className="px-4 pb-4">
-          <p className="text-[10px] italic text-muted-foreground/50 leading-relaxed">
-            {note}
-          </p>
-        </div>
-      )}
-
-      {/* Controls */}
-      <div className="px-4 py-3 border-t border-border/30 flex items-center gap-2">
+      <div className="flex items-center justify-center gap-3 pt-2 border-t border-slate-100">
         <ActionButton onClick={() => setRunning((r) => !r)} variant="secondary">
-          {running ? "Pause" : "Resume Timer"}
+          {running ? "Pause Timer" : "Resume Timer"}
         </ActionButton>
         <ActionButton onClick={onResume} variant="primary">
-          <ChevronRight className="inline size-2.5 mr-1" />
-          Done, Continue
+          <span>Done, Continue</span>
+          <ArrowRight className="h-3.5 w-3.5" />
         </ActionButton>
       </div>
-    </div>
+    </CardWrapper>
   );
 }
 
-// ─── Public DirectiveCardCallbacks interface ──────────────────────────────────
+// ─── UNKNOWN DIRECTIVE ───────────────────────────────────────────────────────
+
+function UnknownDirectiveCard({
+  type,
+  payload,
+  resolved,
+  onContinue,
+}: {
+  type: string;
+  payload: unknown;
+  resolved: boolean;
+  onContinue: () => void;
+}) {
+  return (
+    <CardWrapper
+      resolved={resolved}
+      icon={<HelpCircle className="h-4 w-4 text-slate-400" />}
+      label={`Action: ${type}`}
+    >
+      <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 overflow-auto max-h-36 text-[11px] font-mono text-slate-600">
+        <pre>{JSON.stringify(payload, null, 2)}</pre>
+      </div>
+
+      {!resolved && (
+        <ActionButton onClick={onContinue} variant="primary">
+          Got it
+        </ActionButton>
+      )}
+    </CardWrapper>
+  );
+}
+
+// ─── Public DirectiveCardCallbacks Interface ─────────────────────────────────
 
 export interface DirectiveCardCallbacks {
   onSubmitAnswer: (answers: string[], questions?: string[]) => void;
@@ -1044,7 +1045,7 @@ interface DirectiveCardProps extends DirectiveCardCallbacks {
   resolved?: boolean;
 }
 
-// ─── Main DirectiveCard dispatcher ───────────────────────────────────────────
+// ─── Main DirectiveCard Dispatcher ───────────────────────────────────────────
 
 export function DirectiveCard({
   directive,

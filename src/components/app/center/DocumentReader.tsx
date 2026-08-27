@@ -14,9 +14,9 @@ import {
   ZoomOut,
   Search,
   Trash2,
-  Pencil,
-  Save,
   X,
+  FileText,
+  Bookmark,
 } from "lucide-react";
 import { SelectionContextMenu } from "./SelectionContextMenu";
 import {
@@ -32,20 +32,26 @@ import { toast } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-// Configure worker - using unpkg for simplicity in this environment
+// Configure worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 interface DocumentReaderProps {
   materialId: string;
   sessionId: string;
+  onClose?: () => void;
+  referencePage?: number;
 }
 
-export function DocumentReader({ materialId, sessionId }: DocumentReaderProps) {
+export function DocumentReader({
+  materialId,
+  sessionId,
+  onClose,
+  referencePage,
+}: DocumentReaderProps) {
   const material = useAppMaterial(sessionId, materialId);
   const {
     data: blob,
     isLoading: isLoadingBlob,
-    isError: isBlobError,
   } = useAppMaterialContent(sessionId, materialId);
   const { data: highlights = [] } = useAppHighlights(sessionId);
   const addHighlight = useAddHighlight(sessionId);
@@ -53,25 +59,24 @@ export function DocumentReader({ materialId, sessionId }: DocumentReaderProps) {
   const updateHighlight = useUpdateHighlight(sessionId as string);
 
   const [numPages, setNumPages] = useState<number | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(referencePage || 1);
   const [editingHighlight, setEditingHighlight] =
     useState<SessionHighlight | null>(null);
-  const [scale, setScale] = useState<number>(1.2);
+  const [scale, setScale] = useState<number>(1.0);
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
 
-  const containerRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   // Safe object URL management
   useEffect(() => {
     if (!blob) {
-      setTimeout(() => setObjectUrl(null), 0);
+      setObjectUrl(null);
       return;
     }
 
     const url = URL.createObjectURL(blob);
-    setTimeout(() => setObjectUrl(url), 0);
+    setObjectUrl(url);
 
     return () => {
       URL.revokeObjectURL(url);
@@ -109,6 +114,9 @@ export function DocumentReader({ materialId, sessionId }: DocumentReaderProps) {
   function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
     setNumPages(numPages);
     pageRefs.current = new Array(numPages).fill(null);
+    if (referencePage && referencePage <= numPages) {
+      setTimeout(() => scrollToPage(referencePage), 100);
+    }
   }
 
   const scrollToPage = (pageNum: number) => {
@@ -119,18 +127,16 @@ export function DocumentReader({ materialId, sessionId }: DocumentReaderProps) {
   };
 
   const zoom = (delta: number) => {
-    setScale((prev) => Math.min(Math.max(0.5, prev + delta), 3.0));
+    setScale((prev) => Math.min(Math.max(0.6, Number((prev + delta).toFixed(1))), 2.0));
   };
 
   const handleHighlight = useCallback(
     (text: string, rect: DOMRect, color: string = "yellow", note?: string) => {
-      // Find the page element that contains the selection to calculate relative bounds
       const pageElement = pageRefs.current[currentPage - 1];
       if (!pageElement) return;
 
       const pageRect = pageElement.getBoundingClientRect();
 
-      // Bounds as percentages for responsive scaling
       const bounds = {
         top: ((rect.top - pageRect.top) / pageRect.height) * 100,
         left: ((rect.left - pageRect.left) / pageRect.width) * 100,
@@ -161,294 +167,175 @@ export function DocumentReader({ materialId, sessionId }: DocumentReaderProps) {
   }, [highlights, materialId]);
 
   return (
-    <div
-      ref={containerRef}
-      className="relative flex flex-col h-full bg-muted/20 overflow-hidden group/reader"
-    >
-      {/* Toolbar */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-border/40 bg-background/50 backdrop-blur-sm z-20">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="flex items-center gap-1.5 min-w-0">
-            <Search className="size-3 text-muted-foreground/60 shrink-0" />
-            <span className="text-[11px] font-semibold truncate text-foreground/80 max-w-28 sm:max-w-50">
-              {material?.filename || "Loading..."}
-            </span>
-            {material?.processingStatus === "pending" && (
-              <Loader2 className="size-3 animate-spin text-amber-500" />
-            )}
-          </div>
-          <div className="w-px h-3 bg-border/40 mx-1" />
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => scrollToPage(currentPage - 1)}
-              disabled={currentPage <= 1}
-              className="p-1.5 hover:bg-accent rounded-md disabled:opacity-30 transition-colors"
-            >
-              <ChevronLeft className="size-4" />
-            </button>
-            <span className="text-[11px] font-mono text-muted-foreground w-12 sm:w-16 text-center">
-              {currentPage} / {numPages || "--"}
-            </span>
-            <button
-              onClick={() => scrollToPage(currentPage + 1)}
-              disabled={currentPage >= (numPages ?? 0)}
-              className="p-1.5 hover:bg-accent rounded-md disabled:opacity-30 transition-colors"
-            >
-              <ChevronRight className="size-4" />
-            </button>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => zoom(-0.2)}
-            className="p-1.5 hover:bg-accent rounded-md transition-colors"
-          >
-            <ZoomOut className="size-3.5" />
-          </button>
-          <span className="hidden sm:block text-[11px] font-mono text-muted-foreground w-12 text-center select-none">
-            {Math.round(scale * 100)}%
-          </span>
-          <button
-            onClick={() => zoom(0.2)}
-            className="p-1.5 hover:bg-accent rounded-md transition-colors"
-          >
-            <ZoomIn className="size-3.5" />
-          </button>
-        </div>
-      </div>
-
-      {/* Content Area - Scroll Container */}
-      <div
-        ref={scrollContainerRef}
-        className="flex-1 overflow-auto p-4 flex flex-col items-center gap-6 no-scrollbar scroll-smooth"
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/60 backdrop-blur-sm antialiased">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.96, y: 10 }}
+        transition={{ duration: 0.2 }}
+        className="relative w-full max-w-4xl h-[92vh] max-h-[860px] rounded-[28px] bg-[#F7F9FC] border border-slate-200/80 shadow-2xl flex flex-col overflow-hidden"
       >
-        {objectUrl ? (
-          <Document
-            file={objectUrl}
-            onLoadSuccess={onDocumentLoadSuccess}
-            loading={
-              <div className="flex flex-col items-center justify-center p-20 gap-3">
-                <Loader2 className="size-8 animate-spin text-primary/40" />
-                <p className="text-xs font-mono text-muted-foreground animate-pulse">
-                  Streaming document...
-                </p>
-              </div>
-            }
-            error={
-              <div className="p-12 text-center text-destructive text-xs font-mono border border-destructive/20 bg-destructive/5 rounded-lg max-w-md">
-                Failed to load document. The file might be corrupted or
-                inaccessible.
-              </div>
-            }
-          >
-            {[...Array(numPages)].map((_, i) => (
-              <div
-                key={i + 1}
-                ref={(el) => {
-                  pageRefs.current[i] = el;
-                }}
-                data-page-number={i + 1}
-                className="relative shadow-xl shadow-black/10 transition-transform duration-300"
-              >
-                <Page
-                  pageNumber={i + 1}
-                  scale={scale}
-                  renderAnnotationLayer={true}
-                  renderTextLayer={true}
-                  className="rounded-none overflow-hidden"
-                  loading={null}
-                />
-
-                {/* Highlight Overlays for this page */}
-                <div className="absolute inset-0 pointer-events-none overflow-hidden z-10">
-                  {pageHighlights
-                    .filter((h) => h.pageNumber === i + 1)
-                    .map((h) => {
-                      const highlightColors: Record<string, string> = {
-                        yellow: "rgba(255, 255, 0, 0.4)",
-                        pink: "rgba(255, 0, 255, 0.3)",
-                        green: "rgba(0, 255, 0, 0.3)",
-                        blue: "rgba(0, 100, 255, 0.3)",
-                      };
-
-                      return (
-                        <div
-                          key={h.id}
-                          className={cn(
-                            "absolute group/hl pointer-events-auto cursor-pointer transition-shadow hover:shadow-[0_0_0_2px_rgba(var(--primary),0.3)]",
-                            editingHighlight?.id === h.id &&
-                              "shadow-[0_0_0_2px_rgba(var(--primary),0.5)] z-40",
-                          )}
-                          style={{
-                            top: `${h.bounds.top}%`,
-                            left: `${h.bounds.left}%`,
-                            width: `${h.bounds.width}%`,
-                            height: `${h.bounds.height}%`,
-                            backgroundColor:
-                              highlightColors[h.color || "yellow"],
-                            mixBlendMode: "multiply",
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (editingHighlight?.id !== h.id) setEditingHighlight(h);
-                          }}
-                          title={h.note ? `Note: ${h.note}` : h.text}
-                        >
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeHighlight.mutate(h.id, {
-                                onSuccess: () => toast.success("Highlight removed"),
-                                onError: () => toast.error("Failed to remove highlight"),
-                              });
-                              if (editingHighlight?.id === h.id)
-                                setEditingHighlight(null);
-                            }}
-                            className="absolute -top-1 -right-1 opacity-0 group-hover/hl:opacity-100 bg-destructive text-destructive-foreground p-0.5 rounded-sm shadow-sm transition-opacity"
-                          >
-                            <Trash2 className="size-2.5" />
-                          </button>
-
-                          {h.note && (
-                            <div className="absolute -top-1 -left-1 size-2 rounded-full bg-primary border border-background shadow-xs" />
-                          )}
-
-                          {h.note && (
-                            <div
-                              className={cn(
-                                "absolute bottom-full left-1/2 -translate-x-1/2 mb-2 transition-opacity pointer-events-auto z-50 cursor-default",
-                                editingHighlight?.id === h.id
-                                  ? "opacity-100"
-                                  : "opacity-0 group-hover/hl:opacity-100",
-                              )}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (editingHighlight?.id !== h.id) setEditingHighlight(h);
-                              }}
-                            >
-                              <div className="bg-background/95 backdrop-blur-md border border-border/50 p-2.5 rounded-lg shadow-xl text-[10px] min-w-48 max-w-64 font-mono leading-relaxed group/note relative">
-                                {editingHighlight?.id === h.id ? (
-                                  <div className="space-y-2.5" onClick={(e) => e.stopPropagation()}>
-                                    <div className="flex items-center justify-between border-b border-border/40 pb-1.5">
-                                      <p className="text-primary font-bold uppercase tracking-widest text-[8px]">
-                                        Editing Annotation
-                                      </p>
-                                      <button 
-                                        onClick={() => setEditingHighlight(null)}
-                                        className="p-0.5 hover:bg-muted rounded transition-colors text-muted-foreground"
-                                      >
-                                        <X className="size-2.5" />
-                                      </button>
-                                    </div>
-                                    
-                                    <textarea
-                                      autoFocus
-                                      defaultValue={h.note}
-                                      id={`edit-note-${h.id}`}
-                                      className="w-full bg-muted/30 border border-border/40 rounded p-1.5 text-[10px] font-mono focus:outline-none focus:ring-1 focus:ring-primary/30 min-h-15 resize-none leading-relaxed"
-                                    />
-
-                                    <div className="flex items-center justify-between pt-1">
-                                      <div className="flex items-center gap-1.5">
-                                        {Object.keys(highlightColors).map((cId) => (
-                                          <button
-                                            key={cId}
-                                            onClick={() => {
-                                              const newNote = (document.getElementById(`edit-note-${h.id}`) as HTMLTextAreaElement).value;
-                                              updateHighlight.mutate({
-                                                highlightId: h.id,
-                                                note: newNote,
-                                                color: cId
-                                              }, {
-                                                onSuccess: () => setEditingHighlight(null)
-                                              });
-                                            }}
-                                            className={cn(
-                                              "size-3 rounded-full border border-black/10 transition-transform hover:scale-125",
-                                              cId === "yellow" && "bg-yellow-400",
-                                              cId === "pink" && "bg-pink-400",
-                                              cId === "green" && "bg-green-400",
-                                              cId === "blue" && "bg-blue-400",
-                                              (h.color || "yellow") === cId && "ring-1 ring-primary ring-offset-1 ring-offset-background"
-                                            )}
-                                          />
-                                        ))}
-                                      </div>
-                                      
-                                      <button
-                                        onClick={() => {
-                                          const newNote = (document.getElementById(`edit-note-${h.id}`) as HTMLTextAreaElement).value;
-                                          updateHighlight.mutate({
-                                            highlightId: h.id,
-                                            note: newNote,
-                                            color: h.color
-                                          }, {
-                                            onSuccess: () => {
-                                              toast.success("Note updated");
-                                              setEditingHighlight(null);
-                                            }
-                                          });
-                                        }}
-                                        className="bg-primary text-primary-foreground px-2 py-1 rounded text-[9px] font-bold flex items-center gap-1 hover:opacity-90 transition-opacity"
-                                      >
-                                        <Save className="size-2.5" />
-                                        Save
-                                      </button>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <>
-                                    <div className="flex items-center justify-between mb-1.5 border-b border-border/40 pb-1">
-                                      <p className="text-muted-foreground/60 uppercase tracking-widest text-[8px]">
-                                        Annotation
-                                      </p>
-                                      <button className="p-0.5 hover:bg-muted rounded transition-colors text-muted-foreground/40 hover:text-primary">
-                                        <Pencil className="size-2.5" />
-                                      </button>
-                                    </div>
-                                    <p className="text-foreground whitespace-pre-wrap cursor-text">
-                                      {h.note}
-                                    </p>
-                                  </>
-                                )}
-                              </div>
-                              <div className="w-2 h-2 bg-background/95 border-r border-b border-border/50 rotate-45 absolute left-1/2 -translate-x-1/2 -bottom-1" />
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                </div>
-              </div>
-            ))}
-          </Document>
-        ) : (
-          <div className="flex flex-col items-center justify-center p-20 gap-3 min-h-100">
-            {isBlobError ? (
-              <div className="p-12 text-center text-destructive text-xs font-mono border border-destructive/20 bg-destructive/5 rounded-lg max-w-md">
-                Connection refused. Failed to fetch encrypted content for this
-                material.
-              </div>
-            ) : (
-              <>
-                <Loader2 className="size-8 animate-spin text-primary/40" />
-                <p className="text-xs font-mono text-muted-foreground animate-pulse">
-                  {isLoadingBlob
-                    ? "Initializing secure reader..."
-                    : "Fetching bits..."}
-                </p>
-              </>
-            )}
+        {/* Top Title Bar */}
+        <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-slate-100 shrink-0">
+          <div className="w-8" />
+          {/* Centered Title */}
+          <div className="flex items-center gap-2">
+            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
+              <FileText className="h-3.5 w-3.5" />
+            </span>
+            <span className="text-sm font-extrabold text-slate-900">
+              Source
+            </span>
           </div>
-        )}
 
-        {/* Selection Context Menu - Bound to main reader container */}
-        <SelectionContextMenu
-          containerRef={containerRef}
-          onHighlight={handleHighlight}
-        />
-      </div>
+          {/* Close button */}
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-900 transition cursor-pointer"
+            title="Close viewer"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Toolbar Bar */}
+        <div className="flex items-center justify-between px-6 py-2.5 bg-white/70 backdrop-blur-md border-b border-slate-200/60 shrink-0 text-xs">
+          {/* Document Name and Page Dropdown */}
+          <div className="flex items-center gap-2">
+            <div className="inline-flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-1.5 font-bold text-slate-700 max-w-xs sm:max-w-md truncate">
+              <span className="truncate">{material?.filename || "Loading document…"}</span>
+              <span className="text-slate-400">▸</span>
+              <span className="text-slate-900 font-extrabold shrink-0">
+                {currentPage}/{numPages || "--"}
+              </span>
+            </div>
+          </div>
+
+          {/* Zoom controls */}
+          <div className="inline-flex items-center gap-1 rounded-xl bg-slate-100 p-0.5 text-xs font-bold text-slate-700">
+            <button
+              type="button"
+              onClick={() => zoom(-0.1)}
+              disabled={scale <= 0.6}
+              className="h-6 w-6 flex items-center justify-center rounded-lg hover:bg-white text-slate-600 disabled:opacity-30 cursor-pointer"
+              title="Zoom out"
+            >
+              <ZoomOut className="h-3.5 w-3.5" />
+            </button>
+            <span className="px-2 font-mono text-[11px] select-none">
+              {Math.round(scale * 100)}%
+            </span>
+            <button
+              type="button"
+              onClick={() => zoom(0.1)}
+              disabled={scale >= 2.0}
+              className="h-6 w-6 flex items-center justify-center rounded-lg hover:bg-white text-slate-600 disabled:opacity-30 cursor-pointer"
+              title="Zoom in"
+            >
+              <ZoomIn className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Content Area */}
+        <div
+          ref={scrollContainerRef}
+          className="flex-1 overflow-y-auto p-6 sm:p-8 flex flex-col items-center gap-8 scroll-smooth"
+        >
+          {objectUrl ? (
+            <Document
+              file={objectUrl}
+              onLoadSuccess={onDocumentLoadSuccess}
+              loading={
+                <div className="flex flex-col items-center justify-center p-20 gap-3">
+                  <Loader2 className="h-8 w-8 animate-spin text-[#0C60FC]" />
+                  <p className="text-xs font-bold text-slate-400 animate-pulse">
+                    Loading source document…
+                  </p>
+                </div>
+              }
+              error={
+                <div className="p-12 text-center text-rose-600 text-xs font-bold border border-rose-200 bg-rose-50 rounded-2xl max-w-md">
+                  Failed to load document preview.
+                </div>
+              }
+            >
+              {[...Array(numPages)].map((_, i) => {
+                const pageNum = i + 1;
+                const isReference = referencePage ? pageNum === referencePage : false;
+
+                return (
+                  <div key={pageNum} className="flex flex-col items-center gap-2">
+                    {/* Page Label */}
+                    <span className="text-[11px] font-bold text-slate-400 select-none">
+                      Page {pageNum}
+                    </span>
+
+                    {/* Page Box (with Orange Reference Border if cited) */}
+                    <div
+                      ref={(el) => {
+                        pageRefs.current[i] = el;
+                      }}
+                      data-page-number={pageNum}
+                      className={cn(
+                        "relative rounded-2xl overflow-hidden bg-white shadow-xl transition-all",
+                        isReference &&
+                          "ring-4 ring-orange-500/80 border-2 border-orange-500"
+                      )}
+                    >
+                      {isReference && (
+                        <div className="absolute top-2 left-2 z-30 inline-flex items-center gap-1 rounded-full bg-orange-500 text-white px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider shadow-md">
+                          <span>Reference</span>
+                        </div>
+                      )}
+
+                      <Page
+                        pageNumber={pageNum}
+                        scale={scale}
+                        renderAnnotationLayer={true}
+                        renderTextLayer={true}
+                        className="rounded-xl overflow-hidden"
+                        loading={
+                          <div className="h-96 w-72 flex items-center justify-center">
+                            <Loader2 className="h-6 w-6 animate-spin text-slate-300" />
+                          </div>
+                        }
+                      />
+
+                      {/* Highlight Overlays */}
+                      <div className="absolute inset-0 pointer-events-none overflow-hidden z-10">
+                        {pageHighlights
+                          .filter((h) => h.pageNumber === pageNum)
+                          .map((h) => (
+                            <div
+                              key={h.id}
+                              className="absolute pointer-events-auto cursor-pointer"
+                              style={{
+                                top: `${h.bounds.top}%`,
+                                left: `${h.bounds.left}%`,
+                                width: `${h.bounds.width}%`,
+                                height: `${h.bounds.height}%`,
+                                backgroundColor: "rgba(255, 235, 59, 0.4)",
+                                mixBlendMode: "multiply",
+                              }}
+                              title={h.note || h.text}
+                            />
+                          ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </Document>
+          ) : (
+            <div className="flex flex-col items-center justify-center p-20 gap-3">
+              <Loader2 className="h-8 w-8 animate-spin text-[#0C60FC]" />
+              <p className="text-xs font-bold text-slate-400">Opening source…</p>
+            </div>
+          )}
+        </div>
+      </motion.div>
     </div>
   );
 }

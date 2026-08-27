@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import {
-  Brain,
   Copy,
   Check,
   RotateCcw,
@@ -12,6 +11,8 @@ import {
   FileText,
   ThumbsUp,
   ThumbsDown,
+  Sparkles,
+  BookOpen,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -20,8 +21,9 @@ import rehypeKatex from "rehype-katex";
 import rehypeRaw from "rehype-raw";
 import { cn } from "@/lib/utils";
 import type { ZAppMessage, SessionCitation } from "@/types/session";
-import { DirectiveCard } from "@/components/app/center/DirectiveCard";
-import type { DirectiveCardCallbacks } from "@/components/app/center/DirectiveCard";
+import { DirectiveCard } from "@/components/app/session/DirectiveCard";
+import type { DirectiveCardCallbacks } from "@/components/app/session/DirectiveCard";
+import { GlowingOrb } from "@/components/app/session/GlowingOrb";
 import {
   Popover,
   PopoverContent,
@@ -33,7 +35,6 @@ export interface MessageFeedProps extends DirectiveCardCallbacks {
   citations?: SessionCitation[];
   /**
    * The messageId of the most-recent, still-unresolved directive.
-   * All directives whose messageId does NOT match this are treated as resolved.
    */
   activeDirectiveMessageId: string | null;
   onRetryMessage?: (id: string, content: string) => void;
@@ -67,57 +68,47 @@ export function MessageFeed({
 
   if (messages.length === 0) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-4 py-16 text-center">
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.4 }}
-          className="flex size-16 items-center justify-center border border-primary/30 bg-primary/10 rounded-lg"
-        >
-          <Brain className="size-8 text-primary" />
-        </motion.div>
-        <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-          Session started — send your first message
+      <div className="flex flex-1 flex-col items-center justify-center gap-4 py-20 px-6 text-center max-w-lg mx-auto">
+        <GlowingOrb size="lg" isThinking={false} />
+        <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+          Ready when you are.
+        </h2>
+        <p className="text-xs sm:text-sm text-slate-500 max-w-sm leading-relaxed">
+          Ask a question, upload lecture materials, or pick a study topic to begin your personalized learning session.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-4 scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none]">
-      {messages.map((msg) => {
+    <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-4 sm:px-8 py-8 max-w-3xl w-full mx-auto scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none]">
+      {messages.map((msg, index) => {
         /* ── Skip empty non-directive messages ── */
         if (msg.type !== "directive" && !msg.content?.trim()) return null;
 
         /* ── Directive messages ── */
         if (msg.type === "directive") {
           if (!msg.directive) {
-            return (
-              <div
-                key={msg.id}
-                className="border border-amber-500/20 bg-amber-500/5 px-4 py-2 text-[11px] font-mono text-amber-500/70"
-              >
-                [Directive payload unavailable]
-              </div>
-            );
+            return null;
           }
           const resolved = msg.messageId !== activeDirectiveMessageId;
           return (
-            <DirectiveCard
-              key={msg.id}
-              directive={msg.directive}
-              resolved={resolved}
-              onSubmitAnswer={onSubmitAnswer}
-              onApprove={onApprove}
-              onContinue={onContinue}
-              onRetry={onRetry}
-              onSkip={onSkip}
-              onExplainDifferently={onExplainDifferently}
-              onTestMe={onTestMe}
-              onTryMyself={onTryMyself}
-              onAction={onAction}
-              onPomodoroResume={onPomodoroResume}
-            />
+            <div key={msg.id || index} className="w-full">
+              <DirectiveCard
+                directive={msg.directive}
+                resolved={resolved}
+                onSubmitAnswer={onSubmitAnswer}
+                onApprove={onApprove}
+                onContinue={onContinue}
+                onRetry={onRetry}
+                onSkip={onSkip}
+                onExplainDifferently={onExplainDifferently}
+                onTestMe={onTestMe}
+                onTryMyself={onTryMyself}
+                onAction={onAction}
+                onPomodoroResume={onPomodoroResume}
+              />
+            </div>
           );
         }
 
@@ -125,7 +116,7 @@ export function MessageFeed({
         if (msg.role === "user") {
           return (
             <UserBubble
-              key={msg.id}
+              key={msg.id || index}
               message={msg}
               onRetry={onRetryMessage}
               onEdit={onEditMessage}
@@ -133,10 +124,10 @@ export function MessageFeed({
           );
         }
 
-        /* ── Z text messages ── */
+        /* ── Z text messages / narration ── */
         return (
-          <ZMessageBubble
-            key={msg.id}
+          <ZMessageCanvasNode
+            key={msg.id || index}
             message={msg}
             citations={citations}
             onRetry={onRetryMessage}
@@ -150,7 +141,7 @@ export function MessageFeed({
   );
 }
 
-// ─── User bubble ──────────────────────────────────────────────────────────────
+// ─── User Bubble ─────────────────────────────────────────────────────────────
 
 function UserBubble({
   message,
@@ -191,15 +182,15 @@ function UserBubble({
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: 20 }}
+      initial={{ opacity: 0, x: 16 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.25 }}
-      className="flex flex-col items-end gap-1"
+      className="flex flex-col items-end gap-1 w-full"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
       {editing ? (
-        <div className="flex w-full max-w-[55%] flex-col gap-2">
+        <div className="flex w-full max-w-md flex-col gap-2">
           <textarea
             ref={textareaRef}
             value={draft}
@@ -212,30 +203,30 @@ function UserBubble({
               if (e.key === "Escape") cancelEdit();
             }}
             rows={3}
-            className="w-full resize-none border border-primary/50 bg-secondary px-4 py-3 text-sm font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-primary rounded-lg"
+            className="w-full resize-none border border-[#0C60FC] bg-white px-4 py-3 text-xs sm:text-sm font-medium text-slate-900 rounded-2xl shadow-sm focus:outline-none focus:ring-4 focus:ring-blue-100"
           />
           <div className="flex justify-end gap-2">
             <button
               onClick={cancelEdit}
-              className="text-[9px] font-mono uppercase text-muted-foreground hover:text-foreground"
+              className="text-xs font-bold text-slate-400 hover:text-slate-700 px-3 py-1 cursor-pointer"
             >
               Cancel
             </button>
             <button
               onClick={submitEdit}
-              className="text-[9px] font-mono uppercase text-primary hover:underline"
+              className="rounded-xl bg-[#0C60FC] px-3.5 py-1 text-xs font-extrabold text-white cursor-pointer"
             >
-              Send
+              Save &amp; Send
             </button>
           </div>
         </div>
       ) : (
         <div
           className={cn(
-            "max-w-[55%] border px-4 py-3 text-sm font-mono rounded-lg",
+            "max-w-[75%] sm:max-w-[65%] px-4 sm:px-5 py-3 text-xs sm:text-sm font-semibold rounded-2xl shadow-xs transition-all",
             isErrorMessage
-              ? "border-destructive/50 bg-destructive/10 text-destructive-foreground"
-              : "border-border/50 bg-secondary text-foreground",
+              ? "border border-rose-200 bg-rose-50 text-rose-800"
+              : "bg-slate-900 text-white rounded-br-xs"
           )}
         >
           {message.content}
@@ -244,21 +235,21 @@ function UserBubble({
 
       <div className="flex items-center gap-2 mr-1 h-4">
         {isSending && (
-          <span className="text-[9px] font-mono uppercase text-muted-foreground animate-pulse">
-            Sending...
+          <span className="text-[10px] font-extrabold text-slate-400 animate-pulse uppercase tracking-wider">
+            Sending…
           </span>
         )}
         {isErrorMessage && (
           <button
             onClick={() => onRetry?.(msgId, message.content)}
-            className="text-[9px] font-mono uppercase text-destructive hover:underline"
+            className="text-[10px] font-bold text-rose-600 hover:underline cursor-pointer"
           >
             Retry
           </button>
         )}
       </div>
 
-      {/* Hover actions — appear below bubble */}
+      {/* Hover actions */}
       <AnimatePresence>
         {hovered && !isSending && !editing && (
           <motion.div
@@ -266,7 +257,7 @@ function UserBubble({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -2 }}
             transition={{ duration: 0.15 }}
-            className="flex items-center gap-2 mr-1"
+            className="flex items-center gap-2 mr-1 text-[11px] text-slate-400 font-semibold"
           >
             {onEdit && (
               <button
@@ -274,18 +265,18 @@ function UserBubble({
                   setDraft(message.content);
                   setEditing(true);
                 }}
-                className="flex items-center gap-1 text-[9px] font-mono uppercase text-muted-foreground hover:text-foreground transition-colors"
+                className="flex items-center gap-1 hover:text-slate-800 cursor-pointer"
               >
-                <Pencil className="size-2.5" />
+                <Pencil className="h-3 w-3" />
                 Edit
               </button>
             )}
             {onRetry && !isErrorMessage && (
               <button
                 onClick={() => onRetry(msgId, message.content)}
-                className="flex items-center gap-1 text-[9px] font-mono uppercase text-muted-foreground hover:text-foreground transition-colors"
+                className="flex items-center gap-1 hover:text-slate-800 cursor-pointer"
               >
-                <RotateCcw className="size-2.5" />
+                <RotateCcw className="h-3 w-3" />
                 Retry
               </button>
             )}
@@ -296,33 +287,31 @@ function UserBubble({
   );
 }
 
-// ─── Citation marker ─────────────────────────────────────────────────────────
+// ─── Citation Marker ─────────────────────────────────────────────────────────
 
 function CitationMarker({ citation }: { citation: SessionCitation }) {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <sup className="inline-flex items-center cursor-pointer text-primary font-mono text-[9px] font-bold ml-0.5 hover:text-primary/70 transition-colors">
+        <sup className="inline-flex items-center cursor-pointer text-[#0C60FC] text-[10px] font-extrabold ml-1 hover:underline">
           {citation.marker}
         </sup>
       </PopoverTrigger>
       <PopoverContent
         side="top"
-        className="max-w-72 p-3 bg-card border border-border text-foreground shadow-lg"
+        className="max-w-xs p-3.5 bg-white border border-slate-200 rounded-2xl shadow-xl text-slate-900"
       >
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-1.5">
-            <FileText className="size-3 text-primary shrink-0" />
-            <span className="text-[10px] font-mono font-bold text-primary truncate">
-              {citation.filename}
-            </span>
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900">
+            <FileText className="h-3.5 w-3.5 text-[#0C60FC] shrink-0" />
+            <span className="truncate">{citation.filename}</span>
             {citation.pageNumber && (
-              <span className="text-[9px] font-mono text-muted-foreground shrink-0">
-                p.{citation.pageNumber}
+              <span className="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md shrink-0">
+                Page {citation.pageNumber}
               </span>
             )}
           </div>
-          <p className="text-[11px] leading-relaxed text-foreground/80 border-l-2 border-primary/30 pl-2 italic">
+          <p className="text-xs leading-relaxed text-slate-600 italic border-l-2 border-blue-400 pl-2.5">
             &ldquo;{citation.excerpt}&rdquo;
           </p>
         </div>
@@ -331,8 +320,7 @@ function CitationMarker({ citation }: { citation: SessionCitation }) {
   );
 }
 
-// Splits message content on citation markers and renders each segment.
-// Regular text goes through ReactMarkdown; markers become CitationMarker components.
+// Splits message content on citation markers and renders markdown
 function MessageContent({
   content,
   citations,
@@ -352,7 +340,7 @@ function MessageContent({
           return cit ? (
             <CitationMarker key={i} citation={cit} />
           ) : (
-            <sup key={i} className="font-mono text-[9px] text-muted-foreground">
+            <sup key={i} className="text-[10px] font-bold text-slate-400">
               {part}
             </sup>
           );
@@ -364,7 +352,35 @@ function MessageContent({
             remarkPlugins={[remarkGfm, remarkMath]}
             rehypePlugins={[rehypeRaw, rehypeKatex]}
             components={{
-              p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+              p: ({ children }) => (
+                <p className="mb-3.5 last:mb-0 leading-relaxed">{children}</p>
+              ),
+              h1: ({ children }) => (
+                <h1 className="text-xl font-black text-slate-950 mt-4 mb-2">
+                  {children}
+                </h1>
+              ),
+              h2: ({ children }) => (
+                <h2 className="text-lg font-extrabold text-slate-950 mt-3 mb-1.5">
+                  {children}
+                </h2>
+              ),
+              h3: ({ children }) => (
+                <h3 className="text-base font-bold text-slate-950 mt-2 mb-1">
+                  {children}
+                </h3>
+              ),
+              ul: ({ children }) => (
+                <ul className="list-disc pl-5 space-y-1 my-2.5">{children}</ul>
+              ),
+              ol: ({ children }) => (
+                <ol className="list-decimal pl-5 space-y-1 my-2.5">{children}</ol>
+              ),
+              blockquote: ({ children }) => (
+                <blockquote className="border-l-3 border-[#0C60FC] pl-3 italic text-slate-600 my-2">
+                  {children}
+                </blockquote>
+              ),
             }}
           >
             {part}
@@ -375,9 +391,9 @@ function MessageContent({
   );
 }
 
-// ─── Z message bubble ─────────────────────────────────────────────────────────
+// ─── Z Message Canvas Node (Editorial Flow) ──────────────────────────────────
 
-function ZMessageBubble({
+function ZMessageCanvasNode({
   message,
   citations,
   onRetry,
@@ -391,8 +407,7 @@ function ZMessageBubble({
   const isStreaming = !!message.isStreaming;
   const [hovered, setHovered] = useState(false);
   const [copied, setCopied] = useState(false);
-  const replyToId = (message as ZAppMessage & { replyToMessageId?: string })
-    .replyToMessageId;
+  const msgId = message.messageId || message.id;
 
   function copyContent() {
     navigator.clipboard.writeText(message.content).then(() => {
@@ -403,115 +418,73 @@ function ZMessageBubble({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
-      className="flex gap-3"
+      transition={{ duration: 0.3 }}
+      className="w-full flex flex-col items-center gap-2 my-2"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <div
-        className={cn(
-          "mt-0.5 flex size-6 shrink-0 items-center justify-center border rounded-lg",
-          "border-border/50 bg-card text-foreground",
+      {/* Orb display for AI turn */}
+      <GlowingOrb isThinking={isStreaming} size="md" />
+
+      {/* Main Conversational Narration */}
+      <div className="w-full max-w-2xl px-2 sm:px-4 text-center sm:text-left text-slate-800 text-sm sm:text-base leading-relaxed">
+        <MessageContent content={message.content} citations={citations} />
+        {isStreaming && (
+          <span className="inline-block h-2 w-2 rounded-full bg-[#0C60FC] animate-ping ml-1" />
         )}
-      >
-        <Brain
-          className={cn(
-            "size-3 text-muted-foreground",
-            isStreaming && "animate-pulse",
-          )}
-        />
       </div>
 
-      <div className="flex-1 space-y-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="text-[9px] font-mono font-bold tracking-widest uppercase text-primary">
-            Z
-          </span>
-          <span className="text-[9px] font-mono text-muted-foreground/50">
-            {format(new Date(message.timestamp), "HH:mm")}
-          </span>
-          {isStreaming && (
-            <span className="text-[9px] font-mono uppercase text-primary/60 animate-pulse">
-              ···
-            </span>
-          )}
-        </div>
-        <div
-          className={cn(
-            "border px-4 py-3 text-sm leading-relaxed wrap-break-word rounded-lg",
-            "border-border/50 bg-card text-foreground",
-            "prose prose-sm dark:prose-invert max-w-none",
-          )}
+      {/* Action controls (Copy, Feedback thumbs, Retry) */}
+      <div
+        className={cn(
+          "flex items-center gap-3 pt-1 text-slate-400 text-xs transition-opacity",
+          hovered || isStreaming ? "opacity-100" : "opacity-0"
+        )}
+      >
+        <button
+          type="button"
+          onClick={copyContent}
+          className="hover:text-slate-700 transition cursor-pointer flex items-center gap-1"
+          title="Copy response"
         >
-          <MessageContent content={message.content} citations={citations} />
-          {isStreaming && (
-            <span className="inline-block size-1 bg-primary animate-pulse ml-0.5" />
-          )}
-        </div>
+          {copied ? <Check className="h-3 w-3 text-emerald-600" /> : <Copy className="h-3 w-3" />}
+          <span>{copied ? "Copied" : "Copy"}</span>
+        </button>
 
-        {/* Hover actions */}
-        <AnimatePresence>
-          {hovered && !isStreaming && (
-            <motion.div
-              initial={{ opacity: 0, y: -2 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -2 }}
-              transition={{ duration: 0.15 }}
-              className="flex items-center gap-3 pt-0.5"
+        {onRate && (
+          <div className="flex items-center gap-1.5 border-l border-slate-200 pl-3">
+            <button
+              type="button"
+              onClick={() => onRate(msgId, 1)}
+              className="hover:text-emerald-600 transition cursor-pointer p-0.5"
+              title="Good explanation"
             >
-              <button
-                onClick={copyContent}
-                className="flex items-center gap-1 text-[9px] font-mono uppercase text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {copied ? (
-                  <Check className="size-2.5" />
-                ) : (
-                  <Copy className="size-2.5" />
-                )}
-                {copied ? "Copied" : "Copy"}
-              </button>
-              {onRetry && replyToId && (
-                <button
-                  onClick={() => onRetry(replyToId, message.content)}
-                  className="flex items-center gap-1 text-[9px] font-mono uppercase text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <RotateCcw className="size-2.5" />
-                  Retry
-                </button>
-              )}
-              {onRate && message.role === "z" && (
-                <>
-                  <button
-                    onClick={() => onRate(message.messageId || message.id, 1)}
-                    className={cn(
-                      "flex items-center gap-1 text-[9px] font-mono uppercase transition-colors",
-                      (message as ZAppMessage & { rating?: number }).rating ===
-                        1
-                        ? "text-emerald-500"
-                        : "text-muted-foreground hover:text-emerald-500",
-                    )}
-                  >
-                    <ThumbsUp className="size-2.5" />
-                  </button>
-                  <button
-                    onClick={() => onRate(message.messageId || message.id, -1)}
-                    className={cn(
-                      "flex items-center gap-1 text-[9px] font-mono uppercase transition-colors",
-                      (message as ZAppMessage & { rating?: number }).rating ===
-                        -1
-                        ? "text-destructive"
-                        : "text-muted-foreground hover:text-destructive",
-                    )}
-                  >
-                    <ThumbsDown className="size-2.5" />
-                  </button>
-                </>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+              <ThumbsUp className="h-3 w-3" />
+            </button>
+            <button
+              type="button"
+              onClick={() => onRate(msgId, -1)}
+              className="hover:text-rose-600 transition cursor-pointer p-0.5"
+              title="Could be better"
+            >
+              <ThumbsDown className="h-3 w-3" />
+            </button>
+          </div>
+        )}
+
+        {onRetry && (
+          <button
+            type="button"
+            onClick={() => onRetry(msgId, message.content)}
+            className="hover:text-slate-700 transition cursor-pointer flex items-center gap-1 border-l border-slate-200 pl-3"
+            title="Regenerate"
+          >
+            <RotateCcw className="h-3 w-3" />
+            <span>Regenerate</span>
+          </button>
+        )}
       </div>
     </motion.div>
   );
