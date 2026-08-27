@@ -12,6 +12,7 @@ import {
   Sparkles,
   BookOpen,
   Loader2,
+  ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ExamSimulatorModal } from "./ExamSimulatorModal";
@@ -245,10 +246,12 @@ export function StudyPlanView({
     let completed = 0;
     let total = 0;
     for (const ch of chapters) {
-      for (const g of ch.goals || []) {
-        for (const b of g.knowledgeBlocks || []) {
+      const steps = (ch.steps || ch.goals || []) as any[];
+      for (const step of steps) {
+        const blocks = (step.prerequisites || step.knowledgeBlocks || []) as any[];
+        for (const b of blocks) {
           total++;
-          if (b.isCompleted) completed++;
+          if (b.completed || b.isCompleted) completed++;
         }
       }
     }
@@ -264,6 +267,69 @@ export function StudyPlanView({
       await toggleBlockMutation.mutateAsync(blockId);
     } catch {
       toast.error("Failed to toggle block status");
+    }
+  };
+
+  const handleContinueChapter = async (ch: IChapter) => {
+    if (!sessionId) return;
+    const targetStep =
+      (ch.steps || ch.goals || []).find((s: any) =>
+        (s.prerequisites || s.knowledgeBlocks || []).some(
+          (b: any) => !b.completed && !b.isCompleted,
+        ),
+      ) ||
+      (ch.steps && ch.steps[0]) ||
+      (ch.goals && ch.goals[0]);
+
+    const targetBlock =
+      targetStep?.prerequisites?.find((b: any) => !b.completed) ||
+      targetStep?.knowledgeBlocks?.find((b: any) => !b.isCompleted) ||
+      targetStep?.prerequisites?.[0] ||
+      targetStep?.knowledgeBlocks?.[0];
+
+    try {
+      await continueJourneyMutation.mutateAsync({
+        chapterId: ch.chapterId || (ch as any)._id,
+        stepId: targetStep?.stepId || targetStep?.goalId || (targetStep as any)?._id,
+        blockId: targetBlock?.blockId || (targetBlock as any)?._id,
+        chapterNumber: ch.chapterNumber || ch.number,
+        topicTitle: targetStep?.title,
+      });
+    } catch {
+      // Non-blocking navigation
+    }
+
+    if (onContinueSession) {
+      onContinueSession();
+    } else {
+      router.push(`/study-session/${sessionId}/session`);
+    }
+  };
+
+  const handleSelectStep = async (ch: IChapter, step: any) => {
+    if (!sessionId) return;
+    const targetBlock =
+      step.prerequisites?.find((b: any) => !b.completed) ||
+      step.knowledgeBlocks?.find((b: any) => !b.isCompleted) ||
+      step.prerequisites?.[0] ||
+      step.knowledgeBlocks?.[0];
+
+    try {
+      await continueJourneyMutation.mutateAsync({
+        chapterId: ch.chapterId || (ch as any)._id,
+        stepId: step.stepId || step.goalId || step._id,
+        blockId: targetBlock?.blockId || targetBlock?._id,
+        chapterNumber: ch.chapterNumber || ch.number,
+        topicTitle: step.title,
+      });
+    } catch {
+      // Non-blocking navigation
+    }
+
+    if (onContinueSession) {
+      onContinueSession();
+    } else {
+      router.push(`/study-session/${sessionId}/session`);
     }
   };
 
@@ -440,14 +506,16 @@ export function StudyPlanView({
               const chNum = ch.chapterNumber || idx + 1;
               const isExpanded = !!expandedChapters[chNum];
               const isFirst = idx === 0;
+              const steps = (ch.steps || ch.goals || []) as any[];
 
               // Calculate chapter totals
               let chCompleted = 0;
               let chTotal = 0;
-              for (const g of ch.goals || []) {
-                for (const b of g.knowledgeBlocks || []) {
+              for (const step of steps) {
+                const blocks = (step.prerequisites || step.knowledgeBlocks || []) as any[];
+                for (const b of blocks) {
                   chTotal++;
-                  if (b.isCompleted) chCompleted++;
+                  if (b.completed || b.isCompleted) chCompleted++;
                 }
               }
 
@@ -503,7 +571,7 @@ export function StudyPlanView({
 
                           <button
                             type="button"
-                            onClick={onContinueSession}
+                            onClick={() => handleContinueChapter(ch)}
                             className="rounded-full bg-black hover:bg-slate-850 text-white px-4 py-1.5 text-xs font-bold shadow-xs hover:scale-102 transition cursor-pointer flex items-center gap-1"
                           >
                             <span>Continue</span>
@@ -512,21 +580,27 @@ export function StudyPlanView({
                         </div>
                       </div>
 
-                      {/* Description */}
+                      {/* Chapter Description */}
                       {ch.description && (
                         <p className="text-xs text-slate-500 leading-relaxed pl-10 pr-2 font-sans">
                           {ch.description}
                         </p>
                       )}
 
-                      {/* Goals & Knowledge Blocks */}
-                      {(ch.goals || []).map((goal, gIdx) => {
-                        const lessonKey = `${chNum}-${goal.goalId || gIdx}`;
-                        const isLessonsOpen = openLessonsMap[lessonKey] !== false; // default true
+                      {/* Topic Steps & Knowledge Blocks */}
+                      {steps.map((step, sIdx) => {
+                        const stepKey = `${chNum}-${step.stepId || step.goalId || sIdx}`;
+                        const isStepOpen = openLessonsMap[stepKey] !== false; // default true
+                        const stepTitle = step.title || `Topic ${sIdx + 1}`;
+                        const blocks = (step.prerequisites || step.knowledgeBlocks || []) as any[];
+
+                        let stepCompleted = 0;
+                        for (const b of blocks) {
+                          if (b.completed || b.isCompleted) stepCompleted++;
+                        }
 
                         // Pair blocks in 2-column rows
-                        const blocks = goal.knowledgeBlocks || [];
-                        const pairedRows: Array<{ left: IKnowledgeBlock; right?: IKnowledgeBlock }> = [];
+                        const pairedRows: Array<{ left: any; right?: any }> = [];
                         for (let i = 0; i < blocks.length; i += 2) {
                           pairedRows.push({
                             left: blocks[i],
@@ -534,99 +608,132 @@ export function StudyPlanView({
                           });
                         }
 
-                        let goalCompleted = 0;
-                        for (const b of blocks) {
-                          if (b.isCompleted) goalCompleted++;
-                        }
-
                         return (
-                          <div key={goal.goalId || gIdx} className="pt-3 border-t border-slate-100 space-y-2">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-1.5 text-xs text-slate-600 font-bold">
-                                <CloverIcon />
-                                <span>{goal.title || `Lesson Step ${gIdx + 1}`}</span>
-                              </div>
-
-                              <button
-                                type="button"
-                                onClick={() => toggleLessonsSection(lessonKey)}
-                                className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer transition"
-                                title="Toggle lessons view"
+                          <div key={step.stepId || step.goalId || sIdx} className="pt-3 border-t border-slate-100 space-y-2">
+                            {/* Step Topic Pill Bar */}
+                            <div className="relative pt-0.5">
+                              <div
+                                onClick={() => toggleLessonsSection(stepKey)}
+                                className="group relative rounded-full bg-[#FAF9F6] border border-[#E8E6E0] hover:bg-[#F2F0E8] hover:border-slate-300 px-4 py-2.5 flex items-center justify-between shadow-2xs cursor-pointer transition"
                               >
-                                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-3 w-3">
-                                  <path d="M2 6L6 2M6 2H3M6 2V5" strokeLinecap="round" strokeLinejoin="round" />
-                                  <path d="M14 10L10 14M10 14H13M10 14V11" strokeLinecap="round" strokeLinejoin="round" />
-                                </svg>
-                              </button>
-                            </div>
-
-                            <div className="relative pt-1">
-                              <div className="absolute left-[20px] -top-1 w-[1.5px] h-3 bg-slate-300 pointer-events-none" />
-
-                              {/* Rounded Pill Bar */}
-                              <div className="relative rounded-full bg-[#FAF9F6] border border-[#E8E6E0] px-4 py-2 flex items-center justify-between shadow-2xs">
-                                <div className="flex items-center gap-2.5">
-                                  <span className="flex h-2.5 w-2.5 items-center justify-center rounded-full border border-slate-400 bg-white shrink-0" />
-                                  <span className="text-xs sm:text-[13px] font-bold text-slate-950">
-                                    Step {gIdx + 1}
+                                <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                                  <span
+                                    className={cn(
+                                      "flex h-2.5 w-2.5 items-center justify-center rounded-full border shrink-0 transition",
+                                      stepCompleted > 0 && stepCompleted === blocks.length
+                                        ? "border-emerald-600 bg-emerald-500"
+                                        : stepCompleted > 0
+                                          ? "border-amber-600 bg-amber-500"
+                                          : "border-slate-400 bg-white"
+                                    )}
+                                  />
+                                  <span className="text-xs sm:text-[13px] font-bold text-slate-950 truncate group-hover:text-slate-900">
+                                    {stepTitle}
                                   </span>
                                 </div>
 
-                                <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-slate-700">
-                                  <span>
-                                    {goalCompleted} / {blocks.length}
-                                  </span>
-                                  <DiamondIcon completed={goalCompleted > 0} />
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-slate-700">
+                                    <span>
+                                      {stepCompleted} / {blocks.length}
+                                    </span>
+                                    <DiamondIcon completed={stepCompleted > 0} />
+                                  </div>
+
+                                  <ChevronDown
+                                    className={cn(
+                                      "h-3.5 w-3.5 text-slate-400 group-hover:text-slate-700 transition-transform duration-200",
+                                      isStepOpen ? "rotate-180" : "rotate-0"
+                                    )}
+                                  />
                                 </div>
                               </div>
 
-                              {/* Knowledge Blocks List */}
+                              {/* Expanded Knowledge Blocks & Topic Details */}
                               <AnimatePresence initial={false}>
-                                {isLessonsOpen && pairedRows.length > 0 && (
+                                {isStepOpen && (
                                   <motion.div
                                     initial={{ opacity: 0, height: 0 }}
                                     animate={{ opacity: 1, height: "auto" }}
                                     exit={{ opacity: 0, height: 0 }}
-                                    className="mt-2.5 rounded-[20px] bg-[#F7F6F2] border border-[#E8E6E0] p-4 sm:p-5 space-y-2.5 shadow-2xs"
+                                    className="mt-2.5 rounded-[22px] bg-[#F7F6F2] border border-[#E8E6E0] p-4 sm:p-5 space-y-3 shadow-2xs"
                                   >
-                                    <div className="text-[11px] font-semibold text-slate-400 font-sans tracking-wide">
-                                      Knowledge blocks
-                                    </div>
+                                    {/* Core Intuition / Why It Matters Banner */}
+                                    {(step.coreIdea || step.whyItMatters || step.description) && (
+                                      <div className="rounded-xl bg-white/90 border border-[#E8E6E0]/80 p-3 space-y-1.5 text-xs text-slate-600 leading-relaxed font-sans">
+                                        {step.coreIdea && (
+                                          <p className="font-medium text-slate-900">
+                                            <span className="text-slate-400 font-semibold mr-1">Core intuition:</span>
+                                            {step.coreIdea}
+                                          </p>
+                                        )}
+                                        {step.whyItMatters && (
+                                          <p className="text-[11.5px] text-slate-500">
+                                            <span className="text-slate-400 font-semibold mr-1">Why it matters:</span>
+                                            {step.whyItMatters}
+                                          </p>
+                                        )}
+                                        {!step.coreIdea && !step.whyItMatters && step.description && (
+                                          <p className="text-[11.5px] text-slate-600">{step.description}</p>
+                                        )}
+                                      </div>
+                                    )}
 
-                                    <div className="space-y-0">
-                                      {pairedRows.map((row, rIdx) => (
-                                        <div
-                                          key={rIdx}
-                                          className={cn(
-                                            "grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 py-1.5",
-                                            rIdx < pairedRows.length - 1 && "border-b border-[#E8E6E0]/80"
-                                          )}
-                                        >
-                                          {/* Left Block */}
-                                          {row.left && (
-                                            <div
-                                              onClick={() => handleBlockToggle(row.left.blockId)}
-                                              className="flex items-center gap-2 text-xs font-medium text-slate-700 hover:text-slate-950 transition cursor-pointer min-w-0"
-                                            >
-                                              <DiamondIcon completed={row.left.isCompleted} />
-                                              <span className="truncate">{row.left.concept}</span>
-                                            </div>
-                                          )}
-
-                                          {/* Right Block */}
-                                          {row.right ? (
-                                            <div
-                                              onClick={() => handleBlockToggle(row.right!.blockId)}
-                                              className="flex items-center gap-2 text-xs font-medium text-slate-700 hover:text-slate-950 transition cursor-pointer min-w-0"
-                                            >
-                                              <DiamondIcon completed={row.right.isCompleted} />
-                                              <span className="truncate">{row.right.concept}</span>
-                                            </div>
-                                          ) : (
-                                            <div className="hidden sm:block" />
-                                          )}
+                                    {/* Knowledge Blocks List */}
+                                    {pairedRows.length > 0 && (
+                                      <div className="space-y-1.5 pt-1">
+                                        <div className="text-[11px] font-semibold text-slate-400 font-sans tracking-wide">
+                                          Knowledge blocks
                                         </div>
-                                      ))}
+
+                                        <div className="space-y-0">
+                                          {pairedRows.map((row, rIdx) => (
+                                            <div
+                                              key={rIdx}
+                                              className={cn(
+                                                "grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 py-1.5",
+                                                rIdx < pairedRows.length - 1 && "border-b border-[#E8E6E0]/80"
+                                              )}
+                                            >
+                                              {/* Left Block */}
+                                              {row.left && (
+                                                <div
+                                                  onClick={() => handleBlockToggle(row.left.blockId || row.left._id)}
+                                                  className="flex items-center gap-2 text-xs font-medium text-slate-700 hover:text-slate-950 transition cursor-pointer min-w-0"
+                                                >
+                                                  <DiamondIcon completed={row.left.isCompleted || row.left.completed} />
+                                                  <span className="truncate">{row.left.concept || row.left.title || row.left.summary}</span>
+                                                </div>
+                                              )}
+
+                                              {/* Right Block */}
+                                              {row.right ? (
+                                                <div
+                                                  onClick={() => handleBlockToggle(row.right.blockId || row.right._id)}
+                                                  className="flex items-center gap-2 text-xs font-medium text-slate-700 hover:text-slate-950 transition cursor-pointer min-w-0"
+                                                >
+                                                  <DiamondIcon completed={row.right.isCompleted || row.right.completed} />
+                                                  <span className="truncate">{row.right.concept || row.right.title || row.right.summary}</span>
+                                                </div>
+                                              ) : (
+                                                <div className="hidden sm:block" />
+                                              )}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Quick Start Button for this Topic */}
+                                    <div className="pt-2 flex justify-end">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleSelectStep(ch, step)}
+                                        className="rounded-full bg-slate-900 hover:bg-black text-white px-3.5 py-1 text-[11.5px] font-bold shadow-xs hover:scale-102 transition cursor-pointer flex items-center gap-1.5"
+                                      >
+                                        <span>Start topic with Z</span>
+                                        <ArrowRight className="h-3 w-3" />
+                                      </button>
                                     </div>
                                   </motion.div>
                                 )}
