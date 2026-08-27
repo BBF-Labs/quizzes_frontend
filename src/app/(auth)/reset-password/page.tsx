@@ -14,7 +14,7 @@ import {
   KeyRound,
   Loader2,
   ShieldCheck,
-  Sparkles,
+  Lock,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -170,7 +170,7 @@ function ResetPasswordForm() {
               </div>
               <div className="rounded-2xl bg-white/10 p-4">
                 <div className="flex items-center gap-2 text-lg font-bold">
-                  <Sparkles className="h-4 w-4 text-[#DFFF61]" /> Unique
+                  <Lock className="h-4 w-4 text-[#DFFF61]" /> Unique
                 </div>
                 <p className="mt-1 text-xs text-blue-200">Keep it safe</p>
               </div>
