@@ -10,13 +10,12 @@ import {
   usePackages,
   useCreditBundles,
   useBillingStatus,
-  useInitiatePlanPayment,
-  useInitiateCreditPayment,
   type PlanTier,
   type PlanDuration,
 } from "@/hooks/common/use-billing";
 import { toast } from "sonner";
 import { CreditBundleCard } from "@/components/common";
+import { cn } from "@/lib/utils";
 
 const PRICES: Record<string, Record<PlanDuration, string>> = {
   cooked: { daily: "2.99", weekly: "4.99", semester: "14.99" },
@@ -28,6 +27,17 @@ const DURATION_LABELS: Record<PlanDuration, string> = {
   daily: "/ day",
   weekly: "/ weekly",
   semester: "/ semester",
+};
+
+const TIER_ORDER: Record<string, number> = { cooked: 0, cruising: 1, locked_in: 2 };
+
+const PLAN_TIER_META: Record<
+  string,
+  { label: string; tagline: string }
+> = {
+  cooked: { label: "Cooked", tagline: "All-nighter mode. One shot." },
+  cruising: { label: "Cruising", tagline: "Steady grind. Mid-semester flow." },
+  locked_in: { label: "Locked In", tagline: "Unlimited. Zero excuses." },
 };
 
 const FAQ_ITEMS = [
@@ -59,65 +69,60 @@ export default function PricingPage() {
   const { data: apiPackages = [] } = usePackages();
   const { data: creditBundles = [] } = useCreditBundles();
   const { data: billingStatus } = useBillingStatus();
-  const initiatePlan = useInitiatePlanPayment();
-  const initiateCredit = useInitiateCreditPayment();
 
-  const [loadingTier, setLoadingTier] = useState<string | null>(null);
+  const currentTier = billingStatus?.planTier;
+  const currentRank = currentTier ? (TIER_ORDER[currentTier] ?? -1) : -1;
 
-  const handleSelectPlan = async (tier: PlanTier) => {
+  function getPlanButton(tier: PlanTier) {
+    const cardRank = TIER_ORDER[tier] ?? 0;
+    const isCurrent = currentRank !== -1 && currentRank === cardRank;
+    const isDowngrade = currentRank !== -1 && cardRank < currentRank;
+    const isUpgrade = currentRank !== -1 && cardRank > currentRank;
+
+    let label: string;
     if (!user) {
-      toast.info("Please log in to upgrade your plan.");
-      router.push(`/login?redirect=${encodeURIComponent("/pricing")}`);
+      label = "Get started";
+    } else if (isCurrent) {
+      label = "Current Plan";
+    } else if (isDowngrade) {
+      label = `Downgrade to ${PLAN_TIER_META[tier]?.label ?? tier}`;
+    } else {
+      label = `Upgrade to ${PLAN_TIER_META[tier]?.label ?? tier}`;
+    }
+
+    return { isCurrent, isDowngrade, isUpgrade, label };
+  }
+
+  const handleSelectPlan = (tier: PlanTier) => {
+    if (billingStatus?.planTier === tier) return;
+
+    const matchedPkg = apiPackages.find(
+      (p) => p.tier === tier && p.durationType === cycle
+    );
+    const targetUrl = matchedPkg
+      ? `/app/billing/checkout?packageId=${matchedPkg._id}`
+      : `/app/billing`;
+
+    if (!user) {
+      router.push(`/login?redirect=${encodeURIComponent(targetUrl)}`);
       return;
     }
 
-    setLoadingTier(tier);
-    try {
-      const matchedPkg = apiPackages.find(
-        (p) => p.tier === tier && p.durationType === cycle
-      );
-      const packageId = matchedPkg?._id || tier;
-
-      const res = await initiatePlan.mutateAsync({
-        packageId,
-        email: user.email,
-      });
-
-      if (res?.authorizationUrl) {
-        toast.success("Redirecting to Paystack checkout…");
-        window.location.href = res.authorizationUrl;
-      } else {
-        toast.error("Could not obtain checkout URL.");
-      }
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to initiate payment checkout.");
-    } finally {
-      setLoadingTier(null);
-    }
+    router.push(targetUrl);
   };
 
-  const handleBuyCreditBundle = async (bundleId: string) => {
+  const handleBuyCreditBundle = (bundleId: string) => {
+    const targetUrl = `/app/billing/checkout?bundleId=${bundleId}`;
     if (!user) {
-      toast.info("Please log in to buy credit top-ups.");
-      router.push(`/login?redirect=${encodeURIComponent("/pricing")}`);
+      router.push(`/login?redirect=${encodeURIComponent(targetUrl)}`);
       return;
     }
-
-    try {
-      const res = await initiateCredit.mutateAsync({
-        bundleId,
-        email: user.email,
-      });
-      if (res?.authorizationUrl) {
-        toast.success("Redirecting to Paystack checkout…");
-        window.location.href = res.authorizationUrl;
-      } else {
-        toast.error("Could not obtain checkout URL.");
-      }
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to initiate credit checkout.");
-    }
+    router.push(targetUrl);
   };
+
+  const cookedAction = getPlanButton("cooked");
+  const cruisingAction = getPlanButton("cruising");
+  const lockedInAction = getPlanButton("locked_in");
 
   return (
     <div className="overflow-x-hidden bg-white text-slate-900 antialiased selection:bg-[#0C60FC] selection:text-white min-h-screen">
@@ -128,9 +133,9 @@ export default function PricingPage() {
         <section className="soft-grid relative overflow-hidden px-5 pb-10 pt-32 lg:pt-40">
           <div className="pointer-events-none absolute -right-32 top-24 h-96 w-96 rounded-full bg-blue-100/70 blur-3xl" />
           <div className="relative mx-auto max-w-3xl text-center">
-            {billingStatus?.isSubscribed ? (
+            {billingStatus?.planTier ? (
               <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-extrabold text-emerald-700 shadow-sm">
-                ✦ Current Active Plan: {billingStatus.planTier?.toUpperCase() ?? "ACTIVE"}
+                ✦ Current Active Plan: {PLAN_TIER_META[billingStatus.planTier]?.label?.toUpperCase() ?? billingStatus.planTier.toUpperCase()}
               </div>
             ) : (
               <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-white px-3.5 py-2 text-xs font-bold text-blue-700 shadow-sm">
@@ -176,7 +181,15 @@ export default function PricingPage() {
         <section className="px-5 pb-16">
           <div className="mx-auto grid max-w-7xl gap-5 lg:grid-cols-3">
             {/* Cooked Plan */}
-            <article className="play-card flex flex-col rounded-[28px] border border-slate-200 bg-white p-7" style={{ borderRadius: "28px" }}>
+            <article
+              className="play-card relative flex flex-col rounded-[28px] border border-slate-200 bg-white p-7"
+              style={{ borderRadius: "28px" }}
+            >
+              {cookedAction.isCurrent && (
+                <span className="absolute -top-3 left-7 rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-extrabold text-emerald-700 ring-1 ring-emerald-200">
+                  Current plan
+                </span>
+              )}
               <h2 className="display text-xl font-bold text-slate-950">Cooked</h2>
               <p className="mt-1 text-sm text-slate-500">All-nighter mode. One shot.</p>
               <p className="mt-6 flex items-end gap-1">
@@ -198,27 +211,33 @@ export default function PricingPage() {
                 <button
                   type="button"
                   onClick={() => handleSelectPlan("cooked")}
-                  disabled={loadingTier === "cooked"}
-                  className="w-full rounded-2xl border border-slate-200 py-3.5 text-center text-sm font-extrabold text-slate-700 hover:bg-slate-50 transition flex items-center justify-center gap-2"
-                >
-                  {loadingTier === "cooked" ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-slate-700" />
-                  ) : billingStatus?.planTier === "cooked" ? (
-                    "Current Plan"
-                  ) : user ? (
-                    "Upgrade to Cooked"
-                  ) : (
-                    "Get started"
+                  disabled={cookedAction.isCurrent}
+                  className={cn(
+                    "w-full rounded-2xl py-3.5 text-center text-sm font-extrabold transition flex items-center justify-center gap-2",
+                    cookedAction.isCurrent
+                      ? "border border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed"
+                      : "border border-slate-200 text-slate-700 hover:bg-slate-50 cursor-pointer"
                   )}
+                >
+                  {cookedAction.label}
                 </button>
               </div>
             </article>
 
             {/* Cruising Plan */}
-            <article className="play-card relative flex flex-col rounded-[28px] bg-[#0C60FC] p-7 text-white shadow-2xl shadow-blue-200" style={{ borderRadius: "28px" }}>
-              <span className="absolute -top-3 left-7 rounded-full bg-[#DFFF61] px-3 py-1 text-[10px] font-extrabold text-slate-900">
-                Most popular
-              </span>
+            <article
+              className="play-card relative flex flex-col rounded-[28px] bg-[#0C60FC] p-7 text-white shadow-2xl shadow-blue-200"
+              style={{ borderRadius: "28px" }}
+            >
+              {cruisingAction.isCurrent ? (
+                <span className="absolute -top-3 left-7 rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-extrabold text-emerald-700 ring-1 ring-emerald-200">
+                  Current plan
+                </span>
+              ) : (
+                <span className="absolute -top-3 left-7 rounded-full bg-[#DFFF61] px-3 py-1 text-[10px] font-extrabold text-slate-900">
+                  Most popular
+                </span>
+              )}
               <h2 className="display text-xl font-bold">Cruising</h2>
               <p className="mt-1 text-sm text-blue-100">Steady grind. Mid-semester flow.</p>
               <p className="mt-6 flex items-end gap-1">
@@ -241,24 +260,29 @@ export default function PricingPage() {
                 <button
                   type="button"
                   onClick={() => handleSelectPlan("cruising")}
-                  disabled={loadingTier === "cruising"}
-                  className="squishy w-full rounded-2xl bg-white py-3.5 text-center text-sm font-extrabold text-blue-700 transition flex items-center justify-center gap-2"
-                >
-                  {loadingTier === "cruising" ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-blue-700" />
-                  ) : billingStatus?.planTier === "cruising" ? (
-                    "Current Plan"
-                  ) : user ? (
-                    "Upgrade to Cruising"
-                  ) : (
-                    "Get started"
+                  disabled={cruisingAction.isCurrent}
+                  className={cn(
+                    "w-full rounded-2xl py-3.5 text-center text-sm font-extrabold transition flex items-center justify-center gap-2",
+                    cruisingAction.isCurrent
+                      ? "border border-blue-400/40 bg-blue-500/30 text-blue-100 cursor-not-allowed"
+                      : "squishy bg-white text-blue-700 hover:-translate-y-0.5 cursor-pointer"
                   )}
+                >
+                  {cruisingAction.label}
                 </button>
               </div>
             </article>
 
             {/* Locked In Plan */}
-            <article className="play-card flex flex-col rounded-[28px] border border-slate-200 bg-white p-7" style={{ borderRadius: "28px" }}>
+            <article
+              className="play-card relative flex flex-col rounded-[28px] border border-slate-200 bg-white p-7"
+              style={{ borderRadius: "28px" }}
+            >
+              {lockedInAction.isCurrent && (
+                <span className="absolute -top-3 left-7 rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-extrabold text-emerald-700 ring-1 ring-emerald-200">
+                  Current plan
+                </span>
+              )}
               <h2 className="display text-xl font-bold text-slate-950">Locked In</h2>
               <p className="mt-1 text-sm text-slate-500">Unlimited. Zero excuses.</p>
               <p className="mt-6 flex items-end gap-1">
@@ -281,18 +305,15 @@ export default function PricingPage() {
                 <button
                   type="button"
                   onClick={() => handleSelectPlan("locked_in")}
-                  disabled={loadingTier === "locked_in"}
-                  className="w-full rounded-2xl bg-slate-950 py-3.5 text-center text-sm font-extrabold text-white hover:bg-[#0C60FC] transition flex items-center justify-center gap-2"
-                >
-                  {loadingTier === "locked_in" ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-white" />
-                  ) : billingStatus?.planTier === "locked_in" ? (
-                    "Current Plan"
-                  ) : user ? (
-                    "Upgrade to Locked In"
-                  ) : (
-                    "Get started"
+                  disabled={lockedInAction.isCurrent}
+                  className={cn(
+                    "w-full rounded-2xl py-3.5 text-center text-sm font-extrabold transition flex items-center justify-center gap-2",
+                    lockedInAction.isCurrent
+                      ? "border border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed"
+                      : "bg-slate-950 text-white hover:bg-[#0C60FC] cursor-pointer"
                   )}
+                >
+                  {lockedInAction.label}
                 </button>
               </div>
             </article>
@@ -322,24 +343,15 @@ export default function PricingPage() {
               </div>
 
               <div className="mt-12 flex flex-wrap justify-center gap-5">
-                {creditBundles.map((bundle, idx) => {
-                  const priceGhs = Number(bundle.priceGHS);
-                  const perCredit =
-                    bundle.credits > 0 ? priceGhs / bundle.credits : 0;
-                  const isStarter = idx === 0;
-                  const isBest = idx === creditBundles.length - 1;
-
-                  // Backend names come back lowercase ("starter pack"); title-case
-                  // for display so the card reads like the rest of the page.
-                  const displayName = bundle.name
-                    .split(" ")
-                    .map((w) => (w.length > 0 ? w[0].toUpperCase() + w.slice(1) : w))
-                    .join(" ");
-
-                  return (
-                    <CreditBundleCard key={idx} bundle={bundle} index={idx} totalCount={creditBundles.length} onSelect={handleBuyCreditBundle} />
-                  );
-                })}
+                {creditBundles.map((bundle, idx) => (
+                  <CreditBundleCard
+                    key={idx}
+                    bundle={bundle}
+                    index={idx}
+                    totalCount={creditBundles.length}
+                    onSelect={handleBuyCreditBundle}
+                  />
+                ))}
               </div>
             </div>
           </section>

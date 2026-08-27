@@ -44,12 +44,14 @@ function PlanCard({
   pkg,
   isPopular,
   isCurrent,
+  isDowngrade,
   onSelect,
   loading,
 }: {
   pkg: BillingPackage;
   isPopular: boolean;
   isCurrent: boolean;
+  isDowngrade: boolean;
   onSelect: (pkg: BillingPackage) => void;
   loading: boolean;
 }) {
@@ -72,7 +74,7 @@ function PlanCard({
       )}
       style={{ borderRadius: "28px" }}
     >
-      {isPopular && (
+      {isPopular && !isCurrent && (
         <span className="absolute -top-3 left-7 rounded-full bg-[#DFFF61] px-3 py-1 text-[10px] font-extrabold text-slate-900">
           Most popular
         </span>
@@ -128,18 +130,22 @@ function PlanCard({
           className={cn(
             "w-full rounded-2xl py-3.5 text-center text-sm font-extrabold transition flex items-center justify-center gap-2",
             isCurrent
-              ? "border border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed"
+              ? meta.tone === "blue"
+                ? "border border-blue-400/40 bg-blue-500/30 text-blue-100 cursor-not-allowed"
+                : "border border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed"
               : meta.tone === "blue"
-                ? "squishy bg-white text-blue-700 hover:-translate-y-0.5"
+                ? "squishy bg-white text-blue-700 hover:-translate-y-0.5 cursor-pointer"
                 : meta.tone === "ink"
-                  ? "bg-slate-950 text-white hover:bg-[#0C60FC]"
-                  : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
+                  ? "bg-slate-950 text-white hover:bg-[#0C60FC] cursor-pointer"
+                  : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 cursor-pointer",
           )}
         >
           {loading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : isCurrent ? (
-            "Active plan"
+            "Current plan"
+          ) : isDowngrade ? (
+            <>Downgrade to {meta.label}</>
           ) : (
             <>Upgrade to {meta.label}</>
           )}
@@ -324,19 +330,25 @@ export default function BillingPage() {
               initial="hidden"
               animate="visible"
             >
-              {sorted.map((pkg) => (
-                <PlanCard
-                  key={pkg._id}
-                  pkg={pkg}
-                  isPopular={pkg.tier === "cruising"}
-                  isCurrent={
-                    billingStatus?.planTier === pkg.tier &&
-                    billingStatus?.planDuration === pkg.durationType
-                  }
-                  loading={loadingTier === pkg.tier}
-                  onSelect={handleSelectPlan}
-                />
-              ))}
+              {sorted.map((pkg) => {
+                const cardRank = TIER_ORDER[pkg.tier] ?? 0;
+                const currentTier = billingStatus?.planTier;
+                const currentRank = currentTier ? TIER_ORDER[currentTier] ?? -1 : -1;
+                const isCurrent = currentRank !== -1 && currentRank === cardRank;
+                const isDowngrade = currentRank !== -1 && cardRank < currentRank;
+
+                return (
+                  <PlanCard
+                    key={pkg._id}
+                    pkg={pkg}
+                    isPopular={pkg.tier === "cruising"}
+                    isCurrent={isCurrent}
+                    isDowngrade={isDowngrade}
+                    loading={loadingTier === pkg.tier}
+                    onSelect={handleSelectPlan}
+                  />
+                );
+              })}
             </motion.div>
           )}
 
