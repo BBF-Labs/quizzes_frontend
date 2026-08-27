@@ -187,7 +187,7 @@ export function NotesView({
               </div>
               <h4 className="text-sm font-bold text-slate-800">No notes recorded yet</h4>
               <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
-                Take notes during your study session or ask Alice / Z to synthesize key takeaways for you.
+                Take notes during your study session or ask Z to synthesize key takeaways for you.
               </p>
               <button
                 type="button"
