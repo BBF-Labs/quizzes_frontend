@@ -5,166 +5,137 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Info, Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+import type { IKnowledgeBlock } from "@/types/session";
+
 interface TopicOverviewCardProps {
   title?: string;
   coreIdea?: string;
   whyItMatters?: string;
-  knowledgeBlocks?: string[];
-  prerequisites?: string[];
+  prerequisites?: Array<IKnowledgeBlock | string>;
   onContinue?: () => void;
 }
 
 export function TopicOverviewCard({
-  title = "Primality Testing and Number Theory Algorithms",
+  title = "Primality Testing and Active Recall Strategies",
   coreIdea = "Primality testing and number theory algorithms provide the mathematical tools to verify if a large number is prime with absolute certainty or high probability.",
   whyItMatters = "Modern cryptographic protocols like RSA and Diffie-Hellman rely on generating very large prime numbers efficiently to secure digital communications and financial systems.",
-  knowledgeBlocks = [
-    "Primality testing is needed to find large random primes",
-    "AKS is a deterministic primality test",
-    "The Miller-Rabin test quickly finds large random primes",
-    "Chapter 8 review questions practice gcd and modular arithmetic tools",
-  ],
-  prerequisites = ["Modular Arithmetic Basics", "Greatest Common Divisor (GCD)", "Euler's Totient Function"],
+  prerequisites = [],
   onContinue,
 }: TopicOverviewCardProps) {
-  const [openSection, setOpenSection] = useState<string | null>("core-idea");
+  // Support independent multi-card expansion in the stack
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
 
   const toggleSection = (id: string) => {
-    setOpenSection((prev) => (prev === id ? null : id));
+    setOpenSections((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
   };
 
+  const formattedPrereqs = (prerequisites || []).map((p) =>
+    typeof p === "string" ? p : p.title || p.concept || "Knowledge Block",
+  );
+
+  const sections = [
+    {
+      id: "core-idea",
+      label: "Core idea",
+      content: coreIdea,
+    },
+    {
+      id: "why-matters",
+      label: "Why it matters",
+      content: whyItMatters,
+    },
+    ...(formattedPrereqs.length > 0
+      ? [
+          {
+            id: "prerequisites",
+            label: "Prerequisites",
+            isList: true,
+            items: formattedPrereqs,
+          },
+        ]
+      : []),
+  ];
+
   return (
-    <div className="w-full max-w-2xl mx-auto rounded-[32px] border border-slate-200/90 bg-white p-6 sm:p-7 shadow-sm space-y-4">
-      {/* Intro Tag */}
-      <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-        <Info className="h-3.5 w-3.5 text-slate-400" />
+    <div className="w-full max-w-xl mx-auto rounded-[28px] border border-slate-200/80 bg-[#F9F8F6] p-6 sm:p-7 shadow-xs space-y-3.5">
+      {/* Header Info Tag */}
+      <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-semibold">
+        <Info className="h-3 w-3 text-slate-400" />
         <span>Introduction</span>
       </div>
 
       {/* Main Title */}
-      <h2 className="text-xl sm:text-2xl font-serif text-slate-950 font-normal leading-snug">
+      <h2 className="text-base sm:text-lg font-sans font-bold text-slate-900 tracking-tight leading-snug">
         {title}
       </h2>
 
-      {/* Accordion Sections matching Image 3 */}
-      <div className="space-y-2 pt-1">
-        {/* Core Idea */}
-        <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 overflow-hidden">
-          <button
-            type="button"
-            onClick={() => toggleSection("core-idea")}
-            className="w-full flex items-center justify-between p-3.5 text-left text-xs font-bold text-slate-900 cursor-pointer"
-          >
-            <span>Core idea</span>
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-200/80 text-slate-600">
-              {openSection === "core-idea" ? <X className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
-            </span>
-          </button>
+      {/* Physical Stack of Overlapping Cards with Independent Multi-Expansion */}
+      <div className="relative pt-1 flex flex-col">
+        {sections.map((sec, idx) => {
+          const isOpen = !!openSections[sec.id];
 
-          <AnimatePresence initial={false}>
-            {openSection === "core-idea" && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="px-3.5 pb-4 text-xs sm:text-sm text-slate-600 leading-relaxed font-sans"
+          return (
+            <motion.div
+              key={sec.id}
+              layout
+              style={{ zIndex: 10 + idx }}
+              className={cn(
+                "relative rounded-[18px] bg-white border border-slate-200/90 shadow-[0_3px_12px_rgba(0,0,0,0.05)] transition-all overflow-hidden",
+                idx > 0 && !isOpen && "-mt-2",
+                isOpen ? "my-1.5 p-4 z-30 shadow-md" : "hover:translate-y-[-1px] hover:shadow-sm cursor-pointer"
+              )}
+            >
+              <button
+                type="button"
+                onClick={() => toggleSection(sec.id)}
+                className={cn(
+                  "w-full flex items-center justify-between text-left text-xs font-bold text-slate-900 cursor-pointer",
+                  isOpen ? "pb-2.5 border-b border-slate-100" : "px-3.5 py-3"
+                )}
               >
-                {coreIdea}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+                <span>{sec.label}</span>
 
-        {/* Why it matters */}
-        <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 overflow-hidden">
-          <button
-            type="button"
-            onClick={() => toggleSection("why-matters")}
-            className="w-full flex items-center justify-between p-3.5 text-left text-xs font-bold text-slate-900 cursor-pointer"
-          >
-            <span>Why it matters</span>
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-200/80 text-slate-600">
-              {openSection === "why-matters" ? <X className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
-            </span>
-          </button>
+                {/* Right Action Button */}
+                {isOpen ? (
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition shrink-0">
+                    <X className="h-3 w-3" />
+                  </span>
+                ) : (
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-black text-white hover:bg-slate-800 transition shadow-2xs shrink-0">
+                    <Plus className="h-3 w-3 stroke-[2.5]" />
+                  </span>
+                )}
+              </button>
 
-          <AnimatePresence initial={false}>
-            {openSection === "why-matters" && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="px-3.5 pb-4 text-xs sm:text-sm text-slate-600 leading-relaxed font-sans"
-              >
-                {whyItMatters}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Knowledge blocks to learn */}
-        <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 overflow-hidden">
-          <button
-            type="button"
-            onClick={() => toggleSection("knowledge-blocks")}
-            className="w-full flex items-center justify-between p-3.5 text-left text-xs font-bold text-slate-900 cursor-pointer"
-          >
-            <span>Knowledge blocks to learn</span>
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-200/80 text-slate-600">
-              {openSection === "knowledge-blocks" ? <X className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
-            </span>
-          </button>
-
-          <AnimatePresence initial={false}>
-            {openSection === "knowledge-blocks" && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="px-3.5 pb-4 text-xs text-slate-600 space-y-2 font-sans"
-              >
-                {knowledgeBlocks.map((b, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
-                    <span>{b}</span>
-                  </div>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Prerequisites */}
-        <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 overflow-hidden">
-          <button
-            type="button"
-            onClick={() => toggleSection("prerequisites")}
-            className="w-full flex items-center justify-between p-3.5 text-left text-xs font-bold text-slate-900 cursor-pointer"
-          >
-            <span>Prerequisites</span>
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-200/80 text-slate-600">
-              {openSection === "prerequisites" ? <X className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
-            </span>
-          </button>
-
-          <AnimatePresence initial={false}>
-            {openSection === "prerequisites" && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="px-3.5 pb-4 text-xs text-slate-600 space-y-1.5 font-sans"
-              >
-                {prerequisites.map((p, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0" />
-                    <span>{p}</span>
-                  </div>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+              <AnimatePresence initial={false}>
+                {isOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="pt-2.5 text-[11.5px] sm:text-xs text-slate-600 leading-relaxed font-sans"
+                  >
+                    {sec.isList && sec.items ? (
+                      <div className="space-y-1.5 pt-0.5">
+                        {sec.items.map((item, i) => (
+                          <div key={i} className="flex items-center gap-1.5">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
+                            <span>{item}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p>{sec.content}</p>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          );
+        })}
       </div>
     </div>
   );

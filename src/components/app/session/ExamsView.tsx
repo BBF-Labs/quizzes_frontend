@@ -16,8 +16,10 @@ import {
   Award,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useApp } from "@/hooks/app/use-app-queries";
 
 interface ExamsViewProps {
+  sessionId?: string;
   userName?: string;
   onStartWrittenExam: () => void;
   onStartOralExam: () => void;
@@ -25,50 +27,21 @@ interface ExamsViewProps {
 }
 
 export function ExamsView({
+  sessionId,
   userName = "Student",
   onStartWrittenExam,
   onStartOralExam,
   onSwitchToSession,
 }: ExamsViewProps) {
   const [activeTab, setActiveTab] = useState<"available" | "history">("available");
+  const { data: app } = useApp(sessionId || "");
 
-  const exams = [
-    {
-      id: "exam-1",
-      title: "Foundations & Primality Number Theory Exam",
-      type: "written",
-      duration: "30 mins",
-      questionsCount: 10,
-      difficulty: "Medium",
-      topics: ["AKS Primality Test", "Miller-Rabin Algorithm", "Modular Arithmetic", "RSA Key Generation"],
-    },
-    {
-      id: "exam-2",
-      title: "Oral Socratic Defense: Cryptographic Mechanics",
-      type: "oral",
-      duration: "15 mins",
-      questionsCount: 4,
-      difficulty: "Hard",
-      topics: ["Cognitive Load Theory", "Spaced Retrieval", "Deterministic vs Probabilistic Tests"],
-    },
-  ];
+  // Extract quizzes and test artifacts from session
+  const examArtifacts = (app?.artifacts || []).filter(
+    (a) => a.type === "quiz" || a.type === "exam" || a.type === "simulation"
+  );
 
-  const pastExams = [
-    {
-      title: "Chapter 7 Modular Inverses Assessment",
-      date: "2 days ago",
-      score: "92%",
-      grade: "A",
-      type: "Written",
-    },
-    {
-      title: "Oral Exam Simulation: Primality Primitives",
-      date: "Last week",
-      score: "88%",
-      grade: "A-",
-      type: "Oral",
-    },
-  ];
+  const chapters = app?.studyPlan?.chapters || [];
 
   return (
     <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 py-6 space-y-6 antialiased pb-24">
@@ -106,7 +79,7 @@ export function ExamsView({
           )}
         >
           <FileText className="h-3.5 w-3.5" />
-          <span>Available Simulations ({exams.length})</span>
+          <span>Available Simulations ({chapters.length > 0 ? chapters.length : 2})</span>
         </button>
 
         <button
@@ -120,127 +93,134 @@ export function ExamsView({
           )}
         >
           <Award className="h-3.5 w-3.5" />
-          <span>Past Results</span>
+          <span>Past Results ({examArtifacts.length})</span>
         </button>
       </div>
 
-      {/* Main Content */}
+      {/* Content */}
       {activeTab === "available" ? (
         <div className="space-y-4">
-          {/* Time For A Test Highlight Banner */}
-          <div className="rounded-[32px] p-0.5 bg-linear-to-r from-[#8B5CF6] via-[#EC4899] to-[#8B5CF6] shadow-sm">
-            <div className="rounded-[31px] bg-white p-6 sm:p-8 text-center space-y-4">
-              <div className="flex justify-center">
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-[#FFF8E7] border border-[#FFE082] text-xs font-black text-amber-900 shadow-2xs">
-                  C
-                </span>
-              </div>
-
+          {/* Written Exam Simulation Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xs space-y-4"
+          >
+            <div className="flex items-start justify-between gap-4">
               <div className="space-y-1">
-                <h3 className="text-xl sm:text-2xl font-serif text-slate-950 font-normal">
-                  Ready for a live test, {userName}?
-                </h3>
-                <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
-                  Put your knowledge to the test with real-time feedback and rubric scoring.
+                <div className="flex items-center gap-2">
+                  <span className="rounded-md bg-blue-50 border border-blue-200 px-2 py-0.5 text-[10px] font-bold text-blue-700 uppercase tracking-wider">
+                    Written Exam
+                  </span>
+                  <span className="text-[11px] text-slate-400 font-mono">10 Questions &bull; 30 Mins</span>
+                </div>
+                <h2 className="text-base sm:text-lg font-bold text-slate-900">
+                  Comprehensive Course Final Simulation
+                </h2>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Rigorous multiple-choice and short-answer assessment covering active knowledge blocks and conceptual frameworks.
                 </p>
               </div>
 
-              <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={onStartWrittenExam}
-                  className="rounded-full bg-slate-950 hover:bg-[#0C60FC] text-white px-5 py-2.5 text-xs font-bold shadow-md hover:scale-102 transition cursor-pointer flex items-center gap-2"
-                >
-                  <FileText className="h-3.5 w-3.5" />
-                  <span>Start Written Exam (30m)</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={onStartOralExam}
-                  className="rounded-full bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 px-5 py-2.5 text-xs font-bold shadow-2xs hover:scale-102 transition cursor-pointer flex items-center gap-2"
-                >
-                  <Mic className="h-3.5 w-3.5 text-indigo-600" />
-                  <span>Start Voice Oral Exam (15m)</span>
-                </button>
+              <div className="rounded-xl bg-blue-50/70 p-3 text-blue-600 shrink-0">
+                <FileText className="h-6 w-6" />
               </div>
             </div>
-          </div>
 
-          {/* Exam Cards List */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            {exams.map((exam) => (
-              <motion.div
-                key={exam.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="rounded-[28px] border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs flex flex-col justify-between space-y-4"
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+              <span className="text-xs text-slate-400 font-mono">Adaptive Grading Enabled</span>
+              <button
+                type="button"
+                onClick={onStartWrittenExam}
+                className="rounded-full bg-slate-900 hover:bg-blue-600 text-white px-4 py-1.5 text-xs font-bold transition shadow-xs cursor-pointer flex items-center gap-1.5"
               >
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span
-                      className={cn(
-                        "text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border",
-                        exam.type === "written"
-                          ? "bg-purple-50 text-purple-700 border-purple-200"
-                          : "bg-amber-50 text-amber-700 border-amber-200"
-                      )}
-                    >
-                      {exam.type === "written" ? "Written Exam" : "Oral Simulation"}
-                    </span>
-                    <span className="text-[11px] font-mono text-slate-400">
-                      {exam.duration}
-                    </span>
-                  </div>
+                <span>Launch Written Exam</span>
+                <ArrowRight className="h-3 w-3" />
+              </button>
+            </div>
+          </motion.div>
 
-                  <h3 className="text-sm sm:text-base font-bold text-slate-900 leading-snug">
-                    {exam.title}
-                  </h3>
-
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    {exam.topics.map((t, idx) => (
-                      <span
-                        key={idx}
-                        className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md"
-                      >
-                        {t}
-                      </span>
-                    ))}
-                  </div>
+          {/* Oral Socratic Defense Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+            className="rounded-2xl border border-purple-200/80 bg-linear-to-br from-purple-50/40 to-white p-5 sm:p-6 shadow-xs space-y-4"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="rounded-md bg-purple-50 border border-purple-200 px-2 py-0.5 text-[10px] font-bold text-purple-700 uppercase tracking-wider">
+                    Oral Socratic
+                  </span>
+                  <span className="text-[11px] text-purple-600 font-mono">4 Defense Rounds &bull; 15 Mins</span>
                 </div>
+                <h2 className="text-base sm:text-lg font-bold text-slate-900">
+                  Interactive Socratic Oral Defense
+                </h2>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Real-time voice evaluation where Z probes your conceptual depth, asks follow-up questions, and tests your critical reasoning.
+                </p>
+              </div>
 
-                <button
-                  type="button"
-                  onClick={exam.type === "written" ? onStartWrittenExam : onStartOralExam}
-                  className="w-full rounded-2xl bg-slate-900 hover:bg-[#0C60FC] text-white py-2.5 text-xs font-bold transition shadow-xs cursor-pointer flex items-center justify-center gap-2"
-                >
-                  <span>Begin Exam</span>
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </button>
-              </motion.div>
-            ))}
-          </div>
+              <div className="rounded-xl bg-purple-100 p-3 text-purple-600 shrink-0">
+                <Mic className="h-6 w-6" />
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-purple-100/70 flex items-center justify-between">
+              <span className="text-xs text-slate-400 font-mono">Real-time Voice AI</span>
+              <button
+                type="button"
+                onClick={onStartOralExam}
+                className="rounded-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-1.5 text-xs font-bold transition shadow-xs cursor-pointer flex items-center gap-1.5"
+              >
+                <span>Launch Oral Exam</span>
+                <ArrowRight className="h-3 w-3" />
+              </button>
+            </div>
+          </motion.div>
         </div>
       ) : (
-        <div className="rounded-[28px] border border-slate-200/90 bg-white p-6 shadow-xs space-y-4">
-          <h3 className="text-xs font-extrabold uppercase tracking-widest text-slate-400">
-            Past Exam Scores
-          </h3>
-
-          <div className="divide-y divide-slate-100">
-            {pastExams.map((p, idx) => (
-              <div key={idx} className="py-3 flex items-center justify-between first:pt-0 last:pb-0">
-                <div>
-                  <h4 className="text-xs sm:text-sm font-bold text-slate-900">{p.title}</h4>
-                  <p className="text-[11px] text-slate-400 mt-0.5">{p.type} · {p.date}</p>
+        <div className="space-y-3">
+          {examArtifacts.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-slate-200 p-8 text-center space-y-2">
+              <Trophy className="h-8 w-8 text-slate-300 mx-auto" />
+              <h3 className="text-sm font-bold text-slate-800">No completed exams yet</h3>
+              <p className="text-xs text-slate-400">
+                Start a written or oral exam simulation to see your scores and feedback history here.
+              </p>
+            </div>
+          ) : (
+            examArtifacts.map((artifact, idx) => (
+              <div
+                key={artifact.artifactId || idx}
+                className="rounded-2xl border border-slate-200 bg-white p-4 flex items-center justify-between shadow-2xs"
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-900">{artifact.title}</span>
+                    <span className="rounded-md bg-emerald-50 text-emerald-700 px-1.5 py-0.5 text-[10px] font-bold">
+                      Completed
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 font-mono">
+                    {new Date(artifact.updatedAt || artifact.createdAt).toLocaleDateString()}
+                  </p>
                 </div>
-                <div className="text-right">
-                  <span className="text-sm font-black text-emerald-600">{p.score}</span>
-                  <span className="text-xs font-bold text-slate-400 ml-1.5">({p.grade})</span>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={onSwitchToSession}
+                    className="rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1 text-xs font-medium transition cursor-pointer"
+                  >
+                    View in Chat
+                  </button>
                 </div>
               </div>
-            ))}
-          </div>
+            ))
+          )}
         </div>
       )}
     </div>
