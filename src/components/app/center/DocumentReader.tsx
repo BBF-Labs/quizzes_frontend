@@ -241,7 +241,7 @@ export function DocumentReader({
         {/* Content Area */}
         <div
           ref={scrollContainerRef}
-          className="flex-1 overflow-y-auto p-6 sm:p-8 flex flex-col items-center gap-8 scroll-smooth"
+          className="flex-1 overflow-y-auto p-6 sm:p-8 flex flex-col items-center gap-8 scroll-smooth scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none]"
         >
           {objectUrl ? (
             <Document

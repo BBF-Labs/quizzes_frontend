@@ -381,73 +381,42 @@ export function AppSessionLayout({ children, sessionId }: AppSessionLayoutProps)
   return (
     <AppLayoutContext.Provider value={contextValue}>
       <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden">
-        {/* ── Three-panel NotebookLM body ─────────────────────────────────────────────── */}
         <div className="flex flex-1 min-h-0 overflow-hidden relative">
-          {/* ── Left panel (Sources) ─────────────────────────────────────────────── */}
-          <AnimatePresence initial={false}>
+          {/* ── Left slide-over panel (Sources / Materials) ───────────────────────── */}
+          <AnimatePresence>
             {leftOpen && (
               <>
-                {/* Mobile backdrop */}
-                {!isLg && (
-                  <motion.div
-                    key="left-backdrop"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="fixed inset-0 z-30 bg-background/60 backdrop-blur-xs"
-                    onClick={toggleLeft}
-                  />
-                )}
+                <motion.div
+                  key="left-backdrop"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="fixed inset-0 z-50 bg-slate-950/30 backdrop-blur-xs"
+                  onClick={toggleLeft}
+                />
                 <motion.div
                   key="left-panel"
-                  initial={isLg ? { width: 0 } : { x: -LEFT_PANEL_WIDTH }}
-                  animate={
-                    isLg
-                      ? { width: LEFT_PANEL_WIDTH }
-                      : { x: 0, width: LEFT_PANEL_WIDTH }
-                  }
-                  exit={isLg ? { width: 0 } : { x: -LEFT_PANEL_WIDTH }}
-                  transition={{ duration: 0.2, ease: "easeInOut" }}
-                  style={{ overflow: "hidden" }}
-                  className={cn(
-                    "border-r border-border/50 bg-card/10 flex flex-col",
-                    isLg
-                      ? "shrink-0"
-                      : "fixed left-0 top-0 h-full z-40 shadow-2xl shadow-black/30 bg-background",
-                  )}
+                  initial={{ x: -LEFT_PANEL_WIDTH }}
+                  animate={{ x: 0 }}
+                  exit={{ x: -LEFT_PANEL_WIDTH }}
+                  transition={{ type: "spring", damping: 25, stiffness: 280 }}
+                  className="fixed left-0 top-0 bottom-0 z-50 w-full max-w-xs sm:max-w-sm bg-white border-r border-slate-200 shadow-2xl flex flex-col overflow-hidden"
                 >
-                  <div
-                    style={{ width: LEFT_PANEL_WIDTH }}
-                    className="h-full flex flex-col"
-                  >
-                    {/* Top Left Logo Area */}
-                    <div className="h-14 shrink-0 flex items-center px-4">
-                      <Link
-                        href="/app/all"
-                        className="flex items-center gap-1.5 shrink-0 hover:opacity-80 transition-opacity"
-                      >
-                        <span className="text-xl font-bold tracking-widest text-foreground">
-                          Qz.
-                        </span>
-                      </Link>
-                    </div>
-                    <div className="flex-1 min-h-0">
-                      <SourcesPanel
-                        sessionId={sessionId}
-                        activeCitationId={null}
-                        onClose={toggleLeft}
-                      />
-                    </div>
+                  <div className="h-full flex flex-col">
+                    <SourcesPanel
+                      sessionId={sessionId}
+                      activeCitationId={null}
+                      onClose={toggleLeft}
+                    />
                   </div>
                 </motion.div>
               </>
             )}
           </AnimatePresence>
 
-          {/* ── Center panel (Chat) ──────────────────────────────────────────────── */}
+          {/* ── Center Canvas panel ──────────────────────────────────────────────── */}
           <div className="flex-1 min-w-0 flex flex-col overflow-hidden relative">
-            {/* Main Chat Page Content */}
             <div className="flex-1 flex flex-col min-h-0 bg-[#FAF9F6] relative">
               {isLoading ? (
                 <div className="flex-1 flex flex-col items-center justify-center p-8 gap-4">
@@ -508,49 +477,33 @@ export function AppSessionLayout({ children, sessionId }: AppSessionLayoutProps)
             </div>
           </div>
 
-          {/* ── Right panel (Studio) ─────────────────────────────────────────────── */}
-          <AnimatePresence initial={false}>
+          {/* ── Right slide-over panel (Studio) ──────────────────────────────────── */}
+          <AnimatePresence>
             {rightOpen && (
               <>
-                {/* Mobile backdrop */}
-                {!isLg && (
-                  <motion.div
-                    key="right-backdrop"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="fixed inset-0 z-30 bg-background/60 backdrop-blur-xs"
-                    onClick={toggleRight}
-                  />
-                )}
+                <motion.div
+                  key="right-backdrop"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="fixed inset-0 z-50 bg-slate-950/30 backdrop-blur-xs"
+                  onClick={toggleRight}
+                />
                 <motion.div
                   key="right-panel"
-                  initial={isLg ? { width: 0 } : { x: RIGHT_PANEL_WIDTH }}
-                  animate={
-                    isLg
-                      ? { width: RIGHT_PANEL_WIDTH }
-                      : { x: 0, width: RIGHT_PANEL_WIDTH }
-                  }
-                  exit={isLg ? { width: 0 } : { x: RIGHT_PANEL_WIDTH }}
-                  transition={{ duration: 0.2, ease: "easeInOut" }}
-                  style={{ overflow: "hidden", zIndex: isLg ? 10 : 40 }}
-                  className={cn(
-                    "border-l border-border/50 shadow-sm",
-                    isLg
-                      ? "shrink-0"
-                      : "fixed right-0 top-0 h-full shadow-2xl shadow-black/30",
-                  )}
+                  initial={{ x: RIGHT_PANEL_WIDTH }}
+                  animate={{ x: 0 }}
+                  exit={{ x: RIGHT_PANEL_WIDTH }}
+                  transition={{ type: "spring", damping: 25, stiffness: 280 }}
+                  className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-sm sm:max-w-md bg-white border-l border-slate-200 shadow-2xl flex flex-col overflow-hidden"
                 >
-                  <div
-                    style={{ width: RIGHT_PANEL_WIDTH }}
-                    className="h-full flex flex-col bg-background"
-                  >
+                  <div className="h-full flex flex-col bg-background">
                     {app && (
                       <StudioPanel
                         sessionId={sessionId}
                         app={{
-                           ...app,
+                          ...app,
                           notes: studioNotes,
                           sharedNotes: studioSharedNotes,
                           flashcards: studioFlashcards,

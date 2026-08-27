@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { format } from "date-fns";
 import {
   Copy,
   Check,
@@ -12,7 +11,8 @@ import {
   ThumbsUp,
   ThumbsDown,
   Sparkles,
-  BookOpen,
+  ExternalLink,
+  AlignLeft,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -33,10 +33,8 @@ import {
 export interface MessageFeedProps extends DirectiveCardCallbacks {
   messages: ZAppMessage[];
   citations?: SessionCitation[];
-  /**
-   * The messageId of the most-recent, still-unresolved directive.
-   */
   activeDirectiveMessageId: string | null;
+  onOpenSource?: (materialId: string, pageNumber?: number) => void;
   onRetryMessage?: (id: string, content: string) => void;
   onEditMessage?: (id: string, newContent: string) => void;
   onRateMessage?: (messageId: string, rating: 1 | -1) => void;
@@ -46,6 +44,7 @@ export function MessageFeed({
   messages,
   citations = [],
   activeDirectiveMessageId,
+  onOpenSource,
   onSubmitAnswer,
   onApprove,
   onContinue,
@@ -66,15 +65,20 @@ export function MessageFeed({
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
 
+  // Determine current speaker turn for the single gliding orb
+  const lastMessage = messages[messages.length - 1];
+  const isAiStreaming = !!lastMessage?.isStreaming;
+  const isUserTurn = lastMessage?.role === "user" && !isAiStreaming;
+
   if (messages.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-4 py-20 px-6 text-center max-w-lg mx-auto">
-        <GlowingOrb size="lg" isThinking={false} />
+        <GlowingOrb size="lg" position="center" isThinking={false} />
         <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
           Ready when you are.
         </h2>
         <p className="text-xs sm:text-sm text-slate-500 max-w-sm leading-relaxed">
-          Ask a question, upload lecture materials, or pick a study topic to begin your personalized learning session.
+          Ask a question, review the study plan, or upload lecture materials to begin your personalized learning session.
         </p>
       </div>
     );
@@ -82,6 +86,15 @@ export function MessageFeed({
 
   return (
     <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-4 sm:px-8 py-8 max-w-3xl w-full mx-auto scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none]">
+      {/* Gliding animated orb tracking the current active turn */}
+      <div className="w-full flex justify-center sticky top-2 z-20 pointer-events-none">
+        <GlowingOrb
+          isThinking={isAiStreaming}
+          position={isUserTurn ? "user" : "ai"}
+          size="md"
+        />
+      </div>
+
       {messages.map((msg, index) => {
         /* ── Skip empty non-directive messages ── */
         if (msg.type !== "directive" && !msg.content?.trim()) return null;
@@ -130,6 +143,7 @@ export function MessageFeed({
             key={msg.id || index}
             message={msg}
             citations={citations}
+            onOpenSource={onOpenSource}
             onRetry={onRetryMessage}
             onRate={onRateMessage}
           />
@@ -223,7 +237,7 @@ function UserBubble({
       ) : (
         <div
           className={cn(
-            "max-w-[75%] sm:max-w-[65%] px-4 sm:px-5 py-3 text-xs sm:text-sm font-semibold rounded-2xl shadow-xs transition-all",
+            "max-w-[80%] sm:max-w-[70%] px-4 sm:px-5 py-3 text-xs sm:text-sm font-semibold rounded-[22px] shadow-xs transition-all",
             isErrorMessage
               ? "border border-rose-200 bg-rose-50 text-rose-800"
               : "bg-slate-900 text-white rounded-br-xs"
@@ -287,120 +301,45 @@ function UserBubble({
   );
 }
 
-// ─── Citation Marker ─────────────────────────────────────────────────────────
+// ─── Citation Chip Button ───────────────────────────────────────────────────
 
-function CitationMarker({ citation }: { citation: SessionCitation }) {
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <sup className="inline-flex items-center cursor-pointer text-[#0C60FC] text-[10px] font-extrabold ml-1 hover:underline">
-          {citation.marker}
-        </sup>
-      </PopoverTrigger>
-      <PopoverContent
-        side="top"
-        className="max-w-xs p-3.5 bg-white border border-slate-200 rounded-2xl shadow-xl text-slate-900"
-      >
-        <div className="space-y-2">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900">
-            <FileText className="h-3.5 w-3.5 text-[#0C60FC] shrink-0" />
-            <span className="truncate">{citation.filename}</span>
-            {citation.pageNumber && (
-              <span className="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md shrink-0">
-                Page {citation.pageNumber}
-              </span>
-            )}
-          </div>
-          <p className="text-xs leading-relaxed text-slate-600 italic border-l-2 border-blue-400 pl-2.5">
-            &ldquo;{citation.excerpt}&rdquo;
-          </p>
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-// Splits message content on citation markers and renders markdown
-function MessageContent({
-  content,
-  citations,
+function CitationChip({
+  citation,
+  onOpenSource,
 }: {
-  content: string;
-  citations: SessionCitation[];
+  citation: SessionCitation;
+  onOpenSource?: (materialId: string, pageNumber?: number) => void;
 }) {
-  const CITE_RE = /(\[\d+\]|\[\*\])/g;
-  const parts = content.split(CITE_RE);
-
   return (
-    <>
-      {parts.map((part, i) => {
-        if (CITE_RE.test(part)) {
-          CITE_RE.lastIndex = 0;
-          const cit = citations.find((c) => c.marker === part);
-          return cit ? (
-            <CitationMarker key={i} citation={cit} />
-          ) : (
-            <sup key={i} className="text-[10px] font-bold text-slate-400">
-              {part}
-            </sup>
-          );
-        }
-        if (!part) return null;
-        return (
-          <ReactMarkdown
-            key={i}
-            remarkPlugins={[remarkGfm, remarkMath]}
-            rehypePlugins={[rehypeRaw, rehypeKatex]}
-            components={{
-              p: ({ children }) => (
-                <p className="mb-3.5 last:mb-0 leading-relaxed">{children}</p>
-              ),
-              h1: ({ children }) => (
-                <h1 className="text-xl font-black text-slate-950 mt-4 mb-2">
-                  {children}
-                </h1>
-              ),
-              h2: ({ children }) => (
-                <h2 className="text-lg font-extrabold text-slate-950 mt-3 mb-1.5">
-                  {children}
-                </h2>
-              ),
-              h3: ({ children }) => (
-                <h3 className="text-base font-bold text-slate-950 mt-2 mb-1">
-                  {children}
-                </h3>
-              ),
-              ul: ({ children }) => (
-                <ul className="list-disc pl-5 space-y-1 my-2.5">{children}</ul>
-              ),
-              ol: ({ children }) => (
-                <ol className="list-decimal pl-5 space-y-1 my-2.5">{children}</ol>
-              ),
-              blockquote: ({ children }) => (
-                <blockquote className="border-l-3 border-[#0C60FC] pl-3 italic text-slate-600 my-2">
-                  {children}
-                </blockquote>
-              ),
-            }}
-          >
-            {part}
-          </ReactMarkdown>
-        );
-      })}
-    </>
+    <button
+      type="button"
+      onClick={() => onOpenSource?.(citation.materialId, citation.pageNumber)}
+      className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100/90 hover:bg-slate-200/90 border border-slate-200/80 px-2.5 py-1 text-[11px] font-semibold text-slate-700 transition cursor-pointer shadow-2xs mt-2"
+      title={`Open ${citation.filename} on Page ${citation.pageNumber || 1}`}
+    >
+      <FileText className="h-3 w-3 text-slate-500 shrink-0" />
+      <span className="truncate max-w-44">{citation.filename}</span>
+      {citation.pageNumber && (
+        <span className="text-slate-400 font-bold shrink-0">
+          · Page {citation.pageNumber}
+        </span>
+      )}
+    </button>
   );
 }
 
-// ─── Z Message Canvas Node (Editorial Flow) ──────────────────────────────────
+// ─── Z Message Canvas Node ──────────────────────────────────────────────────
 
 function ZMessageCanvasNode({
   message,
   citations,
+  onOpenSource,
   onRetry,
   onRate,
 }: {
   message: ZAppMessage;
   citations: SessionCitation[];
+  onOpenSource?: (materialId: string, pageNumber?: number) => void;
   onRetry?: (id: string, content: string) => void;
   onRate?: (messageId: string, rating: 1 | -1) => void;
 }) {
@@ -408,6 +347,17 @@ function ZMessageCanvasNode({
   const [hovered, setHovered] = useState(false);
   const [copied, setCopied] = useState(false);
   const msgId = message.messageId || message.id;
+
+  // Matching citations for this message
+  const relevantCitations = citations.filter(
+    (c) => c.messageId === message.messageId || c.messageId === message.id
+  );
+
+  // Check if content looks like a structured explanation
+  const isExplanation =
+    message.content.toLowerCase().includes("active recall") ||
+    message.content.toLowerCase().includes("explanation") ||
+    message.content.length > 250;
 
   function copyContent() {
     navigator.clipboard.writeText(message.content).then(() => {
@@ -421,25 +371,70 @@ function ZMessageCanvasNode({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="w-full flex flex-col items-center gap-2 my-2"
+      className="w-full flex flex-col items-center gap-3 my-2"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {/* Orb display for AI turn */}
-      <GlowingOrb isThinking={isStreaming} size="md" />
+      {/* Content Rendering: Elevated Explanation Card vs Conversational Text */}
+      {isExplanation && !isStreaming ? (
+        <div className="w-full rounded-[28px] border border-slate-200/80 bg-white p-5 sm:p-7 shadow-md shadow-slate-200/40 space-y-3.5 text-slate-800">
+          <div className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+            <AlignLeft className="h-3.5 w-3.5" />
+            <span>Explanation</span>
+          </div>
 
-      {/* Main Conversational Narration */}
-      <div className="w-full max-w-2xl px-2 sm:px-4 text-center sm:text-left text-slate-800 text-sm sm:text-base leading-relaxed">
-        <MessageContent content={message.content} citations={citations} />
-        {isStreaming && (
-          <span className="inline-block h-2 w-2 rounded-full bg-[#0C60FC] animate-ping ml-1" />
-        )}
-      </div>
+          <div className="text-xs sm:text-sm leading-relaxed text-slate-800 prose prose-slate max-w-none">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm, remarkMath]}
+              rehypePlugins={[rehypeRaw, rehypeKatex]}
+            >
+              {message.content}
+            </ReactMarkdown>
+          </div>
 
-      {/* Action controls (Copy, Feedback thumbs, Retry) */}
+          {/* Citations at bottom right matching Screenshot 1 & 7 */}
+          {relevantCitations.length > 0 && (
+            <div className="pt-2 border-t border-slate-100 flex flex-wrap justify-end gap-2">
+              {relevantCitations.map((cit, i) => (
+                <CitationChip
+                  key={i}
+                  citation={cit}
+                  onOpenSource={onOpenSource}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="w-full max-w-2xl px-2 sm:px-4 text-center sm:text-left text-slate-800 text-xs sm:text-sm leading-relaxed prose prose-slate max-w-none">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm, remarkMath]}
+            rehypePlugins={[rehypeRaw, rehypeKatex]}
+          >
+            {message.content}
+          </ReactMarkdown>
+          {isStreaming && (
+            <span className="inline-block h-2 w-2 rounded-full bg-[#0C60FC] animate-ping ml-1" />
+          )}
+
+          {relevantCitations.length > 0 && (
+            <div className="pt-2 flex flex-wrap gap-2">
+              {relevantCitations.map((cit, i) => (
+                <CitationChip
+                  key={i}
+                  citation={cit}
+                  onOpenSource={onOpenSource}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Action controls */}
       <div
         className={cn(
-          "flex items-center gap-3 pt-1 text-slate-400 text-xs transition-opacity",
+          "flex items-center gap-3 pt-0.5 text-slate-400 text-xs transition-opacity",
           hovered || isStreaming ? "opacity-100" : "opacity-0"
         )}
       >

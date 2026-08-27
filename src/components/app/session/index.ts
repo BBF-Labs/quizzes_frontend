@@ -9,4 +9,6 @@ export * from "./GlowingOrb";
 export * from "./KnowledgePathway";
 export * from "./FloatingActionLauncher";
 export * from "./PathDrawer";
-
+export * from "./StudyPlanView";
+export * from "./MaterialsView";
+export * from "./NotesView";

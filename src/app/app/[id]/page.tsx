@@ -7,7 +7,6 @@ import {
   Loader2,
   Paperclip,
   X,
-  Settings2,
   Plus,
   ArrowUp,
   ArrowRight,
@@ -17,8 +16,10 @@ import {
   Map,
   LogOut,
   Flame,
-  MessageSquareHeart,
   Sparkles,
+  Layers,
+  Brain,
+  MessageSquare,
 } from "lucide-react";
 import { useAppApprove } from "@/hooks";
 import { useApp } from "@/hooks/app/use-app-queries";
@@ -31,11 +32,19 @@ import {
   type FloatingActionItem,
 } from "@/components/app/session/FloatingActionLauncher";
 import { PathDrawer } from "@/components/app/session/PathDrawer";
+import { StudyPlanView } from "@/components/app/session/StudyPlanView";
+import { MaterialsView } from "@/components/app/session/MaterialsView";
+import { NotesView } from "@/components/app/session/NotesView";
+import { DocumentReader } from "@/components/app/center/DocumentReader";
 import type { KnowledgeBlockItem } from "@/components/app/session/KnowledgePathway";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/auth-context";
+
+type CanvasView = "session" | "plan" | "sources" | "notes";
 
 export default function ChatPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const {
     sessionId,
     messages,
@@ -45,8 +54,7 @@ export default function ChatPage() {
     truncateAfter,
     truncateFrom,
     activeMaterialId,
-    toggleLeft,
-    toggleRight,
+    setActiveMaterialId,
   } = useAppLayout();
 
   const { data: app } = useApp(sessionId);
@@ -60,10 +68,11 @@ export default function ChatPage() {
   const plusMenuRef = useRef<HTMLDivElement>(null);
   const firstMessageSentRef = useRef(false);
 
+  const [activeView, setActiveView] = useState<CanvasView>("session");
+  const [referencePage, setReferencePage] = useState<number | undefined>(undefined);
   const [input, setInput] = useState("");
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [showPlusMenu, setShowPlusMenu] = useState(false);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [isPathDrawerOpen, setIsPathDrawerOpen] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [courseNote, setCourseNote] = useState("");
@@ -105,6 +114,7 @@ export default function ChatPage() {
 
     const userMessage = input.trim();
     setInput("");
+    setActiveView("session");
     await sendMessage(userMessage);
   }, [input, messageMutation, sessionId, sendMessage]);
 
@@ -167,7 +177,7 @@ export default function ChatPage() {
     return null;
   }, [messages]);
 
-  // Active topic title derived from latest directive or app name
+  // Active topic title
   const activeTopicTitle = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i--) {
       const d = messages[i].directive;
@@ -210,32 +220,36 @@ export default function ChatPage() {
     ];
   }, [activeTopicTitle]);
 
-  // Floating Action Items for Top-Left Launcher
+  // Floating Action Launcher Menu Items
   const launcherItems: FloatingActionItem[] = [
     {
-      id: "materials",
-      label: "Materials",
+      id: "session",
+      label: "Study Session",
+      icon: MessageSquare,
+      onClick: () => setActiveView("session"),
+      variant: activeView === "session" ? "accent" : "default",
+    },
+    {
+      id: "plan",
+      label: "Study Plan",
+      icon: Map,
+      onClick: () => setActiveView("plan"),
+      variant: activeView === "plan" ? "accent" : "default",
+    },
+    {
+      id: "sources",
+      label: "Sources & Materials",
       icon: FileText,
-      onClick: () => toggleLeft(),
+      onClick: () => setActiveView("sources"),
       badge: app?.materials?.length || undefined,
+      variant: activeView === "sources" ? "accent" : "default",
     },
     {
       id: "notes",
       label: "Notes & Studio",
       icon: BookOpen,
-      onClick: () => toggleRight(),
-    },
-    {
-      id: "roadmap",
-      label: "Study Plan",
-      icon: Map,
-      onClick: () => setIsPathDrawerOpen(true),
-    },
-    {
-      id: "settings",
-      label: "Session Options",
-      icon: Settings2,
-      onClick: () => setShowSettingsModal(true),
+      onClick: () => setActiveView("notes"),
+      variant: activeView === "notes" ? "accent" : "default",
     },
     {
       id: "exit",
@@ -297,6 +311,12 @@ export default function ChatPage() {
     [sendMessage],
   );
 
+  // Open Document Reader Lightbox
+  const handleOpenSource = (materialId: string, pageNumber?: number) => {
+    setActiveMaterialId(materialId);
+    setReferencePage(pageNumber);
+  };
+
   // Guard: invalid session
   if (!sessionId || sessionId === "undefined") {
     return (
@@ -308,7 +328,7 @@ export default function ChatPage() {
           </p>
           <button
             onClick={() => router.push("/app")}
-            className="w-full rounded-2xl bg-slate-900 py-3 text-xs font-extrabold text-white transition hover:bg-[#0C60FC]"
+            className="w-full rounded-2xl bg-slate-950 py-3 text-xs font-extrabold text-white transition hover:bg-[#0C60FC]"
           >
             Back to Dashboard
           </button>
@@ -319,105 +339,164 @@ export default function ChatPage() {
 
   return (
     <div className="relative flex flex-col h-full overflow-hidden bg-[#FAF9F6] antialiased selection:bg-[#0C60FC] selection:text-white">
-      {/* Top Session Canvas Header */}
-      <header className="relative z-30 flex items-center justify-between px-4 sm:px-8 py-3.5 bg-white/70 backdrop-blur-md border-b border-slate-200/60 shrink-0">
-        {/* Top-Left Floating Action Launcher */}
-        <div className="flex items-center gap-2">
+      {/* 
+        Transparent Floating Header:
+        NO BACKGROUND on the header bar itself, only individual floating divs!
+      */}
+      <header className="absolute top-0 inset-x-0 z-40 p-4 sm:p-6 flex items-center justify-between pointer-events-none bg-transparent">
+        {/* Top-Left Floating Action Launcher Pill */}
+        <div className="pointer-events-auto">
           <FloatingActionLauncher items={launcherItems} />
         </div>
 
-        {/* Center: Current Active Topic Badge */}
-        <div className="flex-1 flex justify-center px-2 min-w-0">
+        {/* Center: Floating Active Topic / View Pill */}
+        <div className="pointer-events-auto flex justify-center px-2 min-w-0">
           <button
             type="button"
             onClick={() => setIsPathDrawerOpen(true)}
-            className="group inline-flex items-center gap-2 rounded-full bg-white/90 hover:bg-white border border-slate-200/80 px-3.5 py-1.5 text-xs font-bold text-slate-800 transition shadow-xs cursor-pointer max-w-xs sm:max-w-md truncate"
-            title="Click to view full learning roadmap"
+            className="group inline-flex items-center gap-2 rounded-full bg-white/95 hover:bg-white border border-slate-200/90 px-4 py-2 text-xs font-bold text-slate-800 transition shadow-sm hover:shadow-md cursor-pointer max-w-xs sm:max-w-md truncate backdrop-blur-md"
+            title="Click to view learning roadmap"
           >
             <span className="flex h-2 w-2 rounded-full bg-emerald-500 shrink-0 animate-pulse" />
-            <span className="truncate">{activeTopicTitle}</span>
+            <span className="truncate">
+              {activeView === "session"
+                ? activeTopicTitle
+                : activeView === "plan"
+                ? "Study Plan Roadmap"
+                : activeView === "sources"
+                ? "Sources & Materials"
+                : "Notes & Studio"}
+            </span>
           </button>
         </div>
 
-        {/* Top-Right: Streak & Feedback Action */}
-        <div className="flex items-center gap-2.5">
-          <div className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-amber-50/80 border border-amber-200/80 px-3 py-1 text-xs font-extrabold text-amber-800 shadow-xs">
+        {/* Top-Right: Floating Streak & Feedback Standalone Chips */}
+        <div className="pointer-events-auto flex items-center gap-2">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-white/95 backdrop-blur-md border border-slate-200/90 px-3 py-1.5 text-xs font-extrabold text-amber-800 shadow-sm">
             <Flame className="h-3.5 w-3.5 text-amber-600 fill-amber-500" />
             <span>1</span>
+            <span className="text-slate-300">·</span>
+            <span className="text-slate-600 font-bold">💎 0</span>
           </div>
 
           <button
             type="button"
             onClick={() => toast.success("Thanks for studying with Qz! Send suggestions to feedback@qz.com")}
-            className="rounded-full bg-white border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition cursor-pointer shadow-xs"
+            className="rounded-full bg-white/95 backdrop-blur-md border border-slate-200/90 px-3.5 py-1.5 text-xs font-bold text-slate-700 hover:text-slate-950 hover:bg-white transition cursor-pointer shadow-sm"
           >
             Feedback
           </button>
         </div>
       </header>
 
-      {/* Main Message Canvas Feed */}
-      <div className="flex-1 flex flex-col min-h-0 overflow-y-auto">
-        <MessageFeed
-          messages={messages}
-          citations={citations}
-          activeDirectiveMessageId={activeDirectiveMessageId}
-          onSubmitAnswer={handleSubmitAnswer}
-          onApprove={handleApprove}
-          onContinue={handleContinue}
-          onRetry={handleRetry}
-          onSkip={handleSkip}
-          onExplainDifferently={handleExplainDifferently}
-          onTestMe={handleTestMe}
-          onTryMyself={handleTryMyself}
-          onAction={handleAction}
-          onPomodoroResume={handlePomodoroResume}
-          onRetryMessage={(messageId: string) => {
-            truncateAfter(messageId);
-            retryMutation.mutate(messageId);
-          }}
-          onEditMessage={(messageId: string, newContent: string) => {
-            truncateFrom(messageId);
-            sendMessage(newContent);
-          }}
-          onRateMessage={(messageId: string, rating: 1 | -1) => {
-            rateMutation.mutate({ messageId, rating });
-          }}
-        />
+      {/* Main Canvas Middle Content (Padded at top for transparent header) */}
+      <div className="flex-1 flex flex-col min-h-0 pt-18 overflow-y-auto">
+        {activeView === "session" && (
+          <MessageFeed
+            messages={messages}
+            citations={citations}
+            activeDirectiveMessageId={activeDirectiveMessageId}
+            onOpenSource={handleOpenSource}
+            onSubmitAnswer={handleSubmitAnswer}
+            onApprove={handleApprove}
+            onContinue={handleContinue}
+            onRetry={handleRetry}
+            onSkip={handleSkip}
+            onExplainDifferently={handleExplainDifferently}
+            onTestMe={handleTestMe}
+            onTryMyself={handleTryMyself}
+            onAction={handleAction}
+            onPomodoroResume={handlePomodoroResume}
+            onRetryMessage={(messageId: string) => {
+              truncateAfter(messageId);
+              retryMutation.mutate(messageId);
+            }}
+            onEditMessage={(messageId: string, newContent: string) => {
+              truncateFrom(messageId);
+              sendMessage(newContent);
+            }}
+            onRateMessage={(messageId: string, rating: 1 | -1) => {
+              rateMutation.mutate({ messageId, rating });
+            }}
+          />
+        )}
+
+        {activeView === "plan" && (
+          <StudyPlanView
+            userName={user?.name || "Student"}
+            onSelectTopic={(topic) => {
+              setActiveView("session");
+              sendMessage(`Let's study: ${topic}`);
+            }}
+            onStartWrittenExam={() => {
+              setActiveView("session");
+              sendMessage("Start written exam simulation");
+            }}
+            onStartOralExam={() => {
+              setActiveView("session");
+              sendMessage("Start oral exam simulation");
+            }}
+            onContinueSession={() => setActiveView("session")}
+          />
+        )}
+
+        {activeView === "sources" && (
+          <MaterialsView
+            sessionId={sessionId}
+            onOpenDocument={(id) => handleOpenSource(id)}
+            onAskAboutMaterial={(filename) => {
+              setActiveView("session");
+              sendMessage(`Tell me key takeaways from ${filename}`);
+            }}
+          />
+        )}
+
+        {activeView === "notes" && (
+          <NotesView
+            sessionId={sessionId}
+            notes={app?.notes || []}
+            onSendMessage={(msg) => {
+              setActiveView("session");
+              sendMessage(msg);
+            }}
+          />
+        )}
       </div>
 
       {/* Floating Bottom Feedback Controls & Centered Ask Qubi Input */}
       <div className="sticky bottom-0 z-40 px-4 sm:px-8 pb-5 pt-2 bg-linear-to-t from-[#FAF9F6] via-[#FAF9F6]/90 to-transparent pointer-events-none">
         <div className="max-w-2xl w-full mx-auto pointer-events-auto space-y-2.5">
-          {/* Quick Feedback & Continue Action Pills */}
-          <div className="flex items-center justify-center gap-2">
-            <button
-              type="button"
-              onClick={() => sendMessage("Too easy")}
-              className="rounded-full bg-white/90 hover:bg-white border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-xs hover:scale-102 transition cursor-pointer flex items-center gap-1.5"
-            >
-              <span>🤯</span>
-              <span>Too easy</span>
-            </button>
+          {/* Quick Feedback & Continue Action Pills (in Session mode) */}
+          {activeView === "session" && (
+            <div className="flex items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={() => sendMessage("Too easy")}
+                className="rounded-full bg-white/95 hover:bg-white border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-xs hover:scale-102 transition cursor-pointer flex items-center gap-1.5"
+              >
+                <span>🤯</span>
+                <span>Too easy</span>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => sendMessage("Too hard")}
-              className="rounded-full bg-white/90 hover:bg-white border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-xs hover:scale-102 transition cursor-pointer flex items-center gap-1.5"
-            >
-              <span>🤯</span>
-              <span>Too hard</span>
-            </button>
+              <button
+                type="button"
+                onClick={() => sendMessage("Too hard")}
+                className="rounded-full bg-white/95 hover:bg-white border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-xs hover:scale-102 transition cursor-pointer flex items-center gap-1.5"
+              >
+                <span>🤯</span>
+                <span>Too hard</span>
+              </button>
 
-            <button
-              type="button"
-              onClick={handleContinue}
-              className="rounded-full bg-slate-950 hover:bg-[#0C60FC] px-4 py-1.5 text-xs font-extrabold text-white shadow-md hover:scale-102 transition cursor-pointer flex items-center gap-1.5"
-            >
-              <span>Continue</span>
-              <ArrowRight className="h-3.5 w-3.5" />
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={handleContinue}
+                className="rounded-full bg-slate-950 hover:bg-[#0C60FC] px-4 py-1.5 text-xs font-extrabold text-white shadow-md hover:scale-102 transition cursor-pointer flex items-center gap-1.5"
+              >
+                <span>Continue</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
 
           {/* Attached file chip */}
           <AnimatePresence>
@@ -433,7 +512,7 @@ export default function ChatPage() {
                 <button
                   type="button"
                   onClick={() => setAttachedFile(null)}
-                  className="text-slate-400 hover:text-rose-600 transition"
+                  className="text-slate-400 hover:text-rose-600 transition cursor-pointer"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -449,7 +528,7 @@ export default function ChatPage() {
                 type="button"
                 onClick={() => setShowPlusMenu((v) => !v)}
                 className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition cursor-pointer"
-                title="Attach or options"
+                title="Options"
               >
                 <Plus className="h-4 w-4" />
               </button>
@@ -468,13 +547,13 @@ export default function ChatPage() {
 
                     <div>
                       <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                        Course Note Context
+                        Course Context
                       </label>
                       <input
                         type="text"
                         value={courseNote}
                         onChange={(e) => setCourseNote(e.target.value)}
-                        placeholder="e.g. Chapter 4 exam review"
+                        placeholder="e.g. Exam chapter 8 review"
                         className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-900 outline-none focus:bg-white focus:border-[#0C60FC]"
                       />
                     </div>
@@ -566,69 +645,23 @@ export default function ChatPage() {
         items={pathwayItems}
         chapterTitle={app?.title || "Foundations of Cognitive Learning"}
         onSelectBlock={(block) => {
+          setActiveView("session");
           sendMessage(`Let's focus on ${block.title}`);
         }}
       />
 
-      {/* Settings Modal */}
+      {/* Document Reader Lightbox Modal */}
       <AnimatePresence>
-        {showSettingsModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-xs">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-sm rounded-[28px] bg-white p-6 shadow-2xl space-y-4 text-slate-900"
-            >
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                <h3 className="text-sm font-black">Session Preferences</h3>
-                <button
-                  type="button"
-                  onClick={() => setShowSettingsModal(false)}
-                  className="h-7 w-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-
-              <div className="space-y-3 text-xs">
-                <div>
-                  <label className="font-bold block mb-1">Course Note</label>
-                  <input
-                    type="text"
-                    value={courseNote}
-                    onChange={(e) => setCourseNote(e.target.value)}
-                    placeholder="Optional syllabus or focus context"
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 p-2.5 outline-none focus:bg-white focus:border-[#0C60FC]"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-200">
-                  <span className="font-bold">Study Hints &amp; Guidance</span>
-                  <button
-                    type="button"
-                    onClick={() => setEnableHints((h) => !h)}
-                    className={cn(
-                      "px-3 py-1 rounded-full text-[10px] font-extrabold",
-                      enableHints
-                        ? "bg-emerald-100 text-emerald-800"
-                        : "bg-slate-200 text-slate-600"
-                    )}
-                  >
-                    {enableHints ? "ON" : "OFF"}
-                  </button>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setShowSettingsModal(false)}
-                className="w-full rounded-2xl bg-slate-950 py-2.5 text-xs font-extrabold text-white hover:bg-[#0C60FC] transition cursor-pointer"
-              >
-                Save Settings
-              </button>
-            </motion.div>
-          </div>
+        {activeMaterialId && (
+          <DocumentReader
+            materialId={activeMaterialId}
+            sessionId={sessionId}
+            referencePage={referencePage}
+            onClose={() => {
+              setActiveMaterialId(null);
+              setReferencePage(undefined);
+            }}
+          />
         )}
       </AnimatePresence>
     </div>
