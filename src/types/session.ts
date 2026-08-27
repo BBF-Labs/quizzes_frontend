@@ -1,6 +1,7 @@
 export type ZAppMessageType =
   | "text"
   | "directive"
+  | "artifact"
   | "tool_call"
   | "tool_result";
 
@@ -189,6 +190,9 @@ export interface ZAppMessage {
   timestamp: string;
   /** Present only when type === "directive" */
   directive?: ZDirective;
+  /** Present when message is linked to or contains an artifact (recap, exposition, question, quiz, etc.) */
+  artifactId?: string;
+  artifact?: ZArtifact | Record<string, any>;
   /** Present only when type === "tool_call" */
   toolCall?: { name: string; input: Record<string, unknown> };
   /** Present only when type === "tool_result" */
