@@ -60,7 +60,12 @@ export function ExercisesModal({
   const handleStart = () => {
     onClose();
     toast.success(`Starting ${selectedType.replace("-", " ")} on ${selectedItem}`);
-    router.push(`/study-session/${sessionId}/session`);
+    const params = new URLSearchParams({
+      exerciseType: selectedType,
+      scope: selectedScope,
+      item: selectedItem,
+    });
+    router.push(`/study-session/${sessionId}/session?${params.toString()}`);
   };
 
   return (

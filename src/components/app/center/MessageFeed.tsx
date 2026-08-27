@@ -35,6 +35,12 @@ export interface MessageFeedProps extends DirectiveCardCallbacks {
   sessionStep?: number;
   isTyping?: boolean;
   inputLength?: number;
+  activeTopic?: {
+    title?: string;
+    coreIdea?: string;
+    whyItMatters?: string;
+    prerequisites?: any[];
+  };
   onOpenSource?: (materialId: string, pageNumber?: number) => void;
   onRetryMessage?: (id: string, content: string) => void;
   onEditMessage?: (id: string, newContent: string) => void;
@@ -48,6 +54,7 @@ export function MessageFeed({
   sessionStep = 0,
   isTyping = false,
   inputLength = 0,
+  activeTopic,
   onOpenSource,
   onSubmitAnswer,
   onApprove,
@@ -120,12 +127,20 @@ export function MessageFeed({
             {/* Narrative greeting */}
             <div className="text-center max-w-md mx-auto px-2">
               <p className="text-[13px] sm:text-[13.5px] text-slate-800 leading-relaxed font-serif">
-                Great to see you! I&apos;ve put together a few things for us to look at today, ranging from number theory to how you actually process new information. Let&apos;s get settled in with a quick look at where we&apos;re headed.
+                {activeTopic?.title
+                  ? `Great to see you! We're diving into ${activeTopic.title}. Let's get settled in with a quick look at where we're headed.`
+                  : `Great to see you! I've put together a few things for us to look at today. Let's get settled in with a quick look at where we're headed.`}
               </p>
             </div>
 
             {/* Topic Overview Card */}
-            <TopicOverviewCard />
+            <TopicOverviewCard
+              title={activeTopic?.title}
+              coreIdea={activeTopic?.coreIdea}
+              whyItMatters={activeTopic?.whyItMatters}
+              prerequisites={activeTopic?.prerequisites}
+              onContinue={onContinue}
+            />
           </motion.div>
         )}
 

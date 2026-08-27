@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight,
@@ -180,6 +181,7 @@ export function StudyPlanView({
   onSwitchToChat,
   sessionId,
 }: StudyPlanViewProps) {
+  const router = useRouter();
   const { data: app } = useApp(sessionId || "");
   const { data: sessionMaterials } = useAppMaterials(sessionId || "");
   const toggleBlockMutation = useToggleBlockCompletion(sessionId || "");
@@ -287,22 +289,36 @@ export function StudyPlanView({
       targetStep?.prerequisites?.[0] ||
       targetStep?.knowledgeBlocks?.[0];
 
+    const params = new URLSearchParams();
+    const chId = ch.chapterId || (ch as any)._id;
+    if (chId) params.set("chapter", String(chId));
+    const chNum = ch.chapterNumber || ch.number || 1;
+    params.set("chapterNumber", String(chNum));
+
+    const sId = targetStep?.stepId || targetStep?.goalId || (targetStep as any)?._id;
+    if (sId) params.set("step", String(sId));
+    if (targetStep?.title) params.set("topic", targetStep.title);
+
+    const bId = targetBlock?.blockId || (targetBlock as any)?._id;
+    if (bId) params.set("block", String(bId));
+
     try {
-      await continueJourneyMutation.mutateAsync({
-        chapterId: ch.chapterId || (ch as any)._id,
-        stepId: targetStep?.stepId || targetStep?.goalId || (targetStep as any)?._id,
-        blockId: targetBlock?.blockId || (targetBlock as any)?._id,
-        chapterNumber: ch.chapterNumber || ch.number,
+      continueJourneyMutation.mutate({
+        chapterId: chId,
+        stepId: sId,
+        blockId: bId,
+        chapterNumber: chNum,
         topicTitle: targetStep?.title,
       });
     } catch {
-      // Non-blocking navigation
+      // Non-blocking
     }
 
+    const query = params.toString() ? `?${params.toString()}` : "";
     if (onContinueSession) {
       onContinueSession();
     } else {
-      router.push(`/study-session/${sessionId}/session`);
+      router.push(`/study-session/${sessionId}/session${query}`);
     }
   };
 
@@ -314,22 +330,36 @@ export function StudyPlanView({
       step.prerequisites?.[0] ||
       step.knowledgeBlocks?.[0];
 
+    const params = new URLSearchParams();
+    const chId = ch.chapterId || (ch as any)._id;
+    if (chId) params.set("chapter", String(chId));
+    const chNum = ch.chapterNumber || ch.number || 1;
+    params.set("chapterNumber", String(chNum));
+
+    const sId = step.stepId || step.goalId || step._id;
+    if (sId) params.set("step", String(sId));
+    if (step.title) params.set("topic", step.title);
+
+    const bId = targetBlock?.blockId || targetBlock?._id;
+    if (bId) params.set("block", String(bId));
+
     try {
-      await continueJourneyMutation.mutateAsync({
-        chapterId: ch.chapterId || (ch as any)._id,
-        stepId: step.stepId || step.goalId || step._id,
-        blockId: targetBlock?.blockId || targetBlock?._id,
-        chapterNumber: ch.chapterNumber || ch.number,
+      continueJourneyMutation.mutate({
+        chapterId: chId,
+        stepId: sId,
+        blockId: bId,
+        chapterNumber: chNum,
         topicTitle: step.title,
       });
     } catch {
-      // Non-blocking navigation
+      // Non-blocking
     }
 
+    const query = params.toString() ? `?${params.toString()}` : "";
     if (onContinueSession) {
       onContinueSession();
     } else {
-      router.push(`/study-session/${sessionId}/session`);
+      router.push(`/study-session/${sessionId}/session${query}`);
     }
   };
 
@@ -723,18 +753,6 @@ export function StudyPlanView({
                                         </div>
                                       </div>
                                     )}
-
-                                    {/* Quick Start Button for this Topic */}
-                                    <div className="pt-2 flex justify-end">
-                                      <button
-                                        type="button"
-                                        onClick={() => handleSelectStep(ch, step)}
-                                        className="rounded-full bg-slate-900 hover:bg-black text-white px-3.5 py-1 text-[11.5px] font-bold shadow-xs hover:scale-102 transition cursor-pointer flex items-center gap-1.5"
-                                      >
-                                        <span>Start topic with Z</span>
-                                        <ArrowRight className="h-3 w-3" />
-                                      </button>
-                                    </div>
                                   </motion.div>
                                 )}
                               </AnimatePresence>

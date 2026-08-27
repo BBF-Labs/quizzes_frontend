@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Loader2,
@@ -76,6 +76,11 @@ export default function ChatPage() {
   const plusMenuRef = useRef<HTMLDivElement>(null);
   const firstMessageSentRef = useRef(false);
 
+  const searchParams = useSearchParams();
+  const topicParam = searchParams.get("topic");
+  const stepParam = searchParams.get("step");
+  const chapterParam = searchParams.get("chapter");
+
   const [activeView, setActiveView] = useState<CanvasView>("session");
   const [sessionStep, setSessionStep] = useState<number>(0);
   const [referencePage, setReferencePage] = useState<number | undefined>(undefined);
@@ -87,6 +92,35 @@ export default function ChatPage() {
   const [courseNote, setCourseNote] = useState("");
   const [enableHints, setEnableHints] = useState(true);
   const [pendingAutoSend, setPendingAutoSend] = useState<string | null>(null);
+
+  const activeTopic = useMemo(() => {
+    if (app?.studyPlan?.chapters) {
+      for (const ch of app.studyPlan.chapters) {
+        if (chapterParam && String(ch.chapterId || (ch as any)._id) !== chapterParam) continue;
+        const steps = (ch.steps || ch.goals || []) as any[];
+        for (const step of steps) {
+          if (
+            (stepParam && String(step.stepId || step.goalId || step._id) === stepParam) ||
+            (topicParam && step.title?.toLowerCase() === topicParam.toLowerCase()) ||
+            (!stepParam && !topicParam && (step.stepId === app.activeStepId || step._id === app.activeStepId))
+          ) {
+            return {
+              title: step.title,
+              coreIdea: step.coreIdea || step.description,
+              whyItMatters: step.whyItMatters,
+              prerequisites: step.prerequisites || step.knowledgeBlocks || [],
+            };
+          }
+        }
+      }
+    }
+    if (topicParam) {
+      return {
+        title: topicParam,
+      };
+    }
+    return undefined;
+  }, [app?.studyPlan, app?.activeStepId, chapterParam, stepParam, topicParam]);
 
   // Auto-grow textarea
   useEffect(() => {
@@ -452,6 +486,7 @@ export default function ChatPage() {
             sessionStep={sessionStep}
             isTyping={input.trim().length > 0}
             inputLength={input.length}
+            activeTopic={activeTopic}
             onOpenSource={handleOpenSource}
             onSubmitAnswer={handleSubmitAnswer}
             onApprove={handleApprove}

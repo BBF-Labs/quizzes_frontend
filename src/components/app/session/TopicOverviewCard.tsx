@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Info, Plus, X } from "lucide-react";
+import { Info, Plus, X, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import type { IKnowledgeBlock } from "@/types/session";
@@ -137,6 +137,20 @@ export function TopicOverviewCard({
           );
         })}
       </div>
+
+      {/* Bottom Continue Action Button */}
+      {onContinue && (
+        <div className="pt-2 flex justify-end">
+          <button
+            type="button"
+            onClick={onContinue}
+            className="rounded-full bg-black hover:bg-slate-850 text-white px-5 py-2 text-xs font-bold shadow-sm hover:scale-102 transition cursor-pointer flex items-center gap-1.5"
+          >
+            <span>Continue</span>
+            <ArrowRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
