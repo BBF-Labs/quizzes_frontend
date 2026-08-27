@@ -47,7 +47,11 @@ export interface AppLayoutContextValue {
   messages: ZAppMessage[];
   citations: SessionCitation[];
   pushMessage: (message: ZAppMessage) => void;
-  sendMessage: (content: string, retryId?: string) => Promise<void>;
+  sendMessage: (
+    content: string,
+    retryId?: string,
+    isSystemAction?: boolean
+  ) => Promise<void>;
   addNote: (title: string, content: string) => void;
   messageMutation: ReturnType<typeof useAppMessage>;
   activeMaterialId: string | null;
@@ -195,7 +199,7 @@ export function AppSessionLayout({ children, sessionId }: AppSessionLayoutProps)
 
   // Send message
   const sendMessage = useCallback(
-    async (content: string, retryId?: string) => {
+    async (content: string, retryId?: string, isSystemAction?: boolean) => {
       const trimmed = content.trim();
       if (!trimmed) return;
 
@@ -210,7 +214,7 @@ export function AppSessionLayout({ children, sessionId }: AppSessionLayoutProps)
         status: "sending",
       };
 
-      if (!retryId) {
+      if (!retryId && !isSystemAction) {
         stream.pushMessage(userMsg);
       }
 
