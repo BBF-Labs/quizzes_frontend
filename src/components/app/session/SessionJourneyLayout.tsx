@@ -23,6 +23,8 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
 import { useApp } from "@/hooks/app/use-app-queries";
+import { useBillingStatus } from "@/hooks/common/use-billing";
+import { QUBI_WAVE_SRC } from "@/lib/constants";
 import { ExercisesModal } from "./ExercisesModal";
 import { ExamSimulatorModal } from "./ExamSimulatorModal";
 import { toast } from "sonner";
@@ -40,30 +42,44 @@ export function SessionJourneyLayout({
   const router = useRouter();
   const { user } = useAuth();
   const { data: app } = useApp(sessionId);
+  const { data: billing } = useBillingStatus();
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isCourseDropdownOpen, setIsCourseDropdownOpen] = useState(false);
   const [isExercisesModalOpen, setIsExercisesModalOpen] = useState(false);
   const [isExamModalOpen, setIsExamModalOpen] = useState(false);
 
-  const courseTitle = app?.name || app?.title || "Foundations of Cognitive Learning";
-  const userName = user?.name || "Michael";
+  const userName = user?.name || user?.email?.split("@")[0] || "Student";
+  const courseTitle = app?.name || "Cryptography & System Security";
+
+  const activityCount =
+    (billing?.dailyUsage?.tutorSessions || 0) +
+    (billing?.dailyUsage?.quizGenerations || 0);
+  const uploadCount = billing?.dailyUsage?.materialUploads || 0;
+  const isSubscribed = Boolean(billing?.isSubscribed);
+  const planBadge = isSubscribed
+    ? "PRO"
+    : billing?.planTier
+      ? billing.planTier.replace("_", " ").toUpperCase()
+      : "FREE";
 
   const isJourney = pathname?.includes("/journey");
   const isContext = pathname?.includes("/context");
-  const isSummary = pathname?.includes("/summary");
-  const isSession = pathname?.includes("/session");
+  const isOverview = pathname?.includes("/overview");
+  const isCourseSummary = pathname?.includes("/course-summary");
+  const isSummary = isCourseSummary || isOverview;
+  const isStudySession = pathname?.includes("/session");
+  const isSession = isStudySession;
 
   return (
     <div
-      className={cn(
-        "flex h-screen w-screen overflow-hidden antialiased text-slate-900 selection:bg-[#0C60FC] selection:text-white transition-colors",
-        isJourney
-          ? "bg-[#FAF9F6] bg-[linear-gradient(to_right,#EAE8E1_1px,transparent_1px),linear-gradient(to_bottom,#EAE8E1_1px,transparent_1px)] bg-[size:24px_24px]"
-          : "bg-[#FDFCFB]"
-      )}
+      className="flex h-screen w-full overflow-hidden bg-[#FAF9F6] text-slate-900 antialiased font-sans"
+      style={{
+        backgroundImage:
+          "radial-gradient(circle at 50% 20%, rgba(240, 238, 233, 0.6) 0%, rgba(250, 249, 246, 0.95) 70%)",
+      }}
     >
-      {/* ─── Left Sidebar matching Alice ──────────────────────────────────── */}
+      {/* ─── Left Sidebar ─────────────────────────────────────────────────── */}
       <AnimatePresence initial={false}>
         {isSidebarOpen && (
           <motion.aside
@@ -74,13 +90,28 @@ export function SessionJourneyLayout({
             className="h-full border-r border-slate-200/90 bg-white flex flex-col justify-between shrink-0 overflow-hidden z-30 select-none shadow-xs text-xs"
           >
             <div className="p-3.5 space-y-4 flex-1 overflow-y-auto scrollbar-none">
-              {/* Brand Logo & Collapse Toggle */}
-              <div className="flex items-center justify-between pt-1 px-1">
+              {/* Brand Logo & Collapse Toggle with Animated Qubi */}
+              <div className="flex items-center justify-between pt-0.5 px-0.5">
                 <Link
                   href="/app"
-                  className="font-serif text-lg font-bold tracking-tight text-slate-950 hover:opacity-80 transition"
+                  aria-label="Qz home"
+                  className="group cursor-pointer flex items-center gap-2 rounded-xl hover:opacity-90 transition"
                 >
-                  Alice
+                  <div className="relative h-9 w-9 shrink-0 flex items-center justify-center">
+                    <img
+                      src={QUBI_WAVE_SRC}
+                      alt="Qubi"
+                      className="h-8 w-8 object-contain qubi-bob"
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="hand text-base font-bold leading-none text-[#0C60FC]">
+                      Qz
+                    </p>
+                    <p className="text-[9.5px] font-semibold text-slate-400 leading-tight mt-0.5">
+                      Study Companion
+                    </p>
+                  </div>
                 </Link>
 
                 <button
@@ -93,7 +124,7 @@ export function SessionJourneyLayout({
                 </button>
               </div>
 
-              {/* Course / User Selector Pill matching (24) Michael ⌵ */}
+              {/* Course / User Selector Pill with Billing Tier Badge */}
               <div className="relative">
                 <button
                   type="button"
@@ -101,8 +132,8 @@ export function SessionJourneyLayout({
                   className="w-full flex items-center justify-between rounded-xl bg-slate-50/80 hover:bg-slate-100/80 border border-slate-200/70 px-2.5 py-1.5 text-xs font-semibold text-slate-800 transition cursor-pointer"
                 >
                   <div className="flex items-center gap-2 truncate">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-200/80 text-[10px] font-bold text-slate-700 shrink-0">
-                      24
+                    <span className="flex items-center justify-center rounded-full bg-blue-50 border border-blue-200/80 text-[#0C60FC] px-1.5 py-0.2 text-[9px] font-black tracking-wider shrink-0">
+                      {planBadge}
                     </span>
                     <span className="truncate">{userName}</span>
                   </div>
@@ -115,20 +146,39 @@ export function SessionJourneyLayout({
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 4 }}
-                      className="absolute top-full left-0 right-0 mt-1 z-50 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg space-y-1 text-xs"
+                      className="absolute top-full left-0 right-0 mt-1 z-50 rounded-xl border border-slate-200 bg-white p-2 shadow-lg space-y-2 text-xs"
                     >
-                      <div className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-400">
-                        Current Course
+                      <div>
+                        <div className="px-1 text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                          Current Course
+                        </div>
+                        <div className="px-2 py-1 mt-0.5 rounded-md bg-blue-50 text-[#0C60FC] font-semibold truncate text-[11.5px]">
+                          {courseTitle}
+                        </div>
                       </div>
-                      <div className="px-2 py-1 rounded-md bg-blue-50 text-[#0C60FC] font-semibold truncate">
-                        {courseTitle}
+
+                      <div className="border-t border-slate-100 pt-1.5 space-y-1">
+                        <Link
+                          href="/app/billing"
+                          className="flex items-center justify-between px-1.5 py-1 rounded-md hover:bg-slate-50 text-slate-700 text-[11px] font-medium"
+                        >
+                          <span>Subscription & Billing</span>
+                          <span className="text-[10px] text-[#0C60FC] font-bold">{planBadge}</span>
+                        </Link>
+                        <Link
+                          href="/app/usage"
+                          className="flex items-center justify-between px-1.5 py-1 rounded-md hover:bg-slate-50 text-slate-700 text-[11px] font-medium"
+                        >
+                          <span>Daily Usage</span>
+                          <span className="text-[10px] text-slate-400">{activityCount} actions</span>
+                        </Link>
+                        <Link
+                          href="/app"
+                          className="block px-1.5 py-1 rounded-md hover:bg-slate-50 text-slate-500 text-[11px] transition"
+                        >
+                          ← All Courses & Sessions
+                        </Link>
                       </div>
-                      <Link
-                        href="/app"
-                        className="block px-2 py-1 rounded-md hover:bg-slate-50 text-slate-700 transition"
-                      >
-                        ← All Courses &amp; Sessions
-                      </Link>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -234,36 +284,46 @@ export function SessionJourneyLayout({
               </div>
             </div>
 
-            {/* Bottom Weekly Usage Limits Card matching Screenshot */}
+            {/* Bottom Weekly Usage Limits Card */}
             <div className="p-3 m-2 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-2">
-              <div className="flex items-center justify-between text-[11px] font-bold text-slate-800">
-                <span>Your weekly usage limits</span>
+              <Link
+                href="/app/usage"
+                className="flex items-center justify-between text-[11px] font-bold text-slate-800 hover:text-blue-600 transition"
+              >
+                <span>Your usage limits</span>
                 <Info className="h-3 w-3 text-slate-400" />
-              </div>
+              </Link>
 
               <div className="flex items-center gap-1.5">
                 <span className="rounded-full bg-slate-50 border border-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-600">
-                  24 Activity
+                  {activityCount} Activity
                 </span>
                 <span className="rounded-full bg-slate-50 border border-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-600">
-                  0 Uploaded pages
+                  {uploadCount} Uploaded pages
                 </span>
               </div>
 
-              {/* Rainbow gradient border Upgrade to Pro button */}
+              {/* Action Button: Upgrade to Pro or Manage Subscription */}
               <button
                 type="button"
-                onClick={() => router.push("/app/billing")}
-                className="w-full relative rounded-full p-[1.5px] bg-linear-to-r from-[#FF7A50] via-[#EC4899] to-[#3B82F6] hover:opacity-95 transition cursor-pointer shadow-2xs"
+                onClick={() => router.push(isSubscribed ? "/app/billing" : "/pricing")}
+                className="w-full relative rounded-full p-[1.5px] bg-linear-to-r from-[#0C60FC] via-[#38BDF8] to-[#6366F1] hover:opacity-95 transition cursor-pointer shadow-2xs"
               >
                 <div className="rounded-full bg-white py-1.5 px-3 flex items-center justify-center gap-1 text-xs font-bold text-slate-900">
-                  <span>Upgrade to Pro</span>
+                  <span>{isSubscribed ? "Manage Subscription" : "Upgrade to Pro"}</span>
                   <ArrowUpRight className="h-3 w-3 text-slate-500" />
                 </div>
               </button>
 
               <p className="text-[10px] text-center text-slate-400 font-medium">
-                or <span className="underline hover:text-slate-700 cursor-pointer">refer a friend</span> to keep going.
+                or{" "}
+                <Link
+                  href="/pricing"
+                  className="underline hover:text-slate-700 cursor-pointer"
+                >
+                  view pricing & perks
+                </Link>
+                .
               </p>
             </div>
           </motion.aside>
@@ -315,7 +375,7 @@ export function SessionJourneyLayout({
             href={`/study-session/${sessionId}/session`}
             className="flex items-center gap-2 rounded-full bg-white/95 backdrop-blur-md border border-slate-200 px-3.5 py-1.5 shadow-sm hover:bg-white transition cursor-pointer"
           >
-            <div className="h-4.5 w-4.5 rounded-full bg-linear-to-tr from-[#FF7A50] via-[#E91E63] to-[#3F51B5]" />
+            <div className="h-4.5 w-4.5 rounded-full bg-linear-to-tr from-[#0C60FC] via-[#38BDF8] to-[#6366F1]" />
             <span className="text-xs font-bold text-slate-900">Chat</span>
           </Link>
         </div>
