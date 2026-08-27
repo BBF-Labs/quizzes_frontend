@@ -11,19 +11,23 @@ interface TopicOverviewCardProps {
   title?: string;
   coreIdea?: string;
   whyItMatters?: string;
+  knowledgeBlocks?: Array<IKnowledgeBlock | string>;
   prerequisites?: Array<IKnowledgeBlock | string>;
   onContinue?: () => void;
 }
 
 export function TopicOverviewCard({
-  title = "Primality Testing and Active Recall Strategies",
-  coreIdea = "Primality testing and number theory algorithms provide the mathematical tools to verify if a large number is prime with absolute certainty or high probability.",
-  whyItMatters = "Modern cryptographic protocols like RSA and Diffie-Hellman rely on generating very large prime numbers efficiently to secure digital communications and financial systems.",
+  title = "Topic Overview",
+  coreIdea = "This session focuses on core conceptual principles and their practical applications.",
+  whyItMatters = "Understanding this topic provides essential foundations for mastering upcoming material.",
+  knowledgeBlocks = [],
   prerequisites = [],
   onContinue,
 }: TopicOverviewCardProps) {
-  // Support independent multi-card expansion in the stack
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+  // Support independent multi-card expansion with Core idea open by default (Screenshot 1)
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    "core-idea": true,
+  });
 
   const toggleSection = (id: string) => {
     setOpenSections((prev) => ({
@@ -32,8 +36,12 @@ export function TopicOverviewCard({
     }));
   };
 
+  const formattedBlocks = (knowledgeBlocks || []).map((k) =>
+    typeof k === "string" ? k : k.concept || k.title || k.summary || "Knowledge Block",
+  );
+
   const formattedPrereqs = (prerequisites || []).map((p) =>
-    typeof p === "string" ? p : p.title || p.concept || "Knowledge Block",
+    typeof p === "string" ? p : p.title || p.concept || "Prerequisite",
   );
 
   const sections = [
@@ -47,6 +55,16 @@ export function TopicOverviewCard({
       label: "Why it matters",
       content: whyItMatters,
     },
+    ...(formattedBlocks.length > 0
+      ? [
+          {
+            id: "knowledge-blocks",
+            label: "Knowledge blocks to learn",
+            isList: true,
+            items: formattedBlocks,
+          },
+        ]
+      : []),
     ...(formattedPrereqs.length > 0
       ? [
           {
@@ -137,20 +155,6 @@ export function TopicOverviewCard({
           );
         })}
       </div>
-
-      {/* Bottom Continue Action Button */}
-      {onContinue && (
-        <div className="pt-2 flex justify-end">
-          <button
-            type="button"
-            onClick={onContinue}
-            className="rounded-full bg-black hover:bg-slate-850 text-white px-5 py-2 text-xs font-bold shadow-sm hover:scale-102 transition cursor-pointer flex items-center gap-1.5"
-          >
-            <span>Continue</span>
-            <ArrowRight className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      )}
     </div>
   );
 }
