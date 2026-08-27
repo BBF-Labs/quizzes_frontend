@@ -1,5 +1,5 @@
 export * from "./ConnectionStatus";
-export * from "./DirectiveCard";
+export * from "./ArtifactCard";
 export * from "./MaterialManager";
 export * from "./MessageBubble";
 export * from "./MessageFeed";
