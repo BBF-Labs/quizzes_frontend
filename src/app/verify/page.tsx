@@ -51,7 +51,7 @@ const VERIFY_CONFIG: Record<VerifyType, VerifyTypeConfig> = {
         error: "Link expired.",
       },
       kicker: {
-        verifying: "checking your .edu ↘",
+        verifying: "checking your student email ↘",
         success: "10% discount unlocked ✦",
         error: "let's try that again ↘",
       },

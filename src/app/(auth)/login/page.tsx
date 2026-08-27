@@ -179,7 +179,7 @@ function LoginForm() {
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   autoComplete="username"
-                  placeholder="you@university.edu or username"
+                  placeholder="you@email.com or username"
                   className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-sm outline-none transition placeholder:text-slate-400 focus:border-[#0C60FC] focus:ring-4 focus:ring-blue-100"
                 />
               </label>

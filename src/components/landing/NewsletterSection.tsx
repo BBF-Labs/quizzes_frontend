@@ -79,7 +79,7 @@ export function NewsletterSection() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@university.edu"
+                  placeholder="you@email.com"
                   className="min-w-0 flex-1 rounded-xl border-0 bg-transparent px-4 py-3.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-[#0C60FC]/20"
                 />
                 <button
