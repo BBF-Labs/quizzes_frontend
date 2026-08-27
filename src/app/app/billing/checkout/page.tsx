@@ -325,7 +325,11 @@ function CheckoutContent() {
       }
 
       if (result?.authorizationUrl) {
-        toast.success("You will be redirected to Paystack to complete payment.");
+        if (finalPrice === 0) {
+          toast.success("Activating your free plan…");
+        } else {
+          toast.success("You will be redirected to Paystack to complete payment.");
+        }
         window.location.href = result.authorizationUrl;
       } else {
         toast.error("Could not obtain checkout URL.");
@@ -667,30 +671,40 @@ function CheckoutContent() {
                   {isLoading ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Redirecting to Paystack…</span>
+                      <span>{finalPrice === 0 ? "Activating plan…" : "Redirecting to Paystack…"}</span>
                     </>
                   ) : (
                     <>
-                      <span>Pay GHS {finalPrice.toFixed(2)} with Paystack</span>
+                      <span>
+                        {finalPrice === 0
+                          ? "Activate Plan (Free)"
+                          : `Pay GHS ${finalPrice.toFixed(2)} with Paystack`}
+                      </span>
                       <ArrowRight className="h-4 w-4" />
                     </>
                   )}
                 </button>
 
                 {/* Supported Payment Channels */}
-                <div className="text-center">
-                  <div className="flex flex-wrap items-center justify-center gap-2 text-[10px] font-bold text-slate-500">
-                    <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1">
-                      <Smartphone className="h-3 w-3 text-slate-700" /> MoMo / Telecel / AT
-                    </span>
-                    <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1">
-                      <CreditCard className="h-3 w-3 text-slate-700" /> Visa / Mastercard
-                    </span>
+                {finalPrice > 0 ? (
+                  <div className="text-center">
+                    <div className="flex flex-wrap items-center justify-center gap-2 text-[10px] font-bold text-slate-500">
+                      <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1">
+                        <Smartphone className="h-3 w-3 text-slate-700" /> MoMo / Telecel / AT
+                      </span>
+                      <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1">
+                        <CreditCard className="h-3 w-3 text-slate-700" /> Visa / Mastercard
+                      </span>
+                    </div>
+                    <p className="mt-2.5 text-[11px] font-medium text-slate-400">
+                      Powered by Paystack
+                    </p>
                   </div>
-                  <p className="mt-2.5 text-[11px] font-medium text-slate-400">
-                    Powered by Paystack
+                ) : (
+                  <p className="text-center text-[11px] font-medium text-emerald-600">
+                    100% Free · Instant activation with no payment required
                   </p>
-                </div>
+                )}
               </div>
             </div>
           </div>
