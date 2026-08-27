@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Copy,
@@ -13,6 +13,8 @@ import {
   AlignLeft,
   Volume2,
   Diamond,
+  ArrowRight,
+  HelpCircle,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -21,14 +23,16 @@ import rehypeKatex from "rehype-katex";
 import rehypeRaw from "rehype-raw";
 import { cn } from "@/lib/utils";
 import type { ZAppMessage, SessionCitation } from "@/types/session";
-import { DirectiveCard } from "@/components/app/session/DirectiveCard";
-import type { DirectiveCardCallbacks } from "@/components/app/session/DirectiveCard";
+import { ArtifactCard, type ArtifactCardCallbacks } from "@/components/app/session/ArtifactCard";
 import { GlowingOrb } from "@/components/app/session/GlowingOrb";
-import { KnowledgePathway } from "@/components/app/session/KnowledgePathway";
+import {
+  KnowledgePathway,
+  type KnowledgeBlockItem,
+} from "@/components/app/session/KnowledgePathway";
 import { TopicOverviewCard } from "@/components/app/session/TopicOverviewCard";
 import { toast } from "sonner";
 
-export interface MessageFeedProps extends DirectiveCardCallbacks {
+export interface MessageFeedProps extends ArtifactCardCallbacks {
   messages: ZAppMessage[];
   citations?: SessionCitation[];
   activeDirectiveMessageId: string | null;
@@ -39,8 +43,20 @@ export interface MessageFeedProps extends DirectiveCardCallbacks {
     title?: string;
     coreIdea?: string;
     whyItMatters?: string;
+    knowledgeBlocks?: any[];
     prerequisites?: any[];
   };
+  activeBlock?: {
+    id?: string;
+    blockId?: string;
+    title?: string;
+    concept?: string;
+    summary?: string;
+    isCompleted?: boolean;
+  };
+  pathwayItems?: KnowledgeBlockItem[];
+  onKeepGoing?: () => void;
+  onFeedback?: (type: "too_easy" | "too_hard") => void;
   onOpenSource?: (materialId: string, pageNumber?: number) => void;
   onRetryMessage?: (id: string, content: string) => void;
   onEditMessage?: (id: string, newContent: string) => void;
@@ -55,10 +71,14 @@ export function MessageFeed({
   isTyping = false,
   inputLength = 0,
   activeTopic,
+  activeBlock,
+  pathwayItems = [],
   onOpenSource,
   onSubmitAnswer,
   onApprove,
   onContinue,
+  onKeepGoing,
+  onFeedback,
   onRetry,
   onSkip,
   onExplainDifferently,
@@ -71,194 +91,148 @@ export function MessageFeed({
   onRateMessage,
 }: MessageFeedProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
-  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
 
+  const activeBlockTitle =
+    activeBlock?.concept ||
+    activeBlock?.title ||
+    (pathwayItems.length > 0 ? pathwayItems[0].title : "Active Concept");
+
+  // Scroll to bottom when messages update
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length, sessionStep]);
+  }, [messages]);
 
-  // Determine current speaker turn for the single gliding orb
-  const lastMessage = messages[messages.length - 1];
-  const isAiStreaming = !!lastMessage?.isStreaming;
-  const isUserTurn = lastMessage?.role === "user" && !isAiStreaming;
-
-  const handleSpeakText = (text: string) => {
-    if ("speechSynthesis" in window) {
-      if (isPlayingAudio) {
-        window.speechSynthesis.cancel();
-        setIsPlayingAudio(false);
-      } else {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = 1.0;
-        utterance.onend = () => setIsPlayingAudio(false);
-        utterance.onerror = () => setIsPlayingAudio(false);
-        window.speechSynthesis.speak(utterance);
-        setIsPlayingAudio(true);
-        toast.info("Playing audio explanation…");
-      }
-    } else {
-      toast.error("Text-to-speech not supported on this browser.");
+  // Dynamic greeting from Z inference
+  const zGreeting = useMemo(() => {
+    const firstZ = messages.find(
+      (m) =>
+        m.role === "z" &&
+        m.type === "text" &&
+        m.content &&
+        !m.content.startsWith("⚠️")
+    );
+    if (firstZ?.content) {
+      return firstZ.content;
     }
-  };
+    const topicDesc = (activeTopic as any)?.description || activeTopic?.coreIdea;
+    if (topicDesc) {
+      return topicDesc;
+    }
+    return "";
+  }, [messages, activeTopic]);
 
-  // If there are no custom messages yet, render the initial structured tutorial steps (Images 3, 4, 5)
-  if (messages.length === 0) {
+  // Step 0: Overview Accordion Card
+  if (sessionStep === 0) {
     return (
       <div className="flex flex-1 flex-col items-center gap-5 py-4 px-4 sm:px-6 max-w-xl w-full mx-auto pb-32">
-        {/* Step 0: Overview Accordion Card */}
-        {sessionStep === 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="w-full space-y-4 flex flex-col items-center"
-          >
-            {/* Center Glowing Orb */}
-            <div className="flex justify-center my-1">
-              <GlowingOrb
-                position="center"
-                size="md"
-                isThinking={false}
-                isTyping={isTyping}
-                inputLength={inputLength}
-              />
-            </div>
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full space-y-4 flex flex-col items-center"
+        >
+          {/* Center Glowing Orb */}
+          <div className="flex justify-center my-1">
+            <GlowingOrb
+              position="center"
+              size="md"
+              isThinking={false}
+              isTyping={isTyping}
+              inputLength={inputLength}
+            />
+          </div>
 
-            {/* Narrative greeting */}
+          {/* Dynamic narrative greeting from Z */}
+          {zGreeting && (
             <div className="text-center max-w-md mx-auto px-2">
               <p className="text-[13px] sm:text-[13.5px] text-slate-800 leading-relaxed font-serif">
-                {activeTopic?.title
-                  ? `Great to see you! We're diving into ${activeTopic.title}. Let's get settled in with a quick look at where we're headed.`
-                  : `Great to see you! I've put together a few things for us to look at today. Let's get settled in with a quick look at where we're headed.`}
+                {zGreeting}
               </p>
             </div>
+          )}
 
-            {/* Topic Overview Card */}
-            <TopicOverviewCard
-              title={activeTopic?.title}
-              coreIdea={activeTopic?.coreIdea}
-              whyItMatters={activeTopic?.whyItMatters}
-              prerequisites={activeTopic?.prerequisites}
-              onContinue={onContinue}
-            />
-          </motion.div>
-        )}
-
-        {/* Step 1: Knowledge Pathway with thinking state */}
-        {sessionStep === 1 && (
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="w-full space-y-2.5"
-          >
-            <div className="w-full flex flex-col items-start pl-2 space-y-1">
-              <span className="font-serif italic text-[11px] text-slate-400">
-                Thinking...
-              </span>
-              <GlowingOrb
-                position="ai"
-                size="sm"
-                isThinking={true}
-                isTyping={isTyping}
-                inputLength={inputLength}
-              />
-            </div>
-
-            {/* Slalom Knowledge Pathway */}
-            <KnowledgePathway />
-          </motion.div>
-        )}
-
-        {/* Step 2+: Exposition / Concept Deep Dive matching screenshot */}
-        {sessionStep >= 2 && (
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="w-full space-y-3.5"
-          >
-            {/* Top Concept Peeking Pill */}
-            <div className="w-full flex justify-center pt-0.5">
-              <div className="rounded-full bg-white border border-slate-200/90 shadow-2xs px-3.5 py-1.5 flex items-center gap-2 max-w-sm">
-                <span className="flex h-4 w-4 items-center justify-center rounded-md bg-[#ECFDF5] border border-[#A7F3D0] text-[#10B981]">
-                  <svg className="h-2.5 w-2.5" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 3L20 12L12 21L4 12Z" />
-                  </svg>
-                </span>
-                <span className="text-[11.5px] font-bold text-slate-900 truncate">
-                  The Miller-Rabin test quickly finds large random primes
-                </span>
-              </div>
-            </div>
-
-            {/* Narrative greeting */}
-            <div className="text-center max-w-lg mx-auto px-2 py-0.5">
-              <p className="text-[13px] sm:text-[13.5px] text-slate-800 leading-relaxed font-serif">
-                Glad to have you here! Let&apos;s dive right into how we actually find the massive prime numbers that keep our digital world secure.
-              </p>
-            </div>
-
-            {/* Left Glowing Orb */}
-            <div className="w-full flex justify-start pl-2 -mb-2">
-              <GlowingOrb
-                position="ai"
-                size="sm"
-                isThinking={false}
-                isTyping={isTyping}
-                inputLength={inputLength}
-              />
-            </div>
-
-            {/* Exposition Card */}
-            <div className="w-full rounded-[26px] border border-slate-200/80 bg-[#F9F8F6] p-6 sm:p-7 space-y-3.5 shadow-xs text-slate-900">
-              <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-semibold">
-                <AlignLeft className="h-3 w-3" />
-                <span>Exposition</span>
-              </div>
-
-              <div className="text-[12px] sm:text-[12.5px] leading-relaxed space-y-3 font-serif text-slate-900">
-                <p>
-                  When generating keys for public-key cryptography, we need very large prime numbers. However, checking every possible factor for a 2048-bit number would take longer than the age of the universe!
-                </p>
-                <p>
-                  The <strong>Miller-Rabin primality test</strong> is the standard solution. It is a probabilistic test, meaning it can tell us with extremely high confidence whether a number is prime. Because it is much faster than deterministic tests (which prove primality with 100% certainty), it&apos;s the go-to tool for finding large random primes quickly and reliably during key generation.
-                </p>
-              </div>
-
-              {/* Bottom Card Controls: Audio & Exact Citation Pill */}
-              <div className="pt-1.5 flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() =>
-                    handleSpeakText(
-                      "When generating keys for public-key cryptography, we need very large prime numbers. The Miller-Rabin primality test is the standard solution."
-                    )
-                  }
-                  className={cn(
-                    "flex h-6.5 w-6.5 items-center justify-center rounded-full hover:bg-slate-200/60 transition cursor-pointer",
-                    isPlayingAudio ? "text-[#0C60FC] bg-blue-50 animate-pulse" : "text-slate-400 hover:text-slate-700"
-                  )}
-                  title="Read aloud"
-                >
-                  <Volume2 className="h-3.5 w-3.5" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => onOpenSource?.("chapter-8", 17)}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-white hover:bg-slate-50 border border-slate-200/90 px-3 py-1 text-[11.5px] font-semibold text-slate-700 transition cursor-pointer shadow-2xs"
-                  title="Open Chapter8_MoreNumberTheory.pdf on Page 17"
-                >
-                  <FileText className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                  <span className="truncate max-w-36">Chapter8_MoreNumb...</span>
-                  <span className="text-slate-500 font-normal">Page 17</span>
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
+          {/* Topic Overview Card */}
+          <TopicOverviewCard
+            title={activeTopic?.title}
+            coreIdea={activeTopic?.coreIdea}
+            whyItMatters={activeTopic?.whyItMatters}
+            knowledgeBlocks={activeTopic?.knowledgeBlocks}
+            prerequisites={activeTopic?.prerequisites}
+            onContinue={onContinue}
+          />
+        </motion.div>
       </div>
     );
   }
+
+  // Step 1: Knowledge Pathway with thinking state
+  if (sessionStep === 1) {
+    return (
+      <div className="flex flex-1 flex-col items-center gap-5 py-4 px-4 sm:px-6 max-w-xl w-full mx-auto pb-32">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full space-y-3"
+        >
+          <div className="w-full flex flex-col items-start pl-2 space-y-1">
+            <span className="font-serif italic text-[11px] text-slate-400">
+              Thinking...
+            </span>
+            <GlowingOrb
+              position="ai"
+              size="sm"
+              isThinking={true}
+              isTyping={isTyping}
+              inputLength={inputLength}
+            />
+          </div>
+
+          {/* Knowledge Pathway with real items */}
+          <KnowledgePathway items={pathwayItems} />
+        </motion.div>
+      </div>
+    );
+  }
+
+  // If there are no messages yet and in transition step 2
+  if (messages.length === 0) {
+    return (
+      <div className="flex flex-1 flex-col items-center gap-5 py-4 px-4 sm:px-6 max-w-xl w-full mx-auto pb-32">
+        {/* Step 2: Pathway Transition into Active Block */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full space-y-6 flex flex-col items-center pt-8"
+        >
+          {/* Thinking State with Glowing Orb */}
+          <div className="w-full flex justify-center py-2">
+            <GlowingOrb
+              position="center"
+              size="md"
+              isThinking={true}
+              isTyping={isTyping}
+              inputLength={inputLength}
+            />
+          </div>
+
+          {/* Center Active Concept Capsule */}
+          <div className="w-full max-w-md rounded-full bg-white border border-slate-200/90 shadow-sm px-4 py-3.5 flex items-center gap-3.5">
+            <div className="h-8 w-8 rounded-full bg-[#ECFDF5] border border-[#A7F3D0] flex items-center justify-center shrink-0">
+              <svg viewBox="0 0 14 18" className="h-3.5 w-2.5 shrink-0" fill="none">
+                <path d="M7 1L13 9L7 17L1 9Z" fill="#84CC16" stroke="#4D7C0F" strokeWidth="1.3" />
+              </svg>
+            </div>
+            <span className="text-xs sm:text-[13px] font-bold text-slate-900 leading-snug">
+              {activeBlockTitle}
+            </span>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  const lastMessage = messages[messages.length - 1];
+  const isAiStreaming = !!lastMessage?.isStreaming;
+  const isUserTurn = lastMessage?.role === "user" && !isAiStreaming;
 
   return (
     <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-4 sm:px-8 py-6 max-w-3xl w-full mx-auto scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] pb-32">
@@ -274,19 +248,33 @@ export function MessageFeed({
       </div>
 
       {messages.map((msg, index) => {
-        /* ── Skip empty non-directive messages ── */
-        if (msg.type !== "directive" && !msg.content?.trim()) return null;
+        /* ── Skip empty non-artifact and non-directive messages ── */
+        if (
+          msg.type !== "directive" &&
+          msg.type !== "artifact" &&
+          !msg.directive &&
+          !msg.artifact &&
+          !msg.content?.trim()
+        ) {
+          return null;
+        }
 
-        /* ── Directive messages ── */
-        if (msg.type === "directive") {
-          if (!msg.directive) {
+        /* ── Artifact & Directive messages ── */
+        if (
+          msg.type === "directive" ||
+          msg.type === "artifact" ||
+          Boolean(msg.directive) ||
+          Boolean(msg.artifact)
+        ) {
+          if (!msg.directive && !msg.artifact) {
             return null;
           }
           const resolved = msg.messageId !== activeDirectiveMessageId;
           return (
-            <div key={msg.id || index} className="w-full">
-              <DirectiveCard
+            <div key={msg.id || msg.messageId || index} className="w-full">
+              <ArtifactCard
                 directive={msg.directive}
+                artifact={msg.artifact}
                 resolved={resolved}
                 onSubmitAnswer={onSubmitAnswer}
                 onApprove={onApprove}
@@ -298,6 +286,8 @@ export function MessageFeed({
                 onTryMyself={onTryMyself}
                 onAction={onAction}
                 onPomodoroResume={onPomodoroResume}
+                onOpenSource={onOpenSource}
+                onFeedback={onFeedback}
               />
             </div>
           );
