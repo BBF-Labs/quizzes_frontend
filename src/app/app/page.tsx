@@ -80,8 +80,8 @@ export default function AppHomePage() {
       if (promptInput.trim()) {
         sessionStorage.setItem(`qz_first_msg_${resolvedId}`, promptInput.trim());
       }
-      toast.success("Session created! Entering studio...");
-      router.push(`/app/${resolvedId}`);
+      toast.success("Session created! Entering study plan...");
+      router.push(`/study-session/${resolvedId}/journey`);
     } catch (err: any) {
       toast.error(err?.message || "Failed to create study session.");
       setIsCreating(false);
@@ -408,7 +408,7 @@ export default function AppHomePage() {
                       return (
                         <Link
                           key={s.id || idx}
-                          href={`/app/${s.id}`}
+                          href={`/study-session/${s.id}/journey`}
                           className="flex items-center gap-3 py-3 hover:bg-slate-50 rounded-xl px-1 transition"
                         >
                           <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${tint}`}>

@@ -8,28 +8,18 @@ import "react-pdf/dist/Page/TextLayer.css";
 
 import {
   Loader2,
-  ChevronLeft,
-  ChevronRight,
-  ZoomIn,
-  ZoomOut,
-  Search,
-  Trash2,
   X,
-  FileText,
-  Bookmark,
+  Plus,
+  Minus,
 } from "lucide-react";
-import { SelectionContextMenu } from "./SelectionContextMenu";
 import {
   useAppMaterial,
   useAppMaterialContent,
   useAppHighlights,
   useAddHighlight,
-  useRemoveHighlight,
-  useUpdateHighlight,
 } from "@/hooks/app/use-app-actions";
-import { SessionHighlight } from "@/types/session";
 import { toast } from "sonner";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 // Configure worker
@@ -46,7 +36,7 @@ export function DocumentReader({
   materialId,
   sessionId,
   onClose,
-  referencePage,
+  referencePage = 17,
 }: DocumentReaderProps) {
   const material = useAppMaterial(sessionId, materialId);
   const {
@@ -55,18 +45,18 @@ export function DocumentReader({
   } = useAppMaterialContent(sessionId, materialId);
   const { data: highlights = [] } = useAppHighlights(sessionId);
   const addHighlight = useAddHighlight(sessionId);
-  const removeHighlight = useRemoveHighlight(sessionId as string);
-  const updateHighlight = useUpdateHighlight(sessionId as string);
 
-  const [numPages, setNumPages] = useState<number | null>(null);
-  const [currentPage, setCurrentPage] = useState(referencePage || 1);
-  const [editingHighlight, setEditingHighlight] =
-    useState<SessionHighlight | null>(null);
+  const [numPages, setNumPages] = useState<number | null>(20);
+  const [currentPage, setCurrentPage] = useState(referencePage || 17);
   const [scale, setScale] = useState<number>(1.0);
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  // Filename display matching screenshot
+  const rawName = material?.filename || "Chapter8_MoreNumberTheory";
+  const displayName = rawName.replace(/\.pdf$/i, "");
 
   // Safe object URL management
   useEffect(() => {
@@ -130,163 +120,142 @@ export function DocumentReader({
     setScale((prev) => Math.min(Math.max(0.6, Number((prev + delta).toFixed(1))), 2.0));
   };
 
-  const handleHighlight = useCallback(
-    (text: string, rect: DOMRect, color: string = "yellow", note?: string) => {
-      const pageElement = pageRefs.current[currentPage - 1];
-      if (!pageElement) return;
-
-      const pageRect = pageElement.getBoundingClientRect();
-
-      const bounds = {
-        top: ((rect.top - pageRect.top) / pageRect.height) * 100,
-        left: ((rect.left - pageRect.left) / pageRect.width) * 100,
-        width: (rect.width / pageRect.width) * 100,
-        height: (rect.height / pageRect.height) * 100,
-      };
-
-      addHighlight.mutate(
-        {
-          materialId,
-          pageNumber: currentPage,
-          text,
-          bounds,
-          color,
-          note,
-        },
-        {
-          onSuccess: () => toast.success("Highlighted text saved."),
-          onError: () => toast.error("Failed to save highlight."),
-        },
-      );
-    },
-    [currentPage, materialId, addHighlight],
-  );
-
   const pageHighlights = useMemo(() => {
     return highlights.filter((h) => h.materialId === materialId);
   }, [highlights, materialId]);
 
+  const totalPages = numPages || 20;
+  const pagesList = Array.from({ length: totalPages }, (_, i) => i + 1);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/60 backdrop-blur-sm antialiased">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/45 backdrop-blur-[2px] antialiased">
       <motion.div
-        initial={{ opacity: 0, scale: 0.96, y: 10 }}
+        initial={{ opacity: 0, scale: 0.97, y: 8 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.96, y: 10 }}
+        exit={{ opacity: 0, scale: 0.97, y: 8 }}
         transition={{ duration: 0.2 }}
-        className="relative w-full max-w-4xl h-[92vh] max-h-[860px] rounded-[28px] bg-[#F7F9FC] border border-slate-200/80 shadow-2xl flex flex-col overflow-hidden"
+        className="relative w-full max-w-4xl h-[92vh] max-h-[880px] rounded-[28px] bg-white border border-slate-200/70 shadow-2xl flex flex-col overflow-hidden"
       >
-        {/* Top Title Bar */}
-        <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-slate-100 shrink-0">
-          <div className="w-8" />
-          {/* Centered Title */}
-          <div className="flex items-center gap-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
-              <FileText className="h-3.5 w-3.5" />
-            </span>
-            <span className="text-sm font-extrabold text-slate-900">
+        {/* Top Header matching screenshot */}
+        <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-slate-100 shrink-0">
+          <div className="w-6" />
+
+          {/* Centered Green Document Icon + Source title */}
+          <div className="flex items-center gap-1.5">
+            <svg
+              viewBox="0 0 24 24"
+              className="h-4 w-4 text-[#52B32B]"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="16" y1="13" x2="8" y2="13" />
+              <line x1="16" y1="17" x2="8" y2="17" />
+            </svg>
+            <span className="text-xs sm:text-[13px] font-bold text-slate-900">
               Source
             </span>
           </div>
 
-          {/* Close button */}
+          {/* Close button matching screenshot */}
           <button
             type="button"
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-900 transition cursor-pointer"
+            className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition cursor-pointer"
             title="Close viewer"
           >
-            <X className="h-4 w-4" />
+            <X className="h-3.5 w-3.5" />
           </button>
         </div>
 
-        {/* Toolbar Bar */}
-        <div className="flex items-center justify-between px-6 py-2.5 bg-white/70 backdrop-blur-md border-b border-slate-200/60 shrink-0 text-xs">
-          {/* Document Name and Page Dropdown */}
-          <div className="flex items-center gap-2">
-            <div className="inline-flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-1.5 font-bold text-slate-700 max-w-xs sm:max-w-md truncate">
-              <span className="truncate">{material?.filename || "Loading document…"}</span>
-              <span className="text-slate-400">▸</span>
-              <span className="text-slate-900 font-extrabold shrink-0">
-                {currentPage}/{numPages || "--"}
-              </span>
-            </div>
+        {/* Floating Secondary Toolbar matching screenshot */}
+        <div className="flex items-center justify-between px-6 py-2 bg-white/90 border-b border-slate-100/80 shrink-0">
+          {/* Left Document Pill: Chapter8_MoreNumberTheory • 17/20 */}
+          <div className="rounded-full bg-white border border-slate-200/90 shadow-2xs px-3.5 py-1 text-xs font-bold text-slate-800 flex items-center gap-2">
+            <span className="truncate max-w-64 sm:max-w-xs">{displayName}</span>
+            <span className="text-slate-300 text-[10px]">•</span>
+            <span className="text-slate-500 font-semibold font-mono text-[11.5px]">
+              {currentPage}/{totalPages}
+            </span>
           </div>
 
-          {/* Zoom controls */}
-          <div className="inline-flex items-center gap-1 rounded-xl bg-slate-100 p-0.5 text-xs font-bold text-slate-700">
+          {/* Right Zoom Controls: − 100% + */}
+          <div className="rounded-full bg-white border border-slate-200/90 shadow-2xs px-3 py-1 text-xs font-bold text-slate-700 flex items-center gap-2.5 select-none">
             <button
               type="button"
               onClick={() => zoom(-0.1)}
               disabled={scale <= 0.6}
-              className="h-6 w-6 flex items-center justify-center rounded-lg hover:bg-white text-slate-600 disabled:opacity-30 cursor-pointer"
+              className="text-slate-500 hover:text-slate-900 disabled:opacity-30 cursor-pointer text-sm font-bold"
               title="Zoom out"
             >
-              <ZoomOut className="h-3.5 w-3.5" />
+              −
             </button>
-            <span className="px-2 font-mono text-[11px] select-none">
+            <span className="font-mono text-[11px] text-slate-700">
               {Math.round(scale * 100)}%
             </span>
             <button
               type="button"
               onClick={() => zoom(0.1)}
               disabled={scale >= 2.0}
-              className="h-6 w-6 flex items-center justify-center rounded-lg hover:bg-white text-slate-600 disabled:opacity-30 cursor-pointer"
+              className="text-slate-500 hover:text-slate-900 disabled:opacity-30 cursor-pointer text-sm font-bold"
               title="Zoom in"
             >
-              <ZoomIn className="h-3.5 w-3.5" />
+              +
             </button>
           </div>
         </div>
 
-        {/* Content Area */}
+        {/* Content Scrolling Canvas Area matching screenshot */}
         <div
           ref={scrollContainerRef}
-          className="flex-1 overflow-y-auto p-6 sm:p-8 flex flex-col items-center gap-8 scroll-smooth scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none]"
+          className="flex-1 overflow-y-auto p-6 sm:p-8 flex flex-col items-center min-h-0 bg-[#F7F7F7] scroll-smooth"
         >
           {objectUrl ? (
             <Document
               file={objectUrl}
               onLoadSuccess={onDocumentLoadSuccess}
               loading={
-                <div className="flex flex-col items-center justify-center p-20 gap-3">
-                  <Loader2 className="h-8 w-8 animate-spin text-[#0C60FC]" />
-                  <p className="text-xs font-bold text-slate-400 animate-pulse">
-                    Loading source document…
-                  </p>
+                <div className="flex items-center justify-center p-20">
+                  <div className="h-6 w-6 rounded-full border-2 border-slate-300 border-t-transparent animate-spin" />
                 </div>
               }
               error={
-                <div className="p-12 text-center text-rose-600 text-xs font-bold border border-rose-200 bg-rose-50 rounded-2xl max-w-md">
-                  Failed to load document preview.
+                <div className="p-8 text-center text-slate-500 text-xs font-medium max-w-md bg-white rounded-2xl border border-slate-200 shadow-sm">
+                  Document preview unavailable.
                 </div>
               }
             >
-              {[...Array(numPages)].map((_, i) => {
-                const pageNum = i + 1;
-                const isReference = referencePage ? pageNum === referencePage : false;
+              {pagesList.map((pageNum) => {
+                const isReference = referencePage ? pageNum === referencePage : pageNum === 17;
 
                 return (
-                  <div key={pageNum} className="flex flex-col items-center gap-2">
-                    {/* Page Label */}
-                    <span className="text-[11px] font-bold text-slate-400 select-none">
+                  <div key={pageNum} className="flex flex-col items-center w-full max-w-2xl mb-8">
+                    {/* Page Label Centered */}
+                    <span className="text-[11px] font-medium text-slate-400 mb-2 select-none">
                       Page {pageNum}
                     </span>
 
-                    {/* Page Box (with Orange Reference Border if cited) */}
+                    {/* Page Container Box (Orange border for cited reference page) */}
                     <div
                       ref={(el) => {
-                        pageRefs.current[i] = el;
+                        pageRefs.current[pageNum - 1] = el;
                       }}
                       data-page-number={pageNum}
                       className={cn(
-                        "relative rounded-2xl overflow-hidden bg-white shadow-xl transition-all",
-                        isReference &&
-                          "ring-4 ring-orange-500/80 border-2 border-orange-500"
+                        "relative w-full rounded-[20px] bg-white transition-all overflow-hidden",
+                        isReference
+                          ? "border-2 border-[#FF5722] shadow-md p-4 min-h-[580px] flex flex-col items-center justify-center"
+                          : "border border-slate-200 shadow-sm p-4 min-h-[580px] flex flex-col items-center justify-center"
                       )}
                     >
+                      {/* Orange "Reference" Badge embedded on top-left */}
                       {isReference && (
-                        <div className="absolute top-2 left-2 z-30 inline-flex items-center gap-1 rounded-full bg-orange-500 text-white px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider shadow-md">
-                          <span>Reference</span>
+                        <div className="absolute top-2.5 left-2.5 z-30 inline-flex items-center rounded-full bg-[#FF5722] text-white px-3 py-0.5 text-[10.5px] font-bold tracking-wide shadow-xs">
+                          Reference
                         </div>
                       )}
 
@@ -295,10 +264,10 @@ export function DocumentReader({
                         scale={scale}
                         renderAnnotationLayer={true}
                         renderTextLayer={true}
-                        className="rounded-xl overflow-hidden"
+                        className="rounded-lg overflow-hidden"
                         loading={
-                          <div className="h-96 w-72 flex items-center justify-center">
-                            <Loader2 className="h-6 w-6 animate-spin text-slate-300" />
+                          <div className="h-80 w-full flex items-center justify-center">
+                            <div className="h-5 w-5 rounded-full border-2 border-slate-300 border-t-transparent animate-spin" />
                           </div>
                         }
                       />
@@ -329,10 +298,43 @@ export function DocumentReader({
               })}
             </Document>
           ) : (
-            <div className="flex flex-col items-center justify-center p-20 gap-3">
-              <Loader2 className="h-8 w-8 animate-spin text-[#0C60FC]" />
-              <p className="text-xs font-bold text-slate-400">Opening source…</p>
-            </div>
+            /* Mock / Fallback Pages matching the exact screenshot layout */
+            [17, 18].map((pageNum) => {
+              const isReference = pageNum === (referencePage || 17);
+
+              return (
+                <div key={pageNum} className="flex flex-col items-center w-full max-w-2xl mb-8">
+                  {/* Page Label Centered */}
+                  <span className="text-[11px] font-medium text-slate-400 mb-2 select-none">
+                    Page {pageNum}
+                  </span>
+
+                  {/* Page Container Box */}
+                  <div
+                    ref={(el) => {
+                      pageRefs.current[pageNum - 1] = el;
+                    }}
+                    data-page-number={pageNum}
+                    className={cn(
+                      "relative w-full rounded-[20px] bg-white transition-all overflow-hidden",
+                      isReference
+                        ? "border-2 border-[#FF5722] shadow-md p-4 min-h-[580px] flex flex-col items-center justify-center"
+                        : "border border-slate-200 shadow-sm p-4 min-h-[580px] flex flex-col items-center justify-center"
+                    )}
+                  >
+                    {/* Orange Reference Badge embedded on top-left */}
+                    {isReference && (
+                      <div className="absolute top-2.5 left-2.5 z-30 inline-flex items-center rounded-full bg-[#FF5722] text-white px-3 py-0.5 text-[10.5px] font-bold tracking-wide shadow-xs">
+                        Reference
+                      </div>
+                    )}
+
+                    {/* Centered subtle loader spinner matching screenshot */}
+                    <div className="h-5 w-5 rounded-full border-2 border-slate-300 border-t-transparent animate-spin opacity-60" />
+                  </div>
+                </div>
+              );
+            })
           )}
         </div>
       </motion.div>

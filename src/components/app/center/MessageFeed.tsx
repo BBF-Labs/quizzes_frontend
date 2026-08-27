@@ -98,32 +98,29 @@ export function MessageFeed({
   // If there are no custom messages yet, render the initial structured tutorial steps (Images 3, 4, 5)
   if (messages.length === 0) {
     return (
-      <div className="flex flex-1 flex-col items-center gap-6 py-4 px-4 sm:px-8 max-w-2xl w-full mx-auto pb-32">
-        {/* Step 0: Overview Accordion Card matching Image 3 */}
+      <div className="flex flex-1 flex-col items-center gap-5 py-4 px-4 sm:px-6 max-w-xl w-full mx-auto pb-32">
+        {/* Step 0: Overview Accordion Card */}
         {sessionStep === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            className="w-full space-y-6 flex flex-col items-center"
+            className="w-full space-y-4 flex flex-col items-center"
           >
             {/* Center Glowing Orb */}
-            <div className="flex justify-center my-2">
+            <div className="flex justify-center my-1">
               <GlowingOrb
                 position="center"
-                size="lg"
+                size="md"
                 isThinking={false}
                 isTyping={isTyping}
                 inputLength={inputLength}
               />
             </div>
 
-            {/* Narrative greeting matching Image 3 */}
-            <div className="text-center max-w-xl space-y-3 px-2">
-              <p className="text-sm sm:text-base text-slate-800 leading-relaxed font-serif">
-                It&apos;s great to see you again! We&apos;re moving into some fascinating territory today as we build on your understanding of how large primes are identified for secure communication.
-              </p>
-              <p className="text-sm sm:text-base text-slate-800 leading-relaxed font-serif">
-                Take a look at the overview below to see what we&apos;ll be tackling.
+            {/* Narrative greeting */}
+            <div className="text-center max-w-md mx-auto px-2">
+              <p className="text-[13px] sm:text-[13.5px] text-slate-800 leading-relaxed font-serif">
+                Great to see you! I&apos;ve put together a few things for us to look at today, ranging from number theory to how you actually process new information. Let&apos;s get settled in with a quick look at where we&apos;re headed.
               </p>
             </div>
 
@@ -132,17 +129,20 @@ export function MessageFeed({
           </motion.div>
         )}
 
-        {/* Step 1: Knowledge Pathway with thinking state matching Image 4 */}
+        {/* Step 1: Knowledge Pathway with thinking state */}
         {sessionStep === 1 && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            className="w-full space-y-4"
+            className="w-full space-y-2.5"
           >
-            <div className="w-full flex justify-start pl-2">
+            <div className="w-full flex flex-col items-start pl-2 space-y-1">
+              <span className="font-serif italic text-[11px] text-slate-400">
+                Thinking...
+              </span>
               <GlowingOrb
                 position="ai"
-                size="md"
+                size="sm"
                 isThinking={true}
                 isTyping={isTyping}
                 inputLength={inputLength}
@@ -154,88 +154,88 @@ export function MessageFeed({
           </motion.div>
         )}
 
-        {/* Step 2+: Exposition / Concept Deep Dive matching Image 5 */}
+        {/* Step 2+: Exposition / Concept Deep Dive matching screenshot */}
         {sessionStep >= 2 && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            className="w-full space-y-5"
+            className="w-full space-y-3.5"
           >
-            {/* Top Right Floating Active Node Pill matching Image 5 */}
-            <div className="w-full flex justify-end">
-              <div className="inline-flex items-center gap-2.5 rounded-full bg-white border border-slate-200/90 px-4 py-2 text-xs font-bold text-slate-900 shadow-xs">
-                <span className="h-5 w-5 rounded-md bg-[#DCFCE7] border border-[#86EFAC] text-[#16A34A] flex items-center justify-center">
-                  <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 4L19 12L12 20L5 12Z" />
+            {/* Top Concept Peeking Pill */}
+            <div className="w-full flex justify-center pt-0.5">
+              <div className="rounded-full bg-white border border-slate-200/90 shadow-2xs px-3.5 py-1.5 flex items-center gap-2 max-w-sm">
+                <span className="flex h-4 w-4 items-center justify-center rounded-md bg-[#ECFDF5] border border-[#A7F3D0] text-[#10B981]">
+                  <svg className="h-2.5 w-2.5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 3L20 12L12 21L4 12Z" />
                   </svg>
                 </span>
-                <span>AKS is a deterministic primality test</span>
+                <span className="text-[11.5px] font-bold text-slate-900 truncate">
+                  The Miller-Rabin test quickly finds large random primes
+                </span>
               </div>
             </div>
 
-            {/* Narrative text intro - NO BACKGROUND */}
-            <div className="w-full text-left px-1">
-              <p className="text-sm sm:text-base text-slate-800 leading-relaxed font-serif">
-                Great! Let&apos;s dive into our first concept. To truly understand how we secure digital communication, we need to look at how we verify the &quot;building blocks&quot; of encryption: prime numbers.
+            {/* Narrative greeting */}
+            <div className="text-center max-w-lg mx-auto px-2 py-0.5">
+              <p className="text-[13px] sm:text-[13.5px] text-slate-800 leading-relaxed font-serif">
+                Glad to have you here! Let&apos;s dive right into how we actually find the massive prime numbers that keep our digital world secure.
               </p>
             </div>
 
             {/* Left Glowing Orb */}
-            <div className="w-full flex justify-start pl-1">
+            <div className="w-full flex justify-start pl-2 -mb-2">
               <GlowingOrb
                 position="ai"
-                size="md"
+                size="sm"
                 isThinking={false}
                 isTyping={isTyping}
                 inputLength={inputLength}
               />
             </div>
 
-            {/* Exposition Card matching Image 5 */}
-            <div className="w-full rounded-[32px] border border-slate-200/90 bg-white p-6 sm:p-7 shadow-md shadow-slate-200/30 space-y-4 text-slate-900">
-              <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-                <AlignLeft className="h-3.5 w-3.5" />
+            {/* Exposition Card */}
+            <div className="w-full rounded-[26px] border border-slate-200/80 bg-[#F9F8F6] p-6 sm:p-7 space-y-3.5 shadow-xs text-slate-900">
+              <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-semibold">
+                <AlignLeft className="h-3 w-3" />
                 <span>Exposition</span>
               </div>
 
-              <div className="text-sm sm:text-base leading-relaxed space-y-3 font-serif">
+              <div className="text-[12px] sm:text-[12.5px] leading-relaxed space-y-3 font-serif text-slate-900">
                 <p>
-                  The <strong>AKS primality test</strong>, published in 2002 by Agrawal, Kayal, and Saxena, was a major breakthrough in computer science. It is a <strong>deterministic algorithm</strong>, meaning it can prove whether a number is prime with 100% certainty, rather than just high probability.
+                  When generating keys for public-key cryptography, we need very large prime numbers. However, checking every possible factor for a 2048-bit number would take longer than the age of the universe!
                 </p>
                 <p>
-                  One of its most important features is that it runs in <strong>polynomial time</strong>. This means the time it takes to check a number doesn&apos;t explode uncontrollably as the numbers get larger, making it theoretically efficient.
-                </p>
-                <p>
-                  However, in the practical world of cryptography, there is a trade-off. While AKS is mathematically &quot;perfect,&quot; it is significantly <strong>slower in practice</strong> than probabilistic tests like Miller-Rabin. Because of this, it is rarely used for tasks like generating encryption keys where speed is essential.
+                  The <strong>Miller-Rabin primality test</strong> is the standard solution. It is a probabilistic test, meaning it can tell us with extremely high confidence whether a number is prime. Because it is much faster than deterministic tests (which prove primality with 100% certainty), it&apos;s the go-to tool for finding large random primes quickly and reliably during key generation.
                 </p>
               </div>
 
-              {/* Bottom Card Controls: Audio & Citation Pill */}
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+              {/* Bottom Card Controls: Audio & Exact Citation Pill */}
+              <div className="pt-1.5 flex items-center justify-between">
                 <button
                   type="button"
                   onClick={() =>
                     handleSpeakText(
-                      "The AKS primality test, published in 2002 by Agrawal, Kayal, and Saxena, was a major breakthrough in computer science. It is a deterministic algorithm that runs in polynomial time."
+                      "When generating keys for public-key cryptography, we need very large prime numbers. The Miller-Rabin primality test is the standard solution."
                     )
                   }
                   className={cn(
-                    "flex h-8 w-8 items-center justify-center rounded-full hover:bg-slate-100 transition cursor-pointer",
+                    "flex h-6.5 w-6.5 items-center justify-center rounded-full hover:bg-slate-200/60 transition cursor-pointer",
                     isPlayingAudio ? "text-[#0C60FC] bg-blue-50 animate-pulse" : "text-slate-400 hover:text-slate-700"
                   )}
                   title="Read aloud"
                 >
-                  <Volume2 className="h-4 w-4" />
+                  <Volume2 className="h-3.5 w-3.5" />
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => onOpenSource?.("chapter-8", 11)}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100/90 hover:bg-slate-200/90 border border-slate-200/80 px-2.5 py-1 text-[11px] font-semibold text-slate-700 transition cursor-pointer shadow-2xs"
+                  onClick={() => onOpenSource?.("chapter-8", 17)}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-white hover:bg-slate-50 border border-slate-200/90 px-3 py-1 text-[11.5px] font-semibold text-slate-700 transition cursor-pointer shadow-2xs"
+                  title="Open Chapter8_MoreNumberTheory.pdf on Page 17"
                 >
-                  <FileText className="h-3 w-3 text-slate-500" />
-                  <span className="truncate max-w-44">Chapter8_MoreNumberTheory...</span>
-                  <span className="text-slate-400 font-bold">· Page 11</span>
+                  <FileText className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                  <span className="truncate max-w-36">Chapter8_MoreNumb...</span>
+                  <span className="text-slate-500 font-normal">Page 17</span>
                 </button>
               </div>
             </div>
@@ -473,18 +473,21 @@ function CitationChip({
   citation: SessionCitation;
   onOpenSource?: (materialId: string, pageNumber?: number) => void;
 }) {
+  const cleanName = citation.filename.replace(/\.pdf$/i, "");
+  const displayName = cleanName.length > 18 ? `${cleanName.slice(0, 18)}...` : cleanName;
+
   return (
     <button
       type="button"
       onClick={() => onOpenSource?.(citation.materialId, citation.pageNumber)}
-      className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100/90 hover:bg-slate-200/90 border border-slate-200/80 px-2.5 py-1 text-[11px] font-semibold text-slate-700 transition cursor-pointer shadow-2xs mt-2"
+      className="inline-flex items-center gap-1.5 rounded-full bg-white hover:bg-slate-50 border border-slate-200/90 px-3.5 py-1 text-xs font-semibold text-slate-700 transition cursor-pointer shadow-2xs mt-2"
       title={`Open ${citation.filename} on Page ${citation.pageNumber || 1}`}
     >
-      <FileText className="h-3 w-3 text-slate-500 shrink-0" />
-      <span className="truncate max-w-44">{citation.filename}</span>
+      <FileText className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+      <span className="truncate max-w-40">{displayName}</span>
       {citation.pageNumber && (
-        <span className="text-slate-400 font-bold shrink-0">
-          · Page {citation.pageNumber}
+        <span className="text-slate-500 font-normal shrink-0">
+          Page {citation.pageNumber}
         </span>
       )}
     </button>

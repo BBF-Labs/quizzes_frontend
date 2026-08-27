@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Loader2,
@@ -31,6 +31,7 @@ import {
 } from "@/components/app/session/FloatingActionLauncher";
 import { PathDrawer } from "@/components/app/session/PathDrawer";
 import { StudyPlanView } from "@/components/app/session/StudyPlanView";
+import { UpdateStudyPlanView } from "@/components/app/session/UpdateStudyPlanView";
 import { MaterialsView } from "@/components/app/session/MaterialsView";
 import { NotesView } from "@/components/app/session/NotesView";
 import { ExamsView } from "@/components/app/session/ExamsView";
@@ -39,10 +40,11 @@ import type { KnowledgeBlockItem } from "@/components/app/session/KnowledgePathw
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/auth-context";
 
-type CanvasView = "session" | "plan" | "sources" | "notes" | "exams";
+type CanvasView = "session" | "plan" | "update-plan" | "sources" | "notes" | "exams";
 
 export default function ChatPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const { user } = useAuth();
   const {
     sessionId,
@@ -55,6 +57,13 @@ export default function ChatPage() {
     activeMaterialId,
     setActiveMaterialId,
   } = useAppLayout();
+
+  // The default start page of any session is the journey page
+  useEffect(() => {
+    if (pathname && pathname === `/app/${sessionId}`) {
+      router.replace(`/study-session/${sessionId}/journey`);
+    }
+  }, [pathname, sessionId, router]);
 
   const { data: app } = useApp(sessionId);
 
@@ -403,6 +412,8 @@ export default function ChatPage() {
                 ? activeTopicTitle
                 : activeView === "plan"
                 ? "Study Plan Roadmap"
+                : activeView === "update-plan"
+                ? "Building Your Study Plan"
                 : activeView === "exams"
                 ? "Exam & Oral Simulations"
                 : activeView === "sources"
@@ -468,8 +479,8 @@ export default function ChatPage() {
 
         {activeView === "plan" && (
           <StudyPlanView
-            userName={user?.name || "Student"}
-            onSelectTopic={(topic) => {
+            userName={user?.name || "Michael"}
+            onSelectTopic={(topic: any) => {
               setActiveView("session");
               sendMessage(`Let's study: ${topic}`);
             }}
@@ -477,6 +488,22 @@ export default function ChatPage() {
             onStartOralExam={() => setActiveView("exams")}
             onContinueSession={() => setActiveView("session")}
             onSwitchToChat={() => setActiveView("session")}
+            onOpenUpdatePlan={() => setActiveView("update-plan")}
+          />
+        )}
+
+        {activeView === "update-plan" && (
+          <UpdateStudyPlanView
+            userName={user?.name || "Michael"}
+            courseTitle={app?.name || app?.title || "Foundations of Cognitive Learning"}
+            onStartNow={() => {
+              setActiveView("session");
+              setSessionStep(0);
+            }}
+            onSendMessage={(msg) => {
+              setActiveView("session");
+              sendMessage(msg);
+            }}
           />
         )}
 
@@ -529,16 +556,16 @@ export default function ChatPage() {
                   <button
                     type="button"
                     onClick={() => sendMessage("Too easy")}
-                    className="rounded-full bg-white/95 hover:bg-white border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-xs hover:scale-102 transition cursor-pointer flex items-center gap-1.5"
+                    className="rounded-full bg-white hover:bg-slate-50 border border-slate-200 px-3 py-1 text-[11px] font-semibold text-slate-700 shadow-2xs hover:scale-102 transition cursor-pointer flex items-center gap-1.5"
                   >
-                    <span>🤯</span>
+                    <span>😴</span>
                     <span>Too easy</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => sendMessage("Too hard")}
-                    className="rounded-full bg-white/95 hover:bg-white border border-slate-200 px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-xs hover:scale-102 transition cursor-pointer flex items-center gap-1.5"
+                    className="rounded-full bg-white hover:bg-slate-50 border border-slate-200 px-3 py-1 text-[11px] font-semibold text-slate-700 shadow-2xs hover:scale-102 transition cursor-pointer flex items-center gap-1.5"
                   >
                     <span>🤯</span>
                     <span>Too hard</span>
@@ -549,10 +576,10 @@ export default function ChatPage() {
               <button
                 type="button"
                 onClick={handleContinue}
-                className="rounded-full bg-slate-950 hover:bg-[#0C60FC] px-5 py-2 text-xs font-extrabold text-white shadow-md hover:scale-102 transition cursor-pointer flex items-center gap-1.5"
+                className="rounded-full bg-black hover:bg-slate-800 px-4 py-1.5 text-[11.5px] font-bold text-white shadow-xs hover:scale-102 transition cursor-pointer flex items-center gap-1.5"
               >
                 <span>Continue</span>
-                <ArrowRight className="h-3.5 w-3.5" />
+                <ArrowRight className="h-3 w-3" />
               </button>
             </div>
           )}

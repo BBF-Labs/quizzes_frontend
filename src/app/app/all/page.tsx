@@ -71,7 +71,7 @@ export default function AllSessionsPage() {
       const resolvedId = session?.id || (session as { _id?: string })?._id;
       if (!resolvedId) throw new Error("Invalid session ID returned");
       toast.success("Study session created!");
-      router.push(`/app/${resolvedId}`);
+      router.push(`/study-session/${resolvedId}/journey`);
     } catch (err: any) {
       toast.error(err?.message || "Failed to create study session.");
       setIsCreating(false);
@@ -286,7 +286,7 @@ export default function AllSessionsPage() {
                       </div>
 
                       {/* Title */}
-                      <Link href={`/app/${session.id}`} className="block mt-4 group">
+                      <Link href={`/study-session/${session.id}/journey`} className="block mt-4 group">
                         <h3 className="text-base sm:text-lg font-bold text-slate-900 line-clamp-2 group-hover:text-[#0C60FC] transition-colors">
                           {title}
                         </h3>
@@ -314,7 +314,7 @@ export default function AllSessionsPage() {
                     {/* Bottom Action */}
                     <div className="mt-6 pt-4 border-t border-slate-100">
                       <Link
-                        href={`/app/${session.id}`}
+                        href={`/study-session/${session.id}/journey`}
                         className="flex h-9 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 text-xs font-extrabold text-white transition hover:bg-[#0C60FC]"
                       >
                         <span>Resume Session</span>
