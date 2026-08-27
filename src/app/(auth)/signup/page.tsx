@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { CheckCircle2, Loader2, PartyPopper, XCircle } from "lucide-react";
+import { CheckCircle2, Loader2, PartyPopper, XCircle, Eye, EyeOff } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/auth-context";
 import { api } from "@/lib/api";
@@ -446,9 +446,14 @@ function SignupForm() {
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-500 hover:text-slate-700"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-1"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
                       >
-                        {showPassword ? "Hide" : "Show"}
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
                       </button>
                     </div>
                   </label>

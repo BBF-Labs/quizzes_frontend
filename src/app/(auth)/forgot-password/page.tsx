@@ -2,9 +2,18 @@
 
 import { useState, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, CheckCircle2, Mail, ShieldCheck, Loader2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Mail,
+  ShieldCheck,
+  Loader2,
+  Zap,
+  Lock,
+  KeyRound,
+} from "lucide-react";
 import Link from "next/link";
 import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { SuccessConfetti } from "@/components/common/success-confetti";
 import { Loader } from "@/components/common/loader";
@@ -28,6 +37,9 @@ function ForgotPasswordForm() {
     onSuccess: () => {
       setError("");
       setSubmitted(true);
+      toast.success(
+        "If an account exists with that email, a password reset link has been sent.",
+      );
     },
     onError: (err: unknown) => {
       const message =
@@ -67,7 +79,7 @@ function ForgotPasswordForm() {
 
           <div className="relative max-w-xl">
             <div className="mb-7 inline-flex items-center gap-2 rounded-full bg-white/12 px-3 py-2 text-xs font-bold">
-              <ShieldCheck className="h-3.5 w-3.5" /> Secure account recovery
+              <KeyRound className="h-3.5 w-3.5" /> Password reset
             </div>
             <h1 className="text-balance text-5xl font-bold leading-tight tracking-tight xl:text-6xl">
               Don&apos;t worry, we&apos;ve got your back.
@@ -95,15 +107,21 @@ function ForgotPasswordForm() {
 
             <div className="mt-10 grid grid-cols-3 gap-3">
               <div className="rounded-2xl bg-white/10 p-4">
-                <p className="text-2xl font-bold">⚡ Instant</p>
+                <div className="flex items-center gap-2 text-lg font-bold">
+                  <Zap className="h-4 w-4 text-[#DFFF61]" /> Instant
+                </div>
                 <p className="mt-1 text-xs text-blue-200">Email dispatch</p>
               </div>
               <div className="rounded-2xl bg-white/10 p-4">
-                <p className="text-2xl font-bold">🔒 Secure</p>
+                <div className="flex items-center gap-2 text-lg font-bold">
+                  <Lock className="h-4 w-4 text-[#DFFF61]" /> Secure
+                </div>
                 <p className="mt-1 text-xs text-blue-200">Single-use link</p>
               </div>
               <div className="rounded-2xl bg-white/10 p-4">
-                <p className="text-2xl font-bold">100%</p>
+                <div className="flex items-center gap-2 text-lg font-bold">
+                  <ShieldCheck className="h-4 w-4 text-[#DFFF61]" /> Protected
+                </div>
                 <p className="mt-1 text-xs text-blue-200">Data protected</p>
               </div>
             </div>
@@ -140,10 +158,7 @@ function ForgotPasswordForm() {
                 >
                   <div className="flex items-end justify-between gap-3">
                     <div>
-                      <p className="text-xs font-extrabold uppercase tracking-[.18em] text-[#0C60FC]">
-                        Account Recovery
-                      </p>
-                      <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl text-slate-950">
+                      <h2 className="text-3xl font-bold tracking-tight sm:text-4xl text-slate-950">
                         Forgot password?
                       </h2>
                       <p className="mt-3 text-sm leading-6 text-slate-500">
@@ -242,17 +257,12 @@ function ForgotPasswordForm() {
                 >
                   <SuccessConfetti />
 
-                  <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs font-bold text-emerald-700 shadow-sm">
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    Link dispatched
-                  </div>
-
                   <div>
                     <h2 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
                       Check your <span className="text-[#0C60FC]">inbox.</span>
                     </h2>
                     <p className="hand mt-2 text-xl text-[#0C60FC]">
-                      recovery link is on its way ↘
+                      we&apos;re looking up your account ↘
                     </p>
                   </div>
 
@@ -265,25 +275,22 @@ function ForgotPasswordForm() {
                     />
                     <div className="text-slate-900">
                       <p className="hand text-lg font-bold text-[#0C60FC]">
-                        Sent to your email!
+                        Check your email!
                       </p>
                       <p className="text-xs text-slate-500">
-                        Check your spam or promotions folder if you don&apos;t see it shortly.
+                        Be sure to check your spam or promotions folder too.
                       </p>
                     </div>
                   </div>
 
                   <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-3 shadow-sm">
-                    <p className="text-xs font-bold text-slate-600">
-                      We sent a password reset link to:
+                    <p className="text-xs text-slate-600 leading-relaxed">
+                      If an account exists for <span className="font-bold text-[#0C60FC] break-all">{email}</span>, a password reset link has been sent.
                     </p>
-                    <div className="flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50/60 p-3 text-xs font-bold text-[#0C60FC] break-all">
-                      <Mail className="h-4 w-4 shrink-0" />
-                      <span>{email}</span>
+                    <div className="flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50/60 p-3 text-xs text-slate-700">
+                      <Mail className="h-4 w-4 shrink-0 text-[#0C60FC]" />
+                      <span>Click the link in the message to set a new password. The link expires in 24 hours.</span>
                     </div>
-                    <p className="text-xs text-slate-500 leading-relaxed">
-                      Click the link in the message to set a new password. The link will safely expire after 24 hours.
-                    </p>
                   </div>
 
                   <div className="space-y-3 pt-2">

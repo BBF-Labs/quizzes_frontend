@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
-import { Loader2, Flame } from "lucide-react";
+import { Loader2, Flame, Eye, EyeOff } from "lucide-react";
 
 import { useMutation } from "@tanstack/react-query";
 import { LOGO_SRC, QUBI_WAVE_SRC, QUBI_PEEK_SRC, QUBI_RUN_SRC } from "@/lib/constants";
@@ -203,9 +203,14 @@ function LoginForm() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-500 hover:text-slate-700"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-1"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                   >
-                    {showPassword ? "Hide" : "Show"}
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
                   </button>
                 </div>
               </label>

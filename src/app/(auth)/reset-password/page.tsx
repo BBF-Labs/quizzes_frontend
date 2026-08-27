@@ -14,8 +14,10 @@ import {
   KeyRound,
   Loader2,
   ShieldCheck,
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { SuccessConfetti } from "@/components/common/success-confetti";
 import { Loader } from "@/components/common/loader";
@@ -49,6 +51,7 @@ function ResetPasswordForm() {
     onSuccess: () => {
       setErrorStatus("");
       setSubmitted(true);
+      toast.success("Password successfully updated! You can now log in.");
     },
     onError: (err: unknown) => {
       const message =
@@ -126,7 +129,7 @@ function ResetPasswordForm() {
 
           <div className="relative max-w-xl">
             <div className="mb-7 inline-flex items-center gap-2 rounded-full bg-white/12 px-3 py-2 text-xs font-bold">
-              <KeyRound className="h-3.5 w-3.5" /> Account protection
+              <KeyRound className="h-3.5 w-3.5" /> Password reset
             </div>
             <h1 className="text-balance text-5xl font-bold leading-tight tracking-tight xl:text-6xl">
               Create a new, strong password.
@@ -154,15 +157,21 @@ function ResetPasswordForm() {
 
             <div className="mt-10 grid grid-cols-3 gap-3">
               <div className="rounded-2xl bg-white/10 p-4">
-                <p className="text-2xl font-bold">8+ Chars</p>
+                <div className="flex items-center gap-2 text-lg font-bold">
+                  <KeyRound className="h-4 w-4 text-[#DFFF61]" /> 8+ Chars
+                </div>
                 <p className="mt-1 text-xs text-blue-200">Minimum length</p>
               </div>
               <div className="rounded-2xl bg-white/10 p-4">
-                <p className="text-2xl font-bold">🔤 Mixed</p>
+                <div className="flex items-center gap-2 text-lg font-bold">
+                  <ShieldCheck className="h-4 w-4 text-[#DFFF61]" /> Mixed
+                </div>
                 <p className="mt-1 text-xs text-blue-200">Upper &amp; numbers</p>
               </div>
               <div className="rounded-2xl bg-white/10 p-4">
-                <p className="text-2xl font-bold">✨ Unique</p>
+                <div className="flex items-center gap-2 text-lg font-bold">
+                  <Sparkles className="h-4 w-4 text-[#DFFF61]" /> Unique
+                </div>
                 <p className="mt-1 text-xs text-blue-200">Keep it safe</p>
               </div>
             </div>
@@ -257,10 +266,7 @@ function ResetPasswordForm() {
                 >
                   <div className="flex items-end justify-between gap-3">
                     <div>
-                      <p className="text-xs font-extrabold uppercase tracking-[.18em] text-[#0C60FC]">
-                        Security Update
-                      </p>
-                      <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl text-slate-950">
+                      <h2 className="text-3xl font-bold tracking-tight sm:text-4xl text-slate-950">
                         Reset password
                       </h2>
                       <p className="mt-3 text-sm leading-6 text-slate-500">
@@ -293,9 +299,14 @@ function ResetPasswordForm() {
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-500 hover:text-slate-700"
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-1"
+                          aria-label={showPassword ? "Hide password" : "Show password"}
                         >
-                          {showPassword ? "Hide" : "Show"}
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
                         </button>
                       </div>
                     </label>
@@ -369,9 +380,14 @@ function ResetPasswordForm() {
                         <button
                           type="button"
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-500 hover:text-slate-700"
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-1"
+                          aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                         >
-                          {showConfirmPassword ? "Hide" : "Show"}
+                          {showConfirmPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
                         </button>
                       </div>
                       {passwordsMismatch && (
@@ -424,11 +440,6 @@ function ResetPasswordForm() {
                   className="space-y-6"
                 >
                   <SuccessConfetti />
-
-                  <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs font-bold text-emerald-700 shadow-sm">
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    Password updated
-                  </div>
 
                   <div>
                     <h2 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
