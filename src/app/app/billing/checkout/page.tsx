@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -97,8 +97,7 @@ function CheckoutContent() {
   const { user } = useAuth();
   const { data: allPackages = [], isLoading: packagesLoading } = usePackages();
   const { data: creditBundles = [], isLoading: bundlesLoading } = useCreditBundles();
-  const { data: billingStatus } = useBillingStatus();
-  const { data: studentStatus } = useStudentVerifyStatus();
+  const { data: studentStatus, isLoading: studentStatusLoading } = useStudentVerifyStatus();
 
   const selectedPackage: BillingPackage | undefined = packageId
     ? allPackages.find((p) => p._id === packageId)
@@ -131,8 +130,89 @@ function CheckoutContent() {
 
   // Track all applicable discounts from validation result
   const [discountResult, setDiscountResult] = useState<any>(null);
-  const finalPrice = discountResult?.finalAmountGHS ?? basePrice;
-  const totalSavings = basePrice > finalPrice ? basePrice - finalPrice : 0;
+
+  const isStudentVerified = studentStatus?.status === "verified";
+
+  // Auto-fetch discounts from backend (including automatic student & loyalty discounts) on load and state changes
+  useEffect(() => {
+    if (!packageId && !bundleId) return;
+
+    let isMounted = true;
+    async function calculateDiscounts() {
+      try {
+        const result: any = await validatePromo.mutateAsync({
+          code: appliedPromo?.code || undefined,
+          referralCode: appliedReferral?.code || undefined,
+          packageId: packageId || undefined,
+          bundleId: bundleId || undefined,
+        });
+        if (isMounted) {
+          setDiscountResult(result);
+        }
+      } catch {
+        // Handled silently for background re-validation
+      }
+    }
+
+    calculateDiscounts();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [packageId, bundleId, appliedPromo?.code, appliedReferral?.code, isStudentVerified]);
+
+  // Compute final price with full fallback support
+  const { finalPrice, totalDiscountPercentage, totalSavings, hasDiscount, activeDiscounts } = useMemo(() => {
+    if (discountResult?.finalAmountGHS != null) {
+      const finalAmount = Number(discountResult.finalAmountGHS);
+      const discountPct = Number(discountResult.totalDiscountPercentage || 0);
+      const savings = Math.max(0, Number((basePrice - finalAmount).toFixed(2)));
+      return {
+        finalPrice: finalAmount,
+        totalDiscountPercentage: discountPct,
+        totalSavings: savings,
+        hasDiscount: finalAmount < basePrice,
+        activeDiscounts: discountResult.discounts || [],
+      };
+    }
+
+    // Fallback calculation while validating or offline
+    let fallbackPct = 0;
+    const fallbackList: Array<{ type: string; label: string; percentage: number }> = [];
+
+    if (isStudentVerified) {
+      fallbackPct += 10;
+      fallbackList.push({ type: "student", label: "Student discount", percentage: 10 });
+    }
+    if (appliedPromo) {
+      fallbackPct += appliedPromo.discountPercent;
+      fallbackList.push({
+        type: "promo",
+        label: `Promo: ${appliedPromo.code}`,
+        percentage: appliedPromo.discountPercent,
+      });
+    }
+    if (appliedReferral) {
+      fallbackPct += appliedReferral.discountPercent;
+      fallbackList.push({
+        type: "referral",
+        label: "Referral discount",
+        percentage: appliedReferral.discountPercent,
+      });
+    }
+
+    const cappedPct = Math.min(fallbackPct, 80);
+    const computedFinal = cappedPct > 0 ? Number((basePrice * (1 - cappedPct / 100)).toFixed(2)) : basePrice;
+    const savings = Math.max(0, Number((basePrice - computedFinal).toFixed(2)));
+
+    return {
+      finalPrice: computedFinal,
+      totalDiscountPercentage: cappedPct,
+      totalSavings: savings,
+      hasDiscount: computedFinal < basePrice,
+      activeDiscounts: fallbackList,
+    };
+  }, [discountResult, basePrice, isStudentVerified, appliedPromo, appliedReferral]);
 
   const isLoading = initiatePlan.isPending || initiateCredits.isPending;
 
@@ -212,11 +292,6 @@ function CheckoutContent() {
       setReferralCode("");
     }
 
-    if (!nextPromo && !nextReferral) {
-      setDiscountResult(null);
-      return;
-    }
-
     try {
       const result: any = await validatePromo.mutateAsync({
         code: nextPromo,
@@ -250,7 +325,7 @@ function CheckoutContent() {
       }
 
       if (result?.authorizationUrl) {
-        toast.success("Connecting to Paystack…");
+        toast.success("You will be redirected to Paystack to complete payment.");
         window.location.href = result.authorizationUrl;
       } else {
         toast.error("Could not obtain checkout URL.");
@@ -260,7 +335,7 @@ function CheckoutContent() {
     }
   }
 
-  if (packagesLoading || bundlesLoading) {
+  if (packagesLoading || bundlesLoading || studentStatusLoading) {
     return <Loader message="Loading checkout..." />;
   }
 
@@ -296,7 +371,6 @@ function CheckoutContent() {
   }
 
   const features = selectedPackage ? buildKeyEntitlements(selectedPackage) : [];
-  const isStudentVerified = studentStatus?.status === "verified";
 
   return (
     <div className="min-h-full px-4 py-8 sm:px-6 lg:px-8 text-slate-900 bg-[#F7F9FC]">
@@ -329,17 +403,27 @@ function CheckoutContent() {
                       : ""}
                 </p>
 
-                {/* Big Price Tag */}
-                <div className="mt-6 flex items-baseline gap-1.5">
+                {/* Strikethrough & New Price Display */}
+                <div className="mt-6 flex flex-wrap items-baseline gap-2">
                   <span className="text-sm font-bold text-slate-400">GHS</span>
-                  <span className="display text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-950">
-                    {basePrice.toFixed(2)}
+                  {hasDiscount && (
+                    <span className="display text-2xl sm:text-3xl font-bold text-slate-400 line-through">
+                      {basePrice.toFixed(2)}
+                    </span>
+                  )}
+                  <span className="display text-4xl sm:text-5xl font-extrabold tracking-tight text-[#0C60FC]">
+                    {finalPrice.toFixed(2)}
                   </span>
                   <span className="text-xs font-bold text-slate-400">
                     {selectedPackage
                       ? DURATION_SUFFIX[selectedPackage.durationType]
                       : "one-time"}
                   </span>
+                  {hasDiscount && (
+                    <span className="ml-2 inline-flex items-center rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 text-xs font-extrabold">
+                      {totalDiscountPercentage}% OFF
+                    </span>
+                  )}
                 </div>
 
                 {/* Feature Entitlements List */}
@@ -401,7 +485,7 @@ function CheckoutContent() {
                   </span>
                 </div>
 
-                {/* Summary Card Details */}
+                {/* Summary Card Details with Strikethrough Item Row */}
                 <div className="mt-6 rounded-2xl border border-slate-100 bg-slate-50/70 p-4 sm:p-5 space-y-3 text-xs sm:text-sm">
                   <div className="flex items-center justify-between text-slate-700">
                     <span className="font-semibold">
@@ -409,36 +493,39 @@ function CheckoutContent() {
                         ? `${TIER_LABELS[selectedPackage.tier]} (${DURATION_LABELS[selectedPackage.durationType]})`
                         : `${selectedBundle?.name} Credits`}
                     </span>
-                    <span className="font-bold text-slate-950">
-                      GHS {basePrice.toFixed(2)}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {hasDiscount && (
+                        <span className="text-xs text-slate-400 line-through">
+                          GHS {basePrice.toFixed(2)}
+                        </span>
+                      )}
+                      <span className="font-bold text-slate-950">
+                        GHS {finalPrice.toFixed(2)}
+                      </span>
+                    </div>
                   </div>
 
-                  {/* Discounts Line Items */}
-                  {discountResult?.discounts && discountResult.discounts.length > 0 && (
+                  {/* Active Discounts Breakdown */}
+                  {activeDiscounts.length > 0 && (
                     <div className="pt-3 border-t border-slate-200/60 space-y-2">
-                      {discountResult.discounts.map((d: any, i: number) => (
+                      {activeDiscounts.map((d: any, i: number) => (
                         <div
                           key={i}
-                          className="flex items-center justify-between text-emerald-600 font-semibold text-xs"
+                          className="flex items-center justify-between text-emerald-700 bg-emerald-50/80 rounded-xl p-2.5 px-3 font-semibold text-xs border border-emerald-100"
                         >
                           <span className="flex items-center gap-1.5">
-                            <Tag className="h-3.5 w-3.5" />
-                            {d.label} ({d.percentage}%)
+                            {d.type === "student" ? (
+                              <GraduationCap className="h-4 w-4 text-emerald-600 shrink-0" />
+                            ) : (
+                              <Tag className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                            )}
+                            {d.label} ({d.percentage}% OFF)
                           </span>
-                          <span>− GHS {((basePrice * d.percentage) / 100).toFixed(2)}</span>
+                          <span className="font-bold">
+                            − GHS {((basePrice * d.percentage) / 100).toFixed(2)}
+                          </span>
                         </div>
                       ))}
-                    </div>
-                  )}
-
-                  {/* Student Discount Auto-Detection Notice */}
-                  {isStudentVerified && !discountResult?.discounts?.some((d: any) => d.type === "student") && (
-                    <div className="flex items-center justify-between text-emerald-700 bg-emerald-100/60 rounded-xl p-2.5 px-3 font-semibold text-xs">
-                      <span className="flex items-center gap-1.5">
-                        <GraduationCap className="h-4 w-4" /> Student discount active
-                      </span>
-                      <span>10% OFF</span>
                     </div>
                   )}
                 </div>
@@ -512,7 +599,7 @@ function CheckoutContent() {
                         <button
                           type="button"
                           onClick={() => handleRemoveCode("referral")}
-                          className="text-xs text-rose-600 hover:text-rose-800 font-extrabold"
+                          className="text-xs text-rose-600 hover:text-rose-800 font-extrabold cursor-pointer"
                         >
                           Remove
                         </button>
@@ -535,7 +622,7 @@ function CheckoutContent() {
                         <button
                           type="submit"
                           disabled={!referralCode.trim() || validatePromo.isPending}
-                          className="rounded-2xl bg-slate-950 px-5 py-3 text-xs font-extrabold text-white transition hover:bg-[#0C60FC] disabled:opacity-50"
+                          className="rounded-2xl bg-slate-950 px-5 py-3 text-xs font-extrabold text-white transition hover:bg-[#0C60FC] disabled:opacity-50 cursor-pointer"
                         >
                           Apply
                         </button>
@@ -544,21 +631,21 @@ function CheckoutContent() {
                   </div>
                 )}
 
-                {/* Final Total Amount */}
+                {/* Final Total Amount with Strikethrough & Savings Tag */}
                 <div className="mt-8 pt-5 border-t border-slate-200 flex items-end justify-between">
                   <div>
                     <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">
                       Total due today
                     </span>
-                    {totalSavings > 0 && (
+                    {hasDiscount && (
                       <span className="text-xs font-bold text-emerald-600 mt-0.5 block">
-                        Saved GHS {totalSavings.toFixed(2)}
+                        Saved GHS {totalSavings.toFixed(2)} ({totalDiscountPercentage}% OFF)
                       </span>
                     )}
                   </div>
-                  <div className="text-right">
-                    {totalSavings > 0 && (
-                      <span className="text-sm font-semibold text-slate-400 line-through mr-2">
+                  <div className="text-right flex items-baseline gap-2">
+                    {hasDiscount && (
+                      <span className="text-base sm:text-lg font-bold text-slate-400 line-through">
                         GHS {basePrice.toFixed(2)}
                       </span>
                     )}
@@ -580,7 +667,7 @@ function CheckoutContent() {
                   {isLoading ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Connecting to Paystack…</span>
+                      <span>Redirecting to Paystack…</span>
                     </>
                   ) : (
                     <>
