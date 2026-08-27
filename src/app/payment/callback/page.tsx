@@ -19,7 +19,9 @@ type PaymentType = "plan" | "credits" | "donation";
 type Stage = "verifying" | "success" | "error";
 
 function detectType(reference: string): PaymentType {
-  if (reference.startsWith("don_")) return "donation";
+  const ref = (reference || "").toUpperCase();
+  if (ref.startsWith("DON_") || ref.includes("DONATION") || reference.startsWith("don_") || reference.includes("donation")) return "donation";
+  if (ref.includes("CREDIT")) return "credits";
   return "plan";
 }
 
