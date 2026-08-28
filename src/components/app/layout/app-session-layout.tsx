@@ -195,7 +195,16 @@ export function AppSessionLayout({ children, sessionId }: AppSessionLayoutProps)
   }, [socket, sessionId, queryClient]);
 
   // Stream Hook
-  const stream = useAppStream(sessionId);
+  const stream = useAppStream(
+    sessionId,
+    app?.zMessages ?? [],
+    true,
+    {
+      onRequestRefetch: () => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.app.detail(sessionId) });
+      },
+    }
+  );
 
   // Send message
   const sendMessage = useCallback(
