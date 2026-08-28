@@ -797,8 +797,12 @@ export const useGenerateStudyPlan = (sessionId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (goal?: string) => {
-      const response = await api.post(`/app/${sessionId}/study-plan/generate`, { goal });
+    mutationFn: async (payload?: { goal?: string; instruction?: string } | string) => {
+      const body =
+        typeof payload === "string"
+          ? { goal: payload }
+          : payload || {};
+      const response = await api.post(`/app/${sessionId}/study-plan/generate`, body);
       return response.data;
     },
     onSuccess: () => {

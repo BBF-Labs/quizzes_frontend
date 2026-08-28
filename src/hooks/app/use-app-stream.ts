@@ -103,10 +103,10 @@ export const useAppStream = (
           if (!contentMatch) {
             next.push(im);
             changed = true;
-          } else if (!contentMatch.messageId && im.messageId) {
-            // Update local optimistic message with server's messageId
+          } else {
+            // Update local optimistic message with server's message and mark delivered
             const idx = next.indexOf(contentMatch);
-            next[idx] = { ...contentMatch, ...im };
+            next[idx] = { ...contentMatch, ...im, status: "sent" };
             changed = true;
           }
         }
@@ -167,6 +167,71 @@ export const useAppStream = (
       try {
         switch (signal.type) {
           case "thinking_chunk":
+            if (
+              signal.payload?.text !== undefined ||
+              signal.payload?.chunk !== undefined
+            ) {
+              const thoughtChunk =
+                signal.payload?.chunk ?? signal.payload?.text ?? "";
+              const msgId = signal.payload?.messageId;
+
+              setMessages((prev) => {
+                const msgs = [...prev];
+                const existingIdx = msgId
+                  ? msgs.findIndex(
+                      (m) => m.messageId === msgId || m.id === msgId,
+                    )
+                  : -1;
+
+                if (existingIdx >= 0) {
+                  streamingMessageIds.current.add(msgId!);
+                  msgs[existingIdx] = {
+                    ...msgs[existingIdx],
+                    isThinking: true,
+                    isStreaming: true,
+                    thinkingContent:
+                      (msgs[existingIdx].thinkingContent || "") + thoughtChunk,
+                  };
+                } else {
+                  const stableId = msgId || uuidv4();
+                  streamingMessageIds.current.add(stableId);
+                  const newMsg: ZAppMessage = {
+                    id: stableId,
+                    messageId: stableId,
+                    role: "z",
+                    type: "text" as ZAppMessageType,
+                    content: "",
+                    thinkingContent: thoughtChunk,
+                    timestamp: signal.timestamp || new Date().toISOString(),
+                    isStreaming: true,
+                    isThinking: true,
+                  };
+                  if (isMountedRef.current) {
+                    msgs.push(newMsg);
+                  }
+                }
+                return msgs;
+              });
+            }
+            break;
+
+          case "thinking_done": {
+            const doneId = signal.payload?.messageId as string | undefined;
+            if (doneId) {
+              setMessages((prev) => {
+                const msgs = [...prev];
+                const idx = msgs.findIndex(
+                  (m) => m.id === doneId || m.messageId === doneId,
+                );
+                if (idx >= 0) {
+                  msgs[idx] = { ...msgs[idx], isThinking: false };
+                }
+                return msgs;
+              });
+            }
+            break;
+          }
+
           case "text_chunk":
             if (
               signal.payload?.text !== undefined ||
@@ -189,6 +254,7 @@ export const useAppStream = (
                     ...msgs[existingIdx],
                     content: msgs[existingIdx].content + text,
                     isStreaming: true,
+                    isThinking: false,
                   };
                 } else {
                   const stableId = msgId || uuidv4();
@@ -201,6 +267,7 @@ export const useAppStream = (
                     content: text,
                     timestamp: signal.timestamp || new Date().toISOString(),
                     isStreaming: true,
+                    isThinking: false,
                   };
                   if (isMountedRef.current) {
                     msgs.push(newMsg);
@@ -211,7 +278,6 @@ export const useAppStream = (
             }
             break;
 
-          case "thinking_done":
           case "text_done": {
             const doneId = signal.payload?.messageId as string | undefined;
             if (doneId) {
@@ -222,7 +288,11 @@ export const useAppStream = (
                   (m) => m.id === doneId || m.messageId === doneId,
                 );
                 if (idx >= 0) {
-                  msgs[idx] = { ...msgs[idx], isStreaming: false };
+                  msgs[idx] = {
+                    ...msgs[idx],
+                    isStreaming: false,
+                    isThinking: false,
+                  };
                 }
                 return msgs;
               });

@@ -199,6 +199,8 @@ export interface ZAppMessage {
   toolResult?: unknown;
   mode?: string;
   isStreaming?: boolean;
+  isThinking?: boolean;
+  thinkingContent?: string;
   status?: "sending" | "sent" | "error";
   replyToMessageId?: string;
   rating?: 1 | -1;
@@ -399,6 +401,7 @@ export interface IStudyPlan {
   sessionId?: string;
   userId?: string;
   courseId?: string;
+  goal?: string;
   chapters: IChapter[];
   totalBlocks: number;
   completedBlocks: number;

@@ -223,7 +223,9 @@ export function AppSessionLayout({ children, sessionId }: AppSessionLayoutProps)
           sessionId,
           message: trimmed,
         });
+        stream.updateMessage(userMsgId, { status: "sent" });
       } catch (err: unknown) {
+        stream.updateMessage(userMsgId, { status: "error" });
         const errorMsg =
           err instanceof Error
             ? err.message

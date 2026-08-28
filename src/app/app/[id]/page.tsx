@@ -281,12 +281,11 @@ export default function ChatPage() {
 
   // Step advancement handler for Continue / Keep going button
   const handleContinue = useCallback(() => {
-    if (messages.length === 0) {
-      if (sessionStep < 2) {
-        setSessionStep((prev) => prev + 1);
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      }
-    } else {
+    if (sessionStep < 2) {
+      setSessionStep((prev) => prev + 1);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    if (messages.length > 0) {
       // If recap is active, send "Keep going", otherwise "Continue"
       sendMessage(isRecapActive ? "Keep going" : "Continue", undefined, true);
     }
