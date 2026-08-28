@@ -21,6 +21,7 @@ import {
   useAddChapter,
   useAddChapterGoal,
   useToggleBlockCompletion,
+  useGenerateStudyPlan,
 } from "@/hooks/app/use-app-actions";
 import type { IChapter, IKnowledgeBlock } from "@/types/session";
 import { toast } from "sonner";
@@ -49,6 +50,7 @@ export function UpdateStudyPlanView({
 }: UpdateStudyPlanViewProps) {
   const { data: app } = useApp(sessionId || "");
   const sendMessageMutation = useAppMessage();
+  const generatePlanMutation = useGenerateStudyPlan(sessionId || "");
   const addChapterMutation = useAddChapter(sessionId || "");
   const addGoalMutation = useAddChapterGoal(sessionId || "");
   const toggleBlockMutation = useToggleBlockCompletion(sessionId || "");
@@ -103,11 +105,17 @@ export function UpdateStudyPlanView({
 
     if (sessionId) {
       try {
-        await sendMessageMutation.mutateAsync({
-          sessionId,
-          message: text,
-        });
-        toast.success("Study plan directive sent to Z");
+        await Promise.allSettled([
+          generatePlanMutation.mutateAsync({
+            goal: app?.studyPlan?.goal,
+            instruction: text,
+          }),
+          sendMessageMutation.mutateAsync({
+            sessionId,
+            message: `Please update the study plan: ${text}`,
+          }),
+        ]);
+        toast.success("Study plan update requested from Z");
       } catch {
         toast.error("Failed to send instruction to Z");
       }

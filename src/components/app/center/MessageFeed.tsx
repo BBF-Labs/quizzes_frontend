@@ -121,8 +121,8 @@ export function MessageFeed({
     return "";
   }, [messages, activeTopic]);
 
-  // Step 0: Overview Accordion Card
-  if (sessionStep === 0) {
+  // Step 0: Overview Accordion Card (Initial launch only when no messages exist)
+  if (sessionStep === 0 && messages.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center gap-5 py-4 px-4 sm:px-6 max-w-xl w-full mx-auto pb-32">
         <motion.div
@@ -164,8 +164,8 @@ export function MessageFeed({
     );
   }
 
-  // Step 1: Knowledge Pathway with thinking state
-  if (sessionStep === 1) {
+  // Step 1: Knowledge Pathway with thinking state (Initial launch only when no messages exist)
+  if (sessionStep === 1 && messages.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center gap-5 py-4 px-4 sm:px-6 max-w-xl w-full mx-auto pb-32">
         <motion.div
@@ -231,7 +231,8 @@ export function MessageFeed({
   }
 
   const lastMessage = messages[messages.length - 1];
-  const isAiStreaming = !!lastMessage?.isStreaming;
+  const isAiThinking = !!lastMessage?.isThinking;
+  const isAiStreaming = !!lastMessage?.isStreaming || isAiThinking;
   const isUserTurn = lastMessage?.role === "user" && !isAiStreaming;
 
   return (
@@ -239,7 +240,7 @@ export function MessageFeed({
       {/* Gliding animated orb tracking the current active turn & typing */}
       <div className="w-full flex justify-start sticky top-2 z-20 pointer-events-none pl-2">
         <GlowingOrb
-          isThinking={isAiStreaming}
+          isThinking={isAiStreaming || isAiThinking}
           isTyping={isTyping}
           inputLength={inputLength}
           position={isUserTurn ? "user" : "ai"}
