@@ -554,6 +554,273 @@ export const useRateMessage = (sessionId: string) => {
   });
 };
 
+// ─── Study Plan & Chapter Management Hooks ───────────────────────────────────
+
+export const useToggleBlockCompletion = (sessionId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (blockId: string) => {
+      const response = await api.patch(`/app/${sessionId}/study-plan/blocks/${blockId}/toggle`);
+      return response.data;
+    },
+    onMutate: async (blockId: string) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.app.detail(sessionId) });
+      const previous = queryClient.getQueryData<ZApp>(queryKeys.app.detail(sessionId));
+
+      if (previous?.studyPlan) {
+        const updatedChapters = (previous.studyPlan.chapters || []).map((ch) => {
+          const updatedSteps = (ch.steps || []).map((st) => {
+            const updatedPrereqs = (st.prerequisites || []).map((b) =>
+              b.blockId === blockId
+                ? { ...b, completed: !b.completed, isCompleted: !b.completed }
+                : b,
+            );
+            const stepCompletedCount = updatedPrereqs.filter(
+              (b) => b.completed || b.isCompleted,
+            ).length;
+            return {
+              ...st,
+              prerequisites: updatedPrereqs,
+              completedBlocks: stepCompletedCount,
+              isCompleted:
+                updatedPrereqs.length > 0 &&
+                stepCompletedCount === updatedPrereqs.length,
+            };
+          });
+
+          const updatedGoals = (ch.goals || []).map((g) => ({
+            ...g,
+            knowledgeBlocks: (g.knowledgeBlocks || []).map((b) =>
+              b.blockId === blockId
+                ? { ...b, completed: !b.completed, isCompleted: !b.isCompleted }
+                : b,
+            ),
+          }));
+
+          let chapterTotal = 0;
+          let chapterCompleted = 0;
+          for (const st of updatedSteps) {
+            for (const b of st.prerequisites || []) {
+              chapterTotal++;
+              if (b.completed || b.isCompleted) chapterCompleted++;
+            }
+          }
+
+          return {
+            ...ch,
+            steps: updatedSteps,
+            goals: updatedGoals,
+            totalBlocks: chapterTotal || ch.totalBlocks,
+            completedBlocks: chapterCompleted,
+          };
+        });
+
+        let completedBlocks = 0;
+        let totalBlocks = 0;
+        for (const ch of updatedChapters) {
+          completedBlocks += ch.completedBlocks ?? 0;
+          totalBlocks += ch.totalBlocks ?? 0;
+        }
+
+        queryClient.setQueryData<ZApp>(queryKeys.app.detail(sessionId), {
+          ...previous,
+          studyPlan: {
+            ...previous.studyPlan,
+            chapters: updatedChapters,
+            totalBlocks,
+            completedBlocks,
+          },
+        });
+      }
+
+      return { previous };
+    },
+    onError: (_err, _blockId, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(queryKeys.app.detail(sessionId), context.previous);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.app.detail(sessionId) });
+    },
+  });
+};
+
+export const useAddChapter = (sessionId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { title: string; description?: string }) => {
+      const response = await api.post(`/app/${sessionId}/study-plan/chapters`, data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.app.detail(sessionId) });
+    },
+  });
+};
+
+export const useUpdateChapter = (sessionId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      chapterId,
+      ...data
+    }: {
+      chapterId: string;
+      title?: string;
+      description?: string;
+    }) => {
+      const response = await api.patch(`/app/${sessionId}/study-plan/chapters/${chapterId}`, data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.app.detail(sessionId) });
+    },
+  });
+};
+
+export const useAddChapterGoal = (sessionId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      chapterId,
+      ...data
+    }: {
+      chapterId: string;
+      title: string;
+      knowledgeBlocks?: string[];
+    }) => {
+      const response = await api.post(
+        `/app/${sessionId}/study-plan/chapters/${chapterId}/goals`,
+        data
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.app.detail(sessionId) });
+    },
+  });
+};
+
+export const useUpdateChapterGoal = (sessionId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      chapterId,
+      goalId,
+      ...data
+    }: {
+      chapterId: string;
+      goalId: string;
+      title?: string;
+      status?: "pending" | "active" | "completed" | "skipped";
+    }) => {
+      const response = await api.patch(
+        `/app/${sessionId}/study-plan/chapters/${chapterId}/goals/${goalId}`,
+        data
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.app.detail(sessionId) });
+    },
+  });
+};
+
+export const useDeleteChapterGoal = (sessionId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      chapterId,
+      goalId,
+    }: {
+      chapterId: string;
+      goalId: string;
+    }) => {
+      const response = await api.delete(
+        `/app/${sessionId}/study-plan/chapters/${chapterId}/goals/${goalId}`
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.app.detail(sessionId) });
+    },
+  });
+};
+
+export const useContinueJourney = (sessionId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload?: Record<string, unknown>) => {
+      const response = await api.post(`/app/${sessionId}/continue`, payload || {});
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.app.detail(sessionId) });
+    },
+  });
+};
+
+export const useRespondToDirectiveArtifact = (sessionId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      artifactId,
+      response,
+      actionType,
+    }: {
+      artifactId: string;
+      response: unknown;
+      actionType?: string;
+    }) => {
+      const res = await api.patch(`/app/${sessionId}/artifacts/${artifactId}/respond`, {
+        response,
+        actionType,
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.app.detail(sessionId) });
+    },
+  });
+};
+
+export const useGenerateStudyPlan = (sessionId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (goal?: string) => {
+      const response = await api.post(`/app/${sessionId}/study-plan/generate`, { goal });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.app.detail(sessionId) });
+    },
+  });
+};
+
+export const useGenerateCourseSummary = (sessionId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const response = await api.post(`/app/${sessionId}/course-summary/generate`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.app.detail(sessionId) });
+    },
+  });
+};
+
 // Aliases for backward compatibility
 export const useCreateSession = useCreateApp;
 export const useStartSession = useStartApp;
@@ -561,3 +828,4 @@ export const useSessionMessage = useAppMessage;
 export const useSessionSteer = useAppSteer;
 export const useSessionApprove = useAppApprove;
 export const useAddSessionMaterial = useAddAppMaterial;
+

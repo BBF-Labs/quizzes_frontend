@@ -5,10 +5,9 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Brain } from "lucide-react";
 import type { ZSessionMessage } from "@/types/session";
 import { MessageBubble } from "./MessageBubble";
-import { DirectiveCard } from "./DirectiveCard";
-import type { DirectiveCardCallbacks } from "@/components/app/session";
+import { ArtifactCard, type ArtifactCardCallbacks } from "./ArtifactCard";
 
-export interface MessageFeedProps extends DirectiveCardCallbacks {
+export interface MessageFeedProps extends ArtifactCardCallbacks {
   messages: ZSessionMessage[];
   /** messageId of the currently active (unresolved) directive, or null if none */
   activeDirectiveMessageId: string | null;
@@ -73,9 +72,10 @@ export function MessageFeed({
           const resolved = msg.messageId !== activeDirectiveMessageId;
 
           return (
-            <DirectiveCard
+            <ArtifactCard
               key={msg.id}
               directive={msg.directive}
+              artifact={(msg as any).artifact}
               resolved={resolved}
               onSubmitAnswer={onSubmitAnswer}
               onApprove={onApprove}

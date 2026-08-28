@@ -1,20 +1,65 @@
 export type ZAppMessageType =
   | "text"
   | "directive"
+  | "artifact"
   | "tool_call"
   | "tool_result";
 
 // ─── App Material (Sources Panel) ───────────────────────────────────────────
 
-export type AppMaterialProcessingStatus = "pending" | "ready" | "failed";
+export type AppMaterialProcessingStatus = "pending" | "processing" | "ready" | "failed";
+
+export interface IMaterialKnowledgeBlockDoc {
+  blockId: string;
+  title: string;
+  summary: string;
+  pageReferences?: number[];
+  isActive?: boolean;
+  order?: number;
+}
+
+export interface IMaterialLogicalOverviewPillar {
+  pillarNumber?: number;
+  title?: string;
+  topics?: string[];
+}
+
+export interface IMaterialTopicDeepDive {
+  title?: string;
+  description?: string;
+}
+
+export interface IMaterialSummaryDoc {
+  overview?: string;
+  logicalOverview?: IMaterialLogicalOverviewPillar[];
+  topicDeepDives?: IMaterialTopicDeepDive[];
+  knowledgeBlocks?: IMaterialKnowledgeBlockDoc[];
+  totalBlocks?: number;
+  generatedAt?: string;
+  generatedBy?: string;
+}
 
 export interface IAppMaterial {
   id: string;
+  title?: string;
   filename: string;
-  type: "pdf" | "docx" | "txt" | "md" | string;
+  originalName?: string;
+  type?: "pdf" | "docx" | "txt" | "md" | string;
+  mimeType?: string;
   /** File size in bytes */
   size: number;
   processingStatus: AppMaterialProcessingStatus;
+  materialType?: string;
+  contentType?: string;
+  summary?: IMaterialSummaryDoc;
+  chunkCount?: number;
+  wordCount?: number;
+  pageCount?: number;
+  uploadedAt?: string;
+  processedAt?: string;
+  createdAt?: string;
+  flashcardsGenerated?: boolean;
+  quizGenerated?: boolean;
   url?: string;
 }
 
@@ -145,6 +190,9 @@ export interface ZAppMessage {
   timestamp: string;
   /** Present only when type === "directive" */
   directive?: ZDirective;
+  /** Present when message is linked to or contains an artifact (recap, exposition, question, quiz, etc.) */
+  artifactId?: string;
+  artifact?: ZArtifact | Record<string, any>;
   /** Present only when type === "tool_call" */
   toolCall?: { name: string; input: Record<string, unknown> };
   /** Present only when type === "tool_result" */
@@ -298,6 +346,96 @@ export interface SessionCitation {
   messageId: string;
 }
 
+export interface IKnowledgeBlock {
+  blockId: string;
+  concept?: string;
+  title?: string;
+  summary?: string;
+  isCompleted?: boolean;
+  completed?: boolean;
+  completedAt?: string | Date | null;
+}
+
+export interface IChapterGoal {
+  goalId: string;
+  title: string;
+  status: "pending" | "active" | "completed" | "skipped";
+  knowledgeBlocks?: IKnowledgeBlock[];
+  targetBlockIds?: string[];
+}
+
+export interface IStudyStep {
+  stepId: string;
+  topicId?: string;
+  label?: string;
+  order: number;
+  title: string;
+  description?: string;
+  coreIdea?: string;
+  whyItMatters?: string;
+  prerequisites: IKnowledgeBlock[];
+  goals?: IChapterGoal[];
+  completedBlocks?: number;
+  totalBlocks?: number;
+  isCompleted?: boolean;
+}
+
+export interface IChapter {
+  chapterId: string;
+  chapterNumber?: number;
+  number?: number;
+  title: string;
+  description?: string;
+  isRecommended?: boolean;
+  goals: IChapterGoal[];
+  steps?: IStudyStep[];
+  completedBlocks?: number;
+  totalBlocks?: number;
+}
+
+export interface IStudyPlan {
+  _id?: string;
+  id?: string;
+  sessionId?: string;
+  userId?: string;
+  courseId?: string;
+  chapters: IChapter[];
+  totalBlocks: number;
+  completedBlocks: number;
+  currentChapterNumber?: number;
+  activeGoalId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ICourseSummary {
+  id?: string;
+  sessionId?: string;
+  userId?: string;
+  courseId?: string;
+  title: string;
+  overview: string;
+  logicalPillars: {
+    pillarNumber?: number;
+    title: string;
+    description?: string;
+    topics?: string[];
+  }[];
+  topicDeepDives: {
+    topic?: string;
+    title?: string;
+    content?: string;
+    description?: string;
+  }[];
+  keyTakeaways: string[];
+  sections: {
+    title: string;
+    body: string;
+  }[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface ZApp {
   id: string;
   title?: string;
@@ -305,6 +443,9 @@ export interface ZApp {
   courseId?: string;
   mode: "free" | "structured";
   planningMode?: "planning" | "fast";
+  studyPlan?: IStudyPlan;
+  courseSummary?: ICourseSummary;
+  materialIds?: string[];
   zMessages: ZAppMessage[];
   citations?: SessionCitation[];
   materials?: ZMaterial[];

@@ -115,7 +115,7 @@ export function AppSidebar() {
       const resolvedId = session?.id || (session as { _id?: string })?._id;
       if (resolvedId) {
         toast.success("New study session started!");
-        router.push(`/app/${resolvedId}`);
+        router.push(`/study-session/${resolvedId}/journey`);
       }
     } catch (err: any) {
       toast.error(err?.message || "Failed to create study session");
