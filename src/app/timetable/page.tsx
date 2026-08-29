@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { LandingHeader, LandingFooter, MobileNav } from "@/components/landing";
-import { Search, Plus, Loader2 } from "lucide-react";
+import { Search, Plus, Loader2, Calendar, RefreshCw } from "lucide-react";
 import { QUBI_WAVE_SRC } from "@/lib/constants";
 import { usePublicTimetables } from "@/hooks/use-public-exams";
 import { useQueryParams } from "@/hooks";
@@ -25,129 +25,6 @@ interface ExamPaper {
   dateBadgeBg: string;
   dateBadgeText: string;
 }
-
-const FALLBACK_PAPERS: ExamPaper[] = [
-  {
-    id: "1",
-    dept: "cs",
-    code: "DCIT 205",
-    title: "Algorithms",
-    date: "MONDAY",
-    month: "Jan",
-    dayNum: "12",
-    time: "9:00 AM",
-    duration: "2 HRS",
-    venue: "Great Hall, Main Campus",
-    colorClass: "border-blue-200 bg-blue-50/40",
-    dateBadgeBg: "bg-[#0C60FC]",
-    dateBadgeText: "text-white",
-  },
-  {
-    id: "2",
-    dept: "core",
-    code: "UGRC 210",
-    title: "Academic Writing II",
-    date: "TUESDAY",
-    month: "Jan",
-    dayNum: "13",
-    time: "7:30 AM",
-    duration: "2 HRS",
-    venue: "NNB Block, Rooms 1–6",
-    colorClass: "border-slate-200 bg-white",
-    dateBadgeBg: "bg-slate-100",
-    dateBadgeText: "text-slate-900",
-  },
-  {
-    id: "3",
-    dept: "cs",
-    code: "DCIT 207",
-    title: "Operating Systems",
-    date: "WEDNESDAY",
-    month: "Jan",
-    dayNum: "14",
-    time: "2:00 PM",
-    duration: "3 HRS",
-    venue: "Balme Library Hall",
-    colorClass: "border-slate-200 bg-white",
-    dateBadgeBg: "bg-violet-50",
-    dateBadgeText: "text-violet-700",
-  },
-  {
-    id: "4",
-    dept: "math",
-    code: "MATH 221",
-    title: "Linear Algebra",
-    date: "THURSDAY",
-    month: "Jan",
-    dayNum: "15",
-    time: "9:00 AM",
-    duration: "2 HRS",
-    venue: "Maths Department, Room 12",
-    colorClass: "border-slate-200 bg-white",
-    dateBadgeBg: "bg-amber-50",
-    dateBadgeText: "text-amber-700",
-  },
-  {
-    id: "5",
-    dept: "bus",
-    code: "BUSA 301",
-    title: "Corporate Finance",
-    date: "FRIDAY",
-    month: "Jan",
-    dayNum: "16",
-    time: "11:30 AM",
-    duration: "2 HRS",
-    venue: "UGBS Auditorium",
-    colorClass: "border-slate-200 bg-white",
-    dateBadgeBg: "bg-emerald-50",
-    dateBadgeText: "text-emerald-700",
-  },
-  {
-    id: "6",
-    dept: "cs",
-    code: "DCIT 201",
-    title: "Data Structures",
-    date: "MONDAY",
-    month: "Jan",
-    dayNum: "19",
-    time: "11:00 AM",
-    duration: "2 HRS",
-    venue: "N Block Auditorium",
-    colorClass: "border-slate-200 bg-white",
-    dateBadgeBg: "bg-cyan-50",
-    dateBadgeText: "text-cyan-700",
-  },
-  {
-    id: "7",
-    dept: "cs",
-    code: "DCIT 203",
-    title: "Computer Architecture",
-    date: "WEDNESDAY",
-    month: "Jan",
-    dayNum: "21",
-    time: "2:00 PM",
-    duration: "2 HRS",
-    venue: "JQB 12",
-    colorClass: "border-slate-200 bg-white",
-    dateBadgeBg: "bg-rose-50",
-    dateBadgeText: "text-rose-700",
-  },
-  {
-    id: "8",
-    dept: "math",
-    code: "MATH 223",
-    title: "Statistics",
-    date: "FRIDAY",
-    month: "Jan",
-    dayNum: "23",
-    time: "9:00 AM",
-    duration: "2 HRS",
-    venue: "Great Hall, Main Campus",
-    colorClass: "border-slate-200 bg-white",
-    dateBadgeBg: "bg-orange-50",
-    dateBadgeText: "text-orange-700",
-  },
-];
 
 export default function TimetablePage() {
   const { getParam, getNumberParam, setQueryParams } = useQueryParams();
@@ -172,7 +49,7 @@ export default function TimetablePage() {
   const setPage = (p: number) => setQueryParams({ page: p > 1 ? p : null });
 
   // TanStack Query integration
-  const { data: apiData, isLoading } = usePublicTimetables(
+  const { data: apiData, isLoading, refetch, isFetching } = usePublicTimetables(
     effectiveCourseSearch,
     effectiveStudentId,
     page,
@@ -180,68 +57,63 @@ export default function TimetablePage() {
   );
 
   const entriesFromApi = apiData?.entries ?? [];
-  const totalCount =
-    apiData?.pagination?.total ??
-    (entriesFromApi.length > 0 ? entriesFromApi.length : FALLBACK_PAPERS.length);
+  const totalCount = apiData?.pagination?.total ?? entriesFromApi.length;
 
-  // Format backend API entries into UI papers if available
-  const formattedPapers: ExamPaper[] =
-    entriesFromApi.length > 0
-      ? entriesFromApi.map((entry, idx) => {
-          const d = entry.scheduledAt ? new Date(entry.scheduledAt) : new Date();
-          const monthStr = format(d, "MMM");
-          const dayStr = String(d.getDate());
-          const dayOfWeekStr = format(d, "EEE").toUpperCase();
-          const timeStr = format(d, "HH:mm");
+  // Format backend API entries into UI papers
+  const formattedPapers: ExamPaper[] = entriesFromApi.map((entry, idx) => {
+    const d = entry.scheduledAt ? new Date(entry.scheduledAt) : new Date();
+    const monthStr = format(d, "MMM");
+    const dayStr = String(d.getDate());
+    const dayOfWeekStr = format(d, "EEE").toUpperCase();
+    const timeStr = format(d, "HH:mm");
 
-          const colors = [
-            {
-              colorClass: "border-blue-200 bg-blue-50/40",
-              dateBadgeBg: "bg-[#0C60FC]",
-              dateBadgeText: "text-white",
-            },
-            {
-              colorClass: "border-slate-200 bg-white",
-              dateBadgeBg: "bg-slate-100",
-              dateBadgeText: "text-slate-900",
-            },
-            {
-              colorClass: "border-slate-200 bg-white",
-              dateBadgeBg: "bg-violet-50",
-              dateBadgeText: "text-violet-700",
-            },
-            {
-              colorClass: "border-slate-200 bg-white",
-              dateBadgeBg: "bg-[#E9FFD3]",
-              dateBadgeText: "text-emerald-800",
-            },
-          ];
-          const style = colors[idx % colors.length];
+    const colors = [
+      {
+        colorClass: "border-blue-200 bg-blue-50/40",
+        dateBadgeBg: "bg-[#0C60FC]",
+        dateBadgeText: "text-white",
+      },
+      {
+        colorClass: "border-slate-200 bg-white",
+        dateBadgeBg: "bg-slate-100",
+        dateBadgeText: "text-slate-900",
+      },
+      {
+        colorClass: "border-slate-200 bg-white",
+        dateBadgeBg: "bg-violet-50",
+        dateBadgeText: "text-violet-700",
+      },
+      {
+        colorClass: "border-slate-200 bg-white",
+        dateBadgeBg: "bg-[#E9FFD3]",
+        dateBadgeText: "text-emerald-800",
+      },
+    ];
+    const style = colors[idx % colors.length];
 
-          const displayVenue =
-            entry.assignedVenue ||
-            (entry.venues && entry.venues.length > 0
-              ? entry.venues.map((v) => v.venue).join(", ")
-              : "Main Campus");
+    const displayVenue =
+      entry.assignedVenue ||
+      (entry.venues && entry.venues.length > 0
+        ? entry.venues.map((v) => v.venue).join(", ")
+        : "Main Campus");
 
-          return {
-            id: entry._id || String(idx),
-            dept: entry.courseCode
-              ? entry.courseCode.split(" ")[0].toLowerCase()
-              : "cs",
-            code: entry.courseCode || "EXAM",
-            title: entry.courseName || entry.label || "Course Exam",
-            date: dayOfWeekStr,
-            month: monthStr,
-            dayNum: dayStr,
-            time: timeStr,
-            duration: `${entry.durationMinutes || 120} MIN`,
-            venue: displayVenue,
-            hasAssignedVenue: Boolean(entry.assignedVenue),
-            ...style,
-          };
-        })
-      : FALLBACK_PAPERS;
+    return {
+      id: entry._id || String(idx),
+      dept: entry.courseCode
+        ? entry.courseCode.split(" ")[0].toLowerCase()
+        : "cs",
+      code: entry.courseCode || "EXAM",
+      title: entry.courseName || entry.label || "Course Exam",
+      date: dayOfWeekStr,
+      month: monthStr,
+      dayNum: dayStr,
+      time: timeStr,
+      duration: `${entry.durationMinutes || 120} MIN`,
+      venue: displayVenue,
+      hasAssignedVenue: Boolean(entry.assignedVenue),
+      ...style,
+    };
+  });
 
   const displayPapers = formattedPapers.filter((paper) => {
     if (effectiveStudentId) return true;
@@ -388,15 +260,68 @@ export default function TimetablePage() {
                 </div>
               </div>
 
-              {isLoading ? (
+              {isLoading || isFetching ? (
                 <div className="py-16 text-center">
                   <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#0C60FC]" />
                   <p className="mt-3 text-xs font-bold text-slate-400">Fetching the latest schedule…</p>
                 </div>
               ) : displayPapers.length === 0 ? (
-                <p className="py-12 text-center text-sm font-semibold text-slate-400">
-                  Nothing matched that search. Try searching just the course code (e.g. &quot;DCIT&quot;).
-                </p>
+                <div className="py-16 text-center">
+                  {effectiveStudentId ? (
+                    <div className="mx-auto max-w-md space-y-3">
+                      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-blue-50 text-[#0C60FC]">
+                        <Loader2 className="h-6 w-6 animate-spin text-[#0C60FC]" />
+                      </div>
+                      <h3 className="text-base font-bold text-slate-900">
+                        Syncing schedule for Student ID{" "}
+                        <span className="font-mono text-[#0C60FC]">
+                          {effectiveStudentId}
+                        </span>
+                      </h3>
+                      <p className="text-xs font-semibold leading-relaxed text-slate-500">
+                        We&apos;ve enqueued a background sync with the
+                        university&apos;s official timetable. If your schedule
+                        was just published, click refresh below in a few moments!
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => refetch()}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                      >
+                        <RefreshCw className="h-3.5 w-3.5" /> Refresh Schedule
+                      </button>
+                    </div>
+                  ) : effectiveCourseSearch ? (
+                    <div className="mx-auto max-w-md space-y-3">
+                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+                        <Search className="h-5 w-5" />
+                      </div>
+                      <h3 className="text-base font-bold text-slate-900">
+                        No exams found matching &quot;{effectiveCourseSearch}&quot;
+                      </h3>
+                      <p className="text-xs font-semibold leading-relaxed text-slate-500">
+                        Try searching by department prefix (e.g. &quot;DCIT&quot;,
+                        &quot;MATH&quot;) or enter your 8-digit Student ID to
+                        automatically discover and pull your exact registered
+                        papers.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="mx-auto max-w-md space-y-3">
+                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-[#0C60FC]">
+                        <Calendar className="h-6 w-6" />
+                      </div>
+                      <h3 className="text-base font-bold text-slate-900">
+                        No exam schedules published yet
+                      </h3>
+                      <p className="text-xs font-semibold leading-relaxed text-slate-500">
+                        Don&apos;t worry—we&apos;re continuously synced with the
+                        UG official timetable. Type your 8-digit Student ID above
+                        to discover and sync your papers!
+                      </p>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div className="mt-6 grid gap-3 md:grid-cols-2">
                   {displayPapers.map((paper) => (
