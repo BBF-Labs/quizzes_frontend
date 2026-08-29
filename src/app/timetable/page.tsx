@@ -20,6 +20,7 @@ interface ExamPaper {
   time: string;
   duration: string;
   venue: string;
+  hasAssignedVenue?: boolean;
   colorClass: string;
   dateBadgeBg: string;
   dateBadgeText: string;
@@ -150,55 +151,101 @@ const FALLBACK_PAPERS: ExamPaper[] = [
 
 export default function TimetablePage() {
   const { getParam, getNumberParam, setQueryParams } = useQueryParams();
-  const searchQuery = getParam("search", "");
+  const rawSearch = getParam("search", "");
+  const rawStudentId = getParam("studentId", "");
   const page = Math.max(1, getNumberParam("page", 1));
 
-  const setSearchQuery = (val: string) =>
-    setQueryParams({ search: val || null, page: 1 });
-  const setPage = (p: number) =>
-    setQueryParams({ page: p > 1 ? p : null });
+  // Determine if rawSearch is an 8-digit Student ID
+  const isDigitsOnly = /^\d{7,10}$/.test(rawSearch.trim());
+  const effectiveStudentId = rawStudentId || (isDigitsOnly ? rawSearch.trim() : "");
+  const effectiveCourseSearch = !isDigitsOnly ? rawSearch : "";
+
+  const setSearchInput = (val: string) => {
+    const trimmed = val.trim();
+    if (/^\d{7,10}$/.test(trimmed)) {
+      setQueryParams({ search: null, studentId: trimmed, page: 1 });
+    } else {
+      setQueryParams({ search: val || null, studentId: null, page: 1 });
+    }
+  };
+
+  const setPage = (p: number) => setQueryParams({ page: p > 1 ? p : null });
 
   // TanStack Query integration
-  const { data: apiData, isLoading } = usePublicTimetables(searchQuery, "", page, 20);
+  const { data: apiData, isLoading } = usePublicTimetables(
+    effectiveCourseSearch,
+    effectiveStudentId,
+    page,
+    20,
+  );
 
   const entriesFromApi = apiData?.entries ?? [];
-  const totalCount = apiData?.pagination?.total ?? (entriesFromApi.length > 0 ? entriesFromApi.length : FALLBACK_PAPERS.length);
+  const totalCount =
+    apiData?.pagination?.total ??
+    (entriesFromApi.length > 0 ? entriesFromApi.length : FALLBACK_PAPERS.length);
 
   // Format backend API entries into UI papers if available
-  const formattedPapers: ExamPaper[] = entriesFromApi.length > 0
-    ? entriesFromApi.map((entry, idx) => {
-        const d = entry.scheduledAt ? new Date(entry.scheduledAt) : new Date();
-        const monthStr = format(d, "MMM");
-        const dayStr = String(d.getDate());
-        const dayOfWeekStr = format(d, "EEE").toUpperCase();
-        const timeStr = format(d, "HH:mm");
+  const formattedPapers: ExamPaper[] =
+    entriesFromApi.length > 0
+      ? entriesFromApi.map((entry, idx) => {
+          const d = entry.scheduledAt ? new Date(entry.scheduledAt) : new Date();
+          const monthStr = format(d, "MMM");
+          const dayStr = String(d.getDate());
+          const dayOfWeekStr = format(d, "EEE").toUpperCase();
+          const timeStr = format(d, "HH:mm");
 
-        const colors = [
-          { colorClass: "border-blue-200 bg-blue-50/40", dateBadgeBg: "bg-[#0C60FC]", dateBadgeText: "text-white" },
-          { colorClass: "border-slate-200 bg-white", dateBadgeBg: "bg-slate-100", dateBadgeText: "text-slate-900" },
-          { colorClass: "border-slate-200 bg-white", dateBadgeBg: "bg-violet-50", dateBadgeText: "text-violet-700" },
-          { colorClass: "border-slate-200 bg-white", dateBadgeBg: "bg-[#E9FFD3]", dateBadgeText: "text-emerald-800" },
-        ];
-        const style = colors[idx % colors.length];
+          const colors = [
+            {
+              colorClass: "border-blue-200 bg-blue-50/40",
+              dateBadgeBg: "bg-[#0C60FC]",
+              dateBadgeText: "text-white",
+            },
+            {
+              colorClass: "border-slate-200 bg-white",
+              dateBadgeBg: "bg-slate-100",
+              dateBadgeText: "text-slate-900",
+            },
+            {
+              colorClass: "border-slate-200 bg-white",
+              dateBadgeBg: "bg-violet-50",
+              dateBadgeText: "text-violet-700",
+            },
+            {
+              colorClass: "border-slate-200 bg-white",
+              dateBadgeBg: "bg-[#E9FFD3]",
+              dateBadgeText: "text-emerald-800",
+            },
+          ];
+          const style = colors[idx % colors.length];
 
-        return {
-          id: entry._id || String(idx),
-          dept: entry.courseCode ? entry.courseCode.split(" ")[0].toLowerCase() : "cs",
-          code: entry.courseCode || "EXAM",
-          title: entry.courseName || entry.label || "Course Exam",
-          date: dayOfWeekStr,
-          month: monthStr,
-          dayNum: dayStr,
-          time: timeStr,
-          duration: `${entry.durationMinutes || 120} MIN`,
-          venue: entry.venues && entry.venues.length > 0 ? entry.venues.map((v) => v.venue).join(", ") : "Main Campus",
-          ...style,
-        };
-      })
-    : FALLBACK_PAPERS;
+          const displayVenue =
+            entry.assignedVenue ||
+            (entry.venues && entry.venues.length > 0
+              ? entry.venues.map((v) => v.venue).join(", ")
+              : "Main Campus");
+
+          return {
+            id: entry._id || String(idx),
+            dept: entry.courseCode
+              ? entry.courseCode.split(" ")[0].toLowerCase()
+              : "cs",
+            code: entry.courseCode || "EXAM",
+            title: entry.courseName || entry.label || "Course Exam",
+            date: dayOfWeekStr,
+            month: monthStr,
+            dayNum: dayStr,
+            time: timeStr,
+            duration: `${entry.durationMinutes || 120} MIN`,
+            venue: displayVenue,
+            hasAssignedVenue: Boolean(entry.assignedVenue),
+            ...style,
+          };
+        })
+      : FALLBACK_PAPERS;
 
   const displayPapers = formattedPapers.filter((paper) => {
-    const q = searchQuery.trim().toLowerCase();
+    if (effectiveStudentId) return true;
+    const q = effectiveCourseSearch.trim().toLowerCase();
     return (
       !q ||
       paper.code.toLowerCase().includes(q) ||
@@ -221,7 +268,7 @@ export default function TimetablePage() {
               <div>
                 <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-white px-3.5 py-2 text-xs font-bold text-blue-700 shadow-sm">
                   <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
-                  Synced with UG timetable
+                  Synced with UG official timetable
                 </div>
                 <h1 className="display mt-6 max-w-3xl text-balance text-5xl font-bold leading-[1.03] tracking-[-.045em] text-slate-950 sm:text-6xl lg:text-7xl">
                   Find your paper.<br />
@@ -231,7 +278,7 @@ export default function TimetablePage() {
                   no more blurry PDFs in the group chat ↓
                 </p>
                 <p className="mt-4 max-w-xl text-lg leading-8 text-slate-600">
-                  The whole University of Ghana exam schedule, typed out properly and searchable. Type your course code and you&apos;ll have your date, time and room in a second — free, no account needed.
+                  Search the University of Ghana exam timetable by course code or type your 8-digit Student ID to see your exact seat venue. Free, no account needed.
                 </p>
               </div>
 
@@ -239,7 +286,9 @@ export default function TimetablePage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                     <p className="text-3xl font-bold">{totalCount}</p>
-                    <p className="mt-1 text-[11px] font-semibold text-slate-500">papers searchable</p>
+                    <p className="mt-1 text-[11px] font-semibold text-slate-500">
+                      {effectiveStudentId ? "papers on your schedule" : "papers searchable"}
+                    </p>
                   </div>
                   <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                     <p className="text-3xl font-bold">46</p>
@@ -250,15 +299,21 @@ export default function TimetablePage() {
                     <img src={QUBI_WAVE_SRC} alt="Qubi" className="h-16 w-16 shrink-0 object-contain" />
                     <div>
                       <p className="hand text-lg leading-none text-[#0C60FC]">I&apos;ll find it for you!</p>
-                      <p className="mt-1 text-[11px] font-semibold text-slate-500">Try a course code like DCIT 205.</p>
+                      <p className="mt-1 text-[11px] font-semibold text-slate-500">
+                        Try a course code like DCIT 205 or your Student ID.
+                      </p>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Search Box */}
-            <form onSubmit={(e) => e.preventDefault()} className="mt-10 flex max-w-4xl flex-col gap-2 rounded-[22px] border border-slate-200 bg-white p-2 shadow-[0_18px_60px_rgba(15,23,42,.1)] sm:flex-row" style={{ borderRadius: "22px" }}>
+            {/* Universal Search Box */}
+            <form
+              onSubmit={(e) => e.preventDefault()}
+              className="mt-10 flex max-w-4xl flex-col gap-2 rounded-[22px] border border-slate-200 bg-white p-2 shadow-[0_18px_60px_rgba(15,23,42,.1)] sm:flex-row"
+              style={{ borderRadius: "22px" }}
+            >
               <div className="flex min-w-0 flex-1 items-center gap-3 px-3">
                 {isLoading ? (
                   <Loader2 className="h-5 w-5 animate-spin text-[#0C60FC]" />
@@ -267,9 +322,9 @@ export default function TimetablePage() {
                 )}
                 <input
                   type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Type a course code or title — e.g. DCIT 205"
+                  value={rawStudentId || rawSearch}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  placeholder="Type a course code (e.g. DCIT 205) or 8-digit Student ID"
                   className="min-w-0 flex-1 bg-transparent py-3.5 text-sm font-semibold text-slate-950 outline-none placeholder:text-slate-400"
                 />
               </div>
@@ -289,7 +344,7 @@ export default function TimetablePage() {
                 <button
                   key={tag}
                   type="button"
-                  onClick={() => setSearchQuery(tag)}
+                  onClick={() => setSearchInput(tag)}
                   className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-slate-600 transition hover:border-blue-300 hover:text-[#0C60FC]"
                 >
                   {tag}
@@ -304,7 +359,7 @@ export default function TimetablePage() {
           <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 text-xs font-semibold text-slate-500">
             <span className="flex items-center gap-2"><b className="text-emerald-500">✓</b> Free to use, always</span>
             <span className="flex items-center gap-2"><b className="text-emerald-500">✓</b> No login required</span>
-            <span className="flex items-center gap-2"><b className="text-emerald-500">✓</b> Synced with UG timetable</span>
+            <span className="flex items-center gap-2"><b className="text-emerald-500">✓</b> Synced with UG official timetable</span>
             <span className="flex items-center gap-2"><b className="text-emerald-500">✓</b> Verified against official source</span>
           </div>
         </section>
@@ -368,9 +423,15 @@ export default function TimetablePage() {
                               {paper.duration}
                             </span>
                           </div>
-                          <p className="mt-3 text-[11px] font-semibold text-slate-500">
-                            ⌖ {paper.venue}
-                          </p>
+                          <div className="mt-3 text-[11px] font-semibold text-slate-500">
+                            {paper.hasAssignedVenue ? (
+                              <span className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-800">
+                                <span className="text-emerald-600">✓</span> Assigned Seat: {paper.venue}
+                              </span>
+                            ) : (
+                              <p>⌖ {paper.venue}</p>
+                            )}
+                          </div>
                           <Link
                             href="/signup"
                             className="mt-3 inline-flex items-center gap-1 text-[10px] font-extrabold text-[#0C60FC] hover:underline"
