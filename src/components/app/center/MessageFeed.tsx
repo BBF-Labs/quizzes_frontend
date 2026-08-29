@@ -330,40 +330,6 @@ export function MessageFeed({
           return null;
         }
 
-        /* ── Artifact & Directive messages ── */
-        if (
-          msg.type === "directive" ||
-          msg.type === "artifact" ||
-          Boolean(msg.directive) ||
-          Boolean(msg.artifact)
-        ) {
-          if (!msg.directive && !msg.artifact) {
-            return null;
-          }
-          const resolved = msg.messageId !== activeDirectiveMessageId;
-          return (
-            <div key={msg.id || msg.messageId || index} className="w-full">
-              <ArtifactCard
-                directive={msg.directive}
-                artifact={msg.artifact}
-                resolved={resolved}
-                onSubmitAnswer={onSubmitAnswer}
-                onApprove={onApprove}
-                onContinue={onContinue}
-                onRetry={onRetry}
-                onSkip={onSkip}
-                onExplainDifferently={onExplainDifferently}
-                onTestMe={onTestMe}
-                onTryMyself={onTryMyself}
-                onAction={onAction}
-                onPomodoroResume={onPomodoroResume}
-                onOpenSource={onOpenSource}
-                onFeedback={onFeedback}
-              />
-            </div>
-          );
-        }
-
         /* ── User messages ── */
         if (msg.role === "user") {
           return (
@@ -376,15 +342,28 @@ export function MessageFeed({
           );
         }
 
-        /* ── Z text messages / narration (NO BACKGROUND) ── */
+        /* ── Z messages / narration / attached artifacts (NO BACKGROUND) ── */
+        const resolved = msg.messageId !== activeDirectiveMessageId;
         return (
           <ZMessageCanvasNode
-            key={msg.id || index}
+            key={msg.id || msg.messageId || index}
             message={msg}
             citations={citations}
+            resolved={resolved}
             onOpenSource={onOpenSource}
-            onRetry={onRetryMessage}
+            onRetryMessage={onRetryMessage}
+            onRetry={onRetry}
             onRate={onRateMessage}
+            onSubmitAnswer={onSubmitAnswer}
+            onApprove={onApprove}
+            onContinue={onContinue}
+            onFeedback={onFeedback}
+            onSkip={onSkip}
+            onExplainDifferently={onExplainDifferently}
+            onTestMe={onTestMe}
+            onTryMyself={onTryMyself}
+            onAction={onAction}
+            onPomodoroResume={onPomodoroResume}
           />
         );
       })}
@@ -575,28 +554,58 @@ function CitationChip({
 function ZMessageCanvasNode({
   message,
   citations,
+  resolved = true,
   onOpenSource,
+  onRetryMessage,
   onRetry,
   onRate,
+  onSubmitAnswer,
+  onApprove,
+  onContinue,
+  onFeedback,
+  onSkip,
+  onExplainDifferently,
+  onTestMe,
+  onTryMyself,
+  onAction,
+  onPomodoroResume,
 }: {
   message: ZAppMessage;
   citations: SessionCitation[];
+  resolved?: boolean;
   onOpenSource?: (materialId: string, pageNumber?: number) => void;
-  onRetry?: (id: string, content: string) => void;
+  onRetryMessage?: (id: string, content: string) => void;
+  onRetry?: () => void;
   onRate?: (messageId: string, rating: 1 | -1) => void;
+  onSubmitAnswer?: (answers: string[], questions?: string[]) => void;
+  onApprove?: () => void;
+  onContinue?: () => void;
+  onFeedback?: (type: "too_easy" | "too_hard") => void;
+  onSkip?: () => void;
+  onExplainDifferently?: (topicTitle: string) => void;
+  onTestMe?: (topicTitle: string) => void;
+  onTryMyself?: (topicTitle: string) => void;
+  onAction?: (actionType: string) => void;
+  onPomodoroResume?: () => void;
 }) {
   const isStreaming = !!message.isStreaming;
   const [hovered, setHovered] = useState(false);
   const [copied, setCopied] = useState(false);
   const msgId = message.messageId || message.id;
+  const hasTextContent = Boolean(message.content && message.content.trim().length > 0);
+  const hasArtifact = Boolean(message.artifact || message.directive);
 
   // Matching citations for this message
   const relevantCitations = citations.filter(
-    (c) => c.messageId === message.messageId || c.messageId === message.id
+    (c) => c.messageId === message.messageId || c.messageId === message.id,
   );
 
   function copyContent() {
-    navigator.clipboard.writeText(message.content).then(() => {
+    const textToCopy =
+      message.content ||
+      (message.artifact?.title ? `${message.artifact.title}\n${JSON.stringify(message.artifact.content)}` : "");
+    if (!textToCopy) return;
+    navigator.clipboard.writeText(textToCopy).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     });
@@ -607,40 +616,65 @@ function ZMessageCanvasNode({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="w-full flex flex-col items-start gap-2 my-2 bg-transparent"
+      className="w-full flex flex-col items-start gap-2.5 my-2 bg-transparent"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {/* Pure text on canvas — NO BACKGROUND */}
-      <div className="w-full text-left text-slate-900 text-sm sm:text-base leading-relaxed font-serif prose prose-slate max-w-none bg-transparent">
-        <ReactMarkdown
-          remarkPlugins={[remarkGfm, remarkMath]}
-          rehypePlugins={[rehypeRaw, rehypeKatex]}
-        >
-          {message.content}
-        </ReactMarkdown>
-        {isStreaming && (
-          <span className="inline-block h-2 w-2 rounded-full bg-[#0C60FC] animate-ping ml-1" />
-        )}
+      {/* 1. Pure text on canvas — NO BACKGROUND */}
+      {hasTextContent && (
+        <div className="w-full text-left text-slate-900 text-sm sm:text-base leading-relaxed font-serif prose prose-slate max-w-none bg-transparent">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm, remarkMath]}
+            rehypePlugins={[rehypeRaw, rehypeKatex]}
+          >
+            {message.content}
+          </ReactMarkdown>
+          {isStreaming && (
+            <span className="inline-block h-2 w-2 rounded-full bg-[#0C60FC] animate-ping ml-1" />
+          )}
 
-        {relevantCitations.length > 0 && (
-          <div className="pt-2 flex flex-wrap gap-2">
-            {relevantCitations.map((cit, i) => (
-              <CitationChip
-                key={i}
-                citation={cit}
-                onOpenSource={onOpenSource}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+          {relevantCitations.length > 0 && (
+            <div className="pt-2 flex flex-wrap gap-2">
+              {relevantCitations.map((cit, i) => (
+                <CitationChip
+                  key={i}
+                  citation={cit}
+                  onOpenSource={onOpenSource}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
-      {/* Action controls */}
+      {/* 2. Attached Interactive ArtifactCard or Directive */}
+      {hasArtifact && (
+        <div className="w-full">
+          <ArtifactCard
+            directive={message.directive}
+            artifact={message.artifact}
+            resolved={resolved}
+            onSubmitAnswer={onSubmitAnswer}
+            onApprove={onApprove}
+            onContinue={onContinue}
+            onRetry={onRetry}
+            onSkip={onSkip}
+            onExplainDifferently={onExplainDifferently}
+            onTestMe={onTestMe}
+            onTryMyself={onTryMyself}
+            onAction={onAction}
+            onPomodoroResume={onPomodoroResume}
+            onOpenSource={onOpenSource}
+            onFeedback={onFeedback}
+          />
+        </div>
+      )}
+
+      {/* 3. Action controls */}
       <div
         className={cn(
           "flex items-center gap-3 pt-0.5 text-slate-400 text-xs transition-opacity",
-          hovered || isStreaming ? "opacity-100" : "opacity-0"
+          hovered || isStreaming ? "opacity-100" : "opacity-0",
         )}
       >
         <button
@@ -674,10 +708,10 @@ function ZMessageCanvasNode({
           </div>
         )}
 
-        {onRetry && (
+        {onRetryMessage && (
           <button
             type="button"
-            onClick={() => onRetry(msgId, message.content)}
+            onClick={() => onRetryMessage(msgId, message.content || "")}
             className="hover:text-slate-700 transition cursor-pointer flex items-center gap-1 border-l border-slate-200 pl-3"
             title="Regenerate"
           >

@@ -280,6 +280,9 @@ export const useAppStream = (
 
           case "text_done": {
             const doneId = signal.payload?.messageId as string | undefined;
+            const text = signal.payload?.text as string | undefined;
+            const artifact = (signal.payload as any)?.artifact;
+            const artifactId = ((signal.payload as any)?.artifactId || artifact?.artifactId) as string | undefined;
             if (doneId) {
               streamingMessageIds.current.delete(doneId);
               setMessages((prev) => {
@@ -290,8 +293,10 @@ export const useAppStream = (
                 if (idx >= 0) {
                   msgs[idx] = {
                     ...msgs[idx],
+                    content: text !== undefined && text.length > 0 ? text : msgs[idx].content,
                     isStreaming: false,
                     isThinking: false,
+                    ...(artifact ? { artifact, artifactId } : {}),
                   };
                 }
                 return msgs;
@@ -331,8 +336,37 @@ export const useAppStream = (
             break;
           }
 
+          case "artifact_saved": {
+            const art = (signal.payload as any)?.artifact;
+            const artId = (signal.payload as any)?.artifactId || art?.artifactId;
+            if (art) {
+              setMessages((prev) => {
+                const msgs = [...prev];
+                let targetIdx = msgs.findIndex((m) => m.role === "z" && m.isStreaming);
+                if (targetIdx < 0) {
+                  for (let i = msgs.length - 1; i >= 0; i--) {
+                    if (msgs[i].role === "z") {
+                      targetIdx = i;
+                      break;
+                    }
+                  }
+                }
+                if (targetIdx >= 0) {
+                  msgs[targetIdx] = {
+                    ...msgs[targetIdx],
+                    artifact: art,
+                    artifactId: artId,
+                  };
+                  return msgs;
+                }
+                return prev;
+              });
+            }
+            optionsRef.current?.onRequestRefetch?.();
+            break;
+          }
+
           case "phase_changed":
-          case "artifact_saved":
           case "artifact_updated":
           case "app_interrupted":
             // Trigger a refetch of the main session data to sync the UI

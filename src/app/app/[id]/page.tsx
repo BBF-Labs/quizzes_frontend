@@ -297,14 +297,19 @@ export default function ChatPage() {
     sendMessage("Keep going", undefined, true);
   }, [sendMessage]);
 
-  const handleFeedback = useCallback((type: "too_easy" | "too_hard") => {
-    if (type === "too_easy") {
-      toast.success("Pacing adjusted: Diving straight into deeper mastery!");
-      setSessionStep((prev) => Math.min(prev + 1, 4));
-    } else {
-      toast.info("Pacing adjusted: Providing extra foundational context.");
-    }
-  }, []);
+  const handleFeedback = useCallback(
+    (type: "too_easy" | "too_hard") => {
+      if (type === "too_easy") {
+        toast.success("Pacing adjusted: Diving straight into deeper mastery!");
+        setSessionStep((prev) => Math.min(prev + 1, 4));
+        sendMessage("Too easy", undefined, true);
+      } else {
+        toast.info("Pacing adjusted: Providing extra foundational context.");
+        sendMessage("Too hard", undefined, true);
+      }
+    },
+    [sendMessage],
+  );
 
   // Active topic title based on sessionStep or message history
   const activeTopicTitle = useMemo(() => {
@@ -724,7 +729,7 @@ export default function ChatPage() {
                 <>
                   <button
                     type="button"
-                    onClick={() => sendMessage("Too easy")}
+                    onClick={() => handleFeedback("too_easy")}
                     className="rounded-full bg-white hover:bg-slate-50 border border-slate-200 px-3 py-1 text-[11px] font-semibold text-slate-700 shadow-2xs hover:scale-102 transition cursor-pointer flex items-center gap-1.5"
                   >
                     <span>😴</span>
@@ -733,7 +738,7 @@ export default function ChatPage() {
 
                   <button
                     type="button"
-                    onClick={() => sendMessage("Too hard")}
+                    onClick={() => handleFeedback("too_hard")}
                     className="rounded-full bg-white hover:bg-slate-50 border border-slate-200 px-3 py-1 text-[11px] font-semibold text-slate-700 shadow-2xs hover:scale-102 transition cursor-pointer flex items-center gap-1.5"
                   >
                     <span>🤯</span>

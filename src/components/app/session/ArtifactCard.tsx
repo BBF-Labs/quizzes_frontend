@@ -1189,16 +1189,16 @@ function UnknownDirectiveCard({
 // ─── Public ArtifactCardCallbacks Interface ──────────────────────────────────
 
 export interface ArtifactCardCallbacks {
-  onSubmitAnswer: (answers: string[], questions?: string[]) => void;
-  onApprove: () => void;
-  onContinue: () => void;
-  onRetry: () => void;
-  onSkip: () => void;
-  onExplainDifferently: (topicTitle: string) => void;
-  onTestMe: (topicTitle: string) => void;
-  onTryMyself: (topicTitle: string) => void;
-  onAction: (actionType: string) => void;
-  onPomodoroResume: () => void;
+  onSubmitAnswer?: (answers: string[], questions?: string[]) => void;
+  onApprove?: () => void;
+  onContinue?: () => void;
+  onRetry?: () => void;
+  onSkip?: () => void;
+  onExplainDifferently?: (topicTitle: string) => void;
+  onTestMe?: (topicTitle: string) => void;
+  onTryMyself?: (topicTitle: string) => void;
+  onAction?: (actionType: string) => void;
+  onPomodoroResume?: () => void;
   onOpenSource?: (materialId: string, pageNumber?: number) => void;
   onFeedback?: (type: "too_easy" | "too_hard") => void;
 }
@@ -1219,16 +1219,16 @@ export function ArtifactCard({
   directive,
   artifact,
   resolved = false,
-  onSubmitAnswer,
-  onApprove,
-  onContinue,
-  onRetry,
-  onSkip,
-  onExplainDifferently,
-  onTestMe,
-  onTryMyself,
-  onAction,
-  onPomodoroResume,
+  onSubmitAnswer = () => {},
+  onApprove = () => {},
+  onContinue = () => {},
+  onRetry = () => {},
+  onSkip = () => {},
+  onExplainDifferently = () => {},
+  onTestMe = () => {},
+  onTryMyself = () => {},
+  onAction = () => {},
+  onPomodoroResume = () => {},
   onOpenSource,
   onFeedback,
 }: ArtifactCardProps) {
