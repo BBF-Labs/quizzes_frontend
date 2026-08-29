@@ -3,8 +3,14 @@
 import { useEffect, useRef } from "react";
 import { useSocket } from "@/hooks/common/use-socket";
 
+interface TimetableSyncPayload {
+  studentId: string;
+  count?: number;
+  entries?: any[];
+}
+
 interface TimetableSocketHandlers {
-  onSynced?: (payload: { studentId: string; count?: number }) => void;
+  onSynced?: (payload: TimetableSyncPayload) => void;
 }
 
 export function useTimetableSocket(
