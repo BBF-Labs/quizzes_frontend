@@ -5,9 +5,11 @@ import Link from "next/link";
 import { LandingHeader, LandingFooter, MobileNav } from "@/components/landing";
 import { Search, Plus, Loader2, Calendar, RefreshCw, Bell } from "lucide-react";
 import { QUBI_WAVE_SRC } from "@/lib/constants";
-import { usePublicTimetables } from "@/hooks/use-public-exams";
-import { useQueryParams } from "@/hooks";
-import { useSocket } from "@/hooks/common/use-socket";
+import {
+  useQueryParams,
+  usePublicTimetables,
+  useTimetableSocket,
+} from "@/hooks";
 import {
   GuestReminderModal,
   GuestReminderPaper,
@@ -74,39 +76,18 @@ export default function TimetablePage() {
     20,
   );
 
-  // Real-time WebSocket live-sync listener
-  const { socket, isConnected } = useSocket();
-
-  useEffect(() => {
-    if (!socket || !effectiveStudentId) return;
-
-    const joinSyncRoom = () => {
-      socket.emit("join:timetable_sync", effectiveStudentId);
-    };
-
-    if (socket.connected) {
-      joinSyncRoom();
-    }
-    socket.on("connect", joinSyncRoom);
-
-    const handleSynced = (payload: any) => {
+  // Real-time WebSocket live-sync listener via domain hook
+  useTimetableSocket(effectiveStudentId, {
+    onSynced: (payload) => {
       const cleanId = String(payload?.studentId || "")
         .trim()
         .replace(/\D/g, "");
       const targetId = effectiveStudentId.trim().replace(/\D/g, "");
-      if (cleanId === targetId) {
+      if (!cleanId || cleanId === targetId) {
         refetch();
       }
-    };
-
-    socket.on("timetable:synced", handleSynced);
-
-    return () => {
-      socket.emit("leave:timetable_sync", effectiveStudentId);
-      socket.off("connect", joinSyncRoom);
-      socket.off("timetable:synced", handleSynced);
-    };
-  }, [socket, isConnected, effectiveStudentId, refetch]);
+    },
+  });
 
   const entriesFromApi = apiData?.entries ?? [];
   const totalCount = apiData?.pagination?.total ?? entriesFromApi.length;
