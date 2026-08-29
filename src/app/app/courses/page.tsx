@@ -28,11 +28,11 @@ import {
 } from "@/components/ui/dialog";
 
 const SEMESTERS = ["Semester 1", "Semester 2"];
-const ACADEMIC_YEARS = ["2025-2026", "2026-2027"];
+const ACADEMIC_YEARS = ["2024-2025", "2025-2026", "2026-2027"];
 
 export default function MyCoursesPage() {
-  const [selectedSemester, setSelectedSemester] = useState("Semester 1");
-  const [selectedYear, setSelectedYear] = useState("2026-2027");
+  const [selectedSemester, setSelectedSemester] = useState("Semester 2");
+  const [selectedYear, setSelectedYear] = useState("2025-2026");
 
   const { data: enrollments = [], isLoading: isEnrollmentsLoading } =
     useMyCourses();
