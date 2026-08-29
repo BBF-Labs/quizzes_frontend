@@ -20,6 +20,8 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import {
   useAdminTimetables,
+  useAdminTimetable,
+  AdminTimetable,
   useAdminCreateTimetable,
   useAdminPublishTimetable,
   useAdminAddTimetableEntry,
@@ -515,10 +517,16 @@ function AddEntryForm({
 }
 
 // --- Timetable Row ---
-function TimetableRow({ timetable }: { timetable: any }) {
+function TimetableCard({ timetable }: { timetable: AdminTimetable }) {
   const [expanded, setExpanded] = useState(false);
   const publishMutation = useAdminPublishTimetable();
   const removeEntryMutation = useAdminRemoveTimetableEntry(timetable._id);
+  const { data: detailedTimetable, isLoading: isLoadingDetails } =
+    useAdminTimetable(timetable._id, expanded);
+
+  const activeTimetable = detailedTimetable || timetable;
+  const entriesCount =
+    timetable.entryCount ?? activeTimetable.entries?.length ?? 0;
 
   const handlePublish = async () => {
     if (
@@ -576,7 +584,7 @@ function TimetableRow({ timetable }: { timetable: any }) {
               </Badge>
             </div>
             <p className="text-[10px] font-mono text-muted-foreground uppercase">
-              {timetable.entries?.length || 0} Scheduled Exams
+              {entriesCount} Scheduled Exams
             </p>
           </div>
         </div>
@@ -616,9 +624,16 @@ function TimetableRow({ timetable }: { timetable: any }) {
             <div className="p-4 bg-background/40">
               <AddEntryForm timetableId={timetable._id} onAdded={() => {}} />
 
-              {timetable.entries && timetable.entries.length > 0 ? (
+              {isLoadingDetails ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center space-y-2">
+                  <RefreshCw className="size-5 animate-spin text-primary/60" />
+                  <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+                    Loading exam entries...
+                  </p>
+                </div>
+              ) : activeTimetable.entries && activeTimetable.entries.length > 0 ? (
                 <div className="space-y-4 mt-4">
-                  {timetable.entries
+                  {activeTimetable.entries
                     .sort((a: any, b: any) => {
                       const timeA = a.sessions?.[0]?.scheduledAt
                         ? new Date(a.sessions[0].scheduledAt).getTime()
@@ -804,7 +819,7 @@ export default function AdminTimetablesPage() {
         ) : (
           <div className="space-y-4">
             {timetables?.data?.map((t: any) => (
-              <TimetableRow key={t._id} timetable={t} />
+              <TimetableCard key={t._id} timetable={t} />
             ))}
           </div>
         )}

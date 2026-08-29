@@ -310,7 +310,7 @@ export default function PrivateTimetablePage() {
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] font-bold text-slate-300">
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
-                Official timetable synced
+                Synced with UG official timetable
               </div>
               <p className="mt-6 text-[10px] font-extrabold uppercase tracking-[.2em] text-blue-300">
                 Monday, 12 January · Week 9

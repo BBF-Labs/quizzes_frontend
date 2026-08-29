@@ -408,9 +408,25 @@ export interface AdminTimetable {
   semester: string;
   academicYear: string;
   isPublished: boolean;
-  entries: AdminExamEntry[];
+  publishedAt?: string;
+  entryCount?: number;
+  entries?: AdminExamEntry[];
   createdAt: string;
+  updatedAt?: string;
 }
+
+export const useAdminTimetable = (id: string, enabled: boolean = true) => {
+  return useQuery({
+    queryKey: ["admin", "timetables", id],
+    queryFn: async () => {
+      const res = await api.get<ApiData<AdminTimetable>>(
+        `/admin/learning/timetables/${id}`,
+      );
+      return res.data?.data;
+    },
+    enabled: !!id && enabled,
+  });
+};
 
 export interface AdminExamSession {
   sessionId: string;
