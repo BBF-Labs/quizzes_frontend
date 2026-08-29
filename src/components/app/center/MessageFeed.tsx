@@ -102,24 +102,52 @@ export function MessageFeed({
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Dynamic greeting from Z inference
-  const zGreeting = useMemo(() => {
-    const firstZ = messages.find(
-      (m) =>
-        m.role === "z" &&
-        m.type === "text" &&
-        m.content &&
-        !m.content.startsWith("⚠️")
-    );
-    if (firstZ?.content) {
-      return firstZ.content;
+  // Track the greeting message that arrives fresh during this mount.
+  // We intentionally do NOT use the first historical message — that would
+  // re-display a stale intro every time the student re-enters a topic.
+  // Instead we capture the messageId of the first Z text that streams in
+  // after this component mounts (i.e. the live inference response), and only
+  // show that one. A ref is used so we don't re-render on every message update.
+  const greetingMessageIdRef = useRef<string | null>(null);
+  const [freshGreeting, setFreshGreeting] = useState("");
+
+  // Reset greeting capture whenever the topic changes (step reset)
+  const prevTopicRef = useRef(activeTopic?.title);
+  useEffect(() => {
+    if (prevTopicRef.current !== activeTopic?.title) {
+      prevTopicRef.current = activeTopic?.title;
+      greetingMessageIdRef.current = null;
+      setFreshGreeting("");
     }
-    const topicDesc = (activeTopic as any)?.description || activeTopic?.coreIdea;
-    if (topicDesc) {
-      return topicDesc;
+  }, [activeTopic?.title]);
+
+  // Capture the most recent streaming/committed Z text as the greeting
+  useEffect(() => {
+    const lastZ = [...messages]
+      .reverse()
+      .find(
+        (m) =>
+          m.role === "z" &&
+          m.type === "text" &&
+          m.content &&
+          !m.content.startsWith("⚠️"),
+      );
+    if (!lastZ) return;
+    const id = lastZ.messageId || lastZ.id;
+    // Latch onto the first Z message we see after mount/topic-reset
+    if (!greetingMessageIdRef.current) {
+      greetingMessageIdRef.current = id;
     }
-    return "";
-  }, [messages, activeTopic]);
+    // Only update the displayed greeting if it's the latched message
+    if (greetingMessageIdRef.current === id) {
+      setFreshGreeting(lastZ.content);
+    }
+  }, [messages]);
+
+  const zGreeting = freshGreeting ||
+    (activeTopic as any)?.description ||
+    activeTopic?.coreIdea ||
+    "";
 
   // Step 0: Overview Accordion Card (Always shown first when starting/entering topic)
   if (sessionStep === 0) {
@@ -280,12 +308,13 @@ export function MessageFeed({
           return null;
         }
 
-        /* ── Skip the intro greeting response that was already displayed on Step 0 ── */
+        /* ── Skip the intro greeting already displayed in step 0/1 ── */
         if (
           msg.role === "z" &&
           msg.type === "text" &&
-          zGreeting &&
-          content === zGreeting.trim()
+          greetingMessageIdRef.current &&
+          (msg.messageId === greetingMessageIdRef.current ||
+            msg.id === greetingMessageIdRef.current)
         ) {
           return null;
         }
