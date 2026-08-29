@@ -1,12 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { LandingHeader, LandingFooter, MobileNav } from "@/components/landing";
-import { Search, Plus, Loader2, Calendar, RefreshCw } from "lucide-react";
+import { Search, Plus, Loader2, Calendar, RefreshCw, Bell } from "lucide-react";
 import { QUBI_WAVE_SRC } from "@/lib/constants";
 import { usePublicTimetables } from "@/hooks/use-public-exams";
 import { useQueryParams } from "@/hooks";
+import { useSocket } from "@/hooks/common/use-socket";
+import {
+  GuestReminderModal,
+  GuestReminderPaper,
+} from "@/components/timetable/guest-reminder-modal";
 import { format } from "date-fns";
 
 interface ExamPaper {
@@ -24,6 +29,7 @@ interface ExamPaper {
   colorClass: string;
   dateBadgeBg: string;
   dateBadgeText: string;
+  rawScheduledAt?: string;
 }
 
 export default function TimetablePage() {
@@ -32,9 +38,14 @@ export default function TimetablePage() {
   const rawStudentId = getParam("studentId", "");
   const page = Math.max(1, getNumberParam("page", 1));
 
+  const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
+  const [selectedPaperForReminder, setSelectedPaperForReminder] =
+    useState<GuestReminderPaper | null>(null);
+
   // Determine if rawSearch is an 8-digit Student ID
   const isDigitsOnly = /^\d{7,10}$/.test(rawSearch.trim());
-  const effectiveStudentId = rawStudentId || (isDigitsOnly ? rawSearch.trim() : "");
+  const effectiveStudentId =
+    rawStudentId || (isDigitsOnly ? rawSearch.trim() : "");
   const effectiveCourseSearch = !isDigitsOnly ? rawSearch : "";
 
   const setSearchInput = (val: string) => {
@@ -49,12 +60,43 @@ export default function TimetablePage() {
   const setPage = (p: number) => setQueryParams({ page: p > 1 ? p : null });
 
   // TanStack Query integration
-  const { data: apiData, isLoading, refetch, isFetching } = usePublicTimetables(
+  const {
+    data: apiData,
+    isLoading,
+    refetch,
+    isFetching,
+  } = usePublicTimetables(
     effectiveCourseSearch,
     effectiveStudentId,
     page,
     20,
   );
+
+  // Real-time WebSocket live-sync listener
+  const { socket } = useSocket();
+
+  useEffect(() => {
+    if (!socket || !effectiveStudentId) return;
+
+    socket.emit("join:timetable_sync", effectiveStudentId);
+
+    const handleSynced = (payload: any) => {
+      const cleanId = String(payload?.studentId || "")
+        .trim()
+        .replace(/\D/g, "");
+      const targetId = effectiveStudentId.trim().replace(/\D/g, "");
+      if (cleanId === targetId) {
+        refetch();
+      }
+    };
+
+    socket.on("timetable:synced", handleSynced);
+
+    return () => {
+      socket.emit("leave:timetable_sync", effectiveStudentId);
+      socket.off("timetable:synced", handleSynced);
+    };
+  }, [socket, effectiveStudentId, refetch]);
 
   const entriesFromApi = apiData?.entries ?? [];
   const totalCount = apiData?.pagination?.total ?? entriesFromApi.length;
@@ -251,12 +293,17 @@ export default function TimetablePage() {
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  <Link
-                    href="/signup"
-                    className="squishy rounded-xl bg-slate-950 px-4 py-2.5 text-xs font-extrabold text-white transition hover:bg-[#0C60FC]"
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedPaperForReminder(null);
+                      setIsReminderModalOpen(true);
+                    }}
+                    className="squishy inline-flex items-center gap-1.5 rounded-xl bg-slate-950 px-4 py-2.5 text-xs font-extrabold text-white transition hover:bg-[#0C60FC]"
                   >
-                    Tell me if it changes →
-                  </Link>
+                    <Bell className="h-3.5 w-3.5" />
+                    <span>Get Exam Alerts →</span>
+                  </button>
                 </div>
               </div>
 
@@ -357,12 +404,28 @@ export default function TimetablePage() {
                               <p>⌖ {paper.venue}</p>
                             )}
                           </div>
-                          <Link
-                            href="/signup"
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedPaperForReminder({
+                                id: paper.id,
+                                courseCode: paper.code,
+                                courseName: paper.title,
+                                scheduledAt:
+                                  paper.rawScheduledAt || new Date(),
+                                venue: paper.venue,
+                                assignedVenue: paper.hasAssignedVenue
+                                  ? paper.venue
+                                  : undefined,
+                                date: paper.date,
+                                time: paper.time,
+                              });
+                              setIsReminderModalOpen(true);
+                            }}
                             className="mt-3 inline-flex items-center gap-1 text-[10px] font-extrabold text-[#0C60FC] hover:underline"
                           >
                             <Plus className="h-3 w-3" /> Remind me
-                          </Link>
+                          </button>
                         </div>
                       </div>
                     </article>
@@ -435,6 +498,27 @@ export default function TimetablePage() {
           </div>
         </section>
       </main>
+
+      {/* Enriched Guest Exam Reminders Modal */}
+      <GuestReminderModal
+        isOpen={isReminderModalOpen}
+        onClose={() => {
+          setIsReminderModalOpen(false);
+          setSelectedPaperForReminder(null);
+        }}
+        studentId={effectiveStudentId}
+        selectedPaper={selectedPaperForReminder}
+        papers={displayPapers.map((p) => ({
+          id: p.id,
+          courseCode: p.code,
+          courseName: p.title,
+          scheduledAt: p.rawScheduledAt || new Date(),
+          venue: p.venue,
+          assignedVenue: p.hasAssignedVenue ? p.venue : undefined,
+          date: p.date,
+          time: p.time,
+        }))}
+      />
 
       <LandingFooter />
       <MobileNav />
