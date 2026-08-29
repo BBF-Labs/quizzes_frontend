@@ -12,8 +12,13 @@ import {
   ShieldCheck,
   Loader2,
   BookOpen,
+  Plus,
+  ChevronDown,
+  ChevronUp,
+  Search,
 } from "lucide-react";
 import { useSubscribeGuestTimetableReminders } from "@/hooks/use-public-exams";
+import { useTimetableSocket } from "@/hooks/use-timetable-socket";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -38,6 +43,34 @@ interface GuestReminderModalProps {
   selectedPaper?: GuestReminderPaper | null;
 }
 
+interface SyncedEntry {
+  _id: string;
+  courseCode: string;
+  courseName: string;
+  scheduledAt: string;
+  venues: { venue: string; indexStart?: string; indexEnd?: string }[];
+  assignedVenue?: string | null;
+  durationMinutes: number;
+  semester?: string;
+  academicYear?: string;
+}
+
+function toGuestPaper(e: SyncedEntry): GuestReminderPaper {
+  const d = new Date(e.scheduledAt);
+  return {
+    id: e._id,
+    courseCode: e.courseCode,
+    courseName: e.courseName,
+    scheduledAt: e.scheduledAt,
+    venue: e.assignedVenue || e.venues.map(v => v.venue).join(", ") || "Main Campus",
+    assignedVenue: e.assignedVenue || undefined,
+    time: format(d, "HH:mm"),
+    date: format(d, "EEE").toUpperCase(),
+    semester: e.semester,
+    academicYear: e.academicYear,
+  };
+}
+
 export function GuestReminderModal({
   isOpen,
   onClose,
@@ -49,15 +82,37 @@ export function GuestReminderModal({
   const [name, setName] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
   const [showAllPapers, setShowAllPapers] = useState(false);
+  const [syncedPapers, setSyncedPapers] = useState<GuestReminderPaper[]>([]);
+  const [useSyncedData, setUseSyncedData] = useState(false);
+  const [showCoursePicker, setShowCoursePicker] = useState(false);
+  const [courseSearch, setCourseSearch] = useState("");
+  const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
 
   const { mutateAsync: subscribeReminders, isPending } =
     useSubscribeGuestTimetableReminders();
+
+  // Listen for real-time timetable sync (enrolled courses for this student)
+  useTimetableSocket(studentId, {
+    onSynced: (payload) => {
+      if (payload?.entries?.length) {
+        const enrolled = payload.entries.map(toGuestPaper);
+        setSyncedPapers(enrolled);
+        // If studentId was provided but no explicit course selection, prefer synced data
+        if (studentId && !selectedPaper) {
+          setUseSyncedData(true);
+        }
+      }
+    },
+  });
 
   // Reset state when opening
   useEffect(() => {
     if (isOpen) {
       setIsSuccess(false);
       setShowAllPapers(false);
+      setUseSyncedData(false);
+      setShowCoursePicker(false);
+      setSelectedCourseIds([]);
     }
   }, [isOpen]);
 
@@ -74,11 +129,29 @@ export function GuestReminderModal({
 
   if (!isOpen) return null;
 
-  const targetPapers = selectedPaper
-    ? [selectedPaper]
-    : papers.length > 0
-    ? papers
-    : [];
+  // Determine which papers to show:
+  // 1. If a specific paper was selected, use that
+  // 2. Else if we have synced enrolled courses and user hasn't explicitly chosen otherwise, use those
+  // 3. Else if user is in course picker mode, use manually selected courses
+  // 4. Else fall back to passed papers (from initial API)
+  let targetPapers: GuestReminderPaper[] = [];
+  let dataSource = "passed";
+
+  if (selectedPaper) {
+    targetPapers = [selectedPaper];
+    dataSource = "selected";
+  } else if (useSyncedData && syncedPapers.length > 0) {
+    targetPapers = syncedPapers;
+    dataSource = "synced";
+  } else if (showCoursePicker && selectedCourseIds.length > 0) {
+    // Find manually selected courses from synced papers (or fallback to passed papers)
+    const source = syncedPapers.length > 0 ? syncedPapers : papers;
+    targetPapers = source.filter(p => selectedCourseIds.includes(p.id || p.courseCode));
+    dataSource = "manual";
+  } else {
+    targetPapers = papers.length > 0 ? papers : [];
+    dataSource = "passed";
+  }
 
   const displayCount = targetPapers.length;
 
@@ -210,6 +283,12 @@ export function GuestReminderModal({
                         ? `Student ID: ${studentId} (${displayCount} papers)`
                         : `${displayCount} Selected Course(s)`}
                     </p>
+                    {dataSource === "synced" && syncedPapers.length > 0 && (
+                      <p className="mt-1 inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-emerald-700">
+                        <CheckCircle2 className="h-2.5 w-2.5" />
+                        Synced from your enrolled schedule
+                      </p>
+                    )}
                   </div>
                   {displayCount > 1 && (
                     <button
@@ -221,6 +300,18 @@ export function GuestReminderModal({
                     </button>
                   )}
                 </div>
+
+                {/* Manual course selection (only when we have papers to pick from) */}
+                {!selectedPaper && !showCoursePicker && (syncedPapers.length > 1 || papers.length > 1) && (
+                  <button
+                    type="button"
+                    onClick={() => setShowCoursePicker(true)}
+                    className="mt-3 inline-flex items-center gap-1 text-[10px] font-extrabold text-[#0C60FC] hover:underline"
+                  >
+                    <Plus className="h-3 w-3" />
+                    Choose specific courses instead
+                  </button>
+                )}
 
                 {/* Collapsible Paper List */}
                 {(showAllPapers || displayCount === 1) && (
@@ -255,6 +346,68 @@ export function GuestReminderModal({
                     })}
                   </div>
                 )}
+
+                {/* Course picker — manual selection */}
+                {showCoursePicker && !selectedPaper && (() => {
+                  const pool = syncedPapers.length > 0 ? syncedPapers : papers;
+                  const filtered = pool.filter(p => {
+                    const q = courseSearch.trim().toLowerCase();
+                    return !q || p.courseCode.toLowerCase().includes(q) || p.courseName.toLowerCase().includes(q);
+                  });
+                  const toggle = (id: string) => {
+                    setSelectedCourseIds(prev =>
+                      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+                    );
+                  };
+                  return (
+                    <div className="mt-3 border-t border-slate-100 pt-3">
+                      <div className="flex items-center gap-2">
+                        <div className="relative flex-1">
+                          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                          <input
+                            type="text"
+                            value={courseSearch}
+                            onChange={(e) => setCourseSearch(e.target.value)}
+                            placeholder="Filter courses…"
+                            className="w-full rounded-lg border border-slate-200 bg-slate-50/50 py-1.5 pl-8 pr-3 text-[11px] font-semibold text-slate-900 placeholder:text-slate-400 focus:border-[#0C60FC] focus:bg-white focus:outline-none"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => { setShowCoursePicker(false); setSelectedCourseIds([]); setUseSyncedData(false); }}
+                          className="text-[10px] font-extrabold text-slate-500 hover:text-slate-900"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                      <div className="mt-2 max-h-44 space-y-1 overflow-y-auto pr-1">
+                        {filtered.length === 0 ? (
+                          <p className="py-3 text-center text-[11px] font-semibold text-slate-400">
+                            No courses match
+                          </p>
+                        ) : filtered.map((p, idx) => {
+                          const key = p.id || p.courseCode || String(idx);
+                          const checked = selectedCourseIds.includes(key);
+                          return (
+                            <label
+                              key={key}
+                              className="flex cursor-pointer items-center gap-2 rounded-lg border border-transparent bg-slate-50 px-2.5 py-1.5 text-[11px] hover:border-slate-200 hover:bg-white"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => toggle(key)}
+                                className="h-3.5 w-3.5 rounded border-slate-300 text-[#0C60FC] focus:ring-[#0C60FC]"
+                              />
+                              <span className="font-extrabold text-slate-900">{p.courseCode}</span>
+                              <span className="truncate text-slate-500">{p.courseName}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 
