@@ -14,6 +14,7 @@ import {
   GuestReminderModal,
   GuestReminderPaper,
 } from "@/components/timetable/guest-reminder-modal";
+import { PaginationController } from "@/components/common/pagination-controller";
 import { format } from "date-fns";
 
 interface ExamPaper {
@@ -91,6 +92,7 @@ export default function TimetablePage() {
 
   const entriesFromApi = apiData?.entries ?? [];
   const totalCount = apiData?.pagination?.total ?? entriesFromApi.length;
+  const totalPages = apiData?.pagination?.totalPages ?? 1;
 
   // Format backend API entries into UI papers
   const formattedPapers: ExamPaper[] = entriesFromApi.map((entry, idx) => {
@@ -364,12 +366,13 @@ export default function TimetablePage() {
                   )}
                 </div>
               ) : (
-                <div className="mt-6 grid gap-3 md:grid-cols-2">
-                  {displayPapers.map((paper) => (
-                    <article
-                      key={paper.id}
-                      className={`paper rounded-2xl border p-4 transition sm:p-5 ${paper.colorClass}`}
-                    >
+                <>
+                  <div className="mt-6 grid gap-3 md:grid-cols-2">
+                    {displayPapers.map((paper) => (
+                      <article
+                        key={paper.id}
+                        className={`paper rounded-2xl border p-4 transition sm:p-5 ${paper.colorClass}`}
+                      >
                       <div className="flex items-start gap-4">
                         <div className={`flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-2xl ${paper.dateBadgeBg} ${paper.dateBadgeText}`}>
                           <span className="text-[9px] font-bold uppercase opacity-80">{paper.month}</span>
@@ -426,7 +429,17 @@ export default function TimetablePage() {
                       </div>
                     </article>
                   ))}
-                </div>
+                  </div>
+                  {totalPages > 1 && (
+                    <PaginationController
+                      page={page}
+                      totalPages={totalPages}
+                      onPageChange={setPage}
+                      className="mt-4"
+                      buttonSize="md"
+                    />
+                  )}
+                </>
               )}
             </div>
           </div>
