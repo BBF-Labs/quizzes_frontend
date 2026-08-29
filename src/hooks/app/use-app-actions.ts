@@ -77,10 +77,14 @@ export const useAppMessage = () => {
       sessionId,
       message,
       messageId,
+      isSystemAction,
+      type,
     }: {
       sessionId: string;
       message: string;
       messageId?: string;
+      isSystemAction?: boolean;
+      type?: "text" | "system_action";
     }) => {
       if (!sessionId || sessionId === "undefined")
         throw new Error("Invalid app ID for app message");
@@ -89,6 +93,8 @@ export const useAppMessage = () => {
         {
           message,
           messageId,
+          isSystemAction: Boolean(isSystemAction),
+          type: type || (isSystemAction ? "system_action" : "text"),
         },
       );
       return response.data;
