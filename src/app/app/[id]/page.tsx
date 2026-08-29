@@ -281,15 +281,17 @@ export default function ChatPage() {
 
   // Step advancement handler for Continue / Keep going button
   const handleContinue = useCallback(() => {
-    if (sessionStep < 2) {
-      setSessionStep((prev) => prev + 1);
+    if (sessionStep === 0) {
+      setSessionStep(1);
       window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-    if (messages.length > 0) {
-      // If recap is active, send "Keep going", otherwise "Continue"
+    } else if (sessionStep === 1) {
+      setSessionStep(2);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      sendMessage(isRecapActive ? "Keep going" : "Continue", undefined, true);
+    } else {
       sendMessage(isRecapActive ? "Keep going" : "Continue", undefined, true);
     }
-  }, [messages.length, sessionStep, sendMessage, isRecapActive]);
+  }, [sessionStep, sendMessage, isRecapActive]);
 
   const handleKeepGoing = useCallback(() => {
     sendMessage("Keep going", undefined, true);
@@ -627,7 +629,7 @@ export default function ChatPage() {
             onAction={handleAction}
             onPomodoroResume={handlePomodoroResume}
             onRetryMessage={(messageId: string) => {
-              truncateAfter(messageId);
+              truncateFrom(messageId);
               retryMutation.mutate(messageId);
             }}
             onEditMessage={(messageId: string, newContent: string) => {
