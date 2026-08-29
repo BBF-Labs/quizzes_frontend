@@ -13,7 +13,7 @@ import {
   Loader2,
   BookOpen,
 } from "lucide-react";
-import { api } from "@/lib/api";
+import { useSubscribeGuestTimetableReminders } from "@/hooks/use-public-exams";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -26,6 +26,8 @@ export interface GuestReminderPaper {
   assignedVenue?: string;
   time?: string;
   date?: string;
+  semester?: string;
+  academicYear?: string;
 }
 
 interface GuestReminderModalProps {
@@ -45,15 +47,16 @@ export function GuestReminderModal({
 }: GuestReminderModalProps) {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [showAllPapers, setShowAllPapers] = useState(false);
+
+  const { mutateAsync: subscribeReminders, isPending } =
+    useSubscribeGuestTimetableReminders();
 
   // Reset state when opening
   useEffect(() => {
     if (isOpen) {
       setIsSuccess(false);
-      setIsSubmitting(false);
       setShowAllPapers(false);
     }
   }, [isOpen]);
@@ -61,13 +64,13 @@ export function GuestReminderModal({
   // Handle ESC key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen && !isSubmitting) {
+      if (e.key === "Escape" && isOpen && !isPending) {
         onClose();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, isSubmitting, onClose]);
+  }, [isOpen, isPending, onClose]);
 
   if (!isOpen) return null;
 
@@ -88,10 +91,8 @@ export function GuestReminderModal({
       return;
     }
 
-    setIsSubmitting(true);
-
     try {
-      await api.post("/learning/timetables/guest-reminders", {
+      await subscribeReminders({
         email: cleanEmail,
         name: name.trim() || undefined,
         studentId: studentId?.trim() || undefined,
@@ -105,6 +106,8 @@ export function GuestReminderModal({
               : String(p.scheduledAt),
           venue: p.venue,
           assignedVenue: p.assignedVenue,
+          semester: p.semester,
+          academicYear: p.academicYear,
         })),
       });
 
@@ -116,8 +119,6 @@ export function GuestReminderModal({
         err?.message ||
         "Failed to activate exam reminders";
       toast.error(msg);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -126,7 +127,7 @@ export function GuestReminderModal({
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity"
-        onClick={() => !isSubmitting && onClose()}
+        onClick={() => !isPending && onClose()}
       />
 
       {/* Modal Card */}
@@ -134,7 +135,7 @@ export function GuestReminderModal({
         {/* Close Button */}
         <button
           onClick={onClose}
-          disabled={isSubmitting}
+          disabled={isPending}
           className="absolute right-4 top-4 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-900 disabled:opacity-50"
         >
           <X className="h-4 w-4" />
@@ -320,10 +321,10 @@ export function GuestReminderModal({
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={isSubmitting || displayCount === 0}
+                disabled={isPending || displayCount === 0}
                 className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 py-3.5 text-xs font-extrabold text-white transition hover:bg-[#0C60FC] disabled:opacity-50 disabled:pointer-events-none shadow-lg shadow-blue-500/10"
               >
-                {isSubmitting ? (
+                {isPending ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
                     <span>Activating Reminders...</span>
