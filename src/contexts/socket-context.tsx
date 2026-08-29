@@ -65,9 +65,14 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       (s as unknown as { auth: { token: string } }).auth = {
         token: `Bearer ${token}`,
       };
-      if (!s.connected) {
-        s.connect();
-      }
+    } else {
+      (s as unknown as { auth: { isGuest: boolean } }).auth = {
+        isGuest: true,
+      };
+    }
+
+    if (!s.connected) {
+      s.connect();
     }
 
     function onConnect() {
