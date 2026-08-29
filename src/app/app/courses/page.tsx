@@ -19,7 +19,7 @@ import {
   useUnenrollFromCourse,
 } from "@/hooks/app/use-user-courses";
 import { ICourse, useCourseSearch } from "@/hooks/common/use-courses";
-import { useDebounce } from "@/hooks";
+import { useQueryParams, useDebounce } from "@/hooks";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -31,8 +31,14 @@ const SEMESTERS = ["Semester 1", "Semester 2"];
 const ACADEMIC_YEARS = ["2024-2025", "2025-2026", "2026-2027"];
 
 export default function MyCoursesPage() {
-  const [selectedSemester, setSelectedSemester] = useState("Semester 2");
-  const [selectedYear, setSelectedYear] = useState("2025-2026");
+  const { getParam, setQueryParams } = useQueryParams();
+  const selectedSemester = getParam("semester", "Semester 2");
+  const selectedYear = getParam("year", "2025-2026");
+  const viewMode = getParam("view", "term"); // "term" | "all"
+
+  const setSelectedSemester = (s: string) => setQueryParams({ semester: s });
+  const setSelectedYear = (y: string) => setQueryParams({ year: y });
+  const setViewMode = (v: string) => setQueryParams({ view: v });
 
   const { data: enrollments = [], isLoading: isEnrollmentsLoading } =
     useMyCourses();
@@ -53,6 +59,27 @@ export default function MyCoursesPage() {
   const totalCount = enrollments.length;
   const selectedCount = selectedCourseIds.size;
 
+  // Current term enrollment count for stat strip
+  const currentTermCount = useMemo(
+    () =>
+      enrollments.filter(
+        (e) =>
+          e.semester === selectedSemester &&
+          e.academicYear === selectedYear,
+      ).length,
+    [enrollments, selectedSemester, selectedYear],
+  );
+
+  // Filter displayed courses based on active view mode
+  const displayedEnrollments = useMemo(() => {
+    if (viewMode === "all") return enrollments;
+    return enrollments.filter(
+      (e) =>
+        e.semester === selectedSemester &&
+        e.academicYear === selectedYear,
+    );
+  }, [enrollments, viewMode, selectedSemester, selectedYear]);
+
   const handleEnroll = async () => {
     if (selectedCount === 0) return;
     try {
@@ -68,25 +95,15 @@ export default function MyCoursesPage() {
       setSelectedCourseIds(new Set());
       setSelectedCourses([]);
       setCourseSearch("");
+      setViewMode("term");
     } catch (err: any) {
-      // Error handling is likely done via global toast
+      // Error handling is handled via toast
     }
   };
 
-  // Current term enrollment count for stat strip
-  const currentTermCount = useMemo(
-    () =>
-      enrollments.filter(
-        (e) =>
-          e.semester === selectedSemester &&
-          e.academicYear === selectedYear,
-      ).length,
-    [enrollments, selectedSemester, selectedYear],
-  );
-
   return (
     <div className="qz-app min-h-full bg-[#F7F9FC] text-slate-900 antialiased">
-      {/* Header / Hero — mirrors library and quizzes pages */}
+      {/* Header / Hero */}
       <header className="border-b border-slate-200 bg-white px-6 pt-8 pb-6 lg:px-8">
         <div className="mx-auto flex max-w-7xl flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -101,12 +118,30 @@ export default function MyCoursesPage() {
             </p>
           </div>
           <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
-            <span className="rounded-full bg-slate-100 px-3 py-1.5">
+            <button
+              type="button"
+              onClick={() => setViewMode("all")}
+              className={cn(
+                "rounded-full px-3.5 py-1.5 transition cursor-pointer",
+                viewMode === "all"
+                  ? "bg-slate-950 text-white font-extrabold shadow-sm"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200",
+              )}
+            >
               {totalCount} total
-            </span>
-            <span className="rounded-full bg-blue-50 px-3 py-1.5 text-[#0C60FC]">
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("term")}
+              className={cn(
+                "rounded-full px-3.5 py-1.5 transition cursor-pointer",
+                viewMode === "term"
+                  ? "bg-[#0C60FC] text-white font-extrabold shadow-sm"
+                  : "bg-blue-50 text-[#0C60FC] hover:bg-blue-100",
+              )}
+            >
               {currentTermCount} this term
-            </span>
+            </button>
           </div>
         </div>
 
@@ -123,9 +158,9 @@ export default function MyCoursesPage() {
                   type="button"
                   onClick={() => setSelectedSemester(s)}
                   className={cn(
-                    "rounded-full px-4 py-2 text-xs font-bold transition",
+                    "rounded-full px-4 py-2 text-xs font-bold transition cursor-pointer",
                     selectedSemester === s
-                      ? "bg-slate-950 text-white"
+                      ? "bg-slate-950 text-white shadow-sm"
                       : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50",
                   )}
                 >
@@ -137,25 +172,21 @@ export default function MyCoursesPage() {
               <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 w-20 shrink-0">
                 Year
               </span>
-              {ACADEMIC_YEARS.map((y) => {
-                const isPast = y === "2025-2026";
-                return (
-                  <button
-                    key={y}
-                    type="button"
-                    onClick={() => setSelectedYear(y)}
-                    className={cn(
-                      "rounded-full px-4 py-2 text-xs font-bold transition",
-                      isPast && "line-through",
-                      selectedYear === y
-                        ? "bg-slate-950 text-white"
-                        : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50",
-                    )}
-                  >
-                    {y}
-                  </button>
-                );
-              })}
+              {ACADEMIC_YEARS.map((y) => (
+                <button
+                  key={y}
+                  type="button"
+                  onClick={() => setSelectedYear(y)}
+                  className={cn(
+                    "rounded-full px-4 py-2 text-xs font-bold transition cursor-pointer",
+                    selectedYear === y
+                      ? "bg-slate-950 text-white shadow-sm"
+                      : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50",
+                  )}
+                >
+                  {y}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -180,7 +211,7 @@ export default function MyCoursesPage() {
                 Loading your courses…
               </p>
             </div>
-          ) : enrollments.length > 0 ? (
+          ) : displayedEnrollments.length > 0 ? (
             <motion.div
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
               variants={{
@@ -191,13 +222,17 @@ export default function MyCoursesPage() {
               animate="visible"
             >
               <AnimatePresence>
-                {enrollments.map((enrollment) => (
+                {displayedEnrollments.map((enrollment) => (
                   <CourseCard
                     key={enrollment._id}
                     title={enrollment.courseId?.title || "Unknown Course"}
                     code={enrollment.courseId?.code || "N/A"}
                     semester={enrollment.semester}
                     academicYear={enrollment.academicYear}
+                    isCurrentTerm={
+                      enrollment.semester === selectedSemester &&
+                      enrollment.academicYear === selectedYear
+                    }
                     href={
                       enrollment.courseId?._id
                         ? `/app/courses/${enrollment.courseId._id}`
@@ -218,9 +253,15 @@ export default function MyCoursesPage() {
           ) : (
             <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-20">
               <BookOpen className="mb-4 h-12 w-12 text-slate-300" />
-              <p className="text-sm font-bold text-slate-700">No courses yet</p>
+              <p className="text-sm font-bold text-slate-700">
+                {viewMode === "term"
+                  ? `No courses enrolled for ${selectedSemester} (${selectedYear})`
+                  : "No courses enrolled yet"}
+              </p>
               <p className="mt-1 max-w-xs text-center text-xs font-semibold text-slate-500">
-                Add the courses you're taking this term.
+                {viewMode === "term"
+                  ? "Pick from the catalog or switch terms to view past enrollments."
+                  : "Add the courses you're taking to stay in sync."}
               </p>
               <button
                 type="button"
@@ -228,17 +269,18 @@ export default function MyCoursesPage() {
                 className="squishy mt-5 inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-xs font-extrabold text-white transition hover:bg-[#0C60FC]"
               >
                 <Plus className="h-4 w-4" />
-                Add your first course
+                Add Course for {selectedSemester}
               </button>
             </div>
           )}
         </div>
       </section>
 
-      {!isEnrollmentsLoading && enrollments.length > 0 && (
+      {!isEnrollmentsLoading && displayedEnrollments.length > 0 && (
         <p className="pb-10 text-center text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
-          showing {enrollments.length} enrolled{" "}
-          {enrollments.length === 1 ? "course" : "courses"}
+          showing {displayedEnrollments.length}{" "}
+          {viewMode === "term" ? `for ${selectedSemester} (${selectedYear})` : "total enrolled"}{" "}
+          {displayedEnrollments.length === 1 ? "course" : "courses"}
         </p>
       )}
 
@@ -469,6 +511,7 @@ function CourseCard({
   code,
   semester,
   academicYear,
+  isCurrentTerm = true,
   href,
   onUnenroll,
 }: {
@@ -476,6 +519,7 @@ function CourseCard({
   code: string;
   semester: string;
   academicYear: string;
+  isCurrentTerm?: boolean;
   href: string;
   onUnenroll: () => void;
 }) {
@@ -505,7 +549,7 @@ function CourseCard({
         </span>
         <span className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-widest text-emerald-600">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-          Enrolled
+          {isCurrentTerm ? "Active Term" : "Enrolled"}
         </span>
       </div>
 
