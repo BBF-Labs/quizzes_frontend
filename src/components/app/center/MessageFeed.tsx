@@ -121,8 +121,8 @@ export function MessageFeed({
     return "";
   }, [messages, activeTopic]);
 
-  // Step 0: Overview Accordion Card (Initial launch only when no messages exist)
-  if (sessionStep === 0 && messages.length === 0) {
+  // Step 0: Overview Accordion Card (Always shown first when starting/entering topic)
+  if (sessionStep === 0) {
     return (
       <div className="flex flex-1 flex-col items-center gap-5 py-4 px-4 sm:px-6 max-w-xl w-full mx-auto pb-32">
         <motion.div
@@ -164,14 +164,14 @@ export function MessageFeed({
     );
   }
 
-  // Step 1: Knowledge Pathway with thinking state (Initial launch only when no messages exist)
-  if (sessionStep === 1 && messages.length === 0) {
+  // Step 1: Knowledge Pathway with thinking state (Shown before entering active session)
+  if (sessionStep === 1) {
     return (
       <div className="flex flex-1 flex-col items-center gap-5 py-4 px-4 sm:px-6 max-w-xl w-full mx-auto pb-32">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="w-full space-y-3"
+          className="w-full space-y-4 flex flex-col items-center"
         >
           <div className="w-full flex flex-col items-start pl-2 space-y-1">
             <span className="font-serif italic text-[11px] text-slate-400">
@@ -188,12 +188,22 @@ export function MessageFeed({
 
           {/* Knowledge Pathway with real items */}
           <KnowledgePathway items={pathwayItems} />
+
+          <div className="w-full flex justify-center pt-2">
+            <button
+              type="button"
+              onClick={onContinue}
+              className="inline-flex items-center gap-2 rounded-full bg-slate-900 text-white px-6 py-2.5 text-xs font-bold hover:bg-[#0C60FC] transition shadow-sm cursor-pointer"
+            >
+              <span>Continue to Session</span>
+            </button>
+          </div>
         </motion.div>
       </div>
     );
   }
 
-  // If there are no messages yet and in transition step 2
+  // If in step 2+ but no messages yet, show transition active concept capsule
   if (messages.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center gap-5 py-4 px-4 sm:px-6 max-w-xl w-full mx-auto pb-32">
@@ -249,13 +259,44 @@ export function MessageFeed({
       </div>
 
       {messages.map((msg, index) => {
+        /* ── Skip system actions, tool calls, and tool results ── */
+        if (
+          msg.type === "system_action" ||
+          msg.type === "tool_call" ||
+          msg.type === "tool_result" ||
+          (msg.role as any) === "tool" ||
+          (msg.role === "system" && msg.type !== "directive" && !msg.directive)
+        ) {
+          return null;
+        }
+
+        const content = typeof msg.content === "string" ? msg.content.trim() : "";
+
+        /* ── Skip raw prompt triggers ── */
+        if (
+          content.startsWith("[STUDY JOURNEY:") ||
+          /^Give a very short.*intro welcoming me/i.test(content)
+        ) {
+          return null;
+        }
+
+        /* ── Skip the intro greeting response that was already displayed on Step 0 ── */
+        if (
+          msg.role === "z" &&
+          msg.type === "text" &&
+          zGreeting &&
+          content === zGreeting.trim()
+        ) {
+          return null;
+        }
+
         /* ── Skip empty non-artifact and non-directive messages ── */
         if (
           msg.type !== "directive" &&
           msg.type !== "artifact" &&
           !msg.directive &&
           !msg.artifact &&
-          !msg.content?.trim()
+          !content
         ) {
           return null;
         }
