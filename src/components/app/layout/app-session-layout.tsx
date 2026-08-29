@@ -217,7 +217,7 @@ export function AppSessionLayout({ children, sessionId }: AppSessionLayoutProps)
         id: userMsgId,
         messageId: userMsgId,
         role: "user",
-        type: "text",
+        type: isSystemAction ? "system_action" : "text",
         content: trimmed,
         timestamp: new Date().toISOString(),
         status: "sending",
@@ -231,8 +231,13 @@ export function AppSessionLayout({ children, sessionId }: AppSessionLayoutProps)
         await messageAction.mutateAsync({
           sessionId,
           message: trimmed,
+          messageId: userMsgId,
+          isSystemAction: Boolean(isSystemAction),
+          type: isSystemAction ? "system_action" : "text",
         });
-        stream.updateMessage(userMsgId, { status: "sent" });
+        if (!isSystemAction) {
+          stream.updateMessage(userMsgId, { status: "sent" });
+        }
       } catch (err: unknown) {
         stream.updateMessage(userMsgId, { status: "error" });
         const errorMsg =
