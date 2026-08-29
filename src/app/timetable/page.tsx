@@ -30,6 +30,8 @@ interface ExamPaper {
   dateBadgeBg: string;
   dateBadgeText: string;
   rawScheduledAt?: string;
+  semester?: string;
+  academicYear?: string;
 }
 
 export default function TimetablePage() {
@@ -73,12 +75,19 @@ export default function TimetablePage() {
   );
 
   // Real-time WebSocket live-sync listener
-  const { socket } = useSocket();
+  const { socket, isConnected } = useSocket();
 
   useEffect(() => {
     if (!socket || !effectiveStudentId) return;
 
-    socket.emit("join:timetable_sync", effectiveStudentId);
+    const joinSyncRoom = () => {
+      socket.emit("join:timetable_sync", effectiveStudentId);
+    };
+
+    if (socket.connected) {
+      joinSyncRoom();
+    }
+    socket.on("connect", joinSyncRoom);
 
     const handleSynced = (payload: any) => {
       const cleanId = String(payload?.studentId || "")
@@ -94,9 +103,10 @@ export default function TimetablePage() {
 
     return () => {
       socket.emit("leave:timetable_sync", effectiveStudentId);
+      socket.off("connect", joinSyncRoom);
       socket.off("timetable:synced", handleSynced);
     };
-  }, [socket, effectiveStudentId, refetch]);
+  }, [socket, isConnected, effectiveStudentId, refetch]);
 
   const entriesFromApi = apiData?.entries ?? [];
   const totalCount = apiData?.pagination?.total ?? entriesFromApi.length;
@@ -153,6 +163,9 @@ export default function TimetablePage() {
       duration: `${entry.durationMinutes || 120} MIN`,
       venue: displayVenue,
       hasAssignedVenue: Boolean(entry.assignedVenue),
+      rawScheduledAt: entry.scheduledAt,
+      semester: entry.semester,
+      academicYear: entry.academicYear,
       ...style,
     };
   });
@@ -419,6 +432,8 @@ export default function TimetablePage() {
                                   : undefined,
                                 date: paper.date,
                                 time: paper.time,
+                                semester: paper.semester,
+                                academicYear: paper.academicYear,
                               });
                               setIsReminderModalOpen(true);
                             }}
@@ -517,6 +532,8 @@ export default function TimetablePage() {
           assignedVenue: p.hasAssignedVenue ? p.venue : undefined,
           date: p.date,
           time: p.time,
+          semester: p.semester,
+          academicYear: p.academicYear,
         }))}
       />
 
