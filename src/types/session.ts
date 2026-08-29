@@ -3,7 +3,8 @@ export type ZAppMessageType =
   | "directive"
   | "artifact"
   | "tool_call"
-  | "tool_result";
+  | "tool_result"
+  | "system_action";
 
 // ─── App Material (Sources Panel) ───────────────────────────────────────────
 
