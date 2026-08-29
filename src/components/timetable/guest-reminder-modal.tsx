@@ -83,24 +83,21 @@ export function GuestReminderModal({
   const [isSuccess, setIsSuccess] = useState(false);
   const [showAllPapers, setShowAllPapers] = useState(false);
   const [syncedPapers, setSyncedPapers] = useState<GuestReminderPaper[]>([]);
-  const [useSyncedData, setUseSyncedData] = useState(false);
   const [showCoursePicker, setShowCoursePicker] = useState(false);
   const [courseSearch, setCourseSearch] = useState("");
   const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
+  const [useEnrolledCourses, setUseEnrolledCourses] = useState(false);
 
   const { mutateAsync: subscribeReminders, isPending } =
     useSubscribeGuestTimetableReminders();
 
   // Listen for real-time timetable sync (enrolled courses for this student)
+  // Populates syncedPapers but does NOT auto-select — user must explicitly choose
   useTimetableSocket(studentId, {
     onSynced: (payload) => {
       if (payload?.entries?.length) {
         const enrolled = payload.entries.map(toGuestPaper);
         setSyncedPapers(enrolled);
-        // If studentId was provided but no explicit course selection, prefer synced data
-        if (studentId && !selectedPaper) {
-          setUseSyncedData(true);
-        }
       }
     },
   });
@@ -110,9 +107,9 @@ export function GuestReminderModal({
     if (isOpen) {
       setIsSuccess(false);
       setShowAllPapers(false);
-      setUseSyncedData(false);
       setShowCoursePicker(false);
       setSelectedCourseIds([]);
+      setUseEnrolledCourses(false);
     }
   }, [isOpen]);
 
@@ -131,7 +128,7 @@ export function GuestReminderModal({
 
   // Determine which papers to show:
   // 1. If a specific paper was selected, use that
-  // 2. Else if we have synced enrolled courses and user hasn't explicitly chosen otherwise, use those
+  // 2. Else if user explicitly opted into enrolled courses, use those
   // 3. Else if user is in course picker mode, use manually selected courses
   // 4. Else fall back to passed papers (from initial API)
   let targetPapers: GuestReminderPaper[] = [];
@@ -140,9 +137,9 @@ export function GuestReminderModal({
   if (selectedPaper) {
     targetPapers = [selectedPaper];
     dataSource = "selected";
-  } else if (useSyncedData && syncedPapers.length > 0) {
+  } else if (useEnrolledCourses && syncedPapers.length > 0) {
     targetPapers = syncedPapers;
-    dataSource = "synced";
+    dataSource = "enrolled";
   } else if (showCoursePicker && selectedCourseIds.length > 0) {
     // Find manually selected courses from synced papers (or fallback to passed papers)
     const source = syncedPapers.length > 0 ? syncedPapers : papers;
@@ -283,10 +280,10 @@ export function GuestReminderModal({
                         ? `Student ID: ${studentId} (${displayCount} papers)`
                         : `${displayCount} Selected Course(s)`}
                     </p>
-                    {dataSource === "synced" && syncedPapers.length > 0 && (
+                    {dataSource === "enrolled" && syncedPapers.length > 0 && (
                       <p className="mt-1 inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-emerald-700">
                         <CheckCircle2 className="h-2.5 w-2.5" />
-                        Synced from your enrolled schedule
+                        From your enrolled schedule
                       </p>
                     )}
                   </div>
@@ -301,16 +298,30 @@ export function GuestReminderModal({
                   )}
                 </div>
 
-                {/* Manual course selection (only when we have papers to pick from) */}
+                {/* Course selection options (only when we have papers to pick from) */}
                 {!selectedPaper && !showCoursePicker && (syncedPapers.length > 1 || papers.length > 1) && (
-                  <button
-                    type="button"
-                    onClick={() => setShowCoursePicker(true)}
-                    className="mt-3 inline-flex items-center gap-1 text-[10px] font-extrabold text-[#0C60FC] hover:underline"
-                  >
-                    <Plus className="h-3 w-3" />
-                    Choose specific courses instead
-                  </button>
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                    {/* Use enrolled courses button */}
+                    {syncedPapers.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setUseEnrolledCourses(!useEnrolledCourses)}
+                        className="inline-flex items-center gap-1 text-[10px] font-extrabold text-[#0C60FC] hover:underline"
+                      >
+                        <CheckCircle2 className="h-3 w-3" />
+                        {useEnrolledCourses ? "Using enrolled courses ✓" : "Use my enrolled courses"}
+                      </button>
+                    )}
+                    {/* Choose specific courses button */}
+                    <button
+                      type="button"
+                      onClick={() => setShowCoursePicker(true)}
+                      className="inline-flex items-center gap-1 text-[10px] font-extrabold text-[#0C60FC] hover:underline"
+                    >
+                      <Plus className="h-3 w-3" />
+                      Choose specific courses
+                    </button>
+                  </div>
                 )}
 
                 {/* Collapsible Paper List */}
@@ -374,13 +385,13 @@ export function GuestReminderModal({
                         </div>
                         <button
                           type="button"
-                          onClick={() => { setShowCoursePicker(false); setSelectedCourseIds([]); setUseSyncedData(false); }}
+                          onClick={() => { setShowCoursePicker(false); setSelectedCourseIds([]); setUseEnrolledCourses(false); }}
                           className="text-[10px] font-extrabold text-slate-500 hover:text-slate-900"
                         >
                           Cancel
                         </button>
                       </div>
-                      <div className="mt-2 max-h-44 space-y-1 overflow-y-auto pr-1">
+                      <div className="mt-2 max-h-44 space-y-1 overflow-y-auto pr-1 no-scrollbar">
                         {filtered.length === 0 ? (
                           <p className="py-3 text-center text-[11px] font-semibold text-slate-400">
                             No courses match

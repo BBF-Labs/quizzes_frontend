@@ -24,7 +24,9 @@ interface PaginationControllerProps {
 
 /**
  * Reusable pagination controller component
- * Handles page navigation with prev/next buttons and optional page info display
+ * Handles page navigation with prev/next buttons and optional page info display.
+ * Styled to match the Qz landing/app dashboard UI (rounded-2xl, bg-white border,
+ * Neon Blue accent, no font-mono, uppercase labels).
  */
 export function PaginationController({
   page,
@@ -35,11 +37,22 @@ export function PaginationController({
   buttonSize = "sm",
   infoPosition = "left",
 }: PaginationControllerProps) {
+  const buttonSizeClass =
+    buttonSize === "sm"
+      ? "h-8 px-2 text-[10px]"
+      : buttonSize === "md"
+        ? "h-9 px-3 text-xs"
+        : "h-8 px-2 text-[10px]";
+
   const buttonClasses =
-    buttonSize === "sm" ? "h-8 px-2 text-[10px]" : "h-9 px-3 text-xs";
+    buttonSize === "sm"
+      ? "rounded-2xl bg-white border border-slate-200 shadow-sm text-[10px] font-bold uppercase hover:bg-slate-50"
+      : buttonSize === "md"
+        ? "rounded-2xl bg-white border border-slate-200 shadow-sm text-xs font-bold uppercase hover:bg-slate-50"
+        : "rounded-2xl bg-white border border-slate-200 shadow-sm text-[10px] font-bold uppercase hover:bg-slate-50";
 
   const pageInfo = (
-    <span className="text-[10px] font-mono uppercase text-muted-foreground whitespace-nowrap">
+    <span className="text-[10px] font-bold uppercase whitespace-nowrap text-slate-500">
       Page {page} of {Math.max(1, totalPages)}
     </span>
   );
@@ -48,12 +61,12 @@ export function PaginationController({
     <div className="flex gap-2">
       <Button
         variant="outline"
-        size="sm"
+        size={buttonSize === "md" ? "default" : "sm"}
         disabled={page <= 1}
         onClick={() => onPageChange(Math.max(1, page - 1))}
         className={cn(
-          "rounded-lg font-mono tracking-widest uppercase gap-2",
           buttonClasses,
+          "rounded-2xl px-4 py-2.5 text-center gap-1.5",
         )}
         aria-label="Previous page"
       >
@@ -61,12 +74,12 @@ export function PaginationController({
       </Button>
       <Button
         variant="outline"
-        size="sm"
+        size={buttonSize === "md" ? "default" : "sm"}
         disabled={page >= totalPages}
         onClick={() => onPageChange(Math.min(totalPages, page + 1))}
         className={cn(
-          "rounded-lg font-mono tracking-widest uppercase gap-2",
           buttonClasses,
+          "rounded-2xl px-4 py-2.5 text-center gap-1.5",
         )}
         aria-label="Next page"
       >
@@ -78,7 +91,7 @@ export function PaginationController({
   return (
     <div
       className={cn(
-        "flex items-center justify-between px-6 py-4 border-t border-border/10 bg-secondary/5 rounded-lg",
+        "flex items-center justify-between rounded-2xl bg-white border border-slate-200 shadow-sm px-4 py-3",
         className,
       )}
     >
