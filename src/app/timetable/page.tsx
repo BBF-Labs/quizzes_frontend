@@ -436,7 +436,6 @@ export default function TimetablePage() {
                       totalPages={totalPages}
                       onPageChange={setPage}
                       className="mt-4"
-                      buttonSize="md"
                     />
                   )}
                 </>

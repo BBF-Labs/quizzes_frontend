@@ -656,7 +656,6 @@ export default function LibraryPage() {
                     totalPages={totalPages}
                     onPageChange={setPage}
                     className="mt-6"
-                    buttonSize="md"
                   />
                 )}
               </>
