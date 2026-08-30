@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 
 export interface PublicVenue {
@@ -37,6 +37,32 @@ export interface PublicPaginationMeta {
   totalPages: number;
 }
 
+export interface SubscribeGuestReminderPaperInput {
+  courseCode: string;
+  courseName: string;
+  scheduledAt: string;
+  venue?: string;
+  assignedVenue?: string;
+  semester?: string;
+  academicYear?: string;
+}
+
+export interface SubscribeGuestReminderPayload {
+  email: string;
+  name?: string;
+  studentId?: string;
+  courseCodes?: string[];
+  papers?: SubscribeGuestReminderPaperInput[];
+}
+
+export interface SubscribeGuestReminderResponse {
+  message: string;
+  data: {
+    contact: any;
+    enrolledCount: number;
+  };
+}
+
 export const usePublicTimetables = (
   search: string = "",
   studentId: string = "",
@@ -68,5 +94,17 @@ export const usePublicTimetables = (
     },
     // Don't refetch too often for public data
     staleTime: 1000 * 60 * 5,
+  });
+};
+
+export const useSubscribeGuestTimetableReminders = () => {
+  return useMutation({
+    mutationFn: async (payload: SubscribeGuestReminderPayload) => {
+      const res = await api.post<SubscribeGuestReminderResponse>(
+        "/learning/timetables/guest-reminders",
+        payload,
+      );
+      return res.data;
+    },
   });
 };

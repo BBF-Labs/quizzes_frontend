@@ -3,7 +3,16 @@
 import { useState } from "react";
 import Link from "next/link";
 import { LandingHeader, LandingFooter, MobileNav } from "@/components/landing";
-import { Search, Bookmark, Loader2, Download, Plus, Check, LogIn, FileText } from "lucide-react";
+import {
+  Search,
+  Bookmark,
+  Loader2,
+  Download,
+  Plus,
+  Check,
+  LogIn,
+  FileText,
+} from "lucide-react";
 import {
   usePublicLibrary,
   useImportMaterial,
@@ -13,6 +22,7 @@ import {
 import { useDebounce } from "@/hooks/common/use-debounce";
 import { useAuth } from "@/contexts/auth-context";
 import { useQueryParams } from "@/hooks";
+import { PaginationController } from "@/components/common/pagination-controller";
 import { toast } from "sonner";
 
 interface Resource {
@@ -42,8 +52,12 @@ const FALLBACK_RESOURCES: Resource[] = [
       <div className="rounded-xl bg-[#F7F9FC] p-3">
         <p className="text-[11px] font-bold">Where does glycolysis occur?</p>
         <div className="mt-2 grid grid-cols-2 gap-1.5 text-[9px] font-semibold">
-          <span className="rounded-md bg-white p-1.5 ring-1 ring-slate-200">Nucleus</span>
-          <span className="rounded-md bg-[#0C60FC] p-1.5 text-white">Cytoplasm ✓</span>
+          <span className="rounded-md bg-white p-1.5 ring-1 ring-slate-200">
+            Nucleus
+          </span>
+          <span className="rounded-md bg-[#0C60FC] p-1.5 text-white">
+            Cytoplasm ✓
+          </span>
         </div>
       </div>
     ),
@@ -59,10 +73,16 @@ const FALLBACK_RESOURCES: Resource[] = [
     ctaText: "Take quiz →",
     preview: (
       <div className="rounded-xl bg-[#F5F0FF] p-3">
-        <p className="text-[11px] font-bold text-slate-900">Which doctrine was established in Marbury v. Madison?</p>
+        <p className="text-[11px] font-bold text-slate-900">
+          Which doctrine was established in Marbury v. Madison?
+        </p>
         <div className="mt-2 grid grid-cols-2 gap-1.5 text-[9px] font-semibold">
-          <span className="rounded-md bg-white p-1.5 ring-1 ring-slate-200">Federalism</span>
-          <span className="rounded-md bg-violet-600 p-1.5 text-white">Judicial Review ✓</span>
+          <span className="rounded-md bg-white p-1.5 ring-1 ring-slate-200">
+            Federalism
+          </span>
+          <span className="rounded-md bg-violet-600 p-1.5 text-white">
+            Judicial Review ✓
+          </span>
         </div>
       </div>
     ),
@@ -78,10 +98,16 @@ const FALLBACK_RESOURCES: Resource[] = [
     ctaText: "Take quiz →",
     preview: (
       <div className="rounded-xl bg-lime-50/70 p-3">
-        <p className="text-[11px] font-bold text-slate-900">What is the average time complexity of QuickSort?</p>
+        <p className="text-[11px] font-bold text-slate-900">
+          What is the average time complexity of QuickSort?
+        </p>
         <div className="mt-2 grid grid-cols-2 gap-1.5 text-[9px] font-semibold">
-          <span className="rounded-md bg-white p-1.5 ring-1 ring-slate-200">O(n²)</span>
-          <span className="rounded-md bg-lime-700 p-1.5 text-white">O(n log n) ✓</span>
+          <span className="rounded-md bg-white p-1.5 ring-1 ring-slate-200">
+            O(n²)
+          </span>
+          <span className="rounded-md bg-lime-700 p-1.5 text-white">
+            O(n log n) ✓
+          </span>
         </div>
       </div>
     ),
@@ -97,10 +123,16 @@ const FALLBACK_RESOURCES: Resource[] = [
     ctaText: "Take quiz →",
     preview: (
       <div className="rounded-xl bg-[#FFF8EF] p-3">
-        <p className="text-[11px] font-bold text-slate-900">Which statement defines the 1st Law of Thermodynamics?</p>
+        <p className="text-[11px] font-bold text-slate-900">
+          Which statement defines the 1st Law of Thermodynamics?
+        </p>
         <div className="mt-2 grid grid-cols-2 gap-1.5 text-[9px] font-semibold">
-          <span className="rounded-md bg-white p-1.5 ring-1 ring-slate-200">Entropy increases</span>
-          <span className="rounded-md bg-amber-600 p-1.5 text-white">Energy is conserved ✓</span>
+          <span className="rounded-md bg-white p-1.5 ring-1 ring-slate-200">
+            Entropy increases
+          </span>
+          <span className="rounded-md bg-amber-600 p-1.5 text-white">
+            Energy is conserved ✓
+          </span>
         </div>
       </div>
     ),
@@ -115,8 +147,7 @@ export default function LibraryPage() {
 
   const setSearchQuery = (q: string) =>
     setQueryParams({ search: q || null, page: 1 });
-  const setPage = (p: number) =>
-    setQueryParams({ page: p > 1 ? p : null });
+  const setPage = (p: number) => setQueryParams({ page: p > 1 ? p : null });
 
   const { user } = useAuth();
   const importMutation = useImportMaterial();
@@ -133,7 +164,8 @@ export default function LibraryPage() {
   const { data: apiData, isLoading } = usePublicLibrary(filters);
 
   const itemsFromApi = apiData?.data ?? [];
-  const totalCount = apiData?.pagination?.total ?? (itemsFromApi.length > 0 ? itemsFromApi.length : 12480);
+  const totalCount = apiData?.pagination?.total ?? itemsFromApi.length;
+  const totalPages = apiData?.pagination?.totalPages ?? 1;
 
   const toggleSave = (id: string) => {
     setSavedIds((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -149,28 +181,87 @@ export default function LibraryPage() {
   /** Resolve badge label + colours from a MIME type */
   function mimeInfo(mime = "") {
     if (mime.includes("pdf"))
-      return { label: "PDF", icon: FileText, bg: "bg-rose-50", text: "text-rose-700", lineBg: "bg-rose-200/50", tagRing: "ring-rose-200", previewBg: "bg-rose-50", accent: "text-rose-500" };
-    if (mime.includes("word") || mime.includes("docx") || mime.includes("document"))
-      return { label: "DOCX", icon: FileText, bg: "bg-blue-50", text: "text-blue-700", lineBg: "bg-blue-200/50", tagRing: "ring-blue-200", previewBg: "bg-blue-50", accent: "text-blue-400" };
-    if (mime.includes("presentation") || mime.includes("pptx") || mime.includes("powerpoint"))
-      return { label: "PPTX", icon: FileText, bg: "bg-orange-50", text: "text-orange-700", lineBg: "bg-orange-200/50", tagRing: "ring-orange-200", previewBg: "bg-orange-50", accent: "text-orange-400" };
+      return {
+        label: "PDF",
+        icon: FileText,
+        bg: "bg-rose-50",
+        text: "text-rose-700",
+        lineBg: "bg-rose-200/50",
+        tagRing: "ring-rose-200",
+        previewBg: "bg-rose-50",
+        accent: "text-rose-500",
+      };
+    if (
+      mime.includes("word") ||
+      mime.includes("docx") ||
+      mime.includes("document")
+    )
+      return {
+        label: "DOCX",
+        icon: FileText,
+        bg: "bg-blue-50",
+        text: "text-blue-700",
+        lineBg: "bg-blue-200/50",
+        tagRing: "ring-blue-200",
+        previewBg: "bg-blue-50",
+        accent: "text-blue-400",
+      };
+    if (
+      mime.includes("presentation") ||
+      mime.includes("pptx") ||
+      mime.includes("powerpoint")
+    )
+      return {
+        label: "PPTX",
+        icon: FileText,
+        bg: "bg-orange-50",
+        text: "text-orange-700",
+        lineBg: "bg-orange-200/50",
+        tagRing: "ring-orange-200",
+        previewBg: "bg-orange-50",
+        accent: "text-orange-400",
+      };
     if (mime.includes("sheet") || mime.includes("xlsx") || mime.includes("csv"))
-      return { label: "XLSX", icon: FileText, bg: "bg-green-50", text: "text-green-700", lineBg: "bg-green-200/50", tagRing: "ring-green-200", previewBg: "bg-green-50", accent: "text-green-500" };
-    return { label: "FILE", icon: FileText, bg: "bg-violet-50", text: "text-violet-700", lineBg: "bg-violet-200/50", tagRing: "ring-violet-200", previewBg: "bg-violet-50", accent: "text-violet-400" };
+      return {
+        label: "XLSX",
+        icon: FileText,
+        bg: "bg-green-50",
+        text: "text-green-700",
+        lineBg: "bg-green-200/50",
+        tagRing: "ring-green-200",
+        previewBg: "bg-green-50",
+        accent: "text-green-500",
+      };
+    return {
+      label: "FILE",
+      icon: FileText,
+      bg: "bg-violet-50",
+      text: "text-violet-700",
+      lineBg: "bg-violet-200/50",
+      tagRing: "ring-violet-200",
+      previewBg: "bg-violet-50",
+      accent: "text-violet-400",
+    };
   }
 
   /** Rich preview JSX per file type */
   function buildPreview(item: (typeof itemsFromApi)[0]) {
-    const mime  = item.materialId?.mimeType ?? "";
-    const info  = mimeInfo(mime);
-    const tags  = item.tags?.slice(0, 3) ?? [];
+    const mime = item.materialId?.mimeType ?? "";
+    const info = mimeInfo(mime);
+    const tags = item.tags?.slice(0, 3) ?? [];
     const pages = (item.materialId as any)?.pageCount ?? 0;
     const words = (item.materialId as any)?.wordCount ?? 0;
     const bytes = (item.materialId as any)?.size ?? 0;
-    const isPptx = mime.includes("presentation") || mime.includes("pptx") || mime.includes("powerpoint");
-    const sizeLbl = bytes > 0
-      ? bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(0)} KB` : `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-      : null;
+    const isPptx =
+      mime.includes("presentation") ||
+      mime.includes("pptx") ||
+      mime.includes("powerpoint");
+    const sizeLbl =
+      bytes > 0
+        ? bytes < 1024 * 1024
+          ? `${(bytes / 1024).toFixed(0)} KB`
+          : `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+        : null;
 
     const metaLine = (pages > 0 || words > 0 || sizeLbl) && (
       <p className={`mt-1.5 text-[9px] font-bold ${info.accent}`}>
@@ -183,7 +274,10 @@ export default function LibraryPage() {
     const tagRow = tags.length > 0 && (
       <div className="mt-2 flex flex-wrap gap-1">
         {tags.map((tag) => (
-          <span key={tag} className={`rounded-md bg-white px-2 py-0.5 text-[9px] font-bold text-slate-600 ring-1 ${info.tagRing}`}>
+          <span
+            key={tag}
+            className={`rounded-md bg-white px-2 py-0.5 text-[9px] font-bold text-slate-600 ring-1 ${info.tagRing}`}
+          >
             {tag}
           </span>
         ))}
@@ -197,7 +291,12 @@ export default function LibraryPage() {
         <div className={`rounded-xl ${info.previewBg} p-3`}>
           <div className="grid grid-cols-3 gap-1.5">
             {[1, 2, 3].map((s) => (
-              <div key={s} className={`flex aspect-[4/3] items-center justify-center rounded-lg bg-white text-xs font-extrabold shadow-sm ring-1 ${info.tagRing} ${info.text}`}>{s}</div>
+              <div
+                key={s}
+                className={`flex aspect-[4/3] items-center justify-center rounded-lg bg-white text-xs font-extrabold shadow-sm ring-1 ${info.tagRing} ${info.text}`}
+              >
+                {s}
+              </div>
             ))}
           </div>
           {metaLine}
@@ -209,18 +308,26 @@ export default function LibraryPage() {
     return (
       <div className={`rounded-xl ${info.previewBg} p-3`}>
         <div className="flex items-start gap-3">
-          <span className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white ring-1 ${info.tagRing} ${info.text}`}>
+          <span
+            className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white ring-1 ${info.tagRing} ${info.text}`}
+          >
             <Icon className="h-4 w-4" strokeWidth={2.25} aria-hidden="true" />
           </span>
           <div className="min-w-0 flex-1 space-y-1.5">
             <div className={`h-2 w-full rounded-full ${info.lineBg}`} />
-            <div className={`h-2 w-10/12 rounded-full ${info.lineBg} opacity-75`} />
-            <div className={`h-2 w-7/12 rounded-full ${info.lineBg} opacity-50`} />
+            <div
+              className={`h-2 w-10/12 rounded-full ${info.lineBg} opacity-75`}
+            />
+            <div
+              className={`h-2 w-7/12 rounded-full ${info.lineBg} opacity-50`}
+            />
             {metaLine}
           </div>
         </div>
         {item.description && (
-          <p className="mt-2 line-clamp-2 text-[11px] font-semibold leading-relaxed text-slate-600">{item.description}</p>
+          <p className="mt-2 line-clamp-2 text-[11px] font-semibold leading-relaxed text-slate-600">
+            {item.description}
+          </p>
         )}
         {tagRow}
       </div>
@@ -228,36 +335,44 @@ export default function LibraryPage() {
   }
 
   // --- build resource list ----------------------------------------------------
-  const displayResources: Resource[] = itemsFromApi.length > 0
-    ? itemsFromApi.map((item) => {
-        const mime    = item.materialId?.mimeType ?? "";
-        const info    = mimeInfo(mime);
-        const course  = item.courseId?.code ? `${item.courseId.code} · ` : "";
-        const subject = item.courseId?.title ?? item.subject ?? "Study material";
-        const uni     = item.universityId?.shortName ?? item.universityId?.name ?? "University";
-        const year    = (item as any).year ? ` · ${(item as any).year}` : "";
-        const uses    = item.useCount ?? 0;
-        return {
-          id: item._id,
-          libraryItemId: item._id,
-          badge: info.label === "PDF" || info.label === "DOCX" ? "COMMUNITY QUIZ" : info.label,
-          badgeBg: "bg-blue-50",
-          badgeText: "text-blue-700",
-          title: cleanTitle(item.title),
-          subtitle: `${course}${subject} · ${uni}${year}`,
-          stats: uses > 0 ? `${uses.toLocaleString()} takes` : "New Quiz",
-          ctaText: "Take quiz →",
-          preview: buildPreview(item),
-        };
-      })
-    : FALLBACK_RESOURCES.filter((res) => {
-        const q = searchQuery.trim().toLowerCase();
-        return (
-          !q ||
-          res.title.toLowerCase().includes(q) ||
-          res.subtitle.toLowerCase().includes(q)
-        );
-      });
+  const displayResources: Resource[] =
+    itemsFromApi.length > 0
+      ? itemsFromApi.map((item) => {
+          const mime = item.materialId?.mimeType ?? "";
+          const info = mimeInfo(mime);
+          const course = item.courseId?.code ? `${item.courseId.code} · ` : "";
+          const subject =
+            item.courseId?.title ?? item.subject ?? "Study material";
+          const uni =
+            item.universityId?.shortName ??
+            item.universityId?.name ??
+            "University";
+          const year = (item as any).year ? ` · ${(item as any).year}` : "";
+          const uses = item.useCount ?? 0;
+          return {
+            id: item._id,
+            libraryItemId: item._id,
+            badge:
+              info.label === "PDF" || info.label === "DOCX"
+                ? "COMMUNITY QUIZ"
+                : info.label,
+            badgeBg: "bg-blue-50",
+            badgeText: "text-blue-700",
+            title: cleanTitle(item.title),
+            subtitle: `${course}${subject} · ${uni}${year}`,
+            stats: uses > 0 ? `${uses.toLocaleString()} takes` : "New Quiz",
+            ctaText: "Take quiz →",
+            preview: buildPreview(item),
+          };
+        })
+      : FALLBACK_RESOURCES.filter((res) => {
+          const q = searchQuery.trim().toLowerCase();
+          return (
+            !q ||
+            res.title.toLowerCase().includes(q) ||
+            res.subtitle.toLowerCase().includes(q)
+          );
+        });
 
   return (
     <div className="overflow-x-hidden bg-[#F7F9FC] text-slate-900 antialiased selection:bg-[#0C60FC] selection:text-white">
@@ -312,13 +427,21 @@ export default function LibraryPage() {
         {user && !user.email && (
           <section className="px-5 pb-8">
             <div className="mx-auto max-w-7xl">
-              <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm" style={{ borderRadius: "24px" }}>
+              <div
+                className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm"
+                style={{ borderRadius: "24px" }}
+              >
                 <div className="flex items-center justify-between">
                   <h2 className="text-sm font-extrabold text-slate-900">
                     Pick up where you left off{" "}
-                    <span className="hand text-[#0C60FC]">you were so close</span>
+                    <span className="hand text-[#0C60FC]">
+                      you were so close
+                    </span>
                   </h2>
-                  <Link href="/app/library" className="text-xs font-extrabold text-[#0C60FC]">
+                  <Link
+                    href="/app/library"
+                    className="text-xs font-extrabold text-[#0C60FC]"
+                  >
                     See all →
                   </Link>
                 </div>
@@ -328,11 +451,15 @@ export default function LibraryPage() {
                       🃏
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-bold text-slate-900">Constitutional Law</p>
+                      <p className="truncate text-xs font-bold text-slate-900">
+                        Constitutional Law
+                      </p>
                       <div className="mt-1.5 h-1.5 rounded-full bg-slate-200">
                         <div className="h-full w-[14%] rounded-full bg-violet-500" />
                       </div>
-                      <p className="mt-1 text-[10px] font-semibold text-slate-400">Card 12 of 84</p>
+                      <p className="mt-1 text-[10px] font-semibold text-slate-400">
+                        Card 12 of 84
+                      </p>
                     </div>
                   </div>
 
@@ -341,11 +468,15 @@ export default function LibraryPage() {
                       📝
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-bold text-slate-900">Cellular Respiration</p>
+                      <p className="truncate text-xs font-bold text-slate-900">
+                        Cellular Respiration
+                      </p>
                       <div className="mt-1.5 h-1.5 rounded-full bg-slate-200">
                         <div className="h-full w-[15%] rounded-full bg-[#0C60FC]" />
                       </div>
-                      <p className="mt-1 text-[10px] font-semibold text-slate-400">Question 3 of 20</p>
+                      <p className="mt-1 text-[10px] font-semibold text-slate-400">
+                        Question 3 of 20
+                      </p>
                     </div>
                   </div>
 
@@ -354,11 +485,15 @@ export default function LibraryPage() {
                       📄
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-bold text-slate-900">Thermodynamics Notes</p>
+                      <p className="truncate text-xs font-bold text-slate-900">
+                        Thermodynamics Notes
+                      </p>
                       <div className="mt-1.5 h-1.5 rounded-full bg-slate-200">
                         <div className="h-full w-[58%] rounded-full bg-amber-500" />
                       </div>
-                      <p className="mt-1 text-[10px] font-semibold text-slate-400">Page 19 of 32</p>
+                      <p className="mt-1 text-[10px] font-semibold text-slate-400">
+                        Page 19 of 32
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -373,15 +508,19 @@ export default function LibraryPage() {
             {isLoading ? (
               <div className="py-16 text-center">
                 <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#0C60FC]" />
-                <p className="mt-3 text-xs font-bold text-slate-400">Fetching public study materials…</p>
+                <p className="mt-3 text-xs font-bold text-slate-400">
+                  Fetching public study materials…
+                </p>
               </div>
             ) : displayResources.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-slate-300 bg-white py-12 text-center text-sm font-semibold text-slate-500">
-                No matching study materials found. Try searching another keyword.
+                No matching study materials found. Try searching another
+                keyword.
               </div>
             ) : (
-              <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-                {displayResources.map((res) => {
+              <>
+                <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+                  {displayResources.map((res) => {
                   const isSaved = !!savedIds[res.id];
                   const isApiItem = !!res.libraryItemId;
 
@@ -392,7 +531,9 @@ export default function LibraryPage() {
                       style={{ borderRadius: "26px" }}
                     >
                       <div className="flex items-start justify-between">
-                        <span className={`rounded-full px-3 py-1 text-[10px] font-extrabold ${res.badgeBg} ${res.badgeText}`}>
+                        <span
+                          className={`rounded-full px-3 py-1 text-[10px] font-extrabold ${res.badgeBg} ${res.badgeText}`}
+                        >
                           {res.badge}
                         </span>
                         <button
@@ -401,12 +542,18 @@ export default function LibraryPage() {
                           className="text-slate-300 transition hover:text-[#0C60FC]"
                           aria-label="Save resource"
                         >
-                          <Bookmark className={`h-5 w-5 ${isSaved ? "fill-[#0C60FC] text-[#0C60FC]" : ""}`} />
+                          <Bookmark
+                            className={`h-5 w-5 ${isSaved ? "fill-[#0C60FC] text-[#0C60FC]" : ""}`}
+                          />
                         </button>
                       </div>
 
-                      <h3 className="mt-5 text-lg font-bold text-slate-900">{res.title}</h3>
-                      <p className="mt-1 text-xs font-semibold text-slate-500">{res.subtitle}</p>
+                      <h3 className="mt-5 text-lg font-bold text-slate-900">
+                        {res.title}
+                      </h3>
+                      <p className="mt-1 text-xs font-semibold text-slate-500">
+                        {res.subtitle}
+                      </p>
 
                       <div className="mt-4">{res.preview}</div>
 
@@ -418,7 +565,10 @@ export default function LibraryPage() {
                             <button
                               type="button"
                               onClick={() =>
-                                window.open(getLibraryDownloadUrl(res.libraryItemId!), "_blank")
+                                window.open(
+                                  getLibraryDownloadUrl(res.libraryItemId!),
+                                  "_blank",
+                                )
                               }
                               className="flex h-9 items-center gap-1.5 rounded-xl border border-slate-200 px-3 text-[11px] font-bold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
                             >
@@ -430,16 +580,25 @@ export default function LibraryPage() {
                             {user ? (
                               <button
                                 type="button"
-                                disabled={importMutation.isPending || !!savedIds[`imported-${res.id}`]}
+                                disabled={
+                                  importMutation.isPending ||
+                                  !!savedIds[`imported-${res.id}`]
+                                }
                                 onClick={() =>
                                   importMutation.mutate(res.libraryItemId!, {
                                     onSuccess: () => {
-                                      setSavedIds((p) => ({ ...p, [`imported-${res.id}`]: true }));
+                                      setSavedIds((p) => ({
+                                        ...p,
+                                        [`imported-${res.id}`]: true,
+                                      }));
                                       toast.success("Added to your library");
                                     },
                                     onError: (err: any) => {
                                       if (err.response?.status === 409) {
-                                        setSavedIds((p) => ({ ...p, [`imported-${res.id}`]: true }));
+                                        setSavedIds((p) => ({
+                                          ...p,
+                                          [`imported-${res.id}`]: true,
+                                        }));
                                         toast.info("Already in your library");
                                       } else {
                                         toast.error("Could not add to library");
@@ -460,7 +619,9 @@ export default function LibraryPage() {
                                 ) : (
                                   <Plus className="h-3.5 w-3.5" />
                                 )}
-                                {savedIds[`imported-${res.id}`] ? "In library" : "Add to library"}
+                                {savedIds[`imported-${res.id}`]
+                                  ? "In library"
+                                  : "Add to library"}
                               </button>
                             ) : (
                               <Link
@@ -476,7 +637,10 @@ export default function LibraryPage() {
                           /* Fallback mock items — single CTA */
                           <div className="flex items-center justify-between text-xs text-slate-500">
                             <span>{res.stats}</span>
-                            <Link href="/signup" className="font-extrabold text-[#0C60FC] hover:underline">
+                            <Link
+                              href="/signup"
+                              className="font-extrabold text-[#0C60FC] hover:underline"
+                            >
                               {res.ctaText}
                             </Link>
                           </div>
@@ -485,7 +649,16 @@ export default function LibraryPage() {
                     </article>
                   );
                 })}
-              </div>
+                </div>
+                {totalPages > 1 && (
+                  <PaginationController
+                    page={page}
+                    totalPages={totalPages}
+                    onPageChange={setPage}
+                    className="mt-6"
+                  />
+                )}
+              </>
             )}
           </div>
         </section>
