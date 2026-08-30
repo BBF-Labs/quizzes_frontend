@@ -46,10 +46,10 @@ export function PaginationController({
 
   const buttonClasses =
     buttonSize === "sm"
-      ? "rounded-2xl bg-white border border-slate-200 shadow-sm text-[10px] font-bold uppercase hover:bg-slate-50"
+      ? "rounded-2xl bg-white border border-slate-200 shadow-sm text-[10px] font-bold uppercase hover:bg-[#0C60FC]"
       : buttonSize === "md"
-        ? "rounded-2xl bg-white border border-slate-200 shadow-sm text-xs font-bold uppercase hover:bg-slate-50"
-        : "rounded-2xl bg-white border border-slate-200 shadow-sm text-[10px] font-bold uppercase hover:bg-slate-50";
+        ? "rounded-2xl bg-white border border-slate-200 shadow-sm text-xs font-bold uppercase hover:bg-[#0C60FC]"
+        : "rounded-2xl bg-white border border-slate-200 shadow-sm text-[10px] font-bold uppercase hover:bg-[#0C60FC]";
 
   const pageInfo = (
     <span className="text-[10px] font-bold uppercase whitespace-nowrap text-slate-500">

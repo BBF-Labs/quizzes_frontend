@@ -80,6 +80,7 @@ export function GuestReminderModal({
 }: GuestReminderModalProps) {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
+  const [enteredStudentId, setEnteredStudentId] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
   const [showAllPapers, setShowAllPapers] = useState(false);
   const [syncedPapers, setSyncedPapers] = useState<GuestReminderPaper[]>([]);
@@ -92,8 +93,9 @@ export function GuestReminderModal({
     useSubscribeGuestTimetableReminders();
 
   // Listen for real-time timetable sync (enrolled courses for this student)
-  // Populates syncedPapers but does NOT auto-select — user must explicitly choose
-  useTimetableSocket(studentId, {
+  // Uses the student ID the user enters in the modal — populates syncedPapers
+  // but does NOT auto-select; user must explicitly choose enrolled or manual.
+  useTimetableSocket(enteredStudentId, {
     onSynced: (payload) => {
       if (payload?.entries?.length) {
         const enrolled = payload.entries.map(toGuestPaper);
@@ -110,6 +112,7 @@ export function GuestReminderModal({
       setShowCoursePicker(false);
       setSelectedCourseIds([]);
       setUseEnrolledCourses(false);
+      setEnteredStudentId("");
     }
   }, [isOpen]);
 
@@ -130,9 +133,9 @@ export function GuestReminderModal({
   // 1. If a specific paper was selected, use that
   // 2. Else if user explicitly opted into enrolled courses, use those
   // 3. Else if user is in course picker mode, use manually selected courses
-  // 4. Else fall back to passed papers (from initial API)
+  // 4. Else no selection - prompt user to choose
   let targetPapers: GuestReminderPaper[] = [];
-  let dataSource = "passed";
+  let dataSource: "selected" | "enrolled" | "manual" | "none" = "none";
 
   if (selectedPaper) {
     targetPapers = [selectedPaper];
@@ -146,8 +149,8 @@ export function GuestReminderModal({
     targetPapers = source.filter(p => selectedCourseIds.includes(p.id || p.courseCode));
     dataSource = "manual";
   } else {
-    targetPapers = papers.length > 0 ? papers : [];
-    dataSource = "passed";
+    targetPapers = [];
+    dataSource = "none";
   }
 
   const displayCount = targetPapers.length;
@@ -161,11 +164,18 @@ export function GuestReminderModal({
       return;
     }
 
+    if (displayCount === 0) {
+      toast.error("Please select at least one course to track");
+      return;
+    }
+
+    const finalStudentId = enteredStudentId.trim() || studentId?.trim() || undefined;
+
     try {
       await subscribeReminders({
         email: cleanEmail,
         name: name.trim() || undefined,
-        studentId: studentId?.trim() || undefined,
+        studentId: finalStudentId,
         courseCodes: targetPapers.map((p) => p.courseCode),
         papers: targetPapers.map((p) => ({
           courseCode: p.courseCode,
@@ -276,9 +286,13 @@ export function GuestReminderModal({
                     <p className="truncate text-xs font-black text-slate-900">
                       {selectedPaper
                         ? `${selectedPaper.courseCode} · ${selectedPaper.courseName}`
-                        : studentId
-                        ? `Student ID: ${studentId} (${displayCount} papers)`
-                        : `${displayCount} Selected Course(s)`}
+                        : dataSource === "enrolled"
+                        ? `Student ID: ${studentId ?? enteredStudentId} — ${displayCount} papers`
+                        : dataSource === "manual"
+                        ? `${displayCount} Selected Course(s)`
+                        : dataSource === "selected"
+                        ? `${displayCount} paper selected`
+                        : "Select courses to track"}
                     </p>
                     {dataSource === "enrolled" && syncedPapers.length > 0 && (
                       <p className="mt-1 inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-emerald-700">
@@ -326,7 +340,7 @@ export function GuestReminderModal({
 
                 {/* Collapsible Paper List */}
                 {(showAllPapers || displayCount === 1) && (
-                  <div className="mt-3 max-h-44 space-y-1.5 overflow-y-auto border-t border-slate-100 pt-2.5">
+                  <div className="mt-3 max-h-44 space-y-1.5 overflow-y-auto border-t border-slate-100 pt-2.5 scrollbar-none">
                     {targetPapers.map((p, idx) => {
                       const d = p.scheduledAt
                         ? new Date(p.scheduledAt)
@@ -435,6 +449,19 @@ export function GuestReminderModal({
                   placeholder="e.g. kwame@st.ug.edu.gh"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:border-[#0C60FC] focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700">
+                  Student ID <span className="text-slate-400 font-normal">(Optional)</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. 12345678"
+                  value={enteredStudentId}
+                  onChange={(e) => setEnteredStudentId(e.target.value)}
                   className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:border-[#0C60FC] focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100"
                 />
               </div>
