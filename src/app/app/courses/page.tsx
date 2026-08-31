@@ -22,18 +22,22 @@ import { ICourse, useCourseSearch } from "@/hooks/common/use-courses";
 import { useQueryParams, useDebounce } from "@/hooks";
 import { cn } from "@/lib/utils";
 import {
+  getCurrentAcademicYear,
+  getAcademicYearOptions,
+} from "@/lib/academic-year";
+import {
   Dialog,
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog";
 
 const SEMESTERS = ["Semester 1", "Semester 2"];
-const ACADEMIC_YEARS = ["2024-2025", "2025-2026", "2026-2027"];
+const ACADEMIC_YEARS = getAcademicYearOptions();
 
 export default function MyCoursesPage() {
   const { getParam, setQueryParams } = useQueryParams();
   const selectedSemester = getParam("semester", "Semester 2");
-  const selectedYear = getParam("year", "2025-2026");
+  const selectedYear = getParam("year", getCurrentAcademicYear());
   const viewMode = getParam("view", "term"); // "term" | "all"
 
   const setSelectedSemester = (s: string) => setQueryParams({ semester: s });
