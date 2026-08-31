@@ -536,6 +536,7 @@ export default function SystemQuizTakePage({
       <QuizReviewResults
         questions={questions}
         userAnswers={answers}
+        zGradingResults={Object.values(zResults)}
         config={
           config ?? {
             selectedKeys: [],
@@ -551,6 +552,8 @@ export default function SystemQuizTakePage({
           }
         }
         onReset={handleRetake}
+        onGradeWithZ={handleGradeWithZ}
+        isGradingZ={gradeQuiz.isPending}
         quizTitle={quiz.title}
       />
     );

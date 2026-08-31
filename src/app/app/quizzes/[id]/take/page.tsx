@@ -399,8 +399,11 @@ export default function QuizTakePage({
       <QuizReviewResults
         questions={questions}
         userAnswers={answers}
+        zGradingResults={Object.values(zResults)}
         config={config}
         onReset={handleRetake}
+        onGradeWithZ={handleGradeWithZ}
+        isGradingZ={gradeQuiz.isPending}
         quizTitle={quiz.title}
       />
     );
