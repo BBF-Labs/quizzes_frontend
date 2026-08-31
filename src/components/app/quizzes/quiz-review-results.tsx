@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { CheckCircle2, XCircle, RotateCcw, ArrowRight, Sparkles, Loader2 } from "lucide-react";
+import { CheckCircle2, XCircle, RotateCcw, ArrowRight } from "lucide-react";
 import { QuestionMarkdown, QuestionTypeBadge } from "@/components/app/quizzes/question-renderer";
 import { answersMatch } from "@/lib/quiz-answer";
 import type { QuizConfig, QuizQuestion, ZGradeResultItem } from "@/types/session";
@@ -121,8 +121,6 @@ export function QuizReviewResults({
   selfMarkings = {},
   config,
   onReset,
-  onGradeWithZ,
-  isGradingZ = false,
   quizTitle = "Quiz",
 }: {
   questions: QuizQuestion[];
@@ -131,24 +129,10 @@ export function QuizReviewResults({
   selfMarkings?: Record<string, boolean>;
   config: QuizConfig;
   onReset: () => void;
-  onGradeWithZ?: () => void;
-  isGradingZ?: boolean;
   quizTitle?: string;
 }) {
   let totalScore = 0;
   let correctCount = 0;
-
-  // Free-text answers the learner gave that Z hasn't graded yet — these gate
-  // the explicit "Grade with Z" call-to-action.
-  const ungradedFreeText = questions.filter(
-    (q) =>
-      isFreeResponseType(q.type) &&
-      (userAnswers[q.id] || "").trim() !== "" &&
-      !zGradingResults.some((z) => z.questionId === q.id),
-  );
-  const showGradeWithZ = Boolean(
-    config.useZGrading && onGradeWithZ && ungradedFreeText.length > 0,
-  );
 
   questions.forEach((q) => {
     const given = userAnswers[q.id] || "";
@@ -193,30 +177,6 @@ export function QuizReviewResults({
                 Pass mark · {config.passingScore || 70}%
               </span>
             </div>
-
-            {/* Explicit Z-grading call-to-action for free-text answers */}
-            {showGradeWithZ && (
-              <div className="pt-3">
-                <button
-                  type="button"
-                  onClick={onGradeWithZ}
-                  disabled={isGradingZ}
-                  className="inline-flex items-center gap-2 rounded-2xl bg-[#DFFF61] px-5 py-2.5 text-xs font-extrabold text-slate-950 transition hover:bg-lime-300 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {isGradingZ ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-4 w-4" />
-                  )}
-                  {isGradingZ
-                    ? "Grading…"
-                    : `Grade with Z (${ungradedFreeText.length})`}
-                </button>
-                <p className="mt-2 text-[10px] font-semibold text-slate-500">
-                  Z will mark your written answers and update your score.
-                </p>
-              </div>
-            )}
           </div>
 
           {/* Right Giant Score Circle */}
