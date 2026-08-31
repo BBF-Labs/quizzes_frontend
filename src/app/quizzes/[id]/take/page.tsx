@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState, useMemo, useCallback } from "react";
+import { use, useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -258,6 +258,8 @@ export default function SystemQuizTakePage({
   );
   const [config, setConfig] = useState<QuizConfig | null>(null);
   const [viewQuiz, setViewQuiz] = useState<SystemQuizDetail | null>(null);
+  // One-shot guard so Z auto-grading fires once per finished attempt.
+  const zAutoGradedRef = useRef(false);
   const currentParam = searchParams.get("q");
   const isViewMode = searchParams.get("mode") === "view";
 
@@ -266,6 +268,7 @@ export default function SystemQuizTakePage({
       const fullQuiz = await startQuiz.mutateAsync(id);
       if (!fullQuiz) return;
       setConfig(newConfig);
+      zAutoGradedRef.current = false;
       const selectedQuestions = buildQuestions(fullQuiz, newConfig);
       setQuestions(selectedQuestions);
       setSelfMarks({});
@@ -416,6 +419,7 @@ export default function SystemQuizTakePage({
     setCurrent(0);
     setDone(false);
     setStarted(false);
+    zAutoGradedRef.current = false;
   };
 
   const handleGradeWithZ = useCallback(async () => {
@@ -449,10 +453,23 @@ export default function SystemQuizTakePage({
           action: { label: "Upgrade", onClick: () => router.push("/pricing") },
         });
       } else {
-        toast.error("Grading failed. Please try again.");
+        toast.error("Grading with Z failed.");
       }
     }
   }, [quiz, config, questions, answers, zResults, id, gradeQuiz, router]);
+
+  // When the quiz finishes, hand any answered free-text questions to Z for
+  // grading (if enabled) — one shot per attempt; results stream into zResults.
+  useEffect(() => {
+    if (!done || !config || !config.useZGrading || isViewMode) return;
+    if (zAutoGradedRef.current || gradeQuiz.isPending) return;
+    const hasUngradedFreeText = questions.some(
+      (q) => isFreeResponseType(q.type) && answers[q.id] && !zResults[q.id],
+    );
+    if (!hasUngradedFreeText) return;
+    zAutoGradedRef.current = true;
+    handleGradeWithZ();
+  }, [done, config, isViewMode, questions, answers, zResults, gradeQuiz.isPending, handleGradeWithZ]);
 
   const score = useMemo(() => {
     return questions.filter((q) => {
@@ -536,6 +553,7 @@ export default function SystemQuizTakePage({
       <QuizReviewResults
         questions={questions}
         userAnswers={answers}
+        zGradingResults={Object.values(zResults)}
         config={
           config ?? {
             selectedKeys: [],

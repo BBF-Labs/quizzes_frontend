@@ -113,6 +113,8 @@ export default function QuizTakePage({
 
   const [timerRemaining, setTimerRemaining] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // One-shot guard so Z auto-grading fires once per finished attempt.
+  const zAutoGradedRef = useRef(false);
   const currentParam = searchParams.get("q");
 
   // Live score for header pill (mirrors public take page)
@@ -301,6 +303,7 @@ export default function QuizTakePage({
       setMaxStreak(0);
 
       setTimerRemaining(cfg.timerSeconds);
+      zAutoGradedRef.current = false;
       setScreen("quiz");
     },
     [quiz, currentParam],
@@ -314,6 +317,7 @@ export default function QuizTakePage({
     setZResults({});
     setStreak(0);
     setMaxStreak(0);
+    zAutoGradedRef.current = false;
     setScreen("config");
   }, [stopTimer]);
 
@@ -346,10 +350,23 @@ export default function QuizTakePage({
           action: { label: "Upgrade", onClick: () => router.push("/pricing") },
         });
       } else {
-        toast.error("Grading failed. Please try again.");
+        toast.error("Grading with Z failed.");
       }
     }
   }, [quiz, config, questions, answers, zResults, id, gradeQuiz, router]);
+
+  // When the quiz finishes, hand any answered free-text questions to Z for
+  // grading (if enabled) — one shot per attempt; results stream into zResults.
+  useEffect(() => {
+    if (screen !== "results" || !config || !config.useZGrading) return;
+    if (zAutoGradedRef.current || gradeQuiz.isPending) return;
+    const hasUngradedFreeText = questions.some(
+      (q) => isFreeResponseType(q.type) && answers[q.id] && !zResults[q.id],
+    );
+    if (!hasUngradedFreeText) return;
+    zAutoGradedRef.current = true;
+    handleGradeWithZ();
+  }, [screen, config, questions, answers, zResults, gradeQuiz.isPending, handleGradeWithZ]);
 
   if (isLoading) {
     return (
@@ -399,6 +416,7 @@ export default function QuizTakePage({
       <QuizReviewResults
         questions={questions}
         userAnswers={answers}
+        zGradingResults={Object.values(zResults)}
         config={config}
         onReset={handleRetake}
         quizTitle={quiz.title}
