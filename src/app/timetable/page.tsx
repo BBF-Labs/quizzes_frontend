@@ -152,7 +152,7 @@ export default function TimetablePage() {
         ? entry.courseCode.split(" ")[0].toLowerCase()
         : "cs",
       code: entry.courseCode || "EXAM",
-      title: entry.courseName || entry.label || "Course Exam",
+      title: entry.courseName || "Course Exam",
       date: dayOfWeekStr,
       month: monthStr,
       dayNum: dayStr,
