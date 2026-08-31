@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import {
   BookOpen,
   CalendarDays,
@@ -26,12 +26,10 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import {
-  useSessions,
   useCreateSession,
   useStreakStatus,
+  useDashboard,
 } from "@/hooks";
-import { useMyCourses } from "@/hooks/app/use-user-courses";
-import { useMyTimetable } from "@/hooks/app/use-timetable";
 import { toast } from "sonner";
 
 function getGreeting(name: string): string {
@@ -53,9 +51,13 @@ function getFormattedDate(): string {
 export default function AppHomePage() {
   const router = useRouter();
   const { user } = useAuth();
-  const { data: sessions = [], isLoading: sessionsLoading } = useSessions();
   const { data: streak } = useStreakStatus();
-  const { data: enrollments = [] } = useMyCourses();
+  const {
+    data: dashboard,
+    isLoading: dashboardLoading,
+    isError: dashboardError,
+    refetch: refetchDashboard,
+  } = useDashboard();
   const createSession = useCreateSession();
 
   const [promptInput, setPromptInput] = useState("");
@@ -63,7 +65,53 @@ export default function AppHomePage() {
 
   const greeting = getGreeting(user?.name ?? "");
   const formattedDate = getFormattedDate();
-  const recentSessions = sessions.slice(0, 4);
+
+  const courses = dashboard?.courses.slice(0, 3) ?? [];
+  const recentWork = dashboard?.recentWork ?? [];
+  const brief = dashboard?.todaysBrief;
+  const nextExam = dashboard?.nextExam ?? null;
+
+  const briefItems: { title: string; sub: string }[] = [];
+  if (brief) {
+    if (brief.sessions.count > 0) {
+      briefItems.push({
+        title: `${brief.sessions.count} ${brief.sessions.count === 1 ? "session" : "sessions"} · ${brief.sessions.totalMinutes} min`,
+        sub: "Recent study activity",
+      });
+    }
+    if (brief.flashcards.reviewedCount > 0) {
+      briefItems.push({
+        title: `${brief.flashcards.reviewedCount} cards reviewed${
+          brief.flashcards.averageMastery != null
+            ? ` · avg mastery ${brief.flashcards.averageMastery}`
+            : ""
+        }`,
+        sub:
+          brief.flashcards.weakCount > 0
+            ? `${brief.flashcards.weakCount} weak ${brief.flashcards.weakCount === 1 ? "card" : "cards"} to revisit`
+            : "Flashcard review",
+      });
+    }
+    if (brief.quizzes.attemptedCount > 0) {
+      briefItems.push({
+        title: `${brief.quizzes.attemptedCount} ${brief.quizzes.attemptedCount === 1 ? "quiz" : "quizzes"} attempted${
+          brief.quizzes.averageScore != null
+            ? ` · avg ${brief.quizzes.averageScore}%`
+            : ""
+        }`,
+        sub: "Personal quizzes",
+      });
+    }
+    if (brief.exams.upcomingCount > 0) {
+      briefItems.push({
+        title: `${brief.exams.upcomingCount} upcoming ${brief.exams.upcomingCount === 1 ? "exam" : "exams"}`,
+        sub:
+          brief.exams.daysToNext != null
+            ? `Next in ${brief.exams.daysToNext} ${brief.exams.daysToNext === 1 ? "day" : "days"}`
+            : "Check your timetable",
+      });
+    }
+  }
 
   const handleStartSession = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -208,6 +256,20 @@ export default function AppHomePage() {
           </aside>
         </section>
 
+        {dashboardError && (
+          <div className="mb-5 flex items-center justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3">
+            <p className="text-xs font-bold text-rose-700">
+              Couldn&apos;t load your dashboard.
+            </p>
+            <button
+              onClick={() => refetchDashboard()}
+              className="rounded-xl bg-rose-600 px-3 py-1.5 text-[10px] font-extrabold text-white transition hover:bg-rose-500"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
         {/* Secondary Row: Desk Tools + My Courses + Recent Work + Brief Sidebar */}
         <section className="mt-5 grid gap-4 xl:grid-cols-[1fr_330px]">
           {/* Main Area */}
@@ -330,57 +392,70 @@ export default function AppHomePage() {
                   </Link>
                 </div>
                 <div className="mt-4 space-y-3">
-                  {enrollments.length > 0 ? (
-                    enrollments.slice(0, 3).map((e: any, idx: number) => {
-                      const code = e.courseId?.code || e.courseId?.courseCode || "DCIT 205";
-                      const name = e.courseId?.name || e.courseId?.title || "Algorithms";
-                      const progress = idx === 0 ? 74 : idx === 1 ? 58 : 41;
-                      const color = idx === 0 ? "bg-[#0C60FC]" : idx === 1 ? "bg-violet-500" : "bg-amber-400";
+                  {dashboardLoading && !dashboard ? (
+                    [0, 1, 2].map((i) => (
+                      <div key={i} className="rounded-2xl bg-[#F7F9FC] p-3">
+                        <div className="h-2.5 w-2/3 animate-pulse rounded-full bg-slate-200" />
+                        <div className="mt-3 h-1.5 animate-pulse rounded-full bg-slate-200" />
+                      </div>
+                    ))
+                  ) : courses.length > 0 ? (
+                    courses.map((course, idx) => {
+                      const color =
+                        idx === 0
+                          ? "bg-[#0C60FC]"
+                          : idx === 1
+                          ? "bg-violet-500"
+                          : "bg-amber-400";
                       return (
-                        <div key={e._id || idx} className="rounded-2xl bg-[#F7F9FC] p-3">
-                          <div className="flex justify-between text-[11px] font-bold text-slate-950">
-                            <span>{code} · {name}</span>
-                            <span>{progress}%</span>
+                        <div key={course.courseId} className="rounded-2xl bg-[#F7F9FC] p-3">
+                          <div className="flex justify-between gap-2 text-[11px] font-bold text-slate-950">
+                            <span className="truncate">
+                              {course.code} · {course.title}
+                            </span>
+                            <span>
+                              {course.progressPercent != null
+                                ? `${course.progressPercent}%`
+                                : "—"}
+                            </span>
                           </div>
-                          <div className="mt-2 h-1.5 rounded-full bg-slate-200">
-                            <div
-                              className={`h-full rounded-full ${color}`}
-                              style={{ width: `${progress}%` }}
-                            />
-                          </div>
+                          {course.progressPercent != null ? (
+                            <>
+                              <div className="mt-2 h-1.5 rounded-full bg-slate-200">
+                                <div
+                                  className={`h-full rounded-full ${color}`}
+                                  style={{ width: `${course.progressPercent}%` }}
+                                />
+                              </div>
+                              {course.daysToExam != null && (
+                                <p className="mt-1.5 text-[9px] font-semibold text-slate-400">
+                                  {course.daysToExam}d to {course.examType} exam
+                                </p>
+                              )}
+                            </>
+                          ) : (
+                            <p className="mt-1.5 text-[9px] font-semibold text-slate-400">
+                              No exam scheduled
+                            </p>
+                          )}
                         </div>
                       );
                     })
+                  ) : dashboardError ? (
+                    <p className="rounded-2xl bg-[#F7F9FC] p-3 text-[11px] font-semibold text-slate-400">
+                      Courses unavailable right now.
+                    </p>
                   ) : (
-                    <>
-                      <div className="rounded-2xl bg-[#F7F9FC] p-3">
-                        <div className="flex justify-between text-[11px] font-bold text-slate-950">
-                          <span>DCIT 205 · Algorithms</span>
-                          <span>74%</span>
-                        </div>
-                        <div className="mt-2 h-1.5 rounded-full bg-slate-200">
-                          <div className="h-full w-[74%] rounded-full bg-[#0C60FC]" />
-                        </div>
-                      </div>
-                      <div className="rounded-2xl bg-[#F7F9FC] p-3">
-                        <div className="flex justify-between text-[11px] font-bold text-slate-950">
-                          <span>DCIT 207 · Operating Systems</span>
-                          <span>58%</span>
-                        </div>
-                        <div className="mt-2 h-1.5 rounded-full bg-slate-200">
-                          <div className="h-full w-[58%] rounded-full bg-violet-500" />
-                        </div>
-                      </div>
-                      <div className="rounded-2xl bg-[#F7F9FC] p-3">
-                        <div className="flex justify-between text-[11px] font-bold text-slate-950">
-                          <span>MATH 223 · Statistics</span>
-                          <span>41%</span>
-                        </div>
-                        <div className="mt-2 h-1.5 rounded-full bg-slate-200">
-                          <div className="h-full w-[41%] rounded-full bg-amber-400" />
-                        </div>
-                      </div>
-                    </>
+                    <p className="rounded-2xl bg-[#F7F9FC] p-3 text-[11px] font-semibold text-slate-400">
+                      No enrolled courses yet.{" "}
+                      <Link
+                        href="/app/library"
+                        className="font-extrabold text-[#0C60FC] hover:underline"
+                      >
+                        Browse the library
+                      </Link>{" "}
+                      to add one.
+                    </p>
                   )}
                 </div>
               </div>
@@ -394,9 +469,21 @@ export default function AppHomePage() {
                   </Link>
                 </div>
                 <div className="mt-4 divide-y divide-slate-100">
-                  {recentSessions.length > 0 ? (
-                    recentSessions.map((s: any, idx: number) => {
-                      const TypeIcon = [ListChecks, Layers, FileText, MessageSquare][idx] ?? ListChecks;
+                  {dashboardLoading && !dashboard ? (
+                    [0, 1, 2].map((i) => (
+                      <div key={i} className="flex items-center gap-3 py-3">
+                        <span className="h-9 w-9 animate-pulse rounded-xl bg-slate-100" />
+                        <div className="min-w-0 flex-1 space-y-1.5">
+                          <div className="h-2.5 w-2/3 animate-pulse rounded-full bg-slate-100" />
+                          <div className="h-2 w-1/3 animate-pulse rounded-full bg-slate-100" />
+                        </div>
+                      </div>
+                    ))
+                  ) : recentWork.length > 0 ? (
+                    recentWork.map((item, idx) => {
+                      const TypeIcon =
+                        [MessageSquare, ListChecks, Layers, FileText][idx] ??
+                        MessageSquare;
                       const tint =
                         idx === 0
                           ? "bg-blue-50 text-[#0C60FC]"
@@ -407,66 +494,49 @@ export default function AppHomePage() {
                           : "bg-emerald-50 text-emerald-600";
                       return (
                         <Link
-                          key={s.id || idx}
-                          href={`/study-session/${s.id}/journey`}
+                          key={item.id}
+                          href={`/study-session/${item.id}/journey`}
                           className="flex items-center gap-3 py-3 hover:bg-slate-50 rounded-xl px-1 transition"
                         >
-                          <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${tint}`}>
+                          <span
+                            className={`flex h-9 w-9 items-center justify-center rounded-xl ${tint}`}
+                          >
                             <TypeIcon className="h-4 w-4" strokeWidth={2.25} />
                           </span>
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-[11px] font-bold text-slate-950">
-                              {s.title || "Core Concepts Review"}
+                              {item.displayName}
                             </p>
                             <p className="text-[9px] text-slate-400 font-semibold">
-                              {s.mode || "Session"} · Recent
+                              {item.courseCode ?? "Session"} ·{" "}
+                              {formatDistanceToNow(new Date(item.updatedAt), {
+                                addSuffix: true,
+                              })}
                             </p>
                           </div>
-                          <span className="ml-auto text-xs font-bold text-emerald-600">
-                            {idx === 0 ? "84%" : "→"}
+                          <span className="ml-auto text-xs font-bold text-slate-300">
+                            →
                           </span>
                         </Link>
                       );
                     })
+                  ) : dashboardError ? (
+                    <p className="py-3 text-[11px] font-semibold text-slate-400">
+                      Recent sessions unavailable right now.
+                    </p>
                   ) : (
-                    <>
-                      <a href="/app/all" className="flex items-center gap-3 py-3">
-                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-[#0C60FC]">
-                          <ListChecks className="h-4 w-4" strokeWidth={2.25} />
-                        </span>
-                        <div className="min-w-0">
-                          <p className="truncate text-[11px] font-bold text-slate-950">
-                            Core Concepts Mastery Review
-                          </p>
-                          <p className="text-[9px] text-slate-400 font-semibold">Quiz · 18 minutes ago</p>
-                        </div>
-                        <b className="ml-auto text-[10px] text-emerald-600">84%</b>
-                      </a>
-                      <a href="/app/all" className="flex items-center gap-3 py-3">
-                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
-                          <Layers className="h-4 w-4" strokeWidth={2.25} />
-                        </span>
-                        <div className="min-w-0">
-                          <p className="truncate text-[11px] font-bold text-slate-950">
-                            Recommendation Systems
-                          </p>
-                          <p className="text-[9px] text-slate-400 font-semibold">Flashcards · Yesterday</p>
-                        </div>
-                        <span className="ml-auto text-slate-300">→</span>
-                      </a>
-                      <a href="/app/all" className="flex items-center gap-3 py-3">
-                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
-                          <FileText className="h-4 w-4" strokeWidth={2.25} />
-                        </span>
-                        <div className="min-w-0">
-                          <p className="truncate text-[11px] font-bold text-slate-950">
-                            Image Processing Notes
-                          </p>
-                          <p className="text-[9px] text-slate-400 font-semibold">Notes · 2 days ago</p>
-                        </div>
-                        <span className="ml-auto text-slate-300">→</span>
-                      </a>
-                    </>
+                    <div className="py-3">
+                      <p className="text-[11px] font-semibold text-slate-400">
+                        No recent sessions yet.
+                      </p>
+                      <button
+                        onClick={() => handleStartSession()}
+                        disabled={isCreating}
+                        className="mt-2 rounded-xl bg-[#0C60FC] px-3 py-2 text-[10px] font-extrabold text-white hover:bg-blue-600 transition"
+                      >
+                        {isCreating ? "Starting..." : "Start a session →"}
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -489,41 +559,46 @@ export default function AppHomePage() {
                 A calm plan for the rest of your day.
               </h2>
               <div className="mt-5 space-y-3">
-                <div className="flex gap-3">
-                  <span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#0C60FC] text-[8px] font-bold text-white">
-                    1
-                  </span>
-                  <div>
-                    <p className="text-xs font-bold text-slate-900">14 min · Big-O quiz</p>
-                    <p className="mt-1 text-[10px] leading-4 text-slate-500 font-semibold">
-                      Repair yesterday's two misses.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex gap-3">
-                  <span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-500 text-[8px] font-bold text-white">
-                    2
-                  </span>
-                  <div>
-                    <p className="text-xs font-bold text-slate-900">25 min · OS flashcards</p>
-                    <p className="mt-1 text-[10px] leading-4 text-slate-500 font-semibold">
-                      Review before your 2 PM lab.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex gap-3">
-                  <span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-400 text-[8px] font-bold text-slate-900">
-                    3
-                  </span>
-                  <div>
-                    <p className="text-xs font-bold text-slate-900">50 min · Statistics</p>
-                    <p className="mt-1 text-[10px] leading-4 text-slate-500 font-semibold">
-                      The paper that needs you most.
-                    </p>
-                  </div>
-                </div>
+                {dashboardLoading && !dashboard ? (
+                  [0, 1, 2].map((i) => (
+                    <div key={i} className="flex gap-3">
+                      <span className="mt-1 h-5 w-5 shrink-0 animate-pulse rounded-full bg-slate-200" />
+                      <div className="flex-1 space-y-1.5">
+                        <div className="h-2.5 w-3/4 animate-pulse rounded-full bg-slate-200" />
+                        <div className="h-2 w-1/2 animate-pulse rounded-full bg-slate-200" />
+                      </div>
+                    </div>
+                  ))
+                ) : briefItems.length > 0 ? (
+                  briefItems.map((item, idx) => {
+                    const badge =
+                      [
+                        "bg-[#0C60FC] text-white",
+                        "bg-violet-500 text-white",
+                        "bg-amber-400 text-slate-900",
+                        "bg-emerald-500 text-white",
+                      ][idx] ?? "bg-slate-200 text-slate-700";
+                    return (
+                      <div key={idx} className="flex gap-3">
+                        <span
+                          className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[8px] font-bold ${badge}`}
+                        >
+                          {idx + 1}
+                        </span>
+                        <div>
+                          <p className="text-xs font-bold text-slate-900">{item.title}</p>
+                          <p className="mt-1 text-[10px] leading-4 text-slate-500 font-semibold">
+                            {item.sub}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-xs font-semibold text-slate-500">
+                    No activity yet — start a session to build your streak.
+                  </p>
+                )}
               </div>
 
               <button
@@ -540,22 +615,52 @@ export default function AppHomePage() {
                 <p className="text-[9px] font-extrabold uppercase tracking-wider text-blue-300">
                   Next exam
                 </p>
-                <span className="rounded-full bg-rose-400/15 px-2 py-1 text-[9px] font-bold text-rose-300">
-                  18 days
-                </span>
+                {nextExam ? (
+                  <span className="rounded-full bg-rose-400/15 px-2 py-1 text-[9px] font-bold text-rose-300">
+                    {nextExam.daysLeft} {nextExam.daysLeft === 1 ? "day" : "days"}
+                  </span>
+                ) : (
+                  <span className="rounded-full bg-white/10 px-2 py-1 text-[9px] font-bold text-slate-400">
+                    —
+                  </span>
+                )}
               </div>
-              <h2 className="mt-5 text-xl font-bold text-white">DCIT 205</h2>
-              <p className="text-xs text-slate-400 font-medium">Algorithms · Great Hall</p>
 
-              <div className="mt-5 flex items-center gap-3">
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#0C60FC] text-xs font-extrabold text-white">
-                  72%
-                </span>
-                <div>
-                  <p className="text-[10px] text-slate-400 font-semibold">Exam readiness</p>
-                  <p className="text-xs font-bold text-white">3 topics left</p>
+              {dashboardLoading && !dashboard ? (
+                <div className="mt-5 space-y-3">
+                  <div className="h-4 w-1/3 animate-pulse rounded-full bg-white/10" />
+                  <div className="h-2.5 w-2/3 animate-pulse rounded-full bg-white/10" />
+                  <div className="h-2.5 w-1/2 animate-pulse rounded-full bg-white/10" />
                 </div>
-              </div>
+              ) : nextExam ? (
+                <>
+                  <h2 className="mt-5 text-xl font-bold text-white">
+                    {nextExam.courseCode}
+                  </h2>
+                  <p className="text-xs text-slate-400 font-medium">
+                    {nextExam.courseName} · {nextExam.venue ?? "Venue TBA"}
+                  </p>
+
+                  <div className="mt-5 flex items-center gap-3">
+                    <span className="rounded-full bg-[#0C60FC] px-3 py-1.5 text-[9px] font-extrabold uppercase tracking-wider text-white">
+                      {nextExam.examType}
+                    </span>
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-semibold">Scheduled for</p>
+                      <p className="text-xs font-bold text-white">
+                        {format(new Date(nextExam.scheduledAt), "EEE, d MMM · h:mm a")}
+                      </p>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h2 className="mt-5 text-xl font-bold text-white">No upcoming exams</h2>
+                  <p className="text-xs text-slate-400 font-medium">
+                    You&apos;re clear for now.
+                  </p>
+                </>
+              )}
 
               <Link
                 href="/app/timetable"

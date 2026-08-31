@@ -6,3 +6,4 @@ export * from "./use-flashcards";
 export * from "./use-quizzes";
 export * from "./use-user-courses";
 export * from "./use-timetable";
+export * from "./use-dashboard";

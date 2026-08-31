@@ -96,6 +96,10 @@ export const queryKeys = {
     root: ["analytics"] as const,
     summary: () => [...queryKeys.analytics.root, "summary"] as const,
   },
+  dashboard: {
+    root: ["dashboard"] as const,
+    summary: () => [...queryKeys.dashboard.root, "summary"] as const,
+  },
   status: {
     root: ["status"] as const,
     live: () => [...queryKeys.status.root, "live"] as const,
