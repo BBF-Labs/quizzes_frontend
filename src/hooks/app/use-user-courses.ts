@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
+import { queryKeys } from "@/lib/query-keys";
 import { ICourse } from "../common/use-courses";
 
 export interface IUserCourseEnrollment {
@@ -42,6 +43,7 @@ export function useEnrollInCourse() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user", "courses"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.summary() });
       toast.success("Enrolled in course successfully");
     },
     onError: (error: any) => {
@@ -68,6 +70,7 @@ export function useUnenrollFromCourse() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user", "courses"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.summary() });
       toast.success("Unenrolled from course successfully");
     },
     onError: (error: any) => {

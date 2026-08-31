@@ -31,6 +31,7 @@ import { useMyCourses } from "@/hooks/app/use-user-courses";
 import { useIsMobile } from "@/hooks";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
+import { getCurrentAcademicYear } from "@/lib/academic-year";
 
 type TabView = "week" | "month" | "agenda" | "exams";
 
@@ -222,7 +223,7 @@ export default function PrivateTimetablePage() {
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState<TabView>("week");
   const [selectedSemester, setSelectedSemester] = useState("Semester 1");
-  const [selectedYear, setSelectedYear] = useState("2025-2026");
+  const [selectedYear, setSelectedYear] = useState(getCurrentAcademicYear());
   const [searchQuery, setSearchQuery] = useState("");
   const [calendarDate, setCalendarDate] = useState<Date | undefined>(
     new Date(),
