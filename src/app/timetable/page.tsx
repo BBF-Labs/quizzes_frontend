@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { LandingHeader, LandingFooter, MobileNav } from "@/components/landing";
-import { Search, Plus, Loader2, Calendar, RefreshCw, Bell } from "lucide-react";
+import { Search, Plus, Loader2, Calendar, RefreshCw, Bell, MapPinOff } from "lucide-react";
 import { QUBI_WAVE_SRC } from "@/lib/constants";
 import {
   useQueryParams,
@@ -29,6 +29,7 @@ interface ExamPaper {
   duration: string;
   venue: string;
   hasAssignedVenue?: boolean;
+  isVenueTbd?: boolean;
   colorClass: string;
   dateBadgeBg: string;
   dateBadgeText: string;
@@ -36,6 +37,19 @@ interface ExamPaper {
   semester?: string;
   academicYear?: string;
 }
+
+/**
+ * True when a venue string is the university's "no venue published yet"
+ * placeholder ("Assigned by Department", optionally with an index-range
+ * suffix). Such papers stay visible — they just have no venue yet.
+ */
+const isTbdVenue = (venue: string): boolean => {
+  const normalized = venue
+    .replace(/\s*\(\d+(?:\s*-\s*\d+)?\)\s*$/, "")
+    .trim()
+    .toLowerCase();
+  return normalized === "" || normalized === "assigned by department";
+};
 
 export default function TimetablePage() {
   const { getParam, getNumberParam, setQueryParams } = useQueryParams();
@@ -146,6 +160,7 @@ export default function TimetablePage() {
       duration: `${entry.durationMinutes || 120} MIN`,
       venue: displayVenue,
       hasAssignedVenue: Boolean(entry.assignedVenue),
+      isVenueTbd: isTbdVenue(displayVenue),
       rawScheduledAt: entry.scheduledAt,
       semester: entry.semester,
       academicYear: entry.academicYear,
@@ -393,7 +408,12 @@ export default function TimetablePage() {
                             </span>
                           </div>
                           <div className="mt-3 text-[11px] font-semibold text-slate-500">
-                            {paper.hasAssignedVenue ? (
+                            {paper.isVenueTbd ? (
+                              <span className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-800">
+                                <MapPinOff className="h-3 w-3 text-amber-600" />
+                                Venue not assigned yet
+                              </span>
+                            ) : paper.hasAssignedVenue ? (
                               <span className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-800">
                                 <span className="text-emerald-600">✓</span> Assigned Seat: {paper.venue}
                               </span>
