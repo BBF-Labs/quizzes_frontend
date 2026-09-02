@@ -62,6 +62,7 @@ export function MessageFeed({
   return (
     <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
       {messages.map((msg) => {
+        if (msg.type === "system_action") return null;
         if (msg.type === "artifact" || Boolean((msg as any).artifact)) {
           if (!(msg as any).artifact) {
             return <MessageBubble key={msg.id} message={msg} />;
