@@ -34,6 +34,7 @@ import { toast } from "sonner";
 
 export interface MessageFeedProps extends ArtifactCardCallbacks {
   messages: ZAppMessage[];
+  artifacts?: any[];
   citations?: SessionCitation[];
   activeDirectiveMessageId: string | null;
   sessionStep?: number;
@@ -65,6 +66,7 @@ export interface MessageFeedProps extends ArtifactCardCallbacks {
 
 export function MessageFeed({
   messages,
+  artifacts = [],
   citations = [],
   activeDirectiveMessageId,
   sessionStep = 0,
@@ -96,6 +98,16 @@ export function MessageFeed({
     activeBlock?.concept ||
     activeBlock?.title ||
     (pathwayItems.length > 0 ? pathwayItems[0].title : "Active Concept");
+
+  const artifactsMap = useMemo(() => {
+    const map = new Map<string, any>();
+    artifacts.forEach((a) => {
+      if (a && a.artifactId) {
+        map.set(a.artifactId, a);
+      }
+    });
+    return map;
+  }, [artifacts]);
 
   // Scroll to bottom when messages update
   useEffect(() => {
@@ -320,11 +332,16 @@ export function MessageFeed({
         }
 
         /* ── Skip empty non-artifact and non-directive messages ── */
+        const resolvedArtifact =
+          msg.artifact ||
+          (msg.artifactId ? artifactsMap.get(msg.artifactId) : undefined);
+
         if (
           msg.type !== "directive" &&
           msg.type !== "artifact" &&
           !msg.directive &&
           !msg.artifact &&
+          !resolvedArtifact &&
           !content
         ) {
           return null;
@@ -347,7 +364,7 @@ export function MessageFeed({
         return (
           <ZMessageCanvasNode
             key={msg.id || msg.messageId || index}
-            message={msg}
+            message={{ ...msg, artifact: resolvedArtifact }}
             citations={citations}
             resolved={resolved}
             onOpenSource={onOpenSource}
