@@ -305,7 +305,7 @@ export function MessageFeed({
           msg.type === "tool_call" ||
           msg.type === "tool_result" ||
           (msg.role as any) === "tool" ||
-          (msg.role === "system" && msg.type !== "directive" && !msg.directive)
+          (msg.role === "system" && msg.type !== "artifact" && !msg.artifact)
         ) {
           return null;
         }
@@ -315,6 +315,7 @@ export function MessageFeed({
         /* ── Skip raw prompt triggers ── */
         if (
           content.startsWith("[STUDY JOURNEY:") ||
+          content.startsWith("[STUDENT_ACTION:") ||
           /^Give a very short.*intro welcoming me/i.test(content)
         ) {
           return null;
@@ -331,7 +332,7 @@ export function MessageFeed({
           return null;
         }
 
-        /* ── Skip empty non-artifact and non-directive messages ── */
+        /* ── Skip empty non-artifact messages ── */
         const resolvedArtifact =
           msg.artifact ||
           (msg.artifactId ? artifactsMap.get(msg.artifactId) : undefined);
