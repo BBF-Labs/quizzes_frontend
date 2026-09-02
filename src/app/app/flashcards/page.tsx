@@ -12,6 +12,13 @@ import {
 } from "@/hooks/app/use-app-library";
 import { GenerationDialog } from "@/components/app/library/generation-dialog";
 import { format } from "date-fns";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -136,18 +143,24 @@ export default function FlashcardsPage() {
 
           <div className="flex items-center gap-2">
             {courses.length > 0 && (
-              <select
-                value={courseFilter}
-                onChange={(e) => setCourseFilter(e.target.value)}
-                className="rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-700 focus:outline-none focus:border-[#0C60FC] transition"
+              <Select
+                value={courseFilter || "ALL"}
+                onValueChange={(val) => setCourseFilter(val === "ALL" ? "" : val)}
               >
-                <option value="">All courses</option>
-                {courses.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="h-10 rounded-2xl border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-2xs hover:border-[#0C60FC] transition cursor-pointer">
+                  <SelectValue placeholder="All courses" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border-slate-200 bg-white font-sans text-xs shadow-lg">
+                  <SelectItem value="ALL" className="text-xs font-bold text-slate-700 cursor-pointer">
+                    All courses
+                  </SelectItem>
+                  {courses.map((c) => (
+                    <SelectItem key={c} value={c} className="text-xs font-bold text-slate-700 cursor-pointer">
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             )}
 
             <button
