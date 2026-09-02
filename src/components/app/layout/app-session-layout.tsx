@@ -57,6 +57,9 @@ export interface AppLayoutContextValue {
   messageMutation: ReturnType<typeof useAppMessage>;
   activeMaterialId: string | null;
   setActiveMaterialId: (id: string | null) => void;
+  referencePage?: number;
+  setReferencePage: (page: number | undefined) => void;
+  openDocument: (materialId: string, pageNumber?: number) => void;
   truncateAfter: (messageId: string) => void;
   truncateFrom: (messageId: string) => void;
 }
@@ -267,6 +270,13 @@ export function AppSessionLayout({ children, sessionId }: AppSessionLayoutProps)
     [createNoteMutation],
   );
 
+  const [referencePage, setReferencePage] = useState<number | undefined>(undefined);
+
+  const openDocument = useCallback((materialId: string, pageNumber?: number) => {
+    setActiveMaterialId(materialId);
+    setReferencePage(pageNumber);
+  }, []);
+
   // Context value (no sidebars)
   const contextValue: AppLayoutContextValue = {
     sessionId,
@@ -282,6 +292,9 @@ export function AppSessionLayout({ children, sessionId }: AppSessionLayoutProps)
     messageMutation: messageAction,
     activeMaterialId,
     setActiveMaterialId,
+    referencePage,
+    setReferencePage,
+    openDocument,
     truncateAfter: stream.truncateAfter,
     truncateFrom: stream.truncateFrom,
   };
@@ -334,7 +347,11 @@ export function AppSessionLayout({ children, sessionId }: AppSessionLayoutProps)
                 <DocumentReader
                   materialId={activeMaterialId}
                   sessionId={sessionId}
-                  onClose={() => setActiveMaterialId(null)}
+                  referencePage={referencePage}
+                  onClose={() => {
+                    setActiveMaterialId(null);
+                    setReferencePage(undefined);
+                  }}
                 />
               )}
             </AnimatePresence>

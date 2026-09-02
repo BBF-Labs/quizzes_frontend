@@ -360,7 +360,10 @@ export function MessageFeed({
         }
 
         /* ── Z messages / narration / attached artifacts (NO BACKGROUND) ── */
-        const resolved = msg.messageId !== activeDirectiveMessageId;
+        const msgId = msg.messageId || msg.id;
+        const resolved = Boolean(
+          activeDirectiveMessageId && msgId !== activeDirectiveMessageId,
+        );
         return (
           <ZMessageCanvasNode
             key={msg.id || msg.messageId || index}

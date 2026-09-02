@@ -56,6 +56,7 @@ export default function ChatPage() {
     truncateFrom,
     activeMaterialId,
     setActiveMaterialId,
+    openDocument,
   } = useAppLayout();
 
   // The default start page of any session is the journey page
@@ -227,20 +228,36 @@ export default function ChatPage() {
     }
   };
 
-  // Derive the most-recent unresolved directive messageId
+  // Derive the most-recent unresolved directive or interactive question artifact messageId
   const activeDirectiveMessageId = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i--) {
-      if (messages[i].type === "directive" && messages[i].directive) {
-        return messages[i].messageId;
+      const m = messages[i];
+      if (m.type === "directive" && m.directive) {
+        return m.messageId || m.id;
+      }
+      if (
+        m.artifact &&
+        ["question", "ask_question", "ask_questions", "quiz", "verification"].includes(
+          String(m.artifact.type || "").toLowerCase(),
+        )
+      ) {
+        return m.messageId || m.id;
       }
     }
     return null;
   }, [messages]);
 
+  const handleOpenSource = useCallback(
+    (materialId: string, pageNumber?: number) => {
+      openDocument(materialId, pageNumber);
+    },
+    [openDocument],
+  );
+
   const isOpenEndedQuestionActive = useMemo(() => {
     if (activeDirectiveMessageId) {
       const activeMsg = messages.find(
-        (m) => m.messageId === activeDirectiveMessageId
+        (m) => (m.messageId || m.id) === activeDirectiveMessageId,
       );
       if (activeMsg?.directive?.type === "ASK_QUESTION") {
         const payload = activeMsg.directive.payload as any;
@@ -248,7 +265,10 @@ export default function ChatPage() {
           return true;
         }
       }
-      if (activeMsg?.artifact?.type === "question") {
+      if (
+        activeMsg?.artifact?.type === "question" ||
+        activeMsg?.artifact?.type === "ask_question"
+      ) {
         const payload = (activeMsg.artifact.content || {}) as any;
         if (!payload?.options || payload.options.length === 0) {
           return true;
@@ -519,12 +539,6 @@ export default function ChatPage() {
     () => sendMessage("Pomodoro done, ready to continue", undefined, true),
     [sendMessage],
   );
-
-  // Open Document Reader Lightbox
-  const handleOpenSource = (materialId: string, pageNumber?: number) => {
-    setActiveMaterialId(materialId);
-    setReferencePage(pageNumber);
-  };
 
   // Guard: invalid session
   if (!sessionId || sessionId === "undefined") {

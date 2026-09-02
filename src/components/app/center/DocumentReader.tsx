@@ -108,12 +108,18 @@ export function DocumentReader({
     }
   }
 
-  const scrollToPage = (pageNum: number) => {
+  const scrollToPage = useCallback((pageNum: number) => {
     const target = pageRefs.current[pageNum - 1];
     if (target) {
       target.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (referencePage && numPages && referencePage <= numPages) {
+      scrollToPage(referencePage);
+    }
+  }, [referencePage, numPages, scrollToPage]);
 
   const zoom = (delta: number) => {
     setScale((prev) => Math.min(Math.max(0.6, Number((prev + delta).toFixed(1))), 2.0));
@@ -211,7 +217,7 @@ export function DocumentReader({
         {/* Content Scrolling Canvas Area matching screenshot */}
         <div
           ref={scrollContainerRef}
-          className="flex-1 overflow-y-auto p-6 sm:p-8 flex flex-col items-center min-h-0 bg-[#F7F7F7] scroll-smooth"
+          className="flex-1 overflow-y-auto p-6 sm:p-8 flex flex-col items-center min-h-0 bg-[#F7F7F7] scroll-smooth scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none]"
         >
           {objectUrl ? (
             <Document
@@ -229,7 +235,7 @@ export function DocumentReader({
               }
             >
               {pagesList.map((pageNum) => {
-                const isReference = referencePage ? pageNum === referencePage : pageNum === 17;
+                const isReference = Boolean(referencePage && pageNum === referencePage);
 
                 return (
                   <div key={pageNum} className="flex flex-col items-center w-full max-w-2xl mb-8">
