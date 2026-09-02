@@ -230,11 +230,18 @@ function QAResolvedCard({ entries }: { entries: QAEntryProps[] }) {
 // ─── Helper to Normalize Option Strings ───────────────────────────────────────
 
 function normalizeOptionText(opt: any): string {
-  if (typeof opt === "string") return opt;
-  if (opt && typeof opt === "object") {
-    return opt.text || opt.label || opt.value || opt.id || JSON.stringify(opt);
+  let str = "";
+  if (typeof opt === "string") {
+    str = opt;
+  } else if (opt && typeof opt === "object") {
+    str = opt.text || opt.label || opt.value || opt.id || JSON.stringify(opt);
+  } else {
+    str = String(opt ?? "");
   }
-  return String(opt ?? "");
+  // Strip leading prefixes like "A) ", "A. ", "A: ", "(A) ", "[A] ", "a) ", "1. ", "1) ", etc.
+  return str
+    .replace(/^(\(?[A-Za-z0-9][\)\.\:\-\]]|\b[A-Za-z0-9][\)\.\:\-])\s*/, "")
+    .trim();
 }
 
 function isTrueFalseOptions(options?: any[]): boolean {
