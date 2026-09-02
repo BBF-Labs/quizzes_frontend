@@ -39,78 +39,110 @@ export function SelectionContextMenu({
   const [showNoteInput, setShowNoteInput] = useState(false);
   const [showHighlightColors, setShowHighlightColors] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const isInteractingWithMenuRef = useRef(false);
 
   useEffect(() => {
-    const handleMouseUp = (e: MouseEvent) => {
-      // Don't reset if clicking inside the menu itself
-      if (menuRef.current?.contains(e.target as Node)) return;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
-      setTimeout(() => {
+    const evaluateSelection = () => {
+      if (isInteractingWithMenuRef.current) return;
+
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
         const selection = window.getSelection();
         if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
-          if (!showNoteInput) setPosition(null);
+          if (!showNoteInput && !showHighlightColors) {
+            setPosition(null);
+          }
           return;
         }
 
-        const range = selection.getRangeAt(0);
         const text = selection.toString().trim();
-
-        if (text.length > 0) {
-          try {
-            const container = containerRef.current;
-            if (!container) return;
-
-            // Ensure selection is inside the container
-            const containerNode = container as Node;
-            if (!containerNode.contains(range.commonAncestorContainer)) {
-              return;
-            }
-
-            const rect = range.getBoundingClientRect();
-            const containerRect = container.getBoundingClientRect();
-
-            if (rect.width > 0) {
-              setPosition({
-                x: rect.left - containerRect.left + container.scrollLeft + rect.width / 2,
-                y: rect.top - containerRect.top + container.scrollTop - 8,
-              });
-              setSelectedText(text);
-              setSelectedRect(rect);
-              currentRangeRef.current = range.cloneRange();
-              // Reset panel state on new selection
-              setShowNoteInput(false);
-              setShowHighlightColors(false);
-              setNote("");
-            }
-          } catch {
+        if (!text) {
+          if (!showNoteInput && !showHighlightColors) {
             setPosition(null);
-            setSelectedRect(null);
-            currentRangeRef.current = null;
           }
-        } else {
-          setPosition(null);
-          setSelectedRect(null);
-          currentRangeRef.current = null;
+          return;
         }
-      }, 20);
+
+        try {
+          const container = containerRef.current;
+          if (!container) return;
+
+          const range = selection.getRangeAt(0);
+          const containerNode = container as Node;
+
+          // Check if selection is within the reader container
+          const isInside =
+            containerNode.contains(range.commonAncestorContainer) ||
+            containerNode.contains(range.startContainer) ||
+            containerNode.contains(range.endContainer);
+
+          if (!isInside) return;
+
+          const rect = range.getBoundingClientRect();
+          const containerRect = container.getBoundingClientRect();
+
+          if (rect.width > 0 || rect.height > 0) {
+            const isMobile = window.innerWidth < 768;
+            const menuWidth = isMobile ? 250 : 280;
+            const halfWidth = menuWidth / 2;
+
+            // Compute relative center X of the selection within the scroll container
+            const rawX =
+              rect.left - containerRect.left + container.scrollLeft + rect.width / 2;
+
+            // Clamp X so the menu remains fully inside the scroll container on narrow mobile viewports
+            const minX = container.scrollLeft + halfWidth + 8;
+            const maxX = container.scrollLeft + containerRect.width - halfWidth - 8;
+            const clampedX = Math.max(minX, Math.min(maxX, rawX));
+
+            // On mobile or if near top edge of container (< 75px), position below selection
+            let clampedY: number;
+            if (rect.top - containerRect.top < 75) {
+              clampedY = rect.bottom - containerRect.top + container.scrollTop + 34;
+            } else {
+              clampedY = rect.top - containerRect.top + container.scrollTop - 10;
+            }
+
+            setPosition({ x: clampedX, y: clampedY });
+            setSelectedText(text);
+            setSelectedRect(rect);
+            currentRangeRef.current = range.cloneRange();
+          }
+        } catch {
+          // Handlers safely catch transient DOM selection changes
+        }
+      }, 50);
     };
 
-    const handleMouseDown = (e: MouseEvent) => {
-      if (menuRef.current?.contains(e.target as Node)) return;
-      if (!showNoteInput) {
+    const handlePointerDown = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as Node;
+      if (menuRef.current?.contains(target)) {
+        isInteractingWithMenuRef.current = true;
+        return;
+      }
+      isInteractingWithMenuRef.current = false;
+      if (!showNoteInput && !showHighlightColors) {
         setPosition(null);
-        setShowHighlightColors(false);
       }
     };
 
-    document.addEventListener("mouseup", handleMouseUp);
-    document.addEventListener("mousedown", handleMouseDown);
+    document.addEventListener("mouseup", evaluateSelection);
+    document.addEventListener("touchend", evaluateSelection);
+    document.addEventListener("selectionchange", evaluateSelection);
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("touchstart", handlePointerDown, { passive: true });
 
     return () => {
-      document.removeEventListener("mouseup", handleMouseUp);
-      document.removeEventListener("mousedown", handleMouseDown);
+      if (timeoutId) clearTimeout(timeoutId);
+      document.removeEventListener("mouseup", evaluateSelection);
+      document.removeEventListener("touchend", evaluateSelection);
+      document.removeEventListener("selectionchange", evaluateSelection);
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("touchstart", handlePointerDown);
     };
-  }, [containerRef, showNoteInput]);
+  }, [containerRef, showNoteInput, showHighlightColors]);
 
   const dismiss = () => {
     setPosition(null);
@@ -175,7 +207,12 @@ export function SelectionContextMenu({
           transition={{ duration: 0.15, ease: "easeOut" }}
           onMouseDown={(e) => e.stopPropagation()}
           onMouseUp={(e) => e.stopPropagation()}
-          className="absolute z-100 select-none"
+          onTouchStart={(e) => {
+            e.stopPropagation();
+            isInteractingWithMenuRef.current = true;
+          }}
+          onTouchEnd={(e) => e.stopPropagation()}
+          className="absolute z-100 select-none touch-auto"
           style={{
             left: `${position.x}px`,
             top: `${position.y}px`,
@@ -193,8 +230,12 @@ export function SelectionContextMenu({
               {/* Ask Z — primary action */}
               <button
                 onMouseDown={(e) => e.preventDefault()}
+                onTouchStart={(e) => {
+                  e.stopPropagation();
+                  isInteractingWithMenuRef.current = true;
+                }}
                 onClick={handleAskZ}
-                className="flex items-center gap-1.5 rounded-full bg-[#0C60FC] px-3.5 py-1.5 text-[11px] font-extrabold text-white hover:bg-[#0952d8] transition-colors whitespace-nowrap shadow-xs"
+                className="flex items-center gap-1.5 rounded-full bg-[#0C60FC] px-3.5 py-1.5 text-[11px] font-extrabold text-white hover:bg-[#0952d8] transition-colors whitespace-nowrap shadow-xs cursor-pointer"
               >
                 <Sparkles className="h-3 w-3" />
                 Ask Z
@@ -205,10 +246,14 @@ export function SelectionContextMenu({
               {/* Copy */}
               <button
                 onMouseDown={(e) => e.preventDefault()}
+                onTouchStart={(e) => {
+                  e.stopPropagation();
+                  isInteractingWithMenuRef.current = true;
+                }}
                 onClick={handleCopy}
                 title="Copy"
                 className={cn(
-                  "flex h-7 w-7 items-center justify-center rounded-full transition-colors",
+                  "flex h-7 w-7 items-center justify-center rounded-full transition-colors cursor-pointer",
                   copied
                     ? "bg-emerald-50 text-emerald-600"
                     : "text-slate-500 hover:bg-slate-100 hover:text-slate-900",
@@ -224,13 +269,17 @@ export function SelectionContextMenu({
               {/* Save Note */}
               <button
                 onMouseDown={(e) => e.preventDefault()}
+                onTouchStart={(e) => {
+                  e.stopPropagation();
+                  isInteractingWithMenuRef.current = true;
+                }}
                 onClick={() => {
                   setShowHighlightColors(false);
                   setShowNoteInput((v) => !v);
                 }}
                 title="Save note"
                 className={cn(
-                  "flex h-7 w-7 items-center justify-center rounded-full transition-colors",
+                  "flex h-7 w-7 items-center justify-center rounded-full transition-colors cursor-pointer",
                   showNoteInput
                     ? "bg-amber-50 text-amber-600"
                     : "text-slate-500 hover:bg-slate-100 hover:text-slate-900",
@@ -244,13 +293,17 @@ export function SelectionContextMenu({
                 <>
                   <button
                     onMouseDown={(e) => e.preventDefault()}
+                    onTouchStart={(e) => {
+                      e.stopPropagation();
+                      isInteractingWithMenuRef.current = true;
+                    }}
                     onClick={() => {
                       setShowNoteInput(false);
                       setShowHighlightColors((v) => !v);
                     }}
                     title="Highlight"
                     className={cn(
-                      "flex h-7 w-7 items-center justify-center rounded-full transition-colors",
+                      "flex h-7 w-7 items-center justify-center rounded-full transition-colors cursor-pointer",
                       showHighlightColors
                         ? "bg-blue-50 text-[#0C60FC]"
                         : "text-slate-500 hover:bg-slate-100 hover:text-slate-900",
@@ -268,10 +321,14 @@ export function SelectionContextMenu({
                           <button
                             key={c.id}
                             onMouseDown={(e) => e.preventDefault()}
+                            onTouchStart={(e) => {
+                              e.stopPropagation();
+                              isInteractingWithMenuRef.current = true;
+                            }}
                             onClick={() => handleHighlight(c.id)}
                             title={c.label}
                             className={cn(
-                              "h-4 w-4 rounded-full border-2 border-white shadow-sm hover:scale-125 transition-transform",
+                              "h-4 w-4 rounded-full border-2 border-white shadow-sm hover:scale-125 transition-transform cursor-pointer",
                               c.bg,
                             )}
                           />
@@ -285,9 +342,13 @@ export function SelectionContextMenu({
               {/* Dismiss */}
               <button
                 onMouseDown={(e) => e.preventDefault()}
+                onTouchStart={(e) => {
+                  e.stopPropagation();
+                  isInteractingWithMenuRef.current = true;
+                }}
                 onClick={dismiss}
                 title="Dismiss"
-                className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors cursor-pointer"
               >
                 <X className="h-3 w-3" />
               </button>
