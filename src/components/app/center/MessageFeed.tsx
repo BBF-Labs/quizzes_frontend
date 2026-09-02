@@ -337,9 +337,7 @@ export function MessageFeed({
           (msg.artifactId ? artifactsMap.get(msg.artifactId) : undefined);
 
         if (
-          msg.type !== "directive" &&
           msg.type !== "artifact" &&
-          !msg.directive &&
           !msg.artifact &&
           !resolvedArtifact &&
           !content
