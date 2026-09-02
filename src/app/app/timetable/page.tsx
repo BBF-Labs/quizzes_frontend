@@ -42,6 +42,14 @@ import type { ITimetableWeekEvent, TimetableEventType } from "@/types/timetable"
 import { useIsMobile } from "@/hooks";
 import { toast } from "sonner";
 import { getCurrentAcademicYear } from "@/lib/academic-year";
+import { useQueryParams } from "@/hooks/common/use-query-params";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type TabView = "week" | "month" | "agenda" | "exams";
 
@@ -63,10 +71,13 @@ const WORKLOAD_BAR_COLORS = [
   "bg-blue-300",
 ];
 
-function getEventStyle(type: TimetableEventType, idx = 0) {
+function getEventStyle(
+  type: TimetableEventType,
+  idx = 0,
+): { bg: string; text: string; ring: string } {
   switch (type) {
     case "exam":
-      return { bg: "bg-slate-950", text: "text-white" };
+      return { bg: "bg-slate-950", text: "text-white", ring: "" };
     case "lab":
     case "tutorial":
       return {
@@ -121,12 +132,48 @@ const WEEK_DAY_LABELS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"] as con
 
 export default function PrivateTimetablePage() {
   const isMobile = useIsMobile();
-  const [activeTab, setActiveTab] = useState<TabView>("week");
-  const [selectedSemester, setSelectedSemester] = useState("Semester 1");
-  const [selectedYear, setSelectedYear] = useState(getCurrentAcademicYear());
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [monthCursor, setMonthCursor] = useState<Date>(new Date());
+  const { setQueryParams, getParam } = useQueryParams();
+
+  const urlTab = (getParam("tab") || getParam("view")) as TabView;
+  const initialTab: TabView = ["week", "month", "agenda", "exams"].includes(urlTab)
+    ? urlTab
+    : "week";
+
+  const initialSemester = getParam("semester") || "Semester 2";
+  const initialYear = getParam("academicYear") || getParam("year") || getCurrentAcademicYear();
+  const initialDateStr = getParam("date");
+  const initialDate = initialDateStr ? new Date(initialDateStr + "T00:00:00") : new Date();
+
+  const [activeTab, setActiveTabState] = useState<TabView>(initialTab);
+  const [selectedSemester, setSelectedSemesterState] = useState(initialSemester);
+  const [selectedYear, setSelectedYearState] = useState(initialYear);
+  const [selectedDate, setSelectedDateState] = useState<Date>(
+    isNaN(initialDate.getTime()) ? new Date() : initialDate,
+  );
+  const [monthCursor, setMonthCursor] = useState<Date>(
+    isNaN(initialDate.getTime()) ? new Date() : initialDate,
+  );
   const [searchQuery, setSearchQuery] = useState("");
+
+  const setActiveTab = (tab: TabView) => {
+    setActiveTabState(tab);
+    setQueryParams({ tab, view: tab });
+  };
+
+  const setSelectedSemester = (sem: string) => {
+    setSelectedSemesterState(sem);
+    setQueryParams({ semester: sem });
+  };
+
+  const setSelectedYear = (yr: string) => {
+    setSelectedYearState(yr);
+    setQueryParams({ academicYear: yr });
+  };
+
+  const setSelectedDate = (d: Date) => {
+    setSelectedDateState(d);
+    setQueryParams({ date: format(d, "yyyy-MM-dd") });
+  };
 
   const selectedDateStr = format(selectedDate, "yyyy-MM-dd");
 
@@ -275,7 +322,7 @@ export default function PrivateTimetablePage() {
 
   return (
     <div className="dash-grid min-h-screen px-4 pb-24 pt-6 sm:px-6 lg:px-8 lg:pb-12 text-slate-900 bg-[#F7F9FC]">
-      <div className="mx-auto max-w-[1280px] space-y-4">
+      <div className="mx-auto max-w-7xl space-y-4">
         {/* ── Header Hero Banner ── */}
         <section className="relative overflow-hidden rounded-[28px] bg-[#131B27] p-5 text-white sm:p-7 shadow-xl">
           <div className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full bg-[#0C60FC]/30 blur-3xl" />
@@ -355,23 +402,31 @@ export default function PrivateTimetablePage() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <select
-                    value={selectedSemester}
-                    onChange={(e) => setSelectedSemester(e.target.value)}
-                    className="rounded-xl border border-slate-200 bg-[#F7F9FC] px-3 py-2 text-xs font-bold text-slate-700 outline-none cursor-pointer"
-                  >
-                    <option value="Semester 1">Semester 1</option>
-                    <option value="Semester 2">Semester 2</option>
-                  </select>
+                  <Select value={selectedSemester} onValueChange={setSelectedSemester}>
+                    <SelectTrigger className="h-9 rounded-xl border-slate-200 bg-[#F7F9FC] px-3 py-2 text-xs font-bold text-slate-700 shadow-2xs hover:bg-white transition cursor-pointer">
+                      <SelectValue placeholder="Select Semester" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-slate-200 bg-white font-sans text-xs shadow-lg">
+                      {(overview?.availableSemesters || ["Semester 1", "Semester 2"]).map((sem) => (
+                        <SelectItem key={sem} value={sem} className="text-xs font-bold text-slate-700 cursor-pointer">
+                          {sem}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
 
-                  <select
-                    value={selectedYear}
-                    onChange={(e) => setSelectedYear(e.target.value)}
-                    className="rounded-xl border border-slate-200 bg-[#F7F9FC] px-3 py-2 text-xs font-bold text-slate-700 outline-none cursor-pointer"
-                  >
-                    <option value="2025/2026">2025/2026</option>
-                    <option value="2024/2025">2024/2025</option>
-                  </select>
+                  <Select value={selectedYear} onValueChange={setSelectedYear}>
+                    <SelectTrigger className="h-9 rounded-xl border-slate-200 bg-[#F7F9FC] px-3 py-2 text-xs font-bold text-slate-700 shadow-2xs hover:bg-white transition cursor-pointer">
+                      <SelectValue placeholder="Select Academic Year" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-slate-200 bg-white font-sans text-xs shadow-lg">
+                      {(overview?.availableAcademicYears || ["2025/2026", "2024/2025"]).map((yr) => (
+                        <SelectItem key={yr} value={yr} className="text-xs font-bold text-slate-700 cursor-pointer">
+                          {yr}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
 
                   <div
                     id="tabs"
@@ -431,7 +486,7 @@ export default function PrivateTimetablePage() {
 
             {/* ── TAB 1: WEEK VIEW ── */}
             {activeTab === "week" && (
-              <section className="panel p-4 sm:p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm flex-1 flex flex-col justify-between min-h-[520px]">
+              <section className="panel p-4 sm:p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm flex-1 flex flex-col justify-between min-h-130">
                 <div>
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
@@ -553,7 +608,7 @@ export default function PrivateTimetablePage() {
 
             {/* ── TAB 2: MONTH VIEW ── */}
             {activeTab === "month" && (
-              <section className="panel p-4 sm:p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm flex-1 flex flex-col justify-between min-h-[520px]">
+              <section className="panel p-4 sm:p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm flex-1 flex flex-col justify-between min-h-130">
                 <div>
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
@@ -587,7 +642,7 @@ export default function PrivateTimetablePage() {
                   </div>
 
                   <div className="mt-5 overflow-x-auto">
-                    <div className="min-w-[640px]">
+                    <div className="min-w-160">
                       <div className="grid grid-cols-7 gap-1.5 pb-2 text-center text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
                         <span>Mon</span>
                         <span>Tue</span>
@@ -609,7 +664,7 @@ export default function PrivateTimetablePage() {
                               key={dStr}
                               type="button"
                               onClick={() => setSelectedDate(d)}
-                              className={`min-h-[76px] rounded-2xl p-2 text-left transition border cursor-pointer ${
+                              className={`min-h-19 rounded-2xl p-2 text-left transition border cursor-pointer ${
                                 active
                                   ? "border-[#0C60FC] bg-blue-50/70 ring-2 ring-[#0C60FC]"
                                   : today
@@ -643,7 +698,7 @@ export default function PrivateTimetablePage() {
 
             {/* ── TAB 3: AGENDA VIEW ── */}
             {activeTab === "agenda" && (
-              <section className="panel p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm space-y-4 flex-1 flex flex-col justify-between min-h-[520px]">
+              <section className="panel p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm space-y-4 flex-1 flex flex-col justify-between min-h-130">
                 <div>
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <h2 className="min-w-0 text-base font-bold text-slate-950">
@@ -702,7 +757,7 @@ export default function PrivateTimetablePage() {
 
             {/* ── TAB 4: EXAMS VIEW ── */}
             {activeTab === "exams" && (
-              <section className="panel p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm flex-1 flex flex-col justify-between min-h-[520px]">
+              <section className="panel p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm flex-1 flex flex-col justify-between min-h-130">
                 <div>
                   <div className="flex items-center justify-between">
                     <div>
@@ -720,56 +775,81 @@ export default function PrivateTimetablePage() {
 
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mt-5">
                     {exams.length > 0 ? (
-                      exams.map((entry) => (
-                        <article
-                          key={entry.id}
-                          className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-xs hover:shadow-md transition flex flex-col justify-between"
-                        >
-                          <div>
-                            <div className="flex items-start justify-between">
-                              <span className="rounded-full bg-rose-50 px-2.5 py-1 text-[9px] font-extrabold text-rose-600 uppercase">
-                                {entry.daysToExam === 0
-                                  ? "TODAY"
-                                  : `IN ${entry.daysToExam} DAYS`}
-                              </span>
-                              <span className="text-xs font-extrabold text-slate-400">
-                                {format(new Date(entry.scheduledAt), "d MMM")}
-                              </span>
+                      exams.map((entry) => {
+                        const isPast = entry.timingStatus === "past";
+                        const isTodayExam = entry.timingStatus === "today" || entry.daysToExam === 0;
+
+                        return (
+                          <article
+                            key={entry.id}
+                            className={`rounded-[24px] border p-5 transition flex flex-col justify-between ${
+                              isPast
+                                ? "border-slate-200/60 bg-slate-50/60 opacity-80"
+                                : "border-slate-200 bg-white shadow-xs hover:shadow-md"
+                            }`}
+                          >
+                            <div>
+                              <div className="flex items-start justify-between">
+                                {isPast ? (
+                                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[9px] font-extrabold text-slate-500 uppercase">
+                                    PAST
+                                  </span>
+                                ) : isTodayExam ? (
+                                  <span className="rounded-full bg-rose-500 text-white px-2.5 py-1 text-[9px] font-extrabold uppercase shadow-2xs">
+                                    TODAY
+                                  </span>
+                                ) : (
+                                  <span className="rounded-full bg-rose-50 px-2.5 py-1 text-[9px] font-extrabold text-rose-600 uppercase">
+                                    IN {entry.daysToExam} {entry.daysToExam === 1 ? "DAY" : "DAYS"}
+                                  </span>
+                                )}
+                                <span className="text-xs font-extrabold text-slate-400">
+                                  {format(new Date(entry.scheduledAt), "d MMM")}
+                                </span>
+                              </div>
+
+                              <h3 className="mt-3 text-base font-bold text-slate-950">
+                                {entry.courseCode}
+                              </h3>
+                              <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                                {entry.courseName}
+                              </p>
+
+                              <div className="mt-4 space-y-1.5 text-xs font-semibold text-slate-600">
+                                <p className="flex items-center gap-2">
+                                  <Clock className="h-3.5 w-3.5 text-slate-400" />
+                                  {format(new Date(entry.scheduledAt), "HH:mm")} ·{" "}
+                                  {entry.durationMinutes} mins
+                                </p>
+                                <p className="flex items-center gap-2">
+                                  <MapPin className="h-3.5 w-3.5 text-slate-400" />
+                                  {entry.venue}
+                                </p>
+                              </div>
                             </div>
 
-                            <h3 className="mt-3 text-base font-bold text-slate-950">
-                              {entry.courseCode}
-                            </h3>
-                            <p className="text-xs text-slate-500 font-semibold mt-0.5">
-                              {entry.courseName}
-                            </p>
-
-                            <div className="mt-4 space-y-1.5 text-xs font-semibold text-slate-600">
-                              <p className="flex items-center gap-2">
-                                <Clock className="h-3.5 w-3.5 text-slate-400" />
-                                {format(new Date(entry.scheduledAt), "HH:mm")} ·{" "}
-                                {entry.durationMinutes} mins
-                              </p>
-                              <p className="flex items-center gap-2">
-                                <MapPin className="h-3.5 w-3.5 text-slate-400" />
-                                {entry.venue}
-                              </p>
+                            <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between">
+                              <span
+                                className={`text-[10px] font-extrabold uppercase ${
+                                  isPast ? "text-slate-400" : "text-emerald-600"
+                                }`}
+                              >
+                                {entry.assignedVenue ? "✓ Seat Assigned" : "General Hall"}
+                              </span>
+                              <Link
+                                href="/app"
+                                className={`rounded-xl px-3 py-1.5 text-[10px] font-extrabold transition ${
+                                  isPast
+                                    ? "bg-slate-200 text-slate-700 hover:bg-slate-300"
+                                    : "bg-slate-950 text-white hover:bg-[#0C60FC]"
+                                }`}
+                              >
+                                {isPast ? "Review paper →" : "Study paper →"}
+                              </Link>
                             </div>
-                          </div>
-
-                          <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between">
-                            <span className="text-[10px] font-extrabold text-emerald-600 uppercase">
-                              {entry.assignedVenue ? "✓ Seat Assigned" : "General Hall"}
-                            </span>
-                            <Link
-                              href="/app"
-                              className="rounded-xl bg-slate-950 px-3 py-1.5 text-[10px] font-extrabold text-white hover:bg-[#0C60FC] transition"
-                            >
-                              Study paper →
-                            </Link>
-                          </div>
-                        </article>
-                      ))
+                          </article>
+                        );
+                      })
                     ) : (
                       <div className="col-span-full py-12 text-center text-xs font-semibold text-slate-400">
                         No upcoming exam entries recorded for this semester.
@@ -784,7 +864,7 @@ export default function PrivateTimetablePage() {
           {/* ── RIGHT SIDEBAR: Tasks & Workload Widget (Matched Equal Height) ── */}
           <aside className="flex flex-col gap-4 h-full">
             {/* 1. Tasks Card */}
-            <div className="panel p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm flex-1 flex flex-col justify-between min-h-[380px]">
+            <div className="panel p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm flex-1 flex flex-col justify-between min-h-95">
               <div className="space-y-3 shrink-0">
                 <div className="flex items-center justify-between">
                   <div>
@@ -833,7 +913,7 @@ export default function PrivateTimetablePage() {
               </div>
 
               {/* Tasks List */}
-              <div className="my-2 max-h-[220px] overflow-y-auto no-scrollbar flex-1">
+              <div className="my-2 max-h-55 overflow-y-auto no-scrollbar flex-1">
                 {tasksLoading ? (
                   <div className="flex flex-col items-center justify-center h-full gap-2 text-slate-400">
                     <Loader2 className="h-5 w-5 animate-spin text-[#0C60FC]" />
@@ -874,7 +954,7 @@ export default function PrivateTimetablePage() {
                                   : "border-slate-300 bg-white group-hover:border-[#0C60FC]"
                               }`}
                             >
-                              {isDone && <Check className="h-3 w-3 stroke-[3]" />}
+                              {isDone && <Check className="h-3 w-3 stroke-3" />}
                             </button>
 
                             <div className="min-w-0 flex-1 pr-6">

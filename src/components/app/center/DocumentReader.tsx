@@ -139,7 +139,7 @@ export function DocumentReader({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.97, y: 8 }}
         transition={{ duration: 0.2 }}
-        className="relative w-full max-w-4xl h-[92vh] max-h-[880px] rounded-[28px] bg-white border border-slate-200/70 shadow-2xl flex flex-col overflow-hidden"
+        className="relative w-full max-w-4xl h-[92vh] max-h-220 rounded-[28px] bg-white border border-slate-200/70 shadow-2xl flex flex-col overflow-hidden"
       >
         {/* Top Header matching screenshot */}
         <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-slate-100 shrink-0">
@@ -253,8 +253,8 @@ export function DocumentReader({
                       className={cn(
                         "relative w-full rounded-[20px] bg-white transition-all overflow-hidden",
                         isReference
-                          ? "border-2 border-[#FF5722] shadow-md p-4 min-h-[580px] flex flex-col items-center justify-center"
-                          : "border border-slate-200 shadow-sm p-4 min-h-[580px] flex flex-col items-center justify-center"
+                          ? "border-2 border-[#FF5722] shadow-md p-4 min-h-145 flex flex-col items-center justify-center"
+                          : "border border-slate-200 shadow-sm p-4 min-h-145 flex flex-col items-center justify-center"
                       )}
                     >
                       {/* Orange "Reference" Badge embedded on top-left */}

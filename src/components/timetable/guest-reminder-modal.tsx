@@ -262,7 +262,7 @@ export function GuestReminderModal({
         ) : (
           <div>
             {/* Header */}
-            <div className="border-b border-slate-100 bg-gradient-to-br from-blue-50/80 via-white to-slate-50 p-6 sm:p-7">
+            <div className="border-b border-slate-100 bg-linear-to-br from-blue-50/80 via-white to-slate-50 p-6 sm:p-7">
               <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-100/60 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-[#0C60FC]">
                 <Bell className="h-3 w-3" />
                 <span>Free Exam Reminders</span>

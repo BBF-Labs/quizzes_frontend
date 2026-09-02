@@ -9,6 +9,13 @@ import { useDeleteLibraryNote, useLibraryNotes } from "@/hooks/app";
 import { cn } from "@/lib/utils";
 import type { NoteSummary } from "@/types/session";
 import { format } from "date-fns";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -208,18 +215,24 @@ export default function NotesPage() {
             )}
           </div>
           {courses.length > 0 && (
-            <select
-              value={courseFilter}
-              onChange={(e) => setCourseFilter(e.target.value)}
-              className="border border-border/50 bg-card/40 px-3 py-2.5 text-[12px] font-mono text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors"
+            <Select
+              value={courseFilter || "ALL"}
+              onValueChange={(val) => setCourseFilter(val === "ALL" ? "" : val)}
             >
-              <option value="">All courses</option>
-              {courses.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="h-10 rounded-xl border border-border/50 bg-card/40 px-3 py-2 text-[12px] font-mono text-muted-foreground shadow-2xs hover:border-primary/50 transition cursor-pointer">
+                <SelectValue placeholder="All courses" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border border-border/50 bg-popover font-mono text-xs shadow-lg">
+                <SelectItem value="ALL" className="text-xs cursor-pointer">
+                  All courses
+                </SelectItem>
+                {courses.map((c) => (
+                  <SelectItem key={c} value={c} className="text-xs cursor-pointer">
+                    {c}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           )}
         </div>
 

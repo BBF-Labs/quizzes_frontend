@@ -138,7 +138,7 @@ export default function AppHomePage() {
 
   return (
     <div className="dash-grid min-h-screen px-4 pb-24 pt-6 sm:px-6 lg:px-8 lg:pb-12 text-slate-900 bg-[#F7F9FC]">
-      <div className="mx-auto max-w-[1240px]">
+      <div className="mx-auto max-w-310">
         {/* Header Hero Section */}
         <section className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>
@@ -544,61 +544,63 @@ export default function AppHomePage() {
           </div>
 
           {/* Sidebar Column: Today's Brief + Next Exam */}
-          <aside className="space-y-4">
+          <aside className="flex flex-col justify-between space-y-4 h-full">
             {/* Today's Brief */}
-            <div className="rounded-[28px] border border-slate-200 bg-[#FFFDF8] p-5 shadow-sm">
-              <div className="flex items-center justify-between">
-                <p className="text-[9px] font-extrabold uppercase tracking-[.18em] text-amber-700">
-                  Today's brief
-                </p>
-                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white text-xs shadow-sm font-bold">
-                  i
-                </span>
-              </div>
-              <h2 className="mt-5 text-xl font-bold text-slate-950">
-                A calm plan for the rest of your day.
-              </h2>
-              <div className="mt-5 space-y-3">
-                {dashboardLoading && !dashboard ? (
-                  [0, 1, 2].map((i) => (
-                    <div key={i} className="flex gap-3">
-                      <span className="mt-1 h-5 w-5 shrink-0 animate-pulse rounded-full bg-slate-200" />
-                      <div className="flex-1 space-y-1.5">
-                        <div className="h-2.5 w-3/4 animate-pulse rounded-full bg-slate-200" />
-                        <div className="h-2 w-1/2 animate-pulse rounded-full bg-slate-200" />
-                      </div>
-                    </div>
-                  ))
-                ) : briefItems.length > 0 ? (
-                  briefItems.map((item, idx) => {
-                    const badge =
-                      [
-                        "bg-[#0C60FC] text-white",
-                        "bg-violet-500 text-white",
-                        "bg-amber-400 text-slate-900",
-                        "bg-emerald-500 text-white",
-                      ][idx] ?? "bg-slate-200 text-slate-700";
-                    return (
-                      <div key={idx} className="flex gap-3">
-                        <span
-                          className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[8px] font-bold ${badge}`}
-                        >
-                          {idx + 1}
-                        </span>
-                        <div>
-                          <p className="text-xs font-bold text-slate-900">{item.title}</p>
-                          <p className="mt-1 text-[10px] leading-4 text-slate-500 font-semibold">
-                            {item.sub}
-                          </p>
+            <div className="flex-1 flex flex-col justify-between rounded-[28px] border border-slate-200 bg-[#FFFDF8] p-5 shadow-sm">
+              <div>
+                <div className="flex items-center justify-between">
+                  <p className="text-[9px] font-extrabold uppercase tracking-[.18em] text-amber-700">
+                    Today's brief
+                  </p>
+                  <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white text-xs shadow-sm font-bold">
+                    i
+                  </span>
+                </div>
+                <h2 className="mt-5 text-xl font-bold text-slate-950">
+                  A calm plan for the rest of your day.
+                </h2>
+                <div className="mt-5 space-y-3">
+                  {dashboardLoading && !dashboard ? (
+                    [0, 1, 2].map((i) => (
+                      <div key={i} className="flex gap-3">
+                        <span className="mt-1 h-5 w-5 shrink-0 animate-pulse rounded-full bg-slate-200" />
+                        <div className="flex-1 space-y-1.5">
+                          <div className="h-2.5 w-3/4 animate-pulse rounded-full bg-slate-200" />
+                          <div className="h-2 w-1/2 animate-pulse rounded-full bg-slate-200" />
                         </div>
                       </div>
-                    );
-                  })
-                ) : (
-                  <p className="text-xs font-semibold text-slate-500">
-                    No activity yet — start a session to build your streak.
-                  </p>
-                )}
+                    ))
+                  ) : briefItems.length > 0 ? (
+                    briefItems.map((item, idx) => {
+                      const badge =
+                        [
+                          "bg-[#0C60FC] text-white",
+                          "bg-violet-500 text-white",
+                          "bg-amber-400 text-slate-900",
+                          "bg-emerald-500 text-white",
+                        ][idx] ?? "bg-slate-200 text-slate-700";
+                      return (
+                        <div key={idx} className="flex gap-3">
+                          <span
+                            className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[8px] font-bold ${badge}`}
+                          >
+                            {idx + 1}
+                          </span>
+                          <div>
+                            <p className="text-xs font-bold text-slate-900">{item.title}</p>
+                            <p className="mt-1 text-[10px] leading-4 text-slate-500 font-semibold">
+                              {item.sub}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p className="text-xs font-semibold text-slate-500">
+                      No activity yet — start a session to build your streak.
+                    </p>
+                  )}
+                </div>
               </div>
 
               <button
@@ -610,7 +612,7 @@ export default function AppHomePage() {
             </div>
 
             {/* Next Exam Widget */}
-            <div className="rounded-[28px] bg-[#131B27] p-5 text-white shadow-xl">
+            <div className="rounded-[28px] bg-[#131B27] p-5 text-white shadow-xl mt-auto">
               <div className="flex items-center justify-between">
                 <p className="text-[9px] font-extrabold uppercase tracking-wider text-blue-300">
                   Next exam
