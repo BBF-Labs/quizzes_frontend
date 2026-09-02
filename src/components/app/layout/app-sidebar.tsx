@@ -151,7 +151,7 @@ export function AppSidebar() {
       label: "Academics",
       items: [
         { href: "/app/courses", label: "My courses", icon: GraduationCap },
-        { href: "/app/timetable", label: "Timetable", icon: CalendarDays, badge: "4" },
+        { href: "/app/timetable", label: "Timetable", icon: CalendarDays },
       ],
     },
     {
