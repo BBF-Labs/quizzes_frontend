@@ -106,5 +106,7 @@ export interface ITimetableOverviewPayload {
   };
   availableSemesters: string[];
   availableAcademicYears: string[];
+  activeSemester?: string;
+  activeAcademicYear?: string;
   generatedAt: string;
 }
