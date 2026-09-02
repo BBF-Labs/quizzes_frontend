@@ -50,6 +50,7 @@ import {
 } from "@/components/app/quizzes/question-renderer";
 import { KnowledgePathway, type KnowledgeBlockItem } from "./KnowledgePathway";
 import { cn } from "@/lib/utils";
+import { answersMatch } from "@/lib/quiz-answer";
 import type {
   ZAskQuestionPayload,
   ZAskQuestionsPayload,
@@ -183,6 +184,7 @@ interface QAEntryProps {
   answer: string;
   explanation?: string;
   correctAnswer?: string;
+  options?: string[];
   isCorrect?: boolean;
 }
 
@@ -196,13 +198,23 @@ function QAResolvedCard({ entries }: { entries: QAEntryProps[] }) {
       className="w-full max-w-xl mx-auto rounded-[22px] border border-slate-200/90 bg-[#FAFBFD] p-4 sm:p-5 text-xs shadow-2xs space-y-3.5"
     >
       {entries.map((e, i) => {
-        const normAns = normalizeOptionText(e.answer).trim().toLowerCase();
-        const normCorrect = e.correctAnswer ? normalizeOptionText(e.correctAnswer).trim().toLowerCase() : "";
-        const isActuallyCorrect = e.isCorrect !== undefined
-          ? e.isCorrect
-          : normCorrect
-          ? normAns === normCorrect || normAns.includes(normCorrect) || normCorrect.includes(normAns)
-          : true;
+        const isActuallyCorrect =
+          e.isCorrect !== undefined
+            ? e.isCorrect
+            : e.correctAnswer
+            ? answersMatch("mcq", e.answer, e.correctAnswer, e.options)
+            : true;
+
+        let displayCorrectAnswer = e.correctAnswer || "";
+        if (e.options && e.options.length > 0 && e.correctAnswer) {
+          const cleanKey = e.correctAnswer.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+          if (cleanKey.length === 1 && cleanKey >= "a" && cleanKey <= "z") {
+            const idx = cleanKey.charCodeAt(0) - 97;
+            if (e.options[idx]) {
+              displayCorrectAnswer = `${String.fromCharCode(65 + idx)}. ${e.options[idx]}`;
+            }
+          }
+        }
 
         return (
           <div key={i} className="space-y-3">
@@ -249,11 +261,11 @@ function QAResolvedCard({ entries }: { entries: QAEntryProps[] }) {
                     {e.answer || "—"}
                   </p>
 
-                  {!isActuallyCorrect && e.correctAnswer && e.correctAnswer !== e.answer && (
+                  {!isActuallyCorrect && displayCorrectAnswer && (
                     <p className="text-[11.5px] text-emerald-800 font-semibold flex items-center gap-1.5 pt-0.5">
                       <span className="text-emerald-600 font-bold">Correct answer:</span>
                       <span className="underline decoration-emerald-400 underline-offset-2">
-                        {e.correctAnswer}
+                        {displayCorrectAnswer}
                       </span>
                     </p>
                   )}
@@ -1522,15 +1534,26 @@ function ShowQuizCard({
   onSkip,
 }: ShowQuizCardProps) {
   const questions = extractAllQuizQuestions(payload);
-  const persistedAnswers =
-    payload.userAnswers || payload.answers || [];
+  const persistedAnswers: string[] =
+    payload.userAnswers ||
+    payload.answers ||
+    (payload.userAnswer ? [payload.userAnswer] : []);
 
   const [answers, setAnswers] = useState<string[]>(
     questions.map((_, i) => persistedAnswers[i] || ""),
   );
   const submittedRef = useRef<string[]>(persistedAnswers);
 
+  const isQuizDone = Boolean(
+    resolved ||
+      (persistedAnswers.length > 0 &&
+        persistedAnswers.some((a: string) => a && a.trim().length > 0)) ||
+      (submittedRef.current.length > 0 &&
+        submittedRef.current.some((a: string) => a && a.trim().length > 0)),
+  );
+
   const handleOptionSelect = (qIdx: number, opt: string) => {
+    if (isQuizDone) return;
     setAnswers((prev) => {
       const next = [...prev];
       next[qIdx] = opt;
@@ -1539,6 +1562,7 @@ function ShowQuizCard({
   };
 
   const handleTextChange = (qIdx: number, val: string) => {
+    if (isQuizDone) return;
     setAnswers((prev) => {
       const next = [...prev];
       next[qIdx] = val;
@@ -1550,30 +1574,13 @@ function ShowQuizCard({
     answers.length > 0 && answers.every((a) => a && a.trim().length > 0);
 
   const handleSubmit = () => {
-    if (!allAnswered) return;
+    if (!allAnswered || isQuizDone) return;
     submittedRef.current = [...answers];
     onSubmitAnswer(
       answers,
       questions.map((q) => q.question || q.text || ""),
     );
   };
-
-  if (
-    resolved ||
-    (persistedAnswers.length > 0 &&
-      persistedAnswers.some((a: string) => a && a.trim().length > 0))
-  ) {
-    return (
-      <QAResolvedCard
-        entries={questions.map((q, i) => ({
-          question: q.question || q.text || "",
-          answer: submittedRef.current[i] || persistedAnswers[i] || "—",
-          correctAnswer: q.correctAnswer,
-          explanation: q.explanation,
-        }))}
-      />
-    );
-  }
 
   if (questions.length === 0) return null;
 
@@ -1584,11 +1591,41 @@ function ShowQuizCard({
       label="Quiz Challenge"
       badge={`${questions.length} Question${questions.length > 1 ? "s" : ""}`}
     >
-      <div className="space-y-5 divide-y divide-slate-100">
+      <div className="space-y-6 divide-y divide-slate-100">
         {questions.map((q, qIdx) => {
           const qText = q.question || q.text || `Question ${qIdx + 1}`;
           const rawOpts: any[] = Array.isArray(q.options) ? q.options : [];
           const opts = rawOpts.map(normalizeOptionText);
+          const correctAns =
+            q.correctAnswer || q.answer || q.solution || "";
+          const chosenAnswer =
+            submittedRef.current[qIdx] ||
+            persistedAnswers[qIdx] ||
+            answers[qIdx] ||
+            "";
+          const isQuestionAnswered = Boolean(
+            isQuizDone && chosenAnswer && chosenAnswer.trim().length > 0,
+          );
+          const isUserCorrect = answersMatch(
+            q.type || "mcq",
+            chosenAnswer,
+            correctAns,
+            opts,
+          );
+
+          let displayCorrectAnswer = correctAns;
+          if (opts.length > 0 && correctAns) {
+            const cleanKey = correctAns
+              .trim()
+              .toLowerCase()
+              .replace(/[^a-z0-9]/g, "");
+            if (cleanKey.length === 1 && cleanKey >= "a" && cleanKey <= "z") {
+              const idx = cleanKey.charCodeAt(0) - 97;
+              if (opts[idx]) {
+                displayCorrectAnswer = `${String.fromCharCode(65 + idx)}. ${opts[idx]}`;
+              }
+            }
+          }
 
           return (
             <div key={qIdx} className="pt-4 first:pt-0 space-y-3">
@@ -1607,28 +1644,63 @@ function ShowQuizCard({
                   {opts.map((opt, oIdx) => {
                     const isSelected = answers[qIdx] === opt;
                     const letter = String.fromCharCode(65 + oIdx);
+                    const isChosen =
+                      isQuestionAnswered &&
+                      (chosenAnswer === opt ||
+                        answersMatch("mcq", chosenAnswer, opt, opts));
+                    const isCorrectOpt =
+                      isQuestionAnswered &&
+                      answersMatch("mcq", opt, correctAns, opts);
+
+                    let btnClass =
+                      "text-left rounded-xl p-3 text-xs font-semibold transition-all border flex items-center gap-2.5 cursor-pointer";
+                    let badgeClass =
+                      "h-5 w-5 rounded-md text-[10px] font-bold flex items-center justify-center shrink-0";
+                    let badgeContent: React.ReactNode = letter;
+
+                    if (isQuestionAnswered) {
+                      if (isChosen) {
+                        btnClass = isUserCorrect
+                          ? "border-emerald-500 bg-emerald-50/90 text-emerald-950 font-bold ring-2 ring-emerald-500/30"
+                          : "border-rose-500 bg-rose-50/90 text-rose-950 font-bold ring-2 ring-rose-500/30";
+                        badgeClass = isUserCorrect
+                          ? "bg-emerald-600 text-white"
+                          : "bg-rose-600 text-white";
+                        badgeContent = isUserCorrect ? (
+                          <Check className="h-3 w-3 stroke-[3]" />
+                        ) : (
+                          <X className="h-3 w-3 stroke-[3]" />
+                        );
+                      } else if (!isUserCorrect && isCorrectOpt) {
+                        btnClass =
+                          "border-emerald-500 bg-emerald-50/70 text-emerald-950 font-bold ring-1.5 ring-emerald-400/50";
+                        badgeClass = "bg-emerald-600 text-white";
+                        badgeContent = <Check className="h-3 w-3 stroke-[3]" />;
+                      } else {
+                        btnClass =
+                          "opacity-45 border-slate-200 bg-slate-50/50 text-slate-400 pointer-events-none";
+                        badgeClass = "bg-white text-slate-400 border border-slate-200";
+                      }
+                    } else if (isSelected) {
+                      btnClass =
+                        "border-[#0C60FC] bg-blue-50 text-[#0C60FC] ring-2 ring-blue-500/20";
+                      badgeClass = "bg-[#0C60FC] text-white";
+                    } else {
+                      btnClass =
+                        "border-slate-200 bg-slate-50/50 text-slate-700 hover:bg-white";
+                      badgeClass =
+                        "bg-white text-slate-500 border border-slate-200";
+                    }
+
                     return (
                       <button
                         key={oIdx}
                         type="button"
                         onClick={() => handleOptionSelect(qIdx, opt)}
-                        className={cn(
-                          "text-left rounded-xl p-3 text-xs font-semibold transition-all border flex items-center gap-2.5 cursor-pointer",
-                          isSelected
-                            ? "border-[#0C60FC] bg-blue-50 text-[#0C60FC] ring-2 ring-blue-500/20"
-                            : "border-slate-200 bg-slate-50/50 text-slate-700 hover:bg-white",
-                        )}
+                        disabled={isQuestionAnswered}
+                        className={cn(btnClass, isQuestionAnswered && "cursor-default")}
                       >
-                        <span
-                          className={cn(
-                            "h-5 w-5 rounded-md text-[10px] font-bold flex items-center justify-center shrink-0",
-                            isSelected
-                              ? "bg-[#0C60FC] text-white"
-                              : "bg-white text-slate-500 border border-slate-200",
-                          )}
-                        >
-                          {letter}
-                        </span>
+                        <span className={badgeClass}>{badgeContent}</span>
                         <span className="truncate">{opt}</span>
                       </button>
                     );
@@ -1639,12 +1711,46 @@ function ShowQuizCard({
                   type="text"
                   value={answers[qIdx] || ""}
                   onChange={(e) => handleTextChange(qIdx, e.target.value)}
+                  disabled={isQuestionAnswered}
                   placeholder="Type your response here..."
                   className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2.5 text-xs font-medium text-slate-900 outline-none focus:bg-white focus:border-[#0C60FC]"
                 />
               )}
 
-              {q.hint && (
+              {/* In-place Feedback Banner when answered */}
+              {isQuestionAnswered && (
+                <div
+                  className={cn(
+                    "rounded-xl p-3 text-xs border space-y-1.5",
+                    isUserCorrect
+                      ? "bg-emerald-50/80 border-emerald-200 text-emerald-950"
+                      : "bg-rose-50/80 border-rose-200 text-rose-950",
+                  )}
+                >
+                  <div className="flex items-center gap-1.5 font-bold">
+                    {isUserCorrect ? (
+                      <>
+                        <Check className="h-3.5 w-3.5 text-emerald-700 stroke-[3]" />
+                        <span>Correct!</span>
+                      </>
+                    ) : (
+                      <>
+                        <X className="h-3.5 w-3.5 text-rose-700 stroke-[3]" />
+                        <span>
+                          Incorrect · Correct answer: {displayCorrectAnswer}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                  {q.explanation && (
+                    <div className="text-[11.5px] text-slate-700 font-normal leading-relaxed pt-1 border-t border-slate-200/50">
+                      <QuestionMarkdown content={q.explanation} />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {q.hint && !isQuestionAnswered && (
                 <p className="text-[11px] text-amber-700 italic">
                   💡 Hint: {q.hint}
                 </p>
@@ -1654,19 +1760,21 @@ function ShowQuizCard({
         })}
       </div>
 
-      <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
-        <ActionButton onClick={onSkip} variant="ghost">
-          Skip
-        </ActionButton>
-        <ActionButton
-          onClick={handleSubmit}
-          disabled={!allAnswered}
-          variant="primary"
-        >
-          <span>Complete Quiz</span>
-          <ArrowRight className="h-3.5 w-3.5" />
-        </ActionButton>
-      </div>
+      {!isQuizDone && (
+        <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+          <ActionButton onClick={onSkip} variant="ghost">
+            Skip
+          </ActionButton>
+          <ActionButton
+            onClick={handleSubmit}
+            disabled={!allAnswered}
+            variant="primary"
+          >
+            <span>Complete Quiz</span>
+            <ArrowRight className="h-3.5 w-3.5" />
+          </ActionButton>
+        </div>
+      )}
     </CardWrapper>
   );
 }
@@ -2446,14 +2554,95 @@ export function ArtifactCard({
 
     // 6. Quiz Challenge
     if (artType === "quiz") {
+      const payload: any =
+        content.questions || content.lectures ? content : { questions: [content] };
+      const extractedQuestions = extractAllQuizQuestions(payload);
+
+      if (extractedQuestions.length === 1) {
+        const singleQ = extractedQuestions[0];
+        const isCardResolved = Boolean(
+          artifact.resolved ||
+          content.resolved ||
+          content.status === "completed" ||
+          content.userAnswer ||
+          content.submittedAnswer ||
+          content.selectedOption ||
+          (Array.isArray(content.userAnswers) && content.userAnswers.length > 0) ||
+          artifact.userAnswer ||
+          artifact.submittedAnswer ||
+          artifact.selectedOption ||
+          (Array.isArray(artifact.userAnswers) && artifact.userAnswers.length > 0) ||
+          (content.response as any)?.answer ||
+          (content.response as any)?.selectedOption ||
+          resolved,
+        );
+
+        const resolvedUserAnswer =
+          content.userAnswer ||
+          content.submittedAnswer ||
+          content.selectedOption ||
+          (Array.isArray(content.userAnswers) && content.userAnswers[0]) ||
+          artifact.userAnswer ||
+          artifact.submittedAnswer ||
+          artifact.selectedOption ||
+          (Array.isArray(artifact.userAnswers) && artifact.userAnswers[0]) ||
+          (content.response as any)?.answer ||
+          (content.response as any)?.selectedOption ||
+          (Array.isArray(content.answers) && content.answers[0]) ||
+          undefined;
+
+        const singlePayload: any = {
+          title: artifact.title || singleQ.title || payload.title || "Quiz Challenge",
+          question: singleQ.question || singleQ.text || singleQ.prompt || artifact.title,
+          options: singleQ.options || [],
+          correctAnswer:
+            singleQ.correctAnswer ||
+            singleQ.solution ||
+            singleQ.answer ||
+            content.correctAnswer ||
+            content.solution ||
+            content.answer,
+          explanation: singleQ.explanation || content.explanation,
+          hint: singleQ.hint || content.hint,
+          topicTitle: artifact.title || singleQ.topicTitle || content.topicTitle,
+          userAnswer: resolvedUserAnswer,
+          userAnswers:
+            content.userAnswers ||
+            artifact.userAnswers ||
+            (content.response as any)?.userAnswers ||
+            (resolvedUserAnswer ? [resolvedUserAnswer] : undefined),
+          selectedOption:
+            content.selectedOption ||
+            artifact.selectedOption ||
+            (content.response as any)?.selectedOption ||
+            resolvedUserAnswer,
+          submittedAnswer:
+            content.submittedAnswer ||
+            artifact.submittedAnswer ||
+            (content.response as any)?.submittedAnswer ||
+            resolvedUserAnswer,
+          resolved: isCardResolved,
+        };
+
+        return (
+          <AskQuestionCard
+            payload={singlePayload}
+            resolved={isCardResolved}
+            onSubmitAnswer={handleAnswer}
+            onRetry={handleRetry}
+            onSkip={handleSkip}
+          />
+        );
+      }
+
       const isQuizResolved = Boolean(
         artifact.resolved ||
         content.resolved ||
         content.status === "completed" ||
         (Array.isArray(content.userAnswers) && content.userAnswers.length > 0) ||
+        (Array.isArray(content.answers) && content.answers.length > 0) ||
         resolved,
       );
-      const payload: any = content.questions || content.lectures ? content : { questions: [content] };
       return (
         <ShowQuizCard
           payload={payload}
