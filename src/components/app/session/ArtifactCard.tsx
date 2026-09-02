@@ -352,77 +352,69 @@ function AskQuestionCard({
   const [evaluatedChoice, setEvaluatedChoice] = useState<string | null>(
     persistedAnswer || null,
   );
-  const [feedbackState, setFeedbackState] = useState<"correct" | "wrong" | null>(null);
-  const [isCollapsed, setIsCollapsed] = useState<boolean>(
-    Boolean(persistedAnswer || resolved),
-  );
 
   useEffect(() => {
-    if (persistedAnswer || resolved) {
-      setIsCollapsed(true);
-      if (persistedAnswer && !evaluatedChoice) {
-        setEvaluatedChoice(persistedAnswer);
-        setSelectedOption(persistedAnswer);
-      }
+    if (persistedAnswer && !evaluatedChoice) {
+      setEvaluatedChoice(persistedAnswer);
+      setSelectedOption(persistedAnswer);
     }
-  }, [persistedAnswer, resolved]);
+  }, [persistedAnswer, evaluatedChoice]);
+
+  const matchOption = (optText: string, index: number, target: string | null | undefined): boolean => {
+    if (!target) return false;
+    const normTarget = normalizeOptionText(target).trim().toLowerCase();
+    const normOpt = normalizeOptionText(optText).trim().toLowerCase();
+    const letter = String.fromCharCode(65 + index).toLowerCase();
+
+    if (normOpt === normTarget || normOpt.includes(normTarget) || normTarget.includes(normOpt)) {
+      return true;
+    }
+    const cleanTarget = normTarget.replace(/[^a-z0-9]/g, "");
+    if (cleanTarget === letter) {
+      return true;
+    }
+    const optCleanLetter = normOpt.replace(/[^a-z0-9]/g, "").slice(0, 1);
+    if (cleanTarget.length === 1 && optCleanLetter === cleanTarget) {
+      return true;
+    }
+    return false;
+  };
+
+  const isUserCorrect = useMemo(() => {
+    if (!evaluatedChoice) return false;
+    if (!correctAnswer) return true;
+
+    const chosenIndex = options.findIndex((o, idx) => matchOption(o, idx, evaluatedChoice));
+    if (chosenIndex >= 0) {
+      return matchOption(options[chosenIndex], chosenIndex, correctAnswer);
+    }
+
+    const normChoice = normalizeOptionText(evaluatedChoice).trim().toLowerCase();
+    const normCorrect = normalizeOptionText(correctAnswer).trim().toLowerCase();
+    return normChoice === normCorrect || normChoice.includes(normCorrect) || normCorrect.includes(normChoice);
+  }, [evaluatedChoice, correctAnswer, options]);
+
+  const correctOptIndex = options.findIndex((o, idx) => matchOption(o, idx, correctAnswer));
+  const correctOptDisplay = correctOptIndex >= 0
+    ? `${String.fromCharCode(65 + correctOptIndex)}. ${options[correctOptIndex]}`
+    : correctAnswer;
 
   const isTF = isTrueFalseOptions(options);
 
   const handleSelectChoice = (choice: string) => {
-    if (evaluatedChoice && feedbackState !== null) return;
+    if (evaluatedChoice) return;
 
     setEvaluatedChoice(choice);
     setSelectedOption(choice);
-
-    const normChoice = normalizeOptionText(choice).trim().toLowerCase();
-    const normCorrect = correctAnswer ? normalizeOptionText(correctAnswer).trim().toLowerCase() : "";
-    const isCorrect = normCorrect
-      ? normChoice === normCorrect ||
-        normChoice.includes(normCorrect) ||
-        normCorrect.includes(normChoice)
-      : true;
-
-    setFeedbackState(isCorrect ? "correct" : "wrong");
     onSubmitAnswer([choice], [rawQuestion]);
-
-    setTimeout(() => {
-      setIsCollapsed(true);
-    }, 700);
   };
 
   const handleTextSubmit = () => {
     const ans = textAnswer.trim();
-    if (!ans) return;
+    if (!ans || evaluatedChoice) return;
     setEvaluatedChoice(ans);
     onSubmitAnswer([ans], [rawQuestion]);
-    setIsCollapsed(true);
   };
-
-  if (isCollapsed) {
-    const finalAnswer = evaluatedChoice || selectedOption || persistedAnswer || textAnswer.trim() || "—";
-    const normAns = normalizeOptionText(finalAnswer).trim().toLowerCase();
-    const normCorrect = correctAnswer ? normalizeOptionText(correctAnswer).trim().toLowerCase() : "";
-    const isCorrect = feedbackState !== null
-      ? feedbackState === "correct"
-      : normCorrect
-      ? normAns === normCorrect || normAns.includes(normCorrect) || normCorrect.includes(normAns)
-      : true;
-
-    return (
-      <QAResolvedCard
-        entries={[
-          {
-            question: rawQuestion,
-            answer: finalAnswer,
-            correctAnswer: typeof correctAnswer === "string" && correctAnswer.trim().length > 0 ? correctAnswer : undefined,
-            explanation,
-            isCorrect,
-          },
-        ]}
-      />
-    );
-  }
 
   // Specialized True / False Card View
   if (isTF && options.length === 2) {
@@ -434,6 +426,36 @@ function AskQuestionCard({
       options.find((o) =>
         ["true", "yes", "a) true"].some((k) => o.trim().toLowerCase().includes(k))
       ) || options[0];
+
+    const isFalseChosen = matchOption(falseOpt, 0, evaluatedChoice);
+    const isTrueChosen = matchOption(trueOpt, 1, evaluatedChoice);
+    const isFalseCorrect = matchOption(falseOpt, 0, correctAnswer);
+    const isTrueCorrect = matchOption(trueOpt, 1, correctAnswer);
+
+    let falseClasses = "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-800";
+    let trueClasses = "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-800";
+
+    if (evaluatedChoice) {
+      if (isFalseChosen) {
+        falseClasses = isUserCorrect
+          ? "border-emerald-500 bg-emerald-50/90 text-emerald-950 font-bold ring-2 ring-emerald-500/30"
+          : "border-rose-500 bg-rose-50/90 text-rose-950 font-bold ring-2 ring-rose-500/30";
+      } else if (!isUserCorrect && isFalseCorrect) {
+        falseClasses = "border-emerald-500 bg-emerald-50/70 text-emerald-950 font-bold ring-1.5 ring-emerald-400/50";
+      } else {
+        falseClasses = "opacity-45 border-slate-200 bg-slate-50/50 text-slate-400 pointer-events-none";
+      }
+
+      if (isTrueChosen) {
+        trueClasses = isUserCorrect
+          ? "border-emerald-500 bg-emerald-50/90 text-emerald-950 font-bold ring-2 ring-emerald-500/30"
+          : "border-rose-500 bg-rose-50/90 text-rose-950 font-bold ring-2 ring-rose-500/30";
+      } else if (!isUserCorrect && isTrueCorrect) {
+        trueClasses = "border-emerald-500 bg-emerald-50/70 text-emerald-950 font-bold ring-1.5 ring-emerald-400/50";
+      } else {
+        trueClasses = "opacity-45 border-slate-200 bg-slate-50/50 text-slate-400 pointer-events-none";
+      }
+    }
 
     return (
       <CardWrapper
@@ -459,40 +481,87 @@ function AskQuestionCard({
         <div className="grid grid-cols-2 gap-3 pt-2">
           <motion.button
             type="button"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            whileHover={!evaluatedChoice ? { scale: 1.01 } : {}}
+            whileTap={!evaluatedChoice ? { scale: 0.99 } : {}}
             onClick={() => handleSelectChoice(falseOpt)}
+            disabled={Boolean(evaluatedChoice)}
             className={cn(
               "rounded-2xl border p-4 flex items-center justify-center gap-2 text-sm font-bold shadow-xs transition-all cursor-pointer",
-              evaluatedChoice === falseOpt
-                ? feedbackState === "correct"
-                  ? "border-emerald-500 bg-emerald-50 text-emerald-950 ring-2 ring-emerald-500/30"
-                  : "border-rose-500 bg-rose-50 text-rose-950 ring-2 ring-rose-500/30"
-                : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-800",
+              falseClasses,
             )}
           >
             <span>👎</span>
             <span>{falseOpt}</span>
+            {evaluatedChoice && isFalseChosen && (
+              isUserCorrect ? <Check className="h-4 w-4 text-emerald-600 stroke-[3]" /> : <X className="h-4 w-4 text-rose-600 stroke-[3]" />
+            )}
+            {evaluatedChoice && !isFalseChosen && isFalseCorrect && (
+              <Check className="h-4 w-4 text-emerald-600 stroke-[3]" />
+            )}
           </motion.button>
 
           <motion.button
             type="button"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            whileHover={!evaluatedChoice ? { scale: 1.01 } : {}}
+            whileTap={!evaluatedChoice ? { scale: 0.99 } : {}}
             onClick={() => handleSelectChoice(trueOpt)}
+            disabled={Boolean(evaluatedChoice)}
             className={cn(
               "rounded-2xl border p-4 flex items-center justify-center gap-2 text-sm font-bold shadow-xs transition-all cursor-pointer",
-              evaluatedChoice === trueOpt
-                ? feedbackState === "correct"
-                  ? "border-emerald-500 bg-emerald-50 text-emerald-950 ring-2 ring-emerald-500/30"
-                  : "border-rose-500 bg-rose-50 text-rose-950 ring-2 ring-rose-500/30"
-                : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-800",
+              trueClasses,
             )}
           >
             <span>👍</span>
             <span>{trueOpt}</span>
+            {evaluatedChoice && isTrueChosen && (
+              isUserCorrect ? <Check className="h-4 w-4 text-emerald-600 stroke-[3]" /> : <X className="h-4 w-4 text-rose-600 stroke-[3]" />
+            )}
+            {evaluatedChoice && !isTrueChosen && isTrueCorrect && (
+              <Check className="h-4 w-4 text-emerald-600 stroke-[3]" />
+            )}
           </motion.button>
         </div>
+
+        {evaluatedChoice && (
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+            className={cn(
+              "rounded-2xl p-3.5 sm:p-4 border transition-all space-y-2 mt-2",
+              isUserCorrect
+                ? "border-emerald-200/90 bg-emerald-50/40"
+                : "border-rose-200/90 bg-rose-50/40"
+            )}
+          >
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <span
+                className={cn(
+                  "text-xs font-extrabold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1.5",
+                  isUserCorrect ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"
+                )}
+              >
+                {isUserCorrect ? (
+                  <>
+                    <Check className="h-3.5 w-3.5 stroke-[3]" />
+                    Correct
+                  </>
+                ) : (
+                  <>
+                    <X className="h-3.5 w-3.5 stroke-[3]" />
+                    Incorrect
+                  </>
+                )}
+              </span>
+            </div>
+
+            {explanation && (
+              <div className="text-xs text-slate-700 leading-relaxed font-normal pt-1.5 border-t border-slate-200/60">
+                <QuestionMarkdown content={explanation} />
+              </div>
+            )}
+          </motion.div>
+        )}
       </CardWrapper>
     );
   }
@@ -548,30 +617,32 @@ function AskQuestionCard({
 
         <div className="flex flex-col gap-2 pt-1">
           {options.map((opt, i) => {
-            const isSelected = selectedOption === opt;
+            const isSelected = matchOption(opt, i, evaluatedChoice);
+            const isCorrectOption = matchOption(opt, i, correctAnswer);
             const letter = String.fromCharCode(65 + i);
             const badgeClass = optionBadgeColors[i % optionBadgeColors.length];
-            const normOpt = normalizeOptionText(opt).trim().toLowerCase();
-            const normCorrect = correctAnswer ? normalizeOptionText(correctAnswer).trim().toLowerCase() : "";
-            const isThisCorrect = normCorrect ? normOpt === normCorrect || normOpt.includes(normCorrect) || normCorrect.includes(normOpt) : false;
 
             let optionClasses = "border-slate-200/90 bg-white text-slate-800 hover:border-slate-300 hover:bg-slate-50/60";
+            let badgeStyle = badgeClass;
             let statusIcon = null;
 
             if (evaluatedChoice) {
               if (isSelected) {
-                if (feedbackState === "correct") {
-                  optionClasses = "border-emerald-500 bg-emerald-50/90 text-emerald-950 ring-2 ring-emerald-500/30 scale-[1.01]";
+                if (isUserCorrect) {
+                  optionClasses = "border-emerald-500 bg-emerald-50/90 text-emerald-950 font-bold ring-2 ring-emerald-500/30 scale-[1.005]";
+                  badgeStyle = "bg-emerald-600 text-white font-extrabold";
                   statusIcon = <Check className="h-4 w-4 text-emerald-600 stroke-[3] shrink-0" />;
                 } else {
-                  optionClasses = "border-rose-500 bg-rose-50/90 text-rose-950 ring-2 ring-rose-500/30 scale-[0.99]";
+                  optionClasses = "border-rose-500 bg-rose-50/90 text-rose-950 font-bold ring-2 ring-rose-500/30 scale-[0.995]";
+                  badgeStyle = "bg-rose-600 text-white font-extrabold";
                   statusIcon = <X className="h-4 w-4 text-rose-600 stroke-[3] shrink-0" />;
                 }
-              } else if (feedbackState === "wrong" && isThisCorrect) {
-                optionClasses = "border-emerald-400 bg-emerald-50/50 text-emerald-900 border-dashed ring-1 ring-emerald-400/40";
-                statusIcon = <Check className="h-3.5 w-3.5 text-emerald-600 stroke-[3] shrink-0" />;
+              } else if (!isUserCorrect && isCorrectOption) {
+                optionClasses = "border-emerald-500 bg-emerald-50/70 text-emerald-950 font-bold ring-1.5 ring-emerald-400/50";
+                badgeStyle = "bg-emerald-600 text-white font-extrabold";
+                statusIcon = <Check className="h-4 w-4 text-emerald-600 stroke-[3] shrink-0" />;
               } else {
-                optionClasses = "opacity-40 border-slate-200 bg-slate-50/50 text-slate-400 pointer-events-none";
+                optionClasses = "opacity-45 border-slate-200 bg-slate-50/50 text-slate-400 pointer-events-none";
               }
             }
 
@@ -579,8 +650,8 @@ function AskQuestionCard({
               <motion.button
                 key={i}
                 type="button"
-                whileHover={!evaluatedChoice ? { scale: 1.01 } : {}}
-                whileTap={!evaluatedChoice ? { scale: 0.99 } : {}}
+                whileHover={!evaluatedChoice ? { scale: 1.005 } : {}}
+                whileTap={!evaluatedChoice ? { scale: 0.995 } : {}}
                 onClick={() => handleSelectChoice(opt)}
                 disabled={Boolean(evaluatedChoice)}
                 className={cn(
@@ -591,7 +662,7 @@ function AskQuestionCard({
                 <span
                   className={cn(
                     "h-6 w-6 rounded-md text-[11px] font-bold flex items-center justify-center shrink-0 shadow-2xs transition-colors",
-                    badgeClass,
+                    badgeStyle,
                   )}
                 >
                   {letter}
@@ -603,6 +674,54 @@ function AskQuestionCard({
           })}
         </div>
 
+        {/* Feedback & Explanation Section */}
+        {evaluatedChoice && (
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+            className={cn(
+              "rounded-2xl p-3.5 sm:p-4 border transition-all space-y-2 mt-1",
+              isUserCorrect
+                ? "border-emerald-200/90 bg-emerald-50/40"
+                : "border-rose-200/90 bg-rose-50/40"
+            )}
+          >
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <span
+                className={cn(
+                  "text-xs font-extrabold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1.5",
+                  isUserCorrect ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"
+                )}
+              >
+                {isUserCorrect ? (
+                  <>
+                    <Check className="h-3.5 w-3.5 stroke-[3]" />
+                    Correct
+                  </>
+                ) : (
+                  <>
+                    <X className="h-3.5 w-3.5 stroke-[3]" />
+                    Incorrect
+                  </>
+                )}
+              </span>
+
+              {!isUserCorrect && correctOptDisplay && (
+                <span className="text-[11.5px] font-bold text-emerald-800">
+                  Correct answer: <span className="font-extrabold underline decoration-emerald-400 underline-offset-2">{correctOptDisplay}</span>
+                </span>
+              )}
+            </div>
+
+            {explanation && (
+              <div className="text-xs text-slate-700 leading-relaxed font-normal pt-1.5 border-t border-slate-200/60">
+                <QuestionMarkdown content={explanation} />
+              </div>
+            )}
+          </motion.div>
+        )}
+
         <div className="flex items-center justify-between pt-1">
           <button
             type="button"
@@ -612,7 +731,7 @@ function AskQuestionCard({
           >
             <Volume2 className="h-3.5 w-3.5" />
           </button>
-          {!selectedOption && (
+          {!evaluatedChoice && (
             <ActionButton onClick={onSkip} variant="ghost">
               Skip
             </ActionButton>
@@ -647,15 +766,41 @@ function AskQuestionCard({
           </div>
         )}
 
-        <div className="pt-2">
-          <textarea
-            value={textAnswer}
-            onChange={(e) => setTextAnswer(e.target.value)}
-            placeholder="Type your response here..."
-            rows={3}
-            className="w-full rounded-2xl border border-slate-200 bg-slate-50/60 p-3 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-[#0C60FC] focus:outline-none transition"
-          />
-        </div>
+        {evaluatedChoice ? (
+          <div className="pt-2 space-y-2">
+            <div className="rounded-2xl border border-slate-200 bg-white p-3 text-xs font-semibold text-slate-900 shadow-2xs">
+              <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block mb-1">
+                Your Answer:
+              </span>
+              <p className="leading-relaxed">{evaluatedChoice}</p>
+            </div>
+
+            {(explanation || correctAnswer) && (
+              <div className="rounded-2xl border border-slate-200/90 bg-slate-50/60 p-3 text-xs text-slate-700 space-y-1.5">
+                {correctAnswer && (
+                  <p className="text-[11px] text-emerald-800 font-bold">
+                    Suggested Answer: {correctAnswer}
+                  </p>
+                )}
+                {explanation && (
+                  <div className="text-xs text-slate-600 leading-relaxed pt-1 border-t border-slate-200/60">
+                    <QuestionMarkdown content={explanation} />
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="pt-2">
+            <textarea
+              value={textAnswer}
+              onChange={(e) => setTextAnswer(e.target.value)}
+              placeholder="Type your response here..."
+              rows={3}
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50/60 p-3 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-[#0C60FC] focus:outline-none transition"
+            />
+          </div>
+        )}
       </div>
 
       <div className="flex items-center justify-between pt-1">
@@ -668,19 +813,21 @@ function AskQuestionCard({
           <Volume2 className="h-3.5 w-3.5" />
         </button>
 
-        <div className="flex items-center gap-2">
-          <ActionButton onClick={onSkip} variant="ghost">
-            Skip
-          </ActionButton>
-          <ActionButton
-            onClick={() => handleTextSubmit()}
-            disabled={!textAnswer.trim()}
-            variant="primary"
-          >
-            <span>Submit</span>
-            <ArrowRight className="h-3.5 w-3.5" />
-          </ActionButton>
-        </div>
+        {!evaluatedChoice && (
+          <div className="flex items-center gap-2">
+            <ActionButton onClick={onSkip} variant="ghost">
+              Skip
+            </ActionButton>
+            <ActionButton
+              onClick={() => handleTextSubmit()}
+              disabled={!textAnswer.trim()}
+              variant="primary"
+            >
+              <span>Submit</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </ActionButton>
+          </div>
+        )}
       </div>
     </CardWrapper>
   );
