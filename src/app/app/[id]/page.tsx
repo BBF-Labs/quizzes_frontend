@@ -561,7 +561,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="relative flex flex-col h-full overflow-hidden bg-[#FAF9F6] bg-[linear-gradient(to_right,#EAE8E1_1px,transparent_1px),linear-gradient(to_bottom,#EAE8E1_1px,transparent_1px)] bg-[size:26px_26px] antialiased selection:bg-[#0C60FC] selection:text-white">
+    <div className="relative flex flex-col h-full overflow-hidden bg-[#FAF9F6] bg-[linear-gradient(to_right,#EAE8E1_1px,transparent_1px),linear-gradient(to_bottom,#EAE8E1_1px,transparent_1px)] bg-size-[26px_26px] antialiased selection:bg-[#0C60FC] selection:text-white">
       {/* 
         Transparent Floating Header:
         NO BACKGROUND on the header bar itself, only individual floating divs!
