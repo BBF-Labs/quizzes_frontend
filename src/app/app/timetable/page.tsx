@@ -71,10 +71,13 @@ const WORKLOAD_BAR_COLORS = [
   "bg-blue-300",
 ];
 
-function getEventStyle(type: TimetableEventType, idx = 0) {
+function getEventStyle(
+  type: TimetableEventType,
+  idx = 0,
+): { bg: string; text: string; ring: string } {
   switch (type) {
     case "exam":
-      return { bg: "bg-slate-950", text: "text-white" };
+      return { bg: "bg-slate-950", text: "text-white", ring: "" };
     case "lab":
     case "tutorial":
       return {
