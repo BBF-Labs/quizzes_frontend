@@ -612,6 +612,7 @@ export default function ChatPage() {
         {activeView === "session" && (
           <MessageFeed
             messages={messages}
+            artifacts={app?.artifacts || []}
             citations={citations}
             activeDirectiveMessageId={activeDirectiveMessageId}
             sessionStep={sessionStep}

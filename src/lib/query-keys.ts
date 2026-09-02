@@ -100,6 +100,13 @@ export const queryKeys = {
     root: ["dashboard"] as const,
     summary: () => [...queryKeys.dashboard.root, "summary"] as const,
   },
+  tasks: {
+    root: ["tasks"] as const,
+    list: (status?: string) =>
+      status
+        ? ([...queryKeys.tasks.root, "list", status] as const)
+        : ([...queryKeys.tasks.root, "list"] as const),
+  },
   status: {
     root: ["status"] as const,
     live: () => [...queryKeys.status.root, "live"] as const,

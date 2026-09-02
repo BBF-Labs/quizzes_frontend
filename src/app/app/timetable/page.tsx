@@ -15,18 +15,26 @@ import {
   CheckCircle2,
   AlertCircle,
   Search,
-  Filter,
   CheckSquare,
   Square,
   ListTodo,
   Check,
   BarChart3,
   Flame,
+  Trash2,
+  Loader2,
 } from "lucide-react";
 import {
   useMyTimetable,
   type IExamSessionEntry,
 } from "@/hooks/app/use-timetable";
+import {
+  useTasks,
+  useCreateTask,
+  useUpdateTask,
+  useDeleteTask,
+} from "@/hooks/app/use-tasks";
+import type { ITask } from "@/types/task";
 import { useMyCourses } from "@/hooks/app/use-user-courses";
 import { useIsMobile } from "@/hooks";
 import { useAuth } from "@/contexts/auth-context";
@@ -34,64 +42,6 @@ import { toast } from "sonner";
 import { getCurrentAcademicYear } from "@/lib/academic-year";
 
 type TabView = "week" | "month" | "agenda" | "exams";
-
-interface TaskItem {
-  id: string;
-  title: string;
-  category: string;
-  done: boolean;
-}
-
-const INITIAL_TASKS: TaskItem[] = [
-  {
-    id: "t1",
-    title: "Re-read DCIT 205 L03 notes",
-    category: "Algorithms",
-    done: true,
-  },
-  {
-    id: "t2",
-    title: "10 Big-O practice questions",
-    category: "Algorithms",
-    done: true,
-  },
-  {
-    id: "t3",
-    title: "Memoization vs tabulation review",
-    category: "Algorithms",
-    done: false,
-  },
-  {
-    id: "t4",
-    title: "OS Process Scheduling lab prep",
-    category: "Operating Systems",
-    done: false,
-  },
-  {
-    id: "t5",
-    title: "Linear Algebra Problem Set 4",
-    category: "Mathematics",
-    done: false,
-  },
-  {
-    id: "t6",
-    title: "Linear Algebra Problem Set 4",
-    category: "Mathematics",
-    done: false,
-  },
-  {
-    id: "t7",
-    title: "Linear Algebra Problem Set 4",
-    category: "Mathematics",
-    done: false,
-  },
-  {
-    id: "t8",
-    title: "Linear Algebra Problem Set 4",
-    category: "Mathematics",
-    done: false,
-  },
-];
 
 const WEEK_DAYS = [
   { day: "MON", date: "12", isToday: true, dotColor: "bg-[#DFFF61]" },
@@ -229,12 +179,19 @@ export default function PrivateTimetablePage() {
     new Date(),
   );
 
-  // Tasks state
-  const [tasks, setTasks] = useState<TaskItem[]>(INITIAL_TASKS);
-  const [newTaskTitle, setNewTaskTitle] = useState("");
+  // Live Tasks Integration
   const [taskFilter, setTaskFilter] = useState<"all" | "active" | "completed">(
     "all",
   );
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [newTaskSubject, setNewTaskSubject] = useState("");
+
+  const { data: tasksData, isLoading: tasksLoading } = useTasks(
+    taskFilter === "all" ? undefined : taskFilter,
+  );
+  const createTaskMutation = useCreateTask();
+  const updateTaskMutation = useUpdateTask();
+  const deleteTaskMutation = useDeleteTask();
 
   const { data: timetables = [], isLoading } = useMyTimetable(
     selectedSemester,
@@ -258,48 +215,57 @@ export default function PrivateTimetablePage() {
     return diff || 18;
   }, [sortedExams]);
 
-  // Task actions
-  const toggleTask = (id: string) => {
-    setTasks((prev) =>
-      prev.map((t) => {
-        if (t.id === id) {
-          const nextState = !t.done;
-          toast.success(nextState ? "Task completed! 🎉" : "Task uncompleted");
-          return { ...t, done: nextState };
-        }
-        return t;
-      }),
-    );
+  const tasks = useMemo(() => tasksData?.tasks || [], [tasksData]);
+  const metadata = tasksData?.metadata || {
+    completed: 0,
+    total: 0,
+    progress: 0,
   };
 
-  const handleAddTask = (e: React.FormEvent) => {
+  // Task actions
+  const toggleTask = async (task: ITask) => {
+    const taskId = task.id || task._id;
+    if (!taskId) return;
+    const nextStatus = task.status === "completed" ? "active" : "completed";
+    try {
+      await updateTaskMutation.mutateAsync({
+        taskId,
+        input: { status: nextStatus },
+      });
+      toast.success(
+        nextStatus === "completed" ? "Task completed! 🎉" : "Task marked active",
+      );
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to update task");
+    }
+  };
+
+  const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTaskTitle.trim()) return;
-    const newTask: TaskItem = {
-      id: `t_${Date.now()}`,
-      title: newTaskTitle.trim(),
-      category: "General Study",
-      done: false,
-    };
-    setTasks((prev) => [newTask, ...prev]);
-    setNewTaskTitle("");
-    toast.success("Task added to schedule!");
+    try {
+      await createTaskMutation.mutateAsync({
+        title: newTaskTitle.trim(),
+        subject: newTaskSubject.trim() || undefined,
+      });
+      setNewTaskTitle("");
+      setNewTaskSubject("");
+      toast.success("Task created!");
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to create task");
+    }
   };
 
-  const completedCount = useMemo(
-    () => tasks.filter((t) => t.done).length,
-    [tasks],
-  );
-  const completionPercentage = useMemo(() => {
-    if (tasks.length === 0) return 0;
-    return Math.round((completedCount / tasks.length) * 100);
-  }, [tasks, completedCount]);
-
-  const filteredTasks = useMemo(() => {
-    if (taskFilter === "active") return tasks.filter((t) => !t.done);
-    if (taskFilter === "completed") return tasks.filter((t) => t.done);
-    return tasks;
-  }, [tasks, taskFilter]);
+  const handleDeleteTask = async (e: React.MouseEvent, taskId?: string) => {
+    e.stopPropagation();
+    if (!taskId) return;
+    try {
+      await deleteTaskMutation.mutateAsync(taskId);
+      toast.success("Task deleted");
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to delete task");
+    }
+  };
 
   return (
     <div className="dash-grid min-h-screen px-4 pb-24 pt-6 sm:px-6 lg:px-8 lg:pb-12 text-slate-900 bg-[#F7F9FC]">
@@ -1051,15 +1017,14 @@ export default function PrivateTimetablePage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-sm font-extrabold text-slate-950 flex items-center gap-1.5">
-                      <ListTodo className="h-4 w-4 text-[#0C60FC]" /> Study
-                      Tasks
+                      <ListTodo className="h-4 w-4 text-[#0C60FC]" /> Tasks
                     </h3>
                     <p className="hand text-base text-[#0C60FC] leading-none mt-0.5">
                       cross them off!
                     </p>
                   </div>
                   <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-extrabold text-[#0C60FC]">
-                    {completedCount} / {tasks.length} DONE
+                    {metadata.completed} / {metadata.total} DONE
                   </span>
                 </div>
 
@@ -1067,12 +1032,12 @@ export default function PrivateTimetablePage() {
                 <div className="space-y-1">
                   <div className="flex justify-between text-[10px] font-extrabold text-slate-500">
                     <span>Progress</span>
-                    <span>{completionPercentage}%</span>
+                    <span>{metadata.progress}%</span>
                   </div>
                   <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
                     <div
                       className="h-full rounded-full bg-[#0C60FC] transition-all duration-300"
-                      style={{ width: `${completionPercentage}%` }}
+                      style={{ width: `${metadata.progress}%` }}
                     />
                   </div>
                 </div>
@@ -1095,64 +1060,112 @@ export default function PrivateTimetablePage() {
                 </div>
               </div>
 
-              {/* Tasks Checklist — fixed height and hidden scrollbar */}
-              <ul className="space-y-2 h-[340px] overflow-y-auto no-scrollbar">
-                <AnimatePresence mode="popLayout">
-                  {filteredTasks.map((t) => (
-                    <motion.li
-                      key={t.id}
-                      layout
-                      initial={{ opacity: 0, y: 4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      onClick={() => toggleTask(t.id)}
-                      className={`group cursor-pointer flex items-start gap-2.5 rounded-2xl p-3 transition border ${
-                        t.done
-                          ? "bg-[#F7F9FC] border-slate-100 text-slate-400 line-through"
-                          : "bg-white border-slate-200/90 text-slate-900 shadow-2xs hover:border-[#0C60FC]/40"
-                      }`}
-                    >
-                      <button
-                        type="button"
-                        className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-md border transition ${
-                          t.done
-                            ? "border-emerald-500 bg-emerald-500 text-white"
-                            : "border-slate-300 bg-white group-hover:border-[#0C60FC]"
-                        }`}
-                      >
-                        {t.done && <Check className="h-3 w-3 stroke-[3]" />}
-                      </button>
+              {/* Tasks Checklist — scrollable with delete action */}
+              <div className="h-[340px] overflow-y-auto no-scrollbar">
+                {tasksLoading ? (
+                  <div className="flex flex-col items-center justify-center h-full gap-2 text-slate-400">
+                    <Loader2 className="h-5 w-5 animate-spin text-[#0C60FC]" />
+                    <span className="text-xs font-semibold">Loading tasks...</span>
+                  </div>
+                ) : tasks.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-center px-4 py-8">
+                    <div className="size-10 rounded-2xl bg-blue-50 flex items-center justify-center text-[#0C60FC] mb-2">
+                      <ListTodo className="size-5" />
+                    </div>
+                    <p className="text-xs font-bold text-slate-800">
+                      {taskFilter === "completed"
+                        ? "No completed tasks yet"
+                        : taskFilter === "active"
+                          ? "No active tasks"
+                          : "No tasks yet"}
+                    </p>
+                    <p className="text-[11px] text-slate-400 mt-1 max-w-[200px]">
+                      Add tasks below to keep your study sessions organized.
+                    </p>
+                  </div>
+                ) : (
+                  <ul className="space-y-2">
+                    <AnimatePresence mode="popLayout">
+                      {tasks.map((t) => {
+                        const isDone = t.status === "completed";
+                        const taskId = t.id || t._id;
+                        return (
+                          <motion.li
+                            key={taskId}
+                            layout
+                            initial={{ opacity: 0, y: 4 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            onClick={() => toggleTask(t)}
+                            className={`group cursor-pointer flex items-start gap-2.5 rounded-2xl p-3 transition border relative ${
+                              isDone
+                                ? "bg-[#F7F9FC] border-slate-100 text-slate-400 line-through"
+                                : "bg-white border-slate-200/90 text-slate-900 shadow-2xs hover:border-[#0C60FC]/40"
+                            }`}
+                          >
+                            <button
+                              type="button"
+                              className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-md border transition ${
+                                isDone
+                                  ? "border-emerald-500 bg-emerald-500 text-white"
+                                  : "border-slate-300 bg-white group-hover:border-[#0C60FC]"
+                              }`}
+                            >
+                              {isDone && <Check className="h-3 w-3 stroke-[3]" />}
+                            </button>
 
-                      <div className="min-w-0 flex-1">
-                        <p
-                          className={`text-xs font-bold leading-snug ${t.done ? "line-through text-slate-400" : "text-slate-900"}`}
-                        >
-                          {t.title}
-                        </p>
-                        <span className="mt-0.5 inline-block text-[9px] font-semibold text-slate-400">
-                          {t.category}
-                        </span>
-                      </div>
-                    </motion.li>
-                  ))}
-                </AnimatePresence>
-              </ul>
+                            <div className="min-w-0 flex-1 pr-6">
+                              <p
+                                className={`text-xs font-bold leading-snug ${
+                                  isDone ? "line-through text-slate-400" : "text-slate-900"
+                                }`}
+                              >
+                                {t.title}
+                              </p>
+                              {t.subject && (
+                                <span className="mt-0.5 inline-block text-[9px] font-semibold text-slate-400">
+                                  {t.subject}
+                                </span>
+                              )}
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={(e) => handleDeleteTask(e, taskId)}
+                              className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-500 transition absolute right-2 top-2.5 rounded-md hover:bg-rose-50"
+                              title="Delete task"
+                            >
+                              <Trash2 className="size-3.5" />
+                            </button>
+                          </motion.li>
+                        );
+                      })}
+                    </AnimatePresence>
+                  </ul>
+                )}
+              </div>
 
               {/* Add New Task Form */}
-              <form onSubmit={handleAddTask} className="pt-1 shrink-0">
+              <form onSubmit={handleAddTask} className="pt-1 shrink-0 space-y-1.5">
                 <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-[#F7F9FC] px-3 py-1.5 focus-within:bg-white focus-within:ring-2 focus-within:ring-[#0C60FC]/20 transition">
                   <input
                     type="text"
                     value={newTaskTitle}
                     onChange={(e) => setNewTaskTitle(e.target.value)}
-                    placeholder="Add a new study task..."
+                    placeholder="Add a new task..."
+                    disabled={createTaskMutation.isPending}
                     className="min-w-0 flex-1 bg-transparent py-1 text-xs font-semibold text-slate-900 outline-none placeholder:text-slate-400"
                   />
                   <button
                     type="submit"
-                    className="rounded-xl bg-slate-950 px-2.5 py-1.5 text-[10px] font-extrabold text-white hover:bg-[#0C60FC] transition cursor-pointer"
+                    disabled={createTaskMutation.isPending || !newTaskTitle.trim()}
+                    className="rounded-xl bg-slate-950 px-2.5 py-1.5 text-[10px] font-extrabold text-white hover:bg-[#0C60FC] disabled:opacity-50 transition cursor-pointer flex items-center gap-1"
                   >
-                    + Add
+                    {createTaskMutation.isPending ? (
+                      <Loader2 className="size-3 animate-spin" />
+                    ) : (
+                      "+ Add"
+                    )}
                   </button>
                 </div>
               </form>
