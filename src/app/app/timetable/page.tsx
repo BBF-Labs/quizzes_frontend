@@ -2,7 +2,9 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
+import { QUBI_STUDY_SRC } from "@/lib/constants";
 import {
   format,
   addDays,
@@ -513,95 +515,110 @@ export default function PrivateTimetablePage() {
                     </div>
                   </div>
 
-                  {/* Desktop Week Time Grid (08:00 - 18:00) */}
-                  <div className="mt-5 hidden lg:block">
-                    <div className="grid grid-cols-[60px_repeat(7,minmax(0,1fr))] gap-1 pb-2 text-center font-bold">
-                      <span />
-                      {weekDays.map((d) => (
-                        <span
-                          key={d.date}
-                          className={`rounded-lg py-1.5 text-[10px] ${
-                            d.isSelected
-                              ? "bg-blue-50 text-[#0C60FC] font-extrabold"
-                              : "text-slate-500"
-                          }`}
-                        >
-                          {d.day} {d.dayNumber}
-                        </span>
-                      ))}
-                    </div>
-
-                    <div className="grid grid-cols-[44px_repeat(7,minmax(0,1fr))] grid-rows-[repeat(10,40px)] gap-1">
-                      {TIME_SLOTS.map((t, i) => (
-                        <span
-                          key={t}
-                          className="text-[9px] font-extrabold uppercase text-slate-400 pt-1"
-                          style={{ gridColumn: 1, gridRow: i + 1 }}
-                        >
-                          {t}
-                        </span>
-                      ))}
-
-                      {weekEvents.map((event, idx) => {
-                        const style = getEventStyle(event.type, idx);
-                        return (
-                          <div
-                            key={event.id}
-                            className={`rounded-xl px-2 py-1.5 transition ${style.bg} ${style.text} ${style.ring ?? ""}`}
-                            style={{
-                              gridColumn: event.day + 1,
-                              gridRow: `${event.startRow} / ${event.endRow}`,
-                            }}
-                          >
-                            <b className="block truncate text-[10px] font-bold leading-tight">
-                              {event.title}
-                            </b>
-                            <span className="block truncate text-[9px] opacity-75 mt-0.5 font-semibold">
-                              {event.meta}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Mobile Schedule List */}
-                  <div className="mt-5 space-y-3 lg:hidden">
-                    {weekEvents.length === 0 ? (
-                      <p className="rounded-2xl border border-dashed border-slate-200 p-6 text-center text-xs font-semibold text-slate-400">
-                        No events scheduled for this week.
+                  {weekEvents.length === 0 ? (
+                    <div className="mt-8 flex flex-col items-center justify-center py-12 px-4 text-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/50">
+                      <div className="relative w-28 h-28 sm:w-36 sm:h-36 mb-3">
+                        <Image
+                          src={QUBI_STUDY_SRC}
+                          alt="Qubi"
+                          fill
+                          className="object-contain"
+                        />
+                      </div>
+                      <h3 className="text-sm sm:text-base font-bold text-slate-800">
+                        It seems you have nothing set for this week
+                      </h3>
+                      <p className="mt-1 text-xs text-slate-500 max-w-xs">
+                        No events, lectures, or exams scheduled for this week.
                       </p>
-                    ) : (
-                      weekEvents.map((event, idx) => {
-                        const style = getEventStyle(event.type, idx);
-                        const dayLabel = WEEK_DAY_LABELS[event.day - 1] || "DAY";
-                        const dayCard = weekDays[event.day - 1];
-                        return (
-                          <div
-                            key={event.id}
-                            className={`flex items-start gap-3 rounded-2xl p-3 ${style.bg} ${style.text} ${style.ring ?? ""}`}
-                          >
-                            <span className="flex w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-white/80 px-1 py-1.5 text-center">
-                              <span className="text-[9px] font-extrabold uppercase tracking-wider">
-                                {dayLabel}
-                              </span>
-                              <span className="text-sm font-extrabold leading-none">
-                                {dayCard?.dayNumber}
-                              </span>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Desktop Week Time Grid (08:00 - 18:00) */}
+                      <div className="mt-5 hidden lg:block">
+                        <div className="grid grid-cols-[60px_repeat(7,minmax(0,1fr))] gap-1 pb-2 text-center font-bold">
+                          <span />
+                          {weekDays.map((d) => (
+                            <span
+                              key={d.date}
+                              className={`rounded-lg py-1.5 text-[10px] ${
+                                d.isSelected
+                                  ? "bg-blue-50 text-[#0C60FC] font-extrabold"
+                                  : "text-slate-500"
+                              }`}
+                            >
+                              {d.day} {d.dayNumber}
                             </span>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-xs font-bold leading-snug">
-                                {event.title}
-                              </p>
-                              <p className="mt-0.5 text-[10px] opacity-80 font-semibold">
-                                {event.meta}
-                              </p>
+                          ))}
+                        </div>
+
+                        <div className="grid grid-cols-[44px_repeat(7,minmax(0,1fr))] grid-rows-[repeat(10,40px)] gap-1">
+                          {TIME_SLOTS.map((t, i) => (
+                            <span
+                              key={t}
+                              className="text-[9px] font-extrabold uppercase text-slate-400 pt-1"
+                              style={{ gridColumn: 1, gridRow: i + 1 }}
+                            >
+                              {t}
+                            </span>
+                          ))}
+
+                          {weekEvents.map((event, idx) => {
+                            const style = getEventStyle(event.type, idx);
+                            return (
+                              <div
+                                key={event.id}
+                                className={`rounded-xl px-2 py-1.5 transition ${style.bg} ${style.text} ${style.ring ?? ""}`}
+                                style={{
+                                  gridColumn: event.day + 1,
+                                  gridRow: `${event.startRow} / ${event.endRow}`,
+                                }}
+                              >
+                                <b className="block truncate text-[10px] font-bold leading-tight">
+                                  {event.title}
+                                </b>
+                                <span className="block truncate text-[9px] opacity-75 mt-0.5 font-semibold">
+                                  {event.meta}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Mobile Schedule List */}
+                      <div className="mt-5 space-y-3 lg:hidden">
+                        {weekEvents.map((event, idx) => {
+                          const style = getEventStyle(event.type, idx);
+                          const dayLabel = WEEK_DAY_LABELS[event.day - 1] || "DAY";
+                          const dayCard = weekDays[event.day - 1];
+                          return (
+                            <div
+                              key={event.id}
+                              className={`flex items-start gap-3 rounded-2xl p-3 ${style.bg} ${style.text} ${style.ring ?? ""}`}
+                            >
+                              <span className="flex w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-white/80 px-1 py-1.5 text-center">
+                                <span className="text-[9px] font-extrabold uppercase tracking-wider">
+                                  {dayLabel}
+                                </span>
+                                <span className="text-sm font-extrabold leading-none">
+                                  {dayCard?.dayNumber}
+                                </span>
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-xs font-bold leading-snug">
+                                  {event.title}
+                                </p>
+                                <p className="mt-0.5 text-[10px] opacity-80 font-semibold">
+                                  {event.meta}
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
                 </div>
               </section>
             )}
