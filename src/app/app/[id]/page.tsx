@@ -917,9 +917,8 @@ export default function ChatPage() {
               setActiveView("session");
               setSessionStep(0);
             }}
-            onSendMessage={(msg) => {
+            onSendMessage={() => {
               setActiveView("session");
-              sendMessage(msg);
             }}
           />
         )}

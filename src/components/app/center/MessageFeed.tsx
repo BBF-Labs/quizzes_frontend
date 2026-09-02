@@ -299,11 +299,12 @@ export function MessageFeed({
       </div>
 
       {messages.map((msg, index) => {
-        /* ── Skip system actions, tool calls, and tool results ── */
+        // Skip purely technical system/tool messages and student system actions
         if (
-          msg.type === "system_action" ||
           msg.type === "tool_call" ||
           msg.type === "tool_result" ||
+          msg.type === "system_action" ||
+          Boolean((msg as any).isSystemAction) ||
           (msg.role as any) === "tool" ||
           (msg.role === "system" && msg.type !== "artifact" && !msg.artifact)
         ) {
@@ -312,25 +313,17 @@ export function MessageFeed({
 
         const content = typeof msg.content === "string" ? msg.content.trim() : "";
 
-        /* ── Skip raw prompt triggers ── */
+        /* ── Skip raw prompt triggers and system actions ── */
         if (
           content.startsWith("[STUDY JOURNEY:") ||
           content.startsWith("[STUDENT_ACTION:") ||
+          content.startsWith("[SYSTEM_ACTION:") ||
+          content.startsWith("[STEERING]") ||
           /^Give a very short.*intro welcoming me/i.test(content)
         ) {
           return null;
         }
 
-        /* ── Skip the intro greeting already displayed in step 0/1 ── */
-        if (
-          msg.role === "z" &&
-          msg.type === "text" &&
-          greetingMessageIdRef.current &&
-          (msg.messageId === greetingMessageIdRef.current ||
-            msg.id === greetingMessageIdRef.current)
-        ) {
-          return null;
-        }
 
         /* ── Skip empty non-artifact messages ── */
         const resolvedArtifact =

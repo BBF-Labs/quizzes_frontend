@@ -112,7 +112,9 @@ export function UpdateStudyPlanView({
           }),
           sendMessageMutation.mutateAsync({
             sessionId,
-            message: `Please update the study plan: ${text}`,
+            message: `[STUDENT_ACTION: UPDATE_STUDY_PLAN] ${text}`,
+            isSystemAction: true,
+            type: "system_action",
           }),
         ]);
         toast.success("Study plan update requested from Z");
