@@ -52,7 +52,6 @@ import { cn } from "@/lib/utils";
 import type {
   ZAskQuestionPayload,
   ZAskQuestionsPayload,
-  ZDirective,
   ZPomodoroPayload,
   ZShowPlanPayload,
   ZShowQuizPayload,
@@ -1924,37 +1923,6 @@ function PomodoroCard({ payload, resolved, onResume }: PomodoroCardProps) {
   );
 }
 
-// ─── UNKNOWN DIRECTIVE ───────────────────────────────────────────────────────
-
-function UnknownDirectiveCard({
-  type,
-  payload,
-  resolved,
-  onContinue,
-}: {
-  type: string;
-  payload: unknown;
-  resolved: boolean;
-  onContinue: () => void;
-}) {
-  return (
-    <CardWrapper
-      resolved={resolved}
-      icon={<HelpCircle className="h-4 w-4 text-slate-400" />}
-      label={`Action: ${type}`}
-    >
-      <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 overflow-auto max-h-36 text-[11px] font-mono text-slate-600">
-        <pre>{JSON.stringify(payload, null, 2)}</pre>
-      </div>
-
-      {!resolved && (
-        <ActionButton onClick={onContinue} variant="primary">
-          Got it
-        </ActionButton>
-      )}
-    </CardWrapper>
-  );
-}
 
 // ─── Public ArtifactCardCallbacks Interface ──────────────────────────────────
 
@@ -1977,20 +1945,14 @@ export interface ArtifactCardCallbacks {
   onFeedback?: (type: "too_easy" | "too_hard", artifactId?: string) => void;
 }
 
-export type DirectiveCardCallbacks = ArtifactCardCallbacks;
-
 export interface ArtifactCardProps extends ArtifactCardCallbacks {
-  directive?: ZDirective;
   artifact?: any;
   resolved?: boolean;
 }
 
-export type DirectiveCardProps = ArtifactCardProps;
-
 // ─── Main ArtifactCard Dispatcher ────────────────────────────────────────────
 
 export function ArtifactCard({
-  directive,
   artifact,
   resolved = false,
   onSubmitAnswer = () => {},
@@ -2009,8 +1971,6 @@ export function ArtifactCard({
   const currentArtifactId =
     artifact?.artifactId ||
     artifact?.id ||
-    (directive as any)?.id ||
-    (directive as any)?.artifactId ||
     (artifact?.content as any)?.artifactId;
 
   const handleAnswer = (answers: string[], questions?: string[]) => {
@@ -2184,111 +2144,5 @@ export function ArtifactCard({
     }
   }
 
-  // If directive is provided
-  if (!directive) return null;
-
-  switch (directive.type) {
-    case "ASK_QUESTION":
-    case "ask_question":
-      return (
-        <AskQuestionCard
-          payload={directive.payload}
-          resolved={resolved}
-          onSubmitAnswer={handleAnswer}
-          onRetry={handleRetry}
-          onSkip={handleSkip}
-        />
-      );
-    case "ASK_QUESTIONS":
-    case "ask_questions":
-      return (
-        <AskQuestionsCard
-          payload={directive.payload}
-          resolved={resolved}
-          onSubmitAnswer={handleAnswer}
-          onSkip={handleSkip}
-        />
-      );
-    case "SHOW_EXPOSITION" as any:
-    case "exposition":
-    case "lesson":
-      return (
-        <ShowExpositionCard
-          payload={directive.payload}
-          resolved={resolved}
-          onOpenSource={onOpenSource}
-          onFeedback={handleFeedback}
-          onContinue={handleContinue}
-        />
-      );
-    case "SHOW_QUIZ":
-    case "show_quiz":
-    case "quiz":
-      return (
-        <ShowQuizCard
-          payload={directive.payload}
-          resolved={resolved}
-          onSubmitAnswer={handleAnswer}
-          onSkip={handleSkip}
-        />
-      );
-    case "SHOW_PLAN":
-    case "show_plan":
-    case "study_plan":
-      return (
-        <ShowPlanCard
-          payload={directive.payload}
-          resolved={resolved}
-          onApprove={handleApprove}
-          onSkip={handleSkip}
-        />
-      );
-    case "UNLOCK_TOPIC":
-    case "unlock_topic":
-      return (
-        <UnlockTopicCard payload={directive.payload} resolved={resolved} />
-      );
-    case "SHOW_RESULT":
-    case "show_result":
-      return <ShowResultCard payload={directive.payload} resolved={resolved} />;
-    case "SHOW_SUGGESTION":
-    case "show_suggestion":
-      return (
-        <ShowSuggestionCard
-          payload={directive.payload}
-          resolved={resolved}
-          onExplainDifferently={handleExplainDifferently}
-          onTestMe={handleTestMe}
-          onTryMyself={handleTryMyself}
-          onAction={handleAction}
-        />
-      );
-    case "SHOW_SUMMARY":
-    case "show_summary":
-    case "summary":
-    case "recap":
-      return (
-        <ShowSummaryCard payload={directive.payload} resolved={resolved} />
-      );
-    case "POMODORO":
-    case "pomodoro":
-      return (
-        <PomodoroCard
-          payload={directive.payload}
-          resolved={resolved}
-          onResume={handlePomodoroResume}
-        />
-      );
-    default:
-      return (
-        <UnknownDirectiveCard
-          type={directive.type}
-          payload={directive.payload}
-          resolved={resolved}
-          onContinue={handleContinue}
-        />
-      );
-  }
+  return null;
 }
-
-export const DirectiveCard = ArtifactCard;
