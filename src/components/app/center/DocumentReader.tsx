@@ -6,12 +6,7 @@ import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
-import {
-  Loader2,
-  X,
-  Plus,
-  Minus,
-} from "lucide-react";
+import { X } from "lucide-react";
 import {
   useAppMaterial,
   useAppMaterialContent,
@@ -21,6 +16,7 @@ import {
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { SelectionContextMenu } from "./SelectionContextMenu";
 
 // Configure worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -74,22 +70,25 @@ export function DocumentReader({
 
   // Page tracking via Intersection Observer
   useEffect(() => {
-    if (!scrollContainerRef.current) return;
+    const container = scrollContainerRef.current;
+    if (!container || !numPages) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
+        // Pick the most-visible page
+        let best: { pageNum: number; ratio: number } | null = null;
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const pageNum = Number(
-              entry.target.getAttribute("data-page-number"),
-            );
-            if (pageNum) setCurrentPage(pageNum);
+          const pageNum = Number(entry.target.getAttribute("data-page-number"));
+          if (!pageNum) return;
+          if (!best || entry.intersectionRatio > best.ratio) {
+            best = { pageNum, ratio: entry.intersectionRatio };
           }
         });
+        if (best) setCurrentPage((best as any).pageNum);
       },
       {
-        root: scrollContainerRef.current,
-        threshold: 0.3,
+        root: container,
+        threshold: [0, 0.1, 0.3, 0.5, 0.8],
       },
     );
 
@@ -98,27 +97,50 @@ export function DocumentReader({
     });
 
     return () => observer.disconnect();
-  }, [numPages, isLoadingBlob]);
-
-  function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
-    setNumPages(numPages);
-    pageRefs.current = new Array(numPages).fill(null);
-    if (referencePage && referencePage <= numPages) {
-      setTimeout(() => scrollToPage(referencePage), 100);
-    }
-  }
+  }, [numPages]);
 
   const scrollToPage = useCallback((pageNum: number) => {
     const target = pageRefs.current[pageNum - 1];
-    if (target) {
+    if (!target) return;
+
+    // Use the scroll container's scrollTop rather than scrollIntoView
+    // to prevent the whole browser window from jumping
+    const container = scrollContainerRef.current;
+    if (container) {
+      const containerTop = container.getBoundingClientRect().top;
+      const targetTop = target.getBoundingClientRect().top;
+      const offset = targetTop - containerTop;
+      container.scrollBy({ top: offset - 24, behavior: "smooth" });
+    } else {
       target.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, []);
 
-  useEffect(() => {
-    if (referencePage && numPages && referencePage <= numPages) {
-      scrollToPage(referencePage);
+  function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
+    setNumPages(numPages);
+    pageRefs.current = new Array(numPages).fill(null);
+    // Defer scroll until PDF pages have painted
+    if (referencePage && referencePage <= numPages) {
+      // Retry a few times because react-pdf renders lazily
+      const attempt = (tries: number) => {
+        setTimeout(() => {
+          const target = pageRefs.current[referencePage - 1];
+          if (target) {
+            scrollToPage(referencePage);
+          } else if (tries > 0) {
+            attempt(tries - 1);
+          }
+        }, 300);
+      };
+      attempt(5);
     }
+  }
+
+  // Re-scroll when referencePage changes after load (e.g. clicking a different citation)
+  useEffect(() => {
+    if (!referencePage || !numPages) return;
+    if (referencePage > numPages) return;
+    scrollToPage(referencePage);
   }, [referencePage, numPages, scrollToPage]);
 
   const zoom = (delta: number) => {
@@ -129,7 +151,36 @@ export function DocumentReader({
     return highlights.filter((h) => h.materialId === materialId);
   }, [highlights, materialId]);
 
-  const totalPages = numPages || 20;
+  const handleHighlight = useCallback(
+    (text: string, rect: DOMRect, color: string, note?: string) => {
+      const container = scrollContainerRef.current;
+      if (!container) return;
+      const containerRect = container.getBoundingClientRect();
+      const bounds = {
+        top: ((rect.top - containerRect.top + container.scrollTop) / container.scrollHeight) * 100,
+        left: ((rect.left - containerRect.left) / containerRect.width) * 100,
+        width: (rect.width / containerRect.width) * 100,
+        height: (rect.height / container.scrollHeight) * 100,
+      };
+      addHighlight.mutate(
+        {
+          materialId,
+          pageNumber: currentPage,
+          text,
+          bounds,
+          color,
+          note,
+        },
+        {
+          onSuccess: () => toast.success("Highlighted text saved."),
+          onError: () => toast.error("Failed to save highlight."),
+        },
+      );
+    },
+    [currentPage, materialId, addHighlight],
+  );
+
+  const totalPages = numPages || 0;
   const pagesList = Array.from({ length: totalPages }, (_, i) => i + 1);
 
   return (
@@ -141,7 +192,7 @@ export function DocumentReader({
         transition={{ duration: 0.2 }}
         className="relative w-full max-w-4xl h-[92vh] max-h-220 rounded-[28px] bg-white border border-slate-200/70 shadow-2xl flex flex-col overflow-hidden"
       >
-        {/* Top Header matching screenshot */}
+        {/* Top Header */}
         <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-slate-100 shrink-0">
           <div className="w-6" />
 
@@ -166,7 +217,7 @@ export function DocumentReader({
             </span>
           </div>
 
-          {/* Close button matching screenshot */}
+          {/* Close button */}
           <button
             type="button"
             onClick={onClose}
@@ -177,18 +228,18 @@ export function DocumentReader({
           </button>
         </div>
 
-        {/* Floating Secondary Toolbar matching screenshot */}
+        {/* Toolbar */}
         <div className="flex items-center justify-between px-6 py-2 bg-white/90 border-b border-slate-100/80 shrink-0">
-          {/* Left Document Pill: Chapter8_MoreNumberTheory • 17/20 */}
+          {/* Left: document name + page counter */}
           <div className="rounded-full bg-white border border-slate-200/90 shadow-2xs px-3.5 py-1 text-xs font-bold text-slate-800 flex items-center gap-2">
             <span className="truncate max-w-64 sm:max-w-xs">{displayName}</span>
             <span className="text-slate-300 text-[10px]">•</span>
             <span className="text-slate-500 font-semibold font-mono text-[11.5px]">
-              {currentPage}/{totalPages}
+              {currentPage}/{totalPages || "--"}
             </span>
           </div>
 
-          {/* Right Zoom Controls: − 100% + */}
+          {/* Right: zoom */}
           <div className="rounded-full bg-white border border-slate-200/90 shadow-2xs px-3 py-1 text-xs font-bold text-slate-700 flex items-center gap-2.5 select-none">
             <button
               type="button"
@@ -214,11 +265,17 @@ export function DocumentReader({
           </div>
         </div>
 
-        {/* Content Scrolling Canvas Area matching screenshot */}
+        {/* Content area — position:relative so SelectionContextMenu absolute coords work */}
         <div
           ref={scrollContainerRef}
-          className="flex-1 overflow-y-auto p-6 sm:p-8 flex flex-col items-center min-h-0 bg-[#F7F7F7] scroll-smooth scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none]"
+          className="relative flex-1 overflow-y-auto p-6 sm:p-8 flex flex-col items-center min-h-0 bg-[#F7F7F7] scroll-smooth scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none]"
         >
+          {/* Selection Context Menu wired to scroll container */}
+          <SelectionContextMenu
+            containerRef={scrollContainerRef}
+            onHighlight={handleHighlight}
+          />
+
           {objectUrl ? (
             <Document
               file={objectUrl}
@@ -239,12 +296,12 @@ export function DocumentReader({
 
                 return (
                   <div key={pageNum} className="flex flex-col items-center w-full max-w-2xl mb-8">
-                    {/* Page Label Centered */}
+                    {/* Page Label */}
                     <span className="text-[11px] font-medium text-slate-400 mb-2 select-none">
                       Page {pageNum}
                     </span>
 
-                    {/* Page Container Box (Orange border for cited reference page) */}
+                    {/* Page Container */}
                     <div
                       ref={(el) => {
                         pageRefs.current[pageNum - 1] = el;
@@ -253,13 +310,13 @@ export function DocumentReader({
                       className={cn(
                         "relative w-full rounded-[20px] bg-white transition-all overflow-hidden",
                         isReference
-                          ? "border-2 border-[#FF5722] shadow-md p-4 min-h-145 flex flex-col items-center justify-center"
-                          : "border border-slate-200 shadow-sm p-4 min-h-145 flex flex-col items-center justify-center"
+                          ? "border-2 border-[#FF5722] shadow-md"
+                          : "border border-slate-200 shadow-sm",
                       )}
                     >
-                      {/* Orange "Reference" Badge embedded on top-left */}
+                      {/* Orange Reference badge */}
                       {isReference && (
-                        <div className="absolute top-2.5 left-2.5 z-30 inline-flex items-center rounded-full bg-[#FF5722] text-white px-3 py-0.5 text-[10.5px] font-bold tracking-wide shadow-xs">
+                        <div className="absolute top-2.5 left-2.5 z-30 inline-flex items-center rounded-full bg-[#FF5722] text-white px-3 py-0.5 text-[10.5px] font-bold tracking-wide shadow-xs pointer-events-none">
                           Reference
                         </div>
                       )}
