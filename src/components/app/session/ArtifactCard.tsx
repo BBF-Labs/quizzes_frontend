@@ -296,10 +296,115 @@ function normalizeOptionText(opt: any): string {
   } else {
     str = String(opt ?? "");
   }
+  const trimmed = str.trim();
+  // Do not strip if string is just a single letter or letter token like "B", "B.", "(B)", "b)"
+  if (/^(\(?[A-Za-z0-9][\)\.\:\-\]]?|\b[A-Za-z0-9][\)\.\:\-])$/.test(trimmed)) {
+    return trimmed;
+  }
   // Strip leading prefixes like "A) ", "A. ", "A: ", "(A) ", "[A] ", "a) ", "1. ", "1) ", etc.
-  return str
-    .replace(/^(\(?[A-Za-z0-9][\)\.\:\-\]]|\b[A-Za-z0-9][\)\.\:\-])\s*/, "")
+  return trimmed
+    .replace(/^(\(?[A-Za-z0-9][\)\.\:\-\]]|\b[A-Za-z0-9][\)\.\:\-])\s+/, "")
     .trim();
+}
+
+function resolveOptionIndex(
+  target: string | null | undefined,
+  options: string[],
+): number {
+  if (!target || options.length === 0) return -1;
+  const rawTarget = String(target).trim();
+  if (!rawTarget) return -1;
+
+  const normTarget = normalizeOptionText(rawTarget).trim().toLowerCase();
+
+  // 1. Direct match against normalized or raw options
+  const exactIdx = options.findIndex((opt) => {
+    const normOpt = normalizeOptionText(opt).trim().toLowerCase();
+    const rawOpt = String(opt).trim().toLowerCase();
+    return (
+      normOpt === normTarget ||
+      rawOpt === rawTarget.toLowerCase() ||
+      rawOpt === normTarget ||
+      normOpt === rawTarget.toLowerCase()
+    );
+  });
+  if (exactIdx >= 0) return exactIdx;
+
+  // 2. Letter indicators:
+  // "Option B", "option b", "Choice B", "Answer: B", "(B)", "[B]", "B.", "B)", "B: ", "B - ", "B"
+  const letterMatch = rawTarget.match(
+    /^(?:option|choice|answer)?\s*[:\-\.]?\s*\(?([a-z])(?:\)|[\.\:\-\s]|$)/i,
+  );
+  if (letterMatch) {
+    const letter = letterMatch[1].toLowerCase();
+    const idx = letter.charCodeAt(0) - 97;
+    if (idx >= 0 && idx < options.length) {
+      return idx;
+    }
+  }
+
+  // 3. Fallback: single standalone alphanumeric letter
+  const clean = rawTarget.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (clean.length === 1 && clean >= "a" && clean <= "z") {
+    const idx = clean.charCodeAt(0) - 97;
+    if (idx >= 0 && idx < options.length) {
+      return idx;
+    }
+  }
+
+  // 4. "Option 1", "Choice 2" (1-based index)
+  const numMatch = rawTarget.match(/^(?:option|choice)?\s*[:\-\.]?\s*(\d+)/i);
+  if (numMatch) {
+    const num = parseInt(numMatch[1], 10);
+    if (num >= 1 && num <= options.length) {
+      return num - 1;
+    }
+  }
+
+  // 5. Target containing the text with prefix, e.g. "B. It is situated..." or "b) It is situated..."
+  const strippedTarget = rawTarget
+    .replace(/^(\(?[a-z0-9][\)\.\:\-\]]|\b[a-z0-9][\)\.\:\-])\s*/i, "")
+    .trim()
+    .toLowerCase();
+  if (strippedTarget.length > 3) {
+    const strippedIdx = options.findIndex((opt) => {
+      const normOpt = normalizeOptionText(opt).trim().toLowerCase();
+      return (
+        normOpt === strippedTarget ||
+        normOpt.includes(strippedTarget) ||
+        strippedTarget.includes(normOpt)
+      );
+    });
+    if (strippedIdx >= 0) return strippedIdx;
+  }
+
+  // 6. Substring match for substantial strings (>= 10 chars)
+  if (normTarget.length >= 10) {
+    const subIdx = options.findIndex((opt) => {
+      const normOpt = normalizeOptionText(opt).trim().toLowerCase();
+      return normOpt.includes(normTarget) || normTarget.includes(normOpt);
+    });
+    if (subIdx >= 0) return subIdx;
+  }
+
+  // 7. True / False matching
+  const tf = rawTarget.toLowerCase();
+  if (tf === "true" || tf === "t" || tf === "yes" || tf === "y") {
+    const idx = options.findIndex((o) => {
+      const l = o.toLowerCase();
+      return l === "true" || l === "yes" || l.startsWith("true") || l.startsWith("yes");
+    });
+    if (idx >= 0) return idx;
+  }
+  if (tf === "false" || tf === "f" || tf === "no" || tf === "n") {
+    const idx = options.findIndex((o) => {
+      const l = o.toLowerCase();
+      return l === "false" || l === "no" || l.startsWith("false") || l.startsWith("no");
+    });
+    if (idx >= 0) return idx;
+  }
+
+  return -1;
 }
 
 function isTrueFalseOptions(options?: any[]): boolean {
@@ -372,64 +477,52 @@ function AskQuestionCard({
     }
   }, [persistedAnswer, evaluatedChoice]);
 
-  const matchOption = (optText: string, index: number, target: string | null | undefined): boolean => {
+  const matchOption = (
+    optText: string,
+    index: number,
+    target: string | null | undefined,
+  ): boolean => {
     if (!target) return false;
+    const targetIdx = resolveOptionIndex(target, options);
+    if (targetIdx >= 0) {
+      return targetIdx === index;
+    }
     const normTarget = normalizeOptionText(target).trim().toLowerCase();
     const normOpt = normalizeOptionText(optText).trim().toLowerCase();
-    const letter = String.fromCharCode(65 + index).toLowerCase();
-
-    // Clean single letter target: "a", "b", "c", "d", "a)", "b.", "(a)"
-    const cleanTarget = normTarget.replace(/[^a-z0-9]/g, "");
-    if (cleanTarget.length === 1 && cleanTarget >= "a" && cleanTarget <= "z") {
-      return cleanTarget === letter;
-    }
-
-    // Exact string match
-    if (normOpt === normTarget) {
-      return true;
-    }
-
-    // If target starts with option letter prefix like "B. It is situated..." or "b) ..."
-    if (cleanTarget.startsWith(letter) && normTarget.length > 5) {
-      const targetWithoutPrefix = normTarget.replace(/^[a-z][\s\).:-]+/i, "").trim();
-      if (
-        targetWithoutPrefix &&
-        (normOpt === targetWithoutPrefix ||
-          normOpt.includes(targetWithoutPrefix) ||
-          targetWithoutPrefix.includes(normOpt))
-      ) {
-        return true;
-      }
-    }
-
-    // Full text match (ONLY for strings >= 10 chars to avoid single-letter substring false positives)
-    if (normTarget.length >= 10 && normOpt.length >= 10) {
-      if (normOpt.includes(normTarget) || normTarget.includes(normOpt)) {
-        return true;
-      }
-    }
-
-    return false;
+    return normOpt === normTarget;
   };
 
   const isUserCorrect = useMemo(() => {
     if (!evaluatedChoice) return false;
     if (!correctAnswer) return false;
 
-    const chosenIndex = options.findIndex((o, idx) => matchOption(o, idx, evaluatedChoice));
-    if (chosenIndex >= 0) {
-      return matchOption(options[chosenIndex], chosenIndex, correctAnswer);
+    if (options.length > 0) {
+      const chosenIdx = resolveOptionIndex(evaluatedChoice, options);
+      const correctIdx = resolveOptionIndex(correctAnswer, options);
+
+      if (chosenIdx >= 0 && correctIdx >= 0) {
+        return chosenIdx === correctIdx;
+      }
+      if (chosenIdx >= 0) {
+        return matchOption(options[chosenIdx], chosenIdx, correctAnswer);
+      }
     }
 
     const normChoice = normalizeOptionText(evaluatedChoice).trim().toLowerCase();
     const normCorrect = normalizeOptionText(correctAnswer).trim().toLowerCase();
-    return normChoice === normCorrect;
+    return (
+      normChoice === normCorrect ||
+      (normChoice.length >= 10 &&
+        normCorrect.length >= 10 &&
+        (normChoice.includes(normCorrect) || normCorrect.includes(normChoice)))
+    );
   }, [evaluatedChoice, correctAnswer, options]);
 
-  const correctOptIndex = options.findIndex((o, idx) => matchOption(o, idx, correctAnswer));
-  const correctOptDisplay = correctOptIndex >= 0
-    ? `${String.fromCharCode(65 + correctOptIndex)}. ${options[correctOptIndex]}`
-    : correctAnswer;
+  const correctOptIndex = resolveOptionIndex(correctAnswer, options);
+  const correctOptDisplay =
+    correctOptIndex >= 0
+      ? `${String.fromCharCode(65 + correctOptIndex)}. ${options[correctOptIndex]}`
+      : correctAnswer;
 
   const isTF = isTrueFalseOptions(options);
 
@@ -2485,6 +2578,11 @@ export function ArtifactCard({
 
     // 5. Concept Check Question
     if (artType === "question" || artType === "ask_question") {
+      const singleQ =
+        Array.isArray(content.questions) && content.questions.length > 0
+          ? content.questions[0]
+          : null;
+
       const isCardResolved = Boolean(
         artifact.resolved ||
         content.resolved ||
@@ -2513,16 +2611,51 @@ export function ArtifactCard({
         (Array.isArray(artifact.userAnswers) && artifact.userAnswers[0]) ||
         (content.response as any)?.answer ||
         (content.response as any)?.selectedOption ||
+        (Array.isArray(content.answers) && content.answers[0]) ||
         undefined;
 
+      const rawQuestion =
+        content.question ||
+        content.text ||
+        content.prompt ||
+        singleQ?.question ||
+        singleQ?.text ||
+        singleQ?.prompt ||
+        artifact.title ||
+        "Knowledge Check";
+
+      const rawOptions =
+        (Array.isArray(content.options) && content.options.length > 0
+          ? content.options
+          : singleQ?.options) || [];
+
+      const rawCorrectAnswer =
+        content.correctAnswer ||
+        content.solution ||
+        content.answer ||
+        singleQ?.correctAnswer ||
+        singleQ?.solution ||
+        singleQ?.answer ||
+        (content.response as any)?.correctAnswer ||
+        (content.response as any)?.answer ||
+        "";
+
+      const rawExplanation =
+        content.explanation ||
+        singleQ?.explanation ||
+        (content.response as any)?.explanation ||
+        "";
+
+      const rawHint = content.hint || singleQ?.hint || "";
+
       const payload: any = {
-        title: artifact.title || content.title || "Knowledge Check",
-        question: content.question || content.text || content.prompt || artifact.title,
-        options: content.options || [],
-        correctAnswer: content.correctAnswer || content.solution || content.answer,
-        explanation: content.explanation,
-        hint: content.hint,
-        topicTitle: artifact.title || content.topicTitle,
+        title: artifact.title || content.title || singleQ?.title || "Knowledge Check",
+        question: rawQuestion,
+        options: rawOptions,
+        correctAnswer: rawCorrectAnswer,
+        explanation: rawExplanation,
+        hint: rawHint,
+        topicTitle: artifact.title || content.topicTitle || singleQ?.topicTitle,
         userAnswer: resolvedUserAnswer,
         userAnswers:
           content.userAnswers ||
