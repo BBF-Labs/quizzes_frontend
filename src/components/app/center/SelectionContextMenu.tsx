@@ -14,6 +14,7 @@ interface SelectionContextMenuProps {
     rect: DOMRect,
     color: string,
     note?: string,
+    range?: Range,
   ) => void;
 }
 
@@ -31,6 +32,7 @@ export function SelectionContextMenu({
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
   const [selectedText, setSelectedText] = useState("");
   const [selectedRect, setSelectedRect] = useState<DOMRect | null>(null);
+  const currentRangeRef = useRef<Range | null>(null);
   const { sendMessage, addNote } = useAppLayout();
   const [copied, setCopied] = useState(false);
   const [note, setNote] = useState("");
@@ -45,7 +47,7 @@ export function SelectionContextMenu({
 
       setTimeout(() => {
         const selection = window.getSelection();
-        if (!selection || selection.rangeCount === 0) {
+        if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
           if (!showNoteInput) setPosition(null);
           return;
         }
@@ -55,16 +57,26 @@ export function SelectionContextMenu({
 
         if (text.length > 0) {
           try {
-            const rect = range.getBoundingClientRect();
-            const containerRect = containerRef.current?.getBoundingClientRect();
+            const container = containerRef.current;
+            if (!container) return;
 
-            if (containerRect && rect.width > 0) {
+            // Ensure selection is inside the container
+            const containerNode = container as Node;
+            if (!containerNode.contains(range.commonAncestorContainer)) {
+              return;
+            }
+
+            const rect = range.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+
+            if (rect.width > 0) {
               setPosition({
-                x: rect.left - containerRect.left + rect.width / 2,
-                y: rect.top - containerRect.top - 8,
+                x: rect.left - containerRect.left + container.scrollLeft + rect.width / 2,
+                y: rect.top - containerRect.top + container.scrollTop - 8,
               });
               setSelectedText(text);
               setSelectedRect(rect);
+              currentRangeRef.current = range.cloneRange();
               // Reset panel state on new selection
               setShowNoteInput(false);
               setShowHighlightColors(false);
@@ -73,31 +85,30 @@ export function SelectionContextMenu({
           } catch {
             setPosition(null);
             setSelectedRect(null);
+            currentRangeRef.current = null;
           }
         } else {
           setPosition(null);
           setSelectedRect(null);
+          currentRangeRef.current = null;
         }
-      }, 10);
+      }, 20);
     };
 
     const handleMouseDown = (e: MouseEvent) => {
       if (menuRef.current?.contains(e.target as Node)) return;
-      setPosition(null);
-      setShowNoteInput(false);
-      setShowHighlightColors(false);
+      if (!showNoteInput) {
+        setPosition(null);
+        setShowHighlightColors(false);
+      }
     };
 
-    const container = containerRef.current;
-    if (container) {
-      container.addEventListener("mouseup", handleMouseUp);
-      container.addEventListener("mousedown", handleMouseDown);
-    }
+    document.addEventListener("mouseup", handleMouseUp);
+    document.addEventListener("mousedown", handleMouseDown);
+
     return () => {
-      if (container) {
-        container.removeEventListener("mouseup", handleMouseUp);
-        container.removeEventListener("mousedown", handleMouseDown);
-      }
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("mousedown", handleMouseDown);
     };
   }, [containerRef, showNoteInput]);
 
@@ -106,6 +117,7 @@ export function SelectionContextMenu({
     setShowNoteInput(false);
     setShowHighlightColors(false);
     setNote("");
+    currentRangeRef.current = null;
   };
 
   const handleAskZ = async () => {
@@ -119,9 +131,11 @@ export function SelectionContextMenu({
     }
   };
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(selectedText);
+  const handleCopy = async () => {
+    if (!selectedText) return;
+    await navigator.clipboard.writeText(selectedText);
     setCopied(true);
+    toast.success("Copied to clipboard.");
     setTimeout(() => {
       setCopied(false);
       dismiss();
@@ -137,7 +151,13 @@ export function SelectionContextMenu({
 
   const handleHighlight = (colorId: string) => {
     if (!selectedText || !selectedRect || !onHighlight) return;
-    onHighlight(selectedText, selectedRect, colorId, note.trim() || undefined);
+    onHighlight(
+      selectedText,
+      selectedRect,
+      colorId,
+      note.trim() || undefined,
+      currentRangeRef.current ?? undefined,
+    );
     toast.success("Highlight saved.");
     dismiss();
   };
