@@ -23,7 +23,6 @@ import {
 } from "lucide-react";
 import {
   useLibraryMaterials,
-  useCreateLibraryMaterial,
   useDeleteLibraryMaterial,
   useGenerateFlashcards,
   useGenerateQuiz,
@@ -32,9 +31,9 @@ import {
 } from "@/hooks/app/use-app-library";
 import { useSubmitToLibrary } from "@/hooks/app/use-public-library";
 import { useCourseSearch } from "@/hooks/common/use-courses";
-import { useUploadFile } from "@/hooks/common/use-upload";
 import { type MaterialSummary } from "@/types/session";
 import { toast } from "sonner";
+import { UploadMaterialDialog } from "@/components/common/UploadMaterialDialog";
 
 // ─── MIME helpers (mirrors src/app/library/page.tsx) ─────────────────────────
 
@@ -473,17 +472,15 @@ type StatusFilter = "all" | "ready" | "processing" | "failed";
 
 export default function LibraryPage() {
   const { data: materials = [], isLoading } = useLibraryMaterials();
-  const createMaterial = useCreateLibraryMaterial();
   const deleteMaterial = useDeleteLibraryMaterial();
   const generateFlashcards = useGenerateFlashcards();
   const generateQuiz = useGenerateQuiz();
   const generateMindMap = useGenerateMindMap();
   const processMaterial = useProcessLibraryMaterial();
-  const uploadFile = useUploadFile();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [isUploading, setIsUploading] = useState(false);
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [submitTarget, setSubmitTarget] = useState<MaterialSummary | null>(
     null,
   );
@@ -527,31 +524,6 @@ export default function LibraryPage() {
       return true;
     });
   }, [materials, searchQuery, statusFilter]);
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setIsUploading(true);
-    try {
-      const upload = await uploadFile.mutateAsync({ file });
-      await createMaterial.mutateAsync({
-        uploadId: upload._id,
-        title: file.name,
-      });
-      toast.success("Material uploaded successfully");
-    } catch (err: any) {
-      if (err?.response?.status === 402) {
-        toast.error(
-          "Daily upload limit reached. Upgrade your plan to upload more materials.",
-        );
-      } else {
-        toast.error("Failed to upload material");
-      }
-    } finally {
-      setIsUploading(false);
-      if (e.target) e.target.value = "";
-    }
-  };
 
   const handleGenerateFlashcards = async (materialId: string) => {
     try {
@@ -671,20 +643,13 @@ export default function LibraryPage() {
             />
           </div>
 
-          <label className="squishy group inline-flex cursor-pointer items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3.5 text-sm font-extrabold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-[#0C60FC]">
-            {isUploading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Plus className="h-4 w-4" />
-            )}
-            <span>{isUploading ? "Uploading…" : "Add Material"}</span>
-            <input
-              type="file"
-              className="hidden"
-              onChange={handleFileUpload}
-              disabled={isUploading}
-            />
-          </label>
+          <button
+            onClick={() => setIsUploadDialogOpen(true)}
+            className="squishy group inline-flex cursor-pointer items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3.5 text-sm font-extrabold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-[#0C60FC]"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Add Material</span>
+          </button>
         </div>
 
         {/* Status filter chips */}
@@ -748,16 +713,14 @@ export default function LibraryPage() {
                   : "Upload a PDF, DOCX, PPTX or spreadsheet to start generating flashcards, quizzes and mind maps."}
               </p>
               {!searchQuery && statusFilter === "all" && (
-                <label className="mt-5 inline-flex cursor-pointer items-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-xs font-extrabold text-white transition hover:bg-[#0C60FC]">
+                <button
+                  type="button"
+                  onClick={() => setIsUploadDialogOpen(true)}
+                  className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-xs font-extrabold text-white transition hover:bg-[#0C60FC]"
+                >
                   <Plus className="h-4 w-4" />
                   Upload your first material
-                  <input
-                    type="file"
-                    className="hidden"
-                    onChange={handleFileUpload}
-                    disabled={isUploading}
-                  />
-                </label>
+                </button>
               )}
             </div>
           ) : (
@@ -953,6 +916,12 @@ export default function LibraryPage() {
           onClose={() => setSubmitTarget(null)}
         />
       )}
+
+      {/* Upload Material Dialog with Preview & Type Guard */}
+      <UploadMaterialDialog
+        isOpen={isUploadDialogOpen}
+        onOpenChange={setIsUploadDialogOpen}
+      />
     </div>
   );
 }
