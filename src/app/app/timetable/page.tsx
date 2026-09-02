@@ -253,9 +253,9 @@ export default function PrivateTimetablePage() {
     activeDate: new Date().toISOString(),
     dayName: format(selectedDate, "EEEE"),
     formattedDate: format(selectedDate, "EEEE, d MMMM"),
-    academicWeek: 9,
-    todayEventsCount: 4,
-    daysToFirstExam: 18,
+    academicWeek: 1,
+    todayEventsCount: 0,
+    daysToFirstExam: 0,
     upNext: null,
     isSynced: true,
   };
@@ -284,14 +284,14 @@ export default function PrivateTimetablePage() {
   const agenda = overview?.agenda || [];
   const workload = overview?.workloadMetrics || {
     dailyHours: [
-      { day: "Mon", date: selectedDateStr, hrs: 4.5 },
-      { day: "Tue", date: selectedDateStr, hrs: 6.0 },
-      { day: "Wed", date: selectedDateStr, hrs: 4.0 },
-      { day: "Thu", date: selectedDateStr, hrs: 3.5 },
-      { day: "Fri", date: selectedDateStr, hrs: 2.5 },
+      { day: "Mon", date: selectedDateStr, hrs: 0 },
+      { day: "Tue", date: selectedDateStr, hrs: 0 },
+      { day: "Wed", date: selectedDateStr, hrs: 0 },
+      { day: "Thu", date: selectedDateStr, hrs: 0 },
+      { day: "Fri", date: selectedDateStr, hrs: 0 },
     ],
-    weeklyTotalHours: 20.5,
-    streakDays: 8,
+    weeklyTotalHours: 0,
+    streakDays: 0,
   };
 
   // ─── Filtered Agenda for Search ────────────────────────────────────────────
