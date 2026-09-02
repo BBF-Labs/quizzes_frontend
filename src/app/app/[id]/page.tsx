@@ -106,7 +106,7 @@ export default function ChatPage() {
           if (
             (stepParam && String(step.stepId || step.goalId || step._id) === stepParam) ||
             (topicParam && step.title?.toLowerCase() === topicParam.toLowerCase()) ||
-            (!stepParam && !topicParam && (step.stepId === currentActiveStep || step._id === currentActiveStep))
+            (!stepParam && !topicParam && currentActiveStep && (step.stepId === currentActiveStep || step._id === currentActiveStep))
           ) {
             const blocks = (step.knowledgeBlocks || step.prerequisites || []) as any[];
             return {
@@ -117,6 +117,40 @@ export default function ChatPage() {
               prerequisites: step.prerequisites || [],
             };
           }
+        }
+      }
+
+      // If no explicit param, find the first uncompleted step in the study plan
+      if (!stepParam && !topicParam) {
+        for (const ch of app.studyPlan.chapters) {
+          const steps = (ch.steps || ch.goals || []) as any[];
+          for (const step of steps) {
+            const isCompleted = Boolean(step.completed || step.isCompleted);
+            if (!isCompleted) {
+              const blocks = (step.knowledgeBlocks || step.prerequisites || []) as any[];
+              return {
+                title: step.title,
+                coreIdea: step.coreIdea || step.description,
+                whyItMatters: step.whyItMatters,
+                knowledgeBlocks: blocks,
+                prerequisites: step.prerequisites || [],
+              };
+            }
+          }
+        }
+
+        // Fallback to very first step if all completed
+        const firstCh = app.studyPlan.chapters[0];
+        const firstStep: any = (firstCh?.steps || firstCh?.goals || [])[0];
+        if (firstStep) {
+          const blocks = (firstStep.knowledgeBlocks || firstStep.prerequisites || []) as any[];
+          return {
+            title: firstStep.title,
+            coreIdea: firstStep.coreIdea || firstStep.description,
+            whyItMatters: firstStep.whyItMatters,
+            knowledgeBlocks: blocks,
+            prerequisites: firstStep.prerequisites || [],
+          };
         }
       }
     }
@@ -362,32 +396,6 @@ export default function ChatPage() {
     [sendMessage, activeArtifactMessageId, activeTopic?.title, respondMutation],
   );
 
-  // Active topic title based on sessionStep or message history
-  const activeTopicTitle = useMemo(() => {
-    if (messages.length === 0) {
-      if (sessionStep === 0) {
-        return activeTopic?.title || app?.name || "Topic Overview";
-      }
-      return activeBlock?.concept || activeBlock?.title || activeTopic?.title || "Active Concept";
-    }
-
-    for (let i = messages.length - 1; i >= 0; i--) {
-      const d = messages[i].directive;
-      if (d) {
-        if (d.type === "UNLOCK_TOPIC" && d.payload.topicTitle) {
-          return d.payload.topicTitle;
-        }
-        if (d.type === "SHOW_SUGGESTION" && d.payload.topicTitle) {
-          return d.payload.topicTitle;
-        }
-        if (d.type === "SHOW_PLAN" && d.payload.title) {
-          return d.payload.title;
-        }
-      }
-    }
-    return activeBlock?.concept || activeBlock?.title || activeTopic?.title || app?.name || "Learning Session";
-  }, [messages, sessionStep, activeTopic, activeBlock, app]);
-
   // Knowledge Pathway items for entire roadmap across the session
   const pathwayItems: KnowledgeBlockItem[] = useMemo(() => {
     const items: KnowledgeBlockItem[] = [];
@@ -468,6 +476,42 @@ export default function ChatPage() {
 
     return [];
   }, [app?.studyPlan, activeTopic, activeBlock]);
+
+  // Active topic title based on current roadmap item or latest artifact/topic
+  const activeTopicTitle = useMemo(() => {
+    if (topicParam) return topicParam;
+
+    // 1. Sync directly with what the roadmap displays as current
+    const currentItem = pathwayItems.find((it) => it.status === "current");
+    if (currentItem?.title) {
+      return currentItem.title;
+    }
+
+    // 2. Check the latest artifact's topicTitle in messages
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const art = messages[i]?.artifact;
+      if (art) {
+        const title = art.content?.topicTitle || art.title;
+        if (
+          title &&
+          title !== "Knowledge Check" &&
+          title !== "Concept Check" &&
+          title !== "Concept Exposition"
+        ) {
+          return title;
+        }
+      }
+    }
+
+    // 3. Fallbacks
+    return (
+      activeBlock?.concept ||
+      activeBlock?.title ||
+      activeTopic?.title ||
+      app?.name ||
+      "Learning Session"
+    );
+  }, [topicParam, pathwayItems, messages, activeBlock, activeTopic, app]);
 
   // Floating Action Launcher Menu Items with EXAMS button
   const launcherItems: FloatingActionItem[] = [
