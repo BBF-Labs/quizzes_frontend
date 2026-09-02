@@ -24,7 +24,7 @@ import { useApp } from "@/hooks/app/use-app-queries";
 import {
   useRetryMessage,
   useRateMessage,
-  useRespondToDirectiveArtifact,
+  useRespondToArtifact,
 } from "@/hooks/app/use-app-actions";
 import { useAppLayout } from "@/components/app/layout";
 import { cn } from "@/lib/utils";
@@ -75,7 +75,7 @@ export default function ChatPage() {
   const approveMutation = useAppApprove();
   const retryMutation = useRetryMessage(sessionId);
   const rateMutation = useRateMessage(sessionId);
-  const respondMutation = useRespondToDirectiveArtifact(sessionId);
+  const respondMutation = useRespondToArtifact(sessionId);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -233,20 +233,17 @@ export default function ChatPage() {
     }
   };
 
-  // Derive the most-recent unresolved directive or interactive question artifact messageId
-  const activeDirectiveMessageId = useMemo(() => {
+  // Derive the most-recent unresolved interactive artifact messageId
+  const activeArtifactMessageId = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i--) {
       const m = messages[i];
-      if (m.type === "directive" && m.directive) {
-        return m.messageId || m.id;
-      }
       if (
         m.artifact &&
         ["question", "ask_question", "ask_questions", "quiz", "verification"].includes(
-          String(m.artifact.type || "").toLowerCase(),
+          String((m.artifact as any).type || "").toLowerCase(),
         )
       ) {
-        return m.messageId || m.id;
+        return m.artifactId || m.messageId || m.id;
       }
     }
     return null;
@@ -260,16 +257,10 @@ export default function ChatPage() {
   );
 
   const isOpenEndedQuestionActive = useMemo(() => {
-    if (activeDirectiveMessageId) {
+    if (activeArtifactMessageId) {
       const activeMsg = messages.find(
-        (m) => (m.messageId || m.id) === activeDirectiveMessageId,
+        (m) => (m.messageId || m.id) === activeArtifactMessageId,
       );
-      if (activeMsg?.directive?.type === "ASK_QUESTION") {
-        const payload = activeMsg.directive.payload as any;
-        if (!payload?.options || payload.options.length === 0) {
-          return true;
-        }
-      }
       if (
         activeMsg?.artifact?.type === "question" ||
         activeMsg?.artifact?.type === "ask_question"
@@ -281,11 +272,11 @@ export default function ChatPage() {
       }
     }
     return false;
-  }, [messages, activeDirectiveMessageId]);
+  }, [messages, activeArtifactMessageId]);
 
   // Check if an artifact has been returned in the session
   const hasArtifactReturned = useMemo(() => {
-    return messages.some((m) => Boolean(m.artifact || m.directive));
+    return messages.some((m) => Boolean(m.artifact || m.artifactId));
   }, [messages]);
 
   // Check if the most recent active artifact is a recap / summary
@@ -296,10 +287,6 @@ export default function ChatPage() {
         const artType = String(msg.artifact.type || "").toLowerCase();
         return artType === "recap" || artType === "summary";
       }
-      if (msg.directive) {
-        const dirType = String(msg.directive.type || "").toUpperCase();
-        return dirType === "SHOW_SUMMARY" || dirType === "RECAP";
-      }
     }
     return false;
   }, [messages]);
@@ -307,7 +294,7 @@ export default function ChatPage() {
   // Step advancement handler for Continue / Keep going button
   const handleContinue = useCallback(
     (artifactId?: string) => {
-      const targetId = artifactId || activeDirectiveMessageId;
+      const targetId = artifactId || activeArtifactMessageId;
       if (targetId) {
         respondMutation
           .mutateAsync({
@@ -327,7 +314,7 @@ export default function ChatPage() {
         sendMessage(isRecapActive ? "Keep going" : "Continue", undefined, true);
       }
     },
-    [sessionStep, sendMessage, isRecapActive, activeDirectiveMessageId, respondMutation],
+    [sessionStep, sendMessage, isRecapActive, activeArtifactMessageId, respondMutation],
   );
 
   const handleKeepGoing = useCallback(() => {
@@ -336,7 +323,7 @@ export default function ChatPage() {
 
   const handleFeedback = useCallback(
     (type: "too_easy" | "too_hard", artifactId?: string) => {
-      const targetId = artifactId || activeDirectiveMessageId;
+      const targetId = artifactId || activeArtifactMessageId;
       if (targetId) {
         respondMutation
           .mutateAsync({
@@ -354,7 +341,7 @@ export default function ChatPage() {
         sendMessage("Too hard", undefined, true);
       }
     },
-    [sendMessage, activeDirectiveMessageId, respondMutation],
+    [sendMessage, activeArtifactMessageId, respondMutation],
   );
 
   // Active topic title based on sessionStep or message history
@@ -511,13 +498,13 @@ export default function ChatPage() {
     },
   ];
 
-  // Directive action helpers
+  // Artifact action helpers
   const handleSubmitAnswer = useCallback(
     (answers: string[], questions?: string[], artifactId?: string) => {
       if (!sessionId) return;
 
       // 1. Modify that particular artifact directly
-      const targetId = artifactId || activeDirectiveMessageId;
+      const targetId = artifactId || activeArtifactMessageId;
       if (targetId) {
         respondMutation
           .mutateAsync({
@@ -547,13 +534,13 @@ export default function ChatPage() {
 
       sendMessage(message, undefined, true);
     },
-    [sessionId, activeDirectiveMessageId, respondMutation, sendMessage],
+    [sessionId, activeArtifactMessageId, respondMutation, sendMessage],
   );
 
   const handleApprove = useCallback(
     (artifactId?: string) => {
       if (!sessionId) return;
-      const targetId = artifactId || activeDirectiveMessageId;
+      const targetId = artifactId || activeArtifactMessageId;
       if (targetId) {
         respondMutation
           .mutateAsync({
@@ -566,12 +553,12 @@ export default function ChatPage() {
         .mutateAsync(sessionId)
         .catch((err: unknown) => console.error("[approvePlan] failed", err));
     },
-    [sessionId, activeDirectiveMessageId, approveMutation, respondMutation],
+    [sessionId, activeArtifactMessageId, approveMutation, respondMutation],
   );
 
   const handleRetry = useCallback(
     (artifactId?: string) => {
-      const targetId = artifactId || activeDirectiveMessageId;
+      const targetId = artifactId || activeArtifactMessageId;
       if (targetId) {
         respondMutation
           .mutateAsync({
@@ -582,12 +569,12 @@ export default function ChatPage() {
       }
       sendMessage("Retry", undefined, true);
     },
-    [sendMessage, activeDirectiveMessageId, respondMutation],
+    [sendMessage, activeArtifactMessageId, respondMutation],
   );
 
   const handleSkip = useCallback(
     (artifactId?: string) => {
-      const targetId = artifactId || activeDirectiveMessageId;
+      const targetId = artifactId || activeArtifactMessageId;
       if (targetId) {
         respondMutation
           .mutateAsync({
@@ -598,12 +585,12 @@ export default function ChatPage() {
       }
       sendMessage("Skip", undefined, true);
     },
-    [sendMessage, activeDirectiveMessageId, respondMutation],
+    [sendMessage, activeArtifactMessageId, respondMutation],
   );
 
   const handleExplainDifferently = useCallback(
     (topicTitle: string, artifactId?: string) => {
-      const targetId = artifactId || activeDirectiveMessageId;
+      const targetId = artifactId || activeArtifactMessageId;
       if (targetId) {
         respondMutation
           .mutateAsync({
@@ -614,12 +601,12 @@ export default function ChatPage() {
       }
       sendMessage("Explain this differently", undefined, true);
     },
-    [sendMessage, activeDirectiveMessageId, respondMutation],
+    [sendMessage, activeArtifactMessageId, respondMutation],
   );
 
   const handleTestMe = useCallback(
     (topicTitle: string, artifactId?: string) => {
-      const targetId = artifactId || activeDirectiveMessageId;
+      const targetId = artifactId || activeArtifactMessageId;
       if (targetId) {
         respondMutation
           .mutateAsync({
@@ -630,12 +617,12 @@ export default function ChatPage() {
       }
       sendMessage(`Test me on ${topicTitle}`, undefined, true);
     },
-    [sendMessage, activeDirectiveMessageId, respondMutation],
+    [sendMessage, activeArtifactMessageId, respondMutation],
   );
 
   const handleTryMyself = useCallback(
     (topicTitle: string, artifactId?: string) => {
-      const targetId = artifactId || activeDirectiveMessageId;
+      const targetId = artifactId || activeArtifactMessageId;
       if (targetId) {
         respondMutation
           .mutateAsync({
@@ -646,12 +633,12 @@ export default function ChatPage() {
       }
       sendMessage(`I'll try ${topicTitle} myself`, undefined, true);
     },
-    [sendMessage, activeDirectiveMessageId, respondMutation],
+    [sendMessage, activeArtifactMessageId, respondMutation],
   );
 
   const handleAction = useCallback(
     (actionType: string, artifactId?: string) => {
-      const targetId = artifactId || activeDirectiveMessageId;
+      const targetId = artifactId || activeArtifactMessageId;
       if (targetId) {
         respondMutation
           .mutateAsync({
@@ -662,12 +649,12 @@ export default function ChatPage() {
       }
       sendMessage(actionType, undefined, true);
     },
-    [sendMessage, activeDirectiveMessageId, respondMutation],
+    [sendMessage, activeArtifactMessageId, respondMutation],
   );
 
   const handlePomodoroResume = useCallback(
     (artifactId?: string) => {
-      const targetId = artifactId || activeDirectiveMessageId;
+      const targetId = artifactId || activeArtifactMessageId;
       if (targetId) {
         respondMutation
           .mutateAsync({
@@ -678,7 +665,7 @@ export default function ChatPage() {
       }
       sendMessage("Pomodoro done, ready to continue", undefined, true);
     },
-    [sendMessage, activeDirectiveMessageId, respondMutation],
+    [sendMessage, activeArtifactMessageId, respondMutation],
   );
 
   // Guard: invalid session
@@ -769,7 +756,7 @@ export default function ChatPage() {
             messages={messages}
             artifacts={app?.artifacts || []}
             citations={citations}
-            activeDirectiveMessageId={activeDirectiveMessageId}
+            activeArtifactMessageId={activeArtifactMessageId}
             sessionStep={sessionStep}
             isTyping={input.trim().length > 0}
             inputLength={input.length}
