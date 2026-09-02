@@ -152,20 +152,40 @@ export function DocumentReader({
   }, [highlights, materialId]);
 
   const handleHighlight = useCallback(
-    (text: string, rect: DOMRect, color: string, note?: string) => {
-      const container = scrollContainerRef.current;
-      if (!container) return;
-      const containerRect = container.getBoundingClientRect();
+    (text: string, rect: DOMRect, color: string, note?: string, range?: Range) => {
+      let pageNumber = currentPage;
+      let pageEl: HTMLElement | null = null;
+
+      if (range) {
+        const node = range.startContainer instanceof HTMLElement
+          ? range.startContainer
+          : range.startContainer.parentElement;
+        pageEl = node?.closest("[data-page-number]") as HTMLElement | null;
+      }
+
+      if (!pageEl && pageNumber) {
+        pageEl = pageRefs.current[pageNumber - 1];
+      }
+
+      if (!pageEl) return;
+
+      const detectedPage = Number(pageEl.getAttribute("data-page-number"));
+      if (detectedPage) pageNumber = detectedPage;
+
+      const pageRect = pageEl.getBoundingClientRect();
+      if (pageRect.width <= 0 || pageRect.height <= 0) return;
+
       const bounds = {
-        top: ((rect.top - containerRect.top + container.scrollTop) / container.scrollHeight) * 100,
-        left: ((rect.left - containerRect.left) / containerRect.width) * 100,
-        width: (rect.width / containerRect.width) * 100,
-        height: (rect.height / container.scrollHeight) * 100,
+        top: Math.max(0, Math.min(100, ((rect.top - pageRect.top) / pageRect.height) * 100)),
+        left: Math.max(0, Math.min(100, ((rect.left - pageRect.left) / pageRect.width) * 100)),
+        width: Math.max(0, Math.min(100, (rect.width / pageRect.width) * 100)),
+        height: Math.max(0, Math.min(100, (rect.height / pageRect.height) * 100)),
       };
+
       addHighlight.mutate(
         {
           materialId,
-          pageNumber: currentPage,
+          pageNumber,
           text,
           bounds,
           color,
@@ -338,21 +358,29 @@ export function DocumentReader({
                       <div className="absolute inset-0 pointer-events-none overflow-hidden z-10">
                         {pageHighlights
                           .filter((h) => h.pageNumber === pageNum)
-                          .map((h) => (
-                            <div
-                              key={h.id}
-                              className="absolute pointer-events-auto cursor-pointer"
-                              style={{
-                                top: `${h.bounds.top}%`,
-                                left: `${h.bounds.left}%`,
-                                width: `${h.bounds.width}%`,
-                                height: `${h.bounds.height}%`,
-                                backgroundColor: "rgba(255, 235, 59, 0.4)",
-                                mixBlendMode: "multiply",
-                              }}
-                              title={h.note || h.text}
-                            />
-                          ))}
+                          .map((h) => {
+                            const colorMap: Record<string, string> = {
+                              yellow: "rgba(250, 204, 21, 0.45)",
+                              pink: "rgba(244, 114, 182, 0.45)",
+                              green: "rgba(74, 222, 128, 0.45)",
+                              blue: "rgba(96, 165, 250, 0.45)",
+                            };
+                            return (
+                              <div
+                                key={h.id}
+                                className="absolute pointer-events-auto cursor-pointer rounded-xs transition-opacity hover:opacity-80"
+                                style={{
+                                  top: `${h.bounds.top}%`,
+                                  left: `${h.bounds.left}%`,
+                                  width: `${h.bounds.width}%`,
+                                  height: `${h.bounds.height}%`,
+                                  backgroundColor: colorMap[h.color || "yellow"] || "rgba(250, 204, 21, 0.45)",
+                                  mixBlendMode: "multiply",
+                                }}
+                                title={h.note || h.text}
+                              />
+                            );
+                          })}
                       </div>
                     </div>
                   </div>
