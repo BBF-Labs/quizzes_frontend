@@ -25,6 +25,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useApp } from "@/hooks/app/use-app-queries";
 import { useBillingStatus } from "@/hooks/common/use-billing";
 import { QUBI_WAVE_SRC } from "@/lib/constants";
+import { Loader } from "@/components/common/loader";
 import { ExercisesModal } from "./ExercisesModal";
 import { ExamSimulatorModal } from "./ExamSimulatorModal";
 import { toast } from "sonner";
@@ -41,7 +42,7 @@ export function SessionJourneyLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { user } = useAuth();
-  const { data: app } = useApp(sessionId);
+  const { data: app, isLoading } = useApp(sessionId);
   const { data: billing } = useBillingStatus();
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -51,6 +52,10 @@ export function SessionJourneyLayout({
 
   const userName = user?.name || user?.email?.split("@")[0] || "Student";
   const courseTitle = app?.name || "Cryptography & System Security";
+
+  if (isLoading) {
+    return <Loader message="Preparing your study journey..." />;
+  }
 
   const activityCount =
     (billing?.dailyUsage?.tutorSessions || 0) +
