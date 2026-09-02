@@ -36,7 +36,7 @@ export interface MessageFeedProps extends ArtifactCardCallbacks {
   messages: ZAppMessage[];
   artifacts?: any[];
   citations?: SessionCitation[];
-  activeDirectiveMessageId: string | null;
+  activeArtifactMessageId?: string | null;
   sessionStep?: number;
   isTyping?: boolean;
   inputLength?: number;
@@ -68,7 +68,7 @@ export function MessageFeed({
   messages,
   artifacts = [],
   citations = [],
-  activeDirectiveMessageId,
+  activeArtifactMessageId,
   sessionStep = 0,
   isTyping = false,
   inputLength = 0,
@@ -362,7 +362,7 @@ export function MessageFeed({
         /* ── Z messages / narration / attached artifacts (NO BACKGROUND) ── */
         const msgId = msg.messageId || msg.id;
         const resolved = Boolean(
-          activeDirectiveMessageId && msgId !== activeDirectiveMessageId,
+          activeArtifactMessageId && msgId !== activeArtifactMessageId,
         );
         return (
           <ZMessageCanvasNode
@@ -617,7 +617,7 @@ function ZMessageCanvasNode({
   const [copied, setCopied] = useState(false);
   const msgId = message.messageId || message.id;
   const hasTextContent = Boolean(message.content && message.content.trim().length > 0);
-  const hasArtifact = Boolean(message.artifact || message.directive);
+  const hasArtifact = Boolean(message.artifact);
 
   // Matching citations for this message
   const relevantCitations = citations.filter(
@@ -671,11 +671,10 @@ function ZMessageCanvasNode({
         </div>
       )}
 
-      {/* 2. Attached Interactive ArtifactCard or Directive */}
+      {/* 2. Attached Interactive ArtifactCard */}
       {hasArtifact && (
         <div className="w-full">
           <ArtifactCard
-            directive={message.directive}
             artifact={message.artifact}
             resolved={resolved}
             onSubmitAnswer={onSubmitAnswer}
