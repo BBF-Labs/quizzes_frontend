@@ -283,11 +283,12 @@ function AskQuestionCard({
   const explanation = payload.explanation || "";
   const hint = payload.hint || "";
 
+  // Check user-submitted responses only — payload.answer is the model's solution key
   const persistedAnswer =
-    payload.selectedOption ||
+    payload.userAnswer ||
     payload.submittedAnswer ||
-    payload.userAnswers?.[0] ||
-    payload.answer ||
+    payload.selectedOption ||
+    (Array.isArray(payload.userAnswers) && payload.userAnswers[0]) ||
     "";
 
   const [textAnswer, setTextAnswer] = useState(persistedAnswer);
@@ -307,7 +308,12 @@ function AskQuestionCard({
     }
   };
 
-  if (resolved || Boolean(persistedAnswer)) {
+  const isResolved =
+    Boolean(submittedAnswerRef.current) ||
+    Boolean(persistedAnswer) ||
+    (resolved && Boolean(persistedAnswer));
+
+  if (isResolved) {
     return (
       <QAResolvedCard
         entries={[
@@ -1600,7 +1606,7 @@ function ShowExpositionCard({
   onContinue = () => {},
 }: ShowExpositionCardProps) {
   // Extract text content from various backend formats
-  const markdownText =
+  const rawMarkdown =
     payload.markdown ||
     payload.body ||
     payload.content ||
@@ -1612,11 +1618,29 @@ function ShowExpositionCard({
     "";
 
   const title = payload.topicTitle || payload.title || "Concept Exposition";
-  const citations = Array.isArray(payload.citations)
+  const initialCitations = Array.isArray(payload.citations)
     ? payload.citations
     : payload.citation
     ? [payload.citation]
     : [];
+
+  const SOURCE_REGEX = /\s*\((?:Source|Ref):\s*([^,)]+)(?:,\s*Chapter\s*[^,)]+)?(?:,\s*p(?:p)?\.?\s*(\d+))?.*?\)\s*$/im;
+
+  let parsedCitations = [...initialCitations];
+  let markdownText = rawMarkdown;
+
+  const match = rawMarkdown.match(SOURCE_REGEX);
+  if (match) {
+    markdownText = rawMarkdown.replace(SOURCE_REGEX, "").trim();
+    if (parsedCitations.length === 0) {
+      const docName = match[1]?.trim() || "Source Document";
+      const pageNum = match[2] ? parseInt(match[2], 10) : undefined;
+      parsedCitations.push({
+        filename: docName,
+        pageNumber: pageNum,
+      });
+    }
+  }
 
   return (
     <CardWrapper
@@ -1637,9 +1661,9 @@ function ShowExpositionCard({
         </div>
 
         {/* Citations list */}
-        {citations.length > 0 && (
+        {parsedCitations.length > 0 && (
           <div className="pt-2 flex flex-wrap gap-2 border-t border-slate-100">
-            {citations.map((c: any, i: number) => {
+            {parsedCitations.map((c: any, i: number) => {
               const filename = c.filename || "Study Material";
               const pageNumber = c.pageNumber || c.page;
               return (
