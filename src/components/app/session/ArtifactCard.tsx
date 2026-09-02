@@ -354,7 +354,7 @@ function AskQuestionCard({
   );
 
   useEffect(() => {
-    if (persistedAnswer && !evaluatedChoice) {
+    if (persistedAnswer && evaluatedChoice !== persistedAnswer) {
       setEvaluatedChoice(persistedAnswer);
       setSelectedOption(persistedAnswer);
     }
@@ -366,23 +366,43 @@ function AskQuestionCard({
     const normOpt = normalizeOptionText(optText).trim().toLowerCase();
     const letter = String.fromCharCode(65 + index).toLowerCase();
 
-    if (normOpt === normTarget || normOpt.includes(normTarget) || normTarget.includes(normOpt)) {
-      return true;
-    }
+    // Clean single letter target: "a", "b", "c", "d", "a)", "b.", "(a)"
     const cleanTarget = normTarget.replace(/[^a-z0-9]/g, "");
-    if (cleanTarget === letter) {
+    if (cleanTarget.length === 1 && cleanTarget >= "a" && cleanTarget <= "z") {
+      return cleanTarget === letter;
+    }
+
+    // Exact string match
+    if (normOpt === normTarget) {
       return true;
     }
-    const optCleanLetter = normOpt.replace(/[^a-z0-9]/g, "").slice(0, 1);
-    if (cleanTarget.length === 1 && optCleanLetter === cleanTarget) {
-      return true;
+
+    // If target starts with option letter prefix like "B. It is situated..." or "b) ..."
+    if (cleanTarget.startsWith(letter) && normTarget.length > 5) {
+      const targetWithoutPrefix = normTarget.replace(/^[a-z][\s\).:-]+/i, "").trim();
+      if (
+        targetWithoutPrefix &&
+        (normOpt === targetWithoutPrefix ||
+          normOpt.includes(targetWithoutPrefix) ||
+          targetWithoutPrefix.includes(normOpt))
+      ) {
+        return true;
+      }
     }
+
+    // Full text match (ONLY for strings >= 10 chars to avoid single-letter substring false positives)
+    if (normTarget.length >= 10 && normOpt.length >= 10) {
+      if (normOpt.includes(normTarget) || normTarget.includes(normOpt)) {
+        return true;
+      }
+    }
+
     return false;
   };
 
   const isUserCorrect = useMemo(() => {
     if (!evaluatedChoice) return false;
-    if (!correctAnswer) return true;
+    if (!correctAnswer) return false;
 
     const chosenIndex = options.findIndex((o, idx) => matchOption(o, idx, evaluatedChoice));
     if (chosenIndex >= 0) {
@@ -391,7 +411,7 @@ function AskQuestionCard({
 
     const normChoice = normalizeOptionText(evaluatedChoice).trim().toLowerCase();
     const normCorrect = normalizeOptionText(correctAnswer).trim().toLowerCase();
-    return normChoice === normCorrect || normChoice.includes(normCorrect) || normCorrect.includes(normChoice);
+    return normChoice === normCorrect;
   }, [evaluatedChoice, correctAnswer, options]);
 
   const correctOptIndex = options.findIndex((o, idx) => matchOption(o, idx, correctAnswer));
@@ -2365,8 +2385,27 @@ export function ArtifactCard({
         content.submittedAnswer ||
         content.selectedOption ||
         (Array.isArray(content.userAnswers) && content.userAnswers.length > 0) ||
+        artifact.userAnswer ||
+        artifact.submittedAnswer ||
+        artifact.selectedOption ||
+        (Array.isArray(artifact.userAnswers) && artifact.userAnswers.length > 0) ||
+        (content.response as any)?.answer ||
+        (content.response as any)?.selectedOption ||
         resolved,
       );
+
+      const resolvedUserAnswer =
+        content.userAnswer ||
+        content.submittedAnswer ||
+        content.selectedOption ||
+        (Array.isArray(content.userAnswers) && content.userAnswers[0]) ||
+        artifact.userAnswer ||
+        artifact.submittedAnswer ||
+        artifact.selectedOption ||
+        (Array.isArray(artifact.userAnswers) && artifact.userAnswers[0]) ||
+        (content.response as any)?.answer ||
+        (content.response as any)?.selectedOption ||
+        undefined;
 
       const payload: any = {
         title: artifact.title || content.title || "Knowledge Check",
@@ -2376,15 +2415,22 @@ export function ArtifactCard({
         explanation: content.explanation,
         hint: content.hint,
         topicTitle: artifact.title || content.topicTitle,
-        userAnswer:
-          content.userAnswer ||
-          content.submittedAnswer ||
+        userAnswer: resolvedUserAnswer,
+        userAnswers:
+          content.userAnswers ||
+          artifact.userAnswers ||
+          (content.response as any)?.userAnswers ||
+          (resolvedUserAnswer ? [resolvedUserAnswer] : undefined),
+        selectedOption:
           content.selectedOption ||
-          (Array.isArray(content.userAnswers) && content.userAnswers[0]) ||
-          undefined,
-        userAnswers: content.userAnswers || undefined,
-        selectedOption: content.selectedOption || undefined,
-        submittedAnswer: content.submittedAnswer || undefined,
+          artifact.selectedOption ||
+          (content.response as any)?.selectedOption ||
+          resolvedUserAnswer,
+        submittedAnswer:
+          content.submittedAnswer ||
+          artifact.submittedAnswer ||
+          (content.response as any)?.submittedAnswer ||
+          resolvedUserAnswer,
         resolved: isCardResolved,
       };
       return (
