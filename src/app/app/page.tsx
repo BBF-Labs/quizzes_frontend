@@ -138,7 +138,7 @@ export default function AppHomePage() {
 
   return (
     <div className="dash-grid min-h-screen px-4 pb-24 pt-6 sm:px-6 lg:px-8 lg:pb-12 text-slate-900 bg-[#F7F9FC]">
-      <div className="mx-auto max-w-[1240px]">
+      <div className="mx-auto max-w-310">
         {/* Header Hero Section */}
         <section className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>
