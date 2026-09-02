@@ -253,9 +253,9 @@ export default function PrivateTimetablePage() {
     activeDate: new Date().toISOString(),
     dayName: format(selectedDate, "EEEE"),
     formattedDate: format(selectedDate, "EEEE, d MMMM"),
-    academicWeek: 9,
-    todayEventsCount: 4,
-    daysToFirstExam: 18,
+    academicWeek: 1,
+    todayEventsCount: 0,
+    daysToFirstExam: 0,
     upNext: null,
     isSynced: true,
   };
@@ -284,14 +284,14 @@ export default function PrivateTimetablePage() {
   const agenda = overview?.agenda || [];
   const workload = overview?.workloadMetrics || {
     dailyHours: [
-      { day: "Mon", date: selectedDateStr, hrs: 4.5 },
-      { day: "Tue", date: selectedDateStr, hrs: 6.0 },
-      { day: "Wed", date: selectedDateStr, hrs: 4.0 },
-      { day: "Thu", date: selectedDateStr, hrs: 3.5 },
-      { day: "Fri", date: selectedDateStr, hrs: 2.5 },
+      { day: "Mon", date: selectedDateStr, hrs: 0 },
+      { day: "Tue", date: selectedDateStr, hrs: 0 },
+      { day: "Wed", date: selectedDateStr, hrs: 0 },
+      { day: "Thu", date: selectedDateStr, hrs: 0 },
+      { day: "Fri", date: selectedDateStr, hrs: 0 },
     ],
-    weeklyTotalHours: 20.5,
-    streakDays: 8,
+    weeklyTotalHours: 0,
+    streakDays: 0,
   };
 
   // ─── Filtered Agenda for Search ────────────────────────────────────────────
@@ -403,7 +403,7 @@ export default function PrivateTimetablePage() {
 
                 <div className="flex flex-wrap items-center gap-2">
                   <Select value={selectedSemester} onValueChange={setSelectedSemester}>
-                    <SelectTrigger className="h-9 rounded-xl border-slate-200 bg-[#F7F9FC] px-3 py-2 text-xs font-bold text-slate-700 shadow-2xs hover:bg-white transition cursor-pointer">
+                    <SelectTrigger className="h-9 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-2xs hover:border-[#0C60FC] hover:bg-slate-50 transition cursor-pointer">
                       <SelectValue placeholder="Select Semester" />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl border-slate-200 bg-white font-sans text-xs shadow-lg">
@@ -416,7 +416,7 @@ export default function PrivateTimetablePage() {
                   </Select>
 
                   <Select value={selectedYear} onValueChange={setSelectedYear}>
-                    <SelectTrigger className="h-9 rounded-xl border-slate-200 bg-[#F7F9FC] px-3 py-2 text-xs font-bold text-slate-700 shadow-2xs hover:bg-white transition cursor-pointer">
+                    <SelectTrigger className="h-9 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-2xs hover:border-[#0C60FC] hover:bg-slate-50 transition cursor-pointer">
                       <SelectValue placeholder="Select Academic Year" />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl border-slate-200 bg-white font-sans text-xs shadow-lg">

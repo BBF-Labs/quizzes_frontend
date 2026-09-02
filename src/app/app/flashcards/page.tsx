@@ -10,7 +10,7 @@ import {
   useDeleteLibraryFlashcard,
   useGenerateFlashcards,
 } from "@/hooks/app/use-app-library";
-import { GenerationDialog } from "@/components/app/library/generation-dialog";
+import { MaterialPickerDialog } from "@/components/common/MaterialPickerDialog";
 import { format } from "date-fns";
 import {
   Select,
@@ -90,7 +90,16 @@ export default function FlashcardsPage() {
   };
 
   const handleGenerate = async (materialId: string) => {
-    await generateFlashcardsMutation.mutateAsync({ materialId });
+    try {
+      await generateFlashcardsMutation.mutateAsync({ materialId });
+      toast.success("Flashcard generation started!");
+    } catch (err: any) {
+      if (err?.response?.status === 402) {
+        toast.error("Daily flashcard limit reached. Upgrade your plan or use credits.");
+      } else {
+        toast.error("Failed to start generation. Please try again.");
+      }
+    }
   };
 
   return (
@@ -324,13 +333,14 @@ export default function FlashcardsPage() {
         </div>
       </section>
 
-      <GenerationDialog
+      <MaterialPickerDialog
         isOpen={isGenerationDialogOpen}
         onOpenChange={setIsGenerationDialogOpen}
         title="Generate Flashcards"
         description="Select a material from your library or upload a new one to generate AI flashcards."
-        type="flashcards"
-        onGenerate={handleGenerate}
+        allowUpload
+        confirmLabel="Generate Flashcards"
+        onSelect={handleGenerate}
       />
     </div>
   );

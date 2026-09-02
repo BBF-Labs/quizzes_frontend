@@ -151,7 +151,7 @@ export function AppSidebar() {
       label: "Academics",
       items: [
         { href: "/app/courses", label: "My courses", icon: GraduationCap },
-        { href: "/app/timetable", label: "Timetable", icon: CalendarDays, badge: "4" },
+        { href: "/app/timetable", label: "Timetable", icon: CalendarDays },
       ],
     },
     {
@@ -169,7 +169,7 @@ export function AppSidebar() {
     <Sidebar
       collapsible="icon"
       variant="sidebar"
-      className="border-r border-slate-200/90 bg-white text-slate-900 [&_[data-slot=sidebar-inner]]:bg-white"
+      className="border-r border-slate-200/90 bg-white text-slate-900 **:data-[slot=sidebar-inner]:bg-white"
     >
       {/* Brand & Animated Qubi Mascot Header */}
       <SidebarHeader className="h-18 border-b border-slate-100 bg-white relative overflow-hidden shrink-0 p-3">

@@ -36,7 +36,7 @@ export interface MessageFeedProps extends ArtifactCardCallbacks {
   messages: ZAppMessage[];
   artifacts?: any[];
   citations?: SessionCitation[];
-  activeDirectiveMessageId: string | null;
+  activeArtifactMessageId?: string | null;
   sessionStep?: number;
   isTyping?: boolean;
   inputLength?: number;
@@ -68,7 +68,7 @@ export function MessageFeed({
   messages,
   artifacts = [],
   citations = [],
-  activeDirectiveMessageId,
+  activeArtifactMessageId,
   sessionStep = 0,
   isTyping = false,
   inputLength = 0,
@@ -232,7 +232,7 @@ export function MessageFeed({
           <div className="w-full flex justify-center pt-2">
             <button
               type="button"
-              onClick={onContinue}
+              onClick={() => onContinue?.()}
               className="inline-flex items-center gap-2 rounded-full bg-slate-900 text-white px-6 py-2.5 text-xs font-bold hover:bg-[#0C60FC] transition shadow-sm cursor-pointer"
             >
               <span>Continue to Session</span>
@@ -305,7 +305,7 @@ export function MessageFeed({
           msg.type === "tool_call" ||
           msg.type === "tool_result" ||
           (msg.role as any) === "tool" ||
-          (msg.role === "system" && msg.type !== "directive" && !msg.directive)
+          (msg.role === "system" && msg.type !== "artifact" && !msg.artifact)
         ) {
           return null;
         }
@@ -315,6 +315,7 @@ export function MessageFeed({
         /* ── Skip raw prompt triggers ── */
         if (
           content.startsWith("[STUDY JOURNEY:") ||
+          content.startsWith("[STUDENT_ACTION:") ||
           /^Give a very short.*intro welcoming me/i.test(content)
         ) {
           return null;
@@ -331,15 +332,13 @@ export function MessageFeed({
           return null;
         }
 
-        /* ── Skip empty non-artifact and non-directive messages ── */
+        /* ── Skip empty non-artifact messages ── */
         const resolvedArtifact =
           msg.artifact ||
           (msg.artifactId ? artifactsMap.get(msg.artifactId) : undefined);
 
         if (
-          msg.type !== "directive" &&
           msg.type !== "artifact" &&
-          !msg.directive &&
           !msg.artifact &&
           !resolvedArtifact &&
           !content
@@ -362,7 +361,7 @@ export function MessageFeed({
         /* ── Z messages / narration / attached artifacts (NO BACKGROUND) ── */
         const msgId = msg.messageId || msg.id;
         const resolved = Boolean(
-          activeDirectiveMessageId && msgId !== activeDirectiveMessageId,
+          activeArtifactMessageId && msgId !== activeArtifactMessageId,
         );
         return (
           <ZMessageCanvasNode
@@ -597,23 +596,27 @@ function ZMessageCanvasNode({
   onRetryMessage?: (id: string, content: string) => void;
   onRetry?: () => void;
   onRate?: (messageId: string, rating: 1 | -1) => void;
-  onSubmitAnswer?: (answers: string[], questions?: string[]) => void;
-  onApprove?: () => void;
-  onContinue?: () => void;
-  onFeedback?: (type: "too_easy" | "too_hard") => void;
-  onSkip?: () => void;
-  onExplainDifferently?: (topicTitle: string) => void;
-  onTestMe?: (topicTitle: string) => void;
-  onTryMyself?: (topicTitle: string) => void;
-  onAction?: (actionType: string) => void;
-  onPomodoroResume?: () => void;
+  onSubmitAnswer?: (
+    answers: string[],
+    questions?: string[],
+    artifactId?: string,
+  ) => void;
+  onApprove?: (artifactId?: string) => void;
+  onContinue?: (artifactId?: string) => void;
+  onFeedback?: (type: "too_easy" | "too_hard", artifactId?: string) => void;
+  onSkip?: (artifactId?: string) => void;
+  onExplainDifferently?: (topicTitle: string, artifactId?: string) => void;
+  onTestMe?: (topicTitle: string, artifactId?: string) => void;
+  onTryMyself?: (topicTitle: string, artifactId?: string) => void;
+  onAction?: (actionType: string, artifactId?: string) => void;
+  onPomodoroResume?: (artifactId?: string) => void;
 }) {
   const isStreaming = !!message.isStreaming;
   const [hovered, setHovered] = useState(false);
   const [copied, setCopied] = useState(false);
   const msgId = message.messageId || message.id;
   const hasTextContent = Boolean(message.content && message.content.trim().length > 0);
-  const hasArtifact = Boolean(message.artifact || message.directive);
+  const hasArtifact = Boolean(message.artifact);
 
   // Matching citations for this message
   const relevantCitations = citations.filter(
@@ -667,11 +670,10 @@ function ZMessageCanvasNode({
         </div>
       )}
 
-      {/* 2. Attached Interactive ArtifactCard or Directive */}
+      {/* 2. Attached Interactive ArtifactCard */}
       {hasArtifact && (
         <div className="w-full">
           <ArtifactCard
-            directive={message.directive}
             artifact={message.artifact}
             resolved={resolved}
             onSubmitAnswer={onSubmitAnswer}

@@ -219,7 +219,7 @@ export default function NotesPage() {
               value={courseFilter || "ALL"}
               onValueChange={(val) => setCourseFilter(val === "ALL" ? "" : val)}
             >
-              <SelectTrigger className="h-10 rounded-xl border border-border/50 bg-card/40 px-3 py-2 text-[12px] font-mono text-muted-foreground shadow-2xs hover:border-primary/50 transition cursor-pointer">
+              <SelectTrigger className="h-10 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[12px] font-medium text-slate-700 shadow-2xs hover:border-[#0C60FC] hover:bg-slate-50 transition cursor-pointer">
                 <SelectValue placeholder="All courses" />
               </SelectTrigger>
               <SelectContent className="rounded-xl border border-border/50 bg-popover font-mono text-xs shadow-lg">

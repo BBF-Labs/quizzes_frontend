@@ -21,7 +21,11 @@ import {
 } from "lucide-react";
 import { useAppApprove } from "@/hooks";
 import { useApp } from "@/hooks/app/use-app-queries";
-import { useRetryMessage, useRateMessage } from "@/hooks/app/use-app-actions";
+import {
+  useRetryMessage,
+  useRateMessage,
+  useRespondToArtifact,
+} from "@/hooks/app/use-app-actions";
 import { useAppLayout } from "@/components/app/layout";
 import { cn } from "@/lib/utils";
 import { MessageFeed } from "@/components/app/center/MessageFeed";
@@ -71,6 +75,7 @@ export default function ChatPage() {
   const approveMutation = useAppApprove();
   const retryMutation = useRetryMessage(sessionId);
   const rateMutation = useRateMessage(sessionId);
+  const respondMutation = useRespondToArtifact(sessionId);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -228,20 +233,17 @@ export default function ChatPage() {
     }
   };
 
-  // Derive the most-recent unresolved directive or interactive question artifact messageId
-  const activeDirectiveMessageId = useMemo(() => {
+  // Derive the most-recent unresolved interactive artifact messageId
+  const activeArtifactMessageId = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i--) {
       const m = messages[i];
-      if (m.type === "directive" && m.directive) {
-        return m.messageId || m.id;
-      }
       if (
         m.artifact &&
         ["question", "ask_question", "ask_questions", "quiz", "verification"].includes(
-          String(m.artifact.type || "").toLowerCase(),
+          String((m.artifact as any).type || "").toLowerCase(),
         )
       ) {
-        return m.messageId || m.id;
+        return m.artifactId || m.messageId || m.id;
       }
     }
     return null;
@@ -255,16 +257,10 @@ export default function ChatPage() {
   );
 
   const isOpenEndedQuestionActive = useMemo(() => {
-    if (activeDirectiveMessageId) {
+    if (activeArtifactMessageId) {
       const activeMsg = messages.find(
-        (m) => (m.messageId || m.id) === activeDirectiveMessageId,
+        (m) => (m.messageId || m.id) === activeArtifactMessageId,
       );
-      if (activeMsg?.directive?.type === "ASK_QUESTION") {
-        const payload = activeMsg.directive.payload as any;
-        if (!payload?.options || payload.options.length === 0) {
-          return true;
-        }
-      }
       if (
         activeMsg?.artifact?.type === "question" ||
         activeMsg?.artifact?.type === "ask_question"
@@ -276,11 +272,11 @@ export default function ChatPage() {
       }
     }
     return false;
-  }, [messages, activeDirectiveMessageId]);
+  }, [messages, activeArtifactMessageId]);
 
   // Check if an artifact has been returned in the session
   const hasArtifactReturned = useMemo(() => {
-    return messages.some((m) => Boolean(m.artifact || m.directive));
+    return messages.some((m) => Boolean(m.artifact || m.artifactId));
   }, [messages]);
 
   // Check if the most recent active artifact is a recap / summary
@@ -291,44 +287,79 @@ export default function ChatPage() {
         const artType = String(msg.artifact.type || "").toLowerCase();
         return artType === "recap" || artType === "summary";
       }
-      if (msg.directive) {
-        const dirType = String(msg.directive.type || "").toUpperCase();
-        return dirType === "SHOW_SUMMARY" || dirType === "RECAP";
-      }
     }
     return false;
   }, [messages]);
 
   // Step advancement handler for Continue / Keep going button
-  const handleContinue = useCallback(() => {
-    if (sessionStep === 0) {
-      setSessionStep(1);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    } else if (sessionStep === 1) {
-      setSessionStep(2);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      sendMessage(isRecapActive ? "Keep going" : "Continue", undefined, true);
-    } else {
-      sendMessage(isRecapActive ? "Keep going" : "Continue", undefined, true);
-    }
-  }, [sessionStep, sendMessage, isRecapActive]);
+  const handleContinue = useCallback(
+    (artifactId?: string) => {
+      const targetId = artifactId || activeArtifactMessageId;
+      if (targetId) {
+        respondMutation
+          .mutateAsync({
+            artifactId: targetId,
+            response: { continued: true, resolved: true, status: "completed" },
+          })
+          .catch(console.error);
+      }
+      const topicContext = activeTopic?.title ? ` Topic: "${activeTopic.title}".` : "";
+      const sectionDesc = isRecapActive ? "reviewing the recap" : "this section";
+      const continueMsg = `[STUDENT_ACTION: CONTINUE]${topicContext} The student finished ${sectionDesc} and clicked Continue. Proceed to the next pedagogical step.`;
+
+      if (sessionStep === 0) {
+        setSessionStep(1);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else if (sessionStep === 1) {
+        setSessionStep(2);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        sendMessage(continueMsg, undefined, true);
+      } else {
+        sendMessage(continueMsg, undefined, true);
+      }
+    },
+    [sessionStep, sendMessage, isRecapActive, activeArtifactMessageId, activeTopic?.title, respondMutation],
+  );
 
   const handleKeepGoing = useCallback(() => {
-    sendMessage("Keep going", undefined, true);
-  }, [sendMessage]);
+    const topicContext = activeTopic?.title ? ` Topic: "${activeTopic.title}".` : "";
+    sendMessage(
+      `[STUDENT_ACTION: KEEP_GOING]${topicContext} The student wants to keep going. Continue with the next part of the lesson.`,
+      undefined,
+      true,
+    );
+  }, [sendMessage, activeTopic?.title]);
 
   const handleFeedback = useCallback(
-    (type: "too_easy" | "too_hard") => {
+    (type: "too_easy" | "too_hard", artifactId?: string) => {
+      const targetId = artifactId || activeArtifactMessageId;
+      if (targetId) {
+        respondMutation
+          .mutateAsync({
+            artifactId: targetId,
+            response: { feedback: type, resolved: true },
+          })
+          .catch(console.error);
+      }
+      const topicContext = activeTopic?.title ? ` Topic: "${activeTopic.title}".` : "";
       if (type === "too_easy") {
         toast.success("Pacing adjusted: Diving straight into deeper mastery!");
         setSessionStep((prev) => Math.min(prev + 1, 4));
-        sendMessage("Too easy", undefined, true);
+        sendMessage(
+          `[STUDENT_ACTION: PACING_FEEDBACK]${topicContext} The student indicated this pace is too easy. Skip elementary explanations and explore deeper conceptual mastery and challenging problems.`,
+          undefined,
+          true,
+        );
       } else {
         toast.info("Pacing adjusted: Providing extra foundational context.");
-        sendMessage("Too hard", undefined, true);
+        sendMessage(
+          `[STUDENT_ACTION: PACING_FEEDBACK]${topicContext} The student indicated this pace is too hard. Slow down, provide foundational intuition, and explain concepts step-by-step with concrete analogies.`,
+          undefined,
+          true,
+        );
       }
     },
-    [sendMessage],
+    [sendMessage, activeArtifactMessageId, activeTopic?.title, respondMutation],
   );
 
   // Active topic title based on sessionStep or message history
@@ -485,59 +516,213 @@ export default function ChatPage() {
     },
   ];
 
-  // Directive action helpers
+  // Artifact action helpers
   const handleSubmitAnswer = useCallback(
-    (answers: string[], questions?: string[]) => {
+    (answers: string[], questions?: string[], artifactId?: string) => {
       if (!sessionId) return;
-      const message =
+
+      // 1. Modify that particular artifact directly
+      const targetId = artifactId || activeArtifactMessageId;
+      if (targetId) {
+        respondMutation
+          .mutateAsync({
+            artifactId: targetId,
+            response: {
+              answers,
+              userAnswers: answers,
+              selectedOption: answers[0],
+              answer: answers[0],
+              submittedAnswer: answers.join(", "),
+              resolved: true,
+              status: "completed",
+            },
+          })
+          .catch((err: unknown) =>
+            console.error("[respondToArtifact] failed", err),
+          );
+      }
+
+      // 2. Send answer through a system action to Z (NO user chat bubble displayed!)
+      const topicHeader = activeTopic?.title ? ` Topic: "${activeTopic.title}"` : "";
+      const blockInfo = activeBlock?.concept || activeBlock?.title ? ` [Concept: ${activeBlock.concept || activeBlock.title}]` : "";
+      const answerBody =
         questions && questions.length > 0
           ? questions
               .map((q, i) => `Q: ${q}\nA: ${answers[i] ?? ""}`)
               .join("\n\n")
-          : answers.join(", ");
-      messageMutation
-        .mutateAsync({ sessionId, message })
-        .catch((err: unknown) => console.error("[submitAnswer] failed", err));
+          : `Submitted answer: ${answers.join(", ")}`;
+
+      const message = `[STUDENT_ACTION: SUBMIT_ANSWER]${topicHeader}${blockInfo}\n${answerBody}\nPlease evaluate my answer, give concise pedagogical feedback, and guide me forward.`;
+
+      sendMessage(message, undefined, true);
     },
-    [sessionId, messageMutation],
+    [sessionId, activeArtifactMessageId, activeTopic?.title, activeBlock?.concept, activeBlock?.title, respondMutation, sendMessage],
   );
 
-  const handleApprove = useCallback(() => {
-    if (!sessionId) return;
-    approveMutation
-      .mutateAsync(sessionId)
-      .catch((err: unknown) => console.error("[approvePlan] failed", err));
-  }, [sessionId, approveMutation]);
+  const handleApprove = useCallback(
+    (artifactId?: string) => {
+      if (!sessionId) return;
+      const targetId = artifactId || activeArtifactMessageId;
+      if (targetId) {
+        respondMutation
+          .mutateAsync({
+            artifactId: targetId,
+            response: { approved: true, resolved: true, status: "completed" },
+          })
+          .catch(console.error);
+      }
+      approveMutation
+        .mutateAsync(sessionId)
+        .catch((err: unknown) => console.error("[approvePlan] failed", err));
+    },
+    [sessionId, activeArtifactMessageId, approveMutation, respondMutation],
+  );
 
   const handleRetry = useCallback(
-    () => sendMessage("Retry", undefined, true),
-    [sendMessage],
+    (artifactId?: string) => {
+      const targetId = artifactId || activeArtifactMessageId;
+      if (targetId) {
+        respondMutation
+          .mutateAsync({
+            artifactId: targetId,
+            response: { retry: true, resolved: false },
+          })
+          .catch(console.error);
+      }
+      const topicContext = activeTopic?.title ? ` for topic "${activeTopic.title}"` : "";
+      sendMessage(
+        `[STUDENT_ACTION: RETRY] The student requested another attempt at this question${topicContext}. Provide a helpful, constructive hint or alternate intuitive angle to guide them, then let them try again.`,
+        undefined,
+        true,
+      );
+    },
+    [sendMessage, activeArtifactMessageId, activeTopic?.title, respondMutation],
   );
+
   const handleSkip = useCallback(
-    () => sendMessage("Skip", undefined, true),
-    [sendMessage],
+    (artifactId?: string) => {
+      const targetId = artifactId || activeArtifactMessageId;
+      if (targetId) {
+        respondMutation
+          .mutateAsync({
+            artifactId: targetId,
+            response: { skipped: true, resolved: true },
+          })
+          .catch(console.error);
+      }
+      const topicContext = activeTopic?.title ? ` on "${activeTopic.title}"` : "";
+      sendMessage(
+        `[STUDENT_ACTION: SKIP] The student chose to skip this step${topicContext}. Acknowledge briefly and smoothly proceed to the next concept or question.`,
+        undefined,
+        true,
+      );
+    },
+    [sendMessage, activeArtifactMessageId, activeTopic?.title, respondMutation],
   );
+
   const handleExplainDifferently = useCallback(
-    () => sendMessage("Explain this differently", undefined, true),
-    [sendMessage],
+    (topicTitle: string, artifactId?: string) => {
+      const targetId = artifactId || activeArtifactMessageId;
+      if (targetId) {
+        respondMutation
+          .mutateAsync({
+            artifactId: targetId,
+            response: { explainDifferently: true, topicTitle, resolved: true },
+          })
+          .catch(console.error);
+      }
+      const topic = topicTitle || activeTopic?.title || "this concept";
+      sendMessage(
+        `[STUDENT_ACTION: EXPLAIN_DIFFERENTLY] The student found the previous explanation of "${topic}" unclear or difficult to grasp. Re-explain the intuition using a fresh, concrete real-world analogy and a simpler breakdown.`,
+        undefined,
+        true,
+      );
+    },
+    [sendMessage, activeArtifactMessageId, activeTopic?.title, respondMutation],
   );
+
   const handleTestMe = useCallback(
-    (topicTitle: string) =>
-      sendMessage(`Test me on ${topicTitle}`, undefined, true),
-    [sendMessage],
+    (topicTitle: string, artifactId?: string) => {
+      const targetId = artifactId || activeArtifactMessageId;
+      if (targetId) {
+        respondMutation
+          .mutateAsync({
+            artifactId: targetId,
+            response: { testMe: true, topicTitle, resolved: true },
+          })
+          .catch(console.error);
+      }
+      const topic = topicTitle || activeTopic?.title || "this topic";
+      sendMessage(
+        `[STUDENT_ACTION: TEST_ME] The student feels ready and requested to be tested on "${topic}". Call 'ask_question' to present an insightful question testing their understanding.`,
+        undefined,
+        true,
+      );
+    },
+    [sendMessage, activeArtifactMessageId, activeTopic?.title, respondMutation],
   );
+
   const handleTryMyself = useCallback(
-    (topicTitle: string) =>
-      sendMessage(`I'll try ${topicTitle} myself`, undefined, true),
-    [sendMessage],
+    (topicTitle: string, artifactId?: string) => {
+      const targetId = artifactId || activeArtifactMessageId;
+      if (targetId) {
+        respondMutation
+          .mutateAsync({
+            artifactId: targetId,
+            response: { tryMyself: true, topicTitle, resolved: true },
+          })
+          .catch(console.error);
+      }
+      const topic = topicTitle || activeTopic?.title || "this topic";
+      sendMessage(
+        `[STUDENT_ACTION: TRY_MYSELF] The student wants to work through "${topic}" independently. Encourage them briefly and invite them to share their solution or thoughts when ready.`,
+        undefined,
+        true,
+      );
+    },
+    [sendMessage, activeArtifactMessageId, activeTopic?.title, respondMutation],
   );
+
   const handleAction = useCallback(
-    (actionType: string) => sendMessage(actionType, undefined, true),
-    [sendMessage],
+    (actionType: string, artifactId?: string) => {
+      const targetId = artifactId || activeArtifactMessageId;
+      if (targetId) {
+        respondMutation
+          .mutateAsync({
+            artifactId: targetId,
+            response: { action: actionType, resolved: true },
+          })
+          .catch(console.error);
+      }
+      const topic = activeTopic?.title ? ` regarding topic "${activeTopic.title}"` : "";
+      sendMessage(
+        `[STUDENT_ACTION: CUSTOM_ACTION] The student selected action "${actionType}"${topic}. Respond accordingly to assist their study journey.`,
+        undefined,
+        true,
+      );
+    },
+    [sendMessage, activeArtifactMessageId, activeTopic?.title, respondMutation],
   );
+
   const handlePomodoroResume = useCallback(
-    () => sendMessage("Pomodoro done, ready to continue", undefined, true),
-    [sendMessage],
+    (artifactId?: string) => {
+      const targetId = artifactId || activeArtifactMessageId;
+      if (targetId) {
+        respondMutation
+          .mutateAsync({
+            artifactId: targetId,
+            response: { pomodoroResume: true, resolved: true },
+          })
+          .catch(console.error);
+      }
+      const topicContext = activeTopic?.title ? ` for "${activeTopic.title}"` : "";
+      sendMessage(
+        `[STUDENT_ACTION: POMODORO_RESUME] The student completed their Pomodoro focus break and is ready to resume studying${topicContext}. Welcome them back warmly and continue the lesson where they left off.`,
+        undefined,
+        true,
+      );
+    },
+    [sendMessage, activeArtifactMessageId, activeTopic?.title, respondMutation],
   );
 
   // Guard: invalid session
@@ -628,7 +813,7 @@ export default function ChatPage() {
             messages={messages}
             artifacts={app?.artifacts || []}
             citations={citations}
-            activeDirectiveMessageId={activeDirectiveMessageId}
+            activeArtifactMessageId={activeArtifactMessageId}
             sessionStep={sessionStep}
             isTyping={input.trim().length > 0}
             inputLength={input.length}
@@ -764,7 +949,7 @@ export default function ChatPage() {
 
               <button
                 type="button"
-                onClick={handleContinue}
+                onClick={() => handleContinue()}
                 className="rounded-full bg-black hover:bg-slate-800 px-4 py-1.5 text-[11.5px] font-bold text-white shadow-xs hover:scale-102 transition cursor-pointer flex items-center gap-1.5"
               >
                 <span>{isRecapActive ? "Keep going" : "Continue"}</span>

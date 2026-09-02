@@ -9,13 +9,13 @@ import { ArtifactCard, type ArtifactCardCallbacks } from "./ArtifactCard";
 
 export interface MessageFeedProps extends ArtifactCardCallbacks {
   messages: ZSessionMessage[];
-  /** messageId of the currently active (unresolved) directive, or null if none */
-  activeDirectiveMessageId: string | null;
+  /** messageId of the currently active (unresolved) artifact, or null if none */
+  activeArtifactMessageId?: string | null;
 }
 
 export function MessageFeed({
   messages,
-  activeDirectiveMessageId,
+  activeArtifactMessageId,
   onSubmitAnswer,
   onApprove,
   onContinue,
@@ -62,19 +62,18 @@ export function MessageFeed({
   return (
     <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
       {messages.map((msg) => {
-        if (msg.type === "directive" || msg.type === "artifact" || Boolean((msg as any).artifact) || Boolean(msg.directive)) {
-          // Directive messages without a parsed directive or artifact object fall back to a plain bubble
-          if (!msg.directive && !(msg as any).artifact) {
+        if (msg.type === "system_action") return null;
+        if (msg.type === "artifact" || Boolean((msg as any).artifact)) {
+          if (!(msg as any).artifact) {
             return <MessageBubble key={msg.id} message={msg} />;
           }
 
-          // A directive is resolved if its messageId does not match the active one
-          const resolved = msg.messageId !== activeDirectiveMessageId;
+          // An artifact is resolved if its messageId does not match the active one
+          const resolved = msg.messageId !== activeArtifactMessageId;
 
           return (
             <ArtifactCard
               key={msg.id}
-              directive={msg.directive}
               artifact={(msg as any).artifact}
               resolved={resolved}
               onSubmitAnswer={onSubmitAnswer}

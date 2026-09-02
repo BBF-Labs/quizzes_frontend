@@ -774,7 +774,7 @@ export const useContinueJourney = (sessionId: string) => {
   });
 };
 
-export const useRespondToDirectiveArtifact = (sessionId: string) => {
+export const useRespondToArtifact = (sessionId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -798,6 +798,7 @@ export const useRespondToDirectiveArtifact = (sessionId: string) => {
     },
   });
 };
+
 
 export const useGenerateStudyPlan = (sessionId: string) => {
   const queryClient = useQueryClient();

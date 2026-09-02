@@ -42,6 +42,7 @@ import {
   Award,
   BookMarked,
   Sparkle,
+  X,
 } from "lucide-react";
 import {
   QuestionMarkdown,
@@ -52,7 +53,6 @@ import { cn } from "@/lib/utils";
 import type {
   ZAskQuestionPayload,
   ZAskQuestionsPayload,
-  ZDirective,
   ZPomodoroPayload,
   ZShowPlanPayload,
   ZShowQuizPayload,
@@ -183,46 +183,92 @@ interface QAEntryProps {
   answer: string;
   explanation?: string;
   correctAnswer?: string;
+  isCorrect?: boolean;
 }
 
 function QAResolvedCard({ entries }: { entries: QAEntryProps[] }) {
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.2 }}
-      className="w-full max-w-xl mx-auto rounded-2xl border border-slate-200 bg-slate-50/80 p-4 text-xs divide-y divide-slate-200/60 space-y-3"
+      initial={{ opacity: 0, scale: 0.98, y: 6 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.98, y: -6 }}
+      transition={{ duration: 0.25, ease: "easeOut" }}
+      className="w-full max-w-xl mx-auto rounded-[22px] border border-slate-200/90 bg-[#FAFBFD] p-4 sm:p-5 text-xs shadow-2xs space-y-3.5"
     >
-      {entries.map((e, i) => (
-        <div key={i} className="pt-2 first:pt-0 space-y-2">
-          <div className="flex items-start gap-2">
-            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mt-0.5">
-              Q:
-            </span>
-            <div className="text-slate-700 font-medium leading-relaxed">
-              <QuestionMarkdown content={e.question} />
+      {entries.map((e, i) => {
+        const normAns = normalizeOptionText(e.answer).trim().toLowerCase();
+        const normCorrect = e.correctAnswer ? normalizeOptionText(e.correctAnswer).trim().toLowerCase() : "";
+        const isActuallyCorrect = e.isCorrect !== undefined
+          ? e.isCorrect
+          : normCorrect
+          ? normAns === normCorrect || normAns.includes(normCorrect) || normCorrect.includes(normAns)
+          : true;
+
+        return (
+          <div key={i} className="space-y-3">
+            <div className="flex items-start gap-2.5">
+              <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mt-0.5">
+                Q:
+              </span>
+              <div className="text-slate-900 font-bold leading-relaxed text-xs sm:text-[13px] flex-1">
+                <QuestionMarkdown content={e.question} />
+              </div>
+            </div>
+
+            <div
+              className={cn(
+                "rounded-2xl p-3 sm:p-3.5 border transition-all space-y-2",
+                isActuallyCorrect
+                  ? "border-emerald-200/80 bg-white"
+                  : "border-rose-200/80 bg-white",
+              )}
+            >
+              <div className="flex items-start gap-2.5">
+                <span
+                  className={cn(
+                    "text-[10px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded-md mt-0.5 flex items-center gap-1",
+                    isActuallyCorrect
+                      ? "bg-emerald-100 text-emerald-800"
+                      : "bg-rose-100 text-rose-800",
+                  )}
+                >
+                  {isActuallyCorrect ? (
+                    <>
+                      <Check className="h-3 w-3 text-emerald-700 stroke-[3]" />
+                      <span>A:</span>
+                    </>
+                  ) : (
+                    <>
+                      <X className="h-3 w-3 text-rose-700 stroke-[3]" />
+                      <span>A:</span>
+                    </>
+                  )}
+                </span>
+                <div className="flex-1 space-y-1.5">
+                  <p className="text-slate-950 font-bold text-xs sm:text-[13px] leading-snug">
+                    {e.answer || "—"}
+                  </p>
+
+                  {!isActuallyCorrect && e.correctAnswer && e.correctAnswer !== e.answer && (
+                    <p className="text-[11.5px] text-emerald-800 font-semibold flex items-center gap-1.5 pt-0.5">
+                      <span className="text-emerald-600 font-bold">Correct answer:</span>
+                      <span className="underline decoration-emerald-400 underline-offset-2">
+                        {e.correctAnswer}
+                      </span>
+                    </p>
+                  )}
+
+                  {e.explanation && (
+                    <p className="text-[11px] text-slate-600 font-normal leading-relaxed pt-1 border-t border-slate-100">
+                      {e.explanation}
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
-          <div className="flex items-start gap-2 bg-white rounded-xl p-2.5 border border-slate-200/70">
-            <span className="text-[10px] font-extrabold text-emerald-600 uppercase tracking-widest mt-0.5">
-              A:
-            </span>
-            <div className="flex-1 space-y-1">
-              <p className="text-slate-900 font-bold leading-relaxed">{e.answer || "—"}</p>
-              {e.correctAnswer && e.correctAnswer !== e.answer && (
-                <p className="text-[11px] text-emerald-700 font-medium">
-                  Correct answer: <span className="font-bold">{e.correctAnswer}</span>
-                </p>
-              )}
-              {e.explanation && (
-                <p className="text-[11px] text-slate-500 font-normal leading-relaxed pt-0.5">
-                  {e.explanation}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </motion.div>
   );
 }
@@ -230,11 +276,18 @@ function QAResolvedCard({ entries }: { entries: QAEntryProps[] }) {
 // ─── Helper to Normalize Option Strings ───────────────────────────────────────
 
 function normalizeOptionText(opt: any): string {
-  if (typeof opt === "string") return opt;
-  if (opt && typeof opt === "object") {
-    return opt.text || opt.label || opt.value || opt.id || JSON.stringify(opt);
+  let str = "";
+  if (typeof opt === "string") {
+    str = opt;
+  } else if (opt && typeof opt === "object") {
+    str = opt.text || opt.label || opt.value || opt.id || JSON.stringify(opt);
+  } else {
+    str = String(opt ?? "");
   }
-  return String(opt ?? "");
+  // Strip leading prefixes like "A) ", "A. ", "A: ", "(A) ", "[A] ", "a) ", "1. ", "1) ", etc.
+  return str
+    .replace(/^(\(?[A-Za-z0-9][\)\.\:\-\]]|\b[A-Za-z0-9][\)\.\:\-])\s*/, "")
+    .trim();
 }
 
 function isTrueFalseOptions(options?: any[]): boolean {
@@ -296,37 +349,72 @@ function AskQuestionCard({
     persistedAnswer || null,
   );
   const [showHint, setShowHint] = useState(false);
-  const submittedAnswerRef = useRef<string>(persistedAnswer);
+  const [evaluatedChoice, setEvaluatedChoice] = useState<string | null>(
+    persistedAnswer || null,
+  );
+
+  useEffect(() => {
+    if (persistedAnswer && !evaluatedChoice) {
+      setEvaluatedChoice(persistedAnswer);
+      setSelectedOption(persistedAnswer);
+    }
+  }, [persistedAnswer, evaluatedChoice]);
+
+  const matchOption = (optText: string, index: number, target: string | null | undefined): boolean => {
+    if (!target) return false;
+    const normTarget = normalizeOptionText(target).trim().toLowerCase();
+    const normOpt = normalizeOptionText(optText).trim().toLowerCase();
+    const letter = String.fromCharCode(65 + index).toLowerCase();
+
+    if (normOpt === normTarget || normOpt.includes(normTarget) || normTarget.includes(normOpt)) {
+      return true;
+    }
+    const cleanTarget = normTarget.replace(/[^a-z0-9]/g, "");
+    if (cleanTarget === letter) {
+      return true;
+    }
+    const optCleanLetter = normOpt.replace(/[^a-z0-9]/g, "").slice(0, 1);
+    if (cleanTarget.length === 1 && optCleanLetter === cleanTarget) {
+      return true;
+    }
+    return false;
+  };
+
+  const isUserCorrect = useMemo(() => {
+    if (!evaluatedChoice) return false;
+    if (!correctAnswer) return true;
+
+    const chosenIndex = options.findIndex((o, idx) => matchOption(o, idx, evaluatedChoice));
+    if (chosenIndex >= 0) {
+      return matchOption(options[chosenIndex], chosenIndex, correctAnswer);
+    }
+
+    const normChoice = normalizeOptionText(evaluatedChoice).trim().toLowerCase();
+    const normCorrect = normalizeOptionText(correctAnswer).trim().toLowerCase();
+    return normChoice === normCorrect || normChoice.includes(normCorrect) || normCorrect.includes(normChoice);
+  }, [evaluatedChoice, correctAnswer, options]);
+
+  const correctOptIndex = options.findIndex((o, idx) => matchOption(o, idx, correctAnswer));
+  const correctOptDisplay = correctOptIndex >= 0
+    ? `${String.fromCharCode(65 + correctOptIndex)}. ${options[correctOptIndex]}`
+    : correctAnswer;
 
   const isTF = isTrueFalseOptions(options);
 
-  const handleSubmit = (choice?: string) => {
-    const ans = choice ?? (options.length > 0 ? selectedOption : textAnswer.trim());
-    if (ans) {
-      submittedAnswerRef.current = ans;
-      onSubmitAnswer([ans], [rawQuestion]);
-    }
+  const handleSelectChoice = (choice: string) => {
+    if (evaluatedChoice) return;
+
+    setEvaluatedChoice(choice);
+    setSelectedOption(choice);
+    onSubmitAnswer([choice], [rawQuestion]);
   };
 
-  const isResolved =
-    Boolean(submittedAnswerRef.current) ||
-    Boolean(persistedAnswer) ||
-    (resolved && Boolean(persistedAnswer));
-
-  if (isResolved) {
-    return (
-      <QAResolvedCard
-        entries={[
-          {
-            question: rawQuestion,
-            answer: submittedAnswerRef.current || persistedAnswer || "—",
-            correctAnswer: typeof correctAnswer === "string" ? correctAnswer : undefined,
-            explanation,
-          },
-        ]}
-      />
-    );
-  }
+  const handleTextSubmit = () => {
+    const ans = textAnswer.trim();
+    if (!ans || evaluatedChoice) return;
+    setEvaluatedChoice(ans);
+    onSubmitAnswer([ans], [rawQuestion]);
+  };
 
   // Specialized True / False Card View
   if (isTF && options.length === 2) {
@@ -338,6 +426,36 @@ function AskQuestionCard({
       options.find((o) =>
         ["true", "yes", "a) true"].some((k) => o.trim().toLowerCase().includes(k))
       ) || options[0];
+
+    const isFalseChosen = matchOption(falseOpt, 0, evaluatedChoice);
+    const isTrueChosen = matchOption(trueOpt, 1, evaluatedChoice);
+    const isFalseCorrect = matchOption(falseOpt, 0, correctAnswer);
+    const isTrueCorrect = matchOption(trueOpt, 1, correctAnswer);
+
+    let falseClasses = "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-800";
+    let trueClasses = "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-800";
+
+    if (evaluatedChoice) {
+      if (isFalseChosen) {
+        falseClasses = isUserCorrect
+          ? "border-emerald-500 bg-emerald-50/90 text-emerald-950 font-bold ring-2 ring-emerald-500/30"
+          : "border-rose-500 bg-rose-50/90 text-rose-950 font-bold ring-2 ring-rose-500/30";
+      } else if (!isUserCorrect && isFalseCorrect) {
+        falseClasses = "border-emerald-500 bg-emerald-50/70 text-emerald-950 font-bold ring-1.5 ring-emerald-400/50";
+      } else {
+        falseClasses = "opacity-45 border-slate-200 bg-slate-50/50 text-slate-400 pointer-events-none";
+      }
+
+      if (isTrueChosen) {
+        trueClasses = isUserCorrect
+          ? "border-emerald-500 bg-emerald-50/90 text-emerald-950 font-bold ring-2 ring-emerald-500/30"
+          : "border-rose-500 bg-rose-50/90 text-rose-950 font-bold ring-2 ring-rose-500/30";
+      } else if (!isUserCorrect && isTrueCorrect) {
+        trueClasses = "border-emerald-500 bg-emerald-50/70 text-emerald-950 font-bold ring-1.5 ring-emerald-400/50";
+      } else {
+        trueClasses = "opacity-45 border-slate-200 bg-slate-50/50 text-slate-400 pointer-events-none";
+      }
+    }
 
     return (
       <CardWrapper
@@ -363,32 +481,87 @@ function AskQuestionCard({
         <div className="grid grid-cols-2 gap-3 pt-2">
           <motion.button
             type="button"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => {
-              setSelectedOption(falseOpt);
-              handleSubmit(falseOpt);
-            }}
-            className="rounded-2xl border border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 p-4 flex items-center justify-center gap-2 text-sm font-bold text-slate-800 shadow-xs transition-all cursor-pointer"
+            whileHover={!evaluatedChoice ? { scale: 1.01 } : {}}
+            whileTap={!evaluatedChoice ? { scale: 0.99 } : {}}
+            onClick={() => handleSelectChoice(falseOpt)}
+            disabled={Boolean(evaluatedChoice)}
+            className={cn(
+              "rounded-2xl border p-4 flex items-center justify-center gap-2 text-sm font-bold shadow-xs transition-all cursor-pointer",
+              falseClasses,
+            )}
           >
             <span>👎</span>
             <span>{falseOpt}</span>
+            {evaluatedChoice && isFalseChosen && (
+              isUserCorrect ? <Check className="h-4 w-4 text-emerald-600 stroke-[3]" /> : <X className="h-4 w-4 text-rose-600 stroke-[3]" />
+            )}
+            {evaluatedChoice && !isFalseChosen && isFalseCorrect && (
+              <Check className="h-4 w-4 text-emerald-600 stroke-[3]" />
+            )}
           </motion.button>
 
           <motion.button
             type="button"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => {
-              setSelectedOption(trueOpt);
-              handleSubmit(trueOpt);
-            }}
-            className="rounded-2xl border border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 p-4 flex items-center justify-center gap-2 text-sm font-bold text-slate-800 shadow-xs transition-all cursor-pointer"
+            whileHover={!evaluatedChoice ? { scale: 1.01 } : {}}
+            whileTap={!evaluatedChoice ? { scale: 0.99 } : {}}
+            onClick={() => handleSelectChoice(trueOpt)}
+            disabled={Boolean(evaluatedChoice)}
+            className={cn(
+              "rounded-2xl border p-4 flex items-center justify-center gap-2 text-sm font-bold shadow-xs transition-all cursor-pointer",
+              trueClasses,
+            )}
           >
             <span>👍</span>
             <span>{trueOpt}</span>
+            {evaluatedChoice && isTrueChosen && (
+              isUserCorrect ? <Check className="h-4 w-4 text-emerald-600 stroke-[3]" /> : <X className="h-4 w-4 text-rose-600 stroke-[3]" />
+            )}
+            {evaluatedChoice && !isTrueChosen && isTrueCorrect && (
+              <Check className="h-4 w-4 text-emerald-600 stroke-[3]" />
+            )}
           </motion.button>
         </div>
+
+        {evaluatedChoice && (
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+            className={cn(
+              "rounded-2xl p-3.5 sm:p-4 border transition-all space-y-2 mt-2",
+              isUserCorrect
+                ? "border-emerald-200/90 bg-emerald-50/40"
+                : "border-rose-200/90 bg-rose-50/40"
+            )}
+          >
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <span
+                className={cn(
+                  "text-xs font-extrabold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1.5",
+                  isUserCorrect ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"
+                )}
+              >
+                {isUserCorrect ? (
+                  <>
+                    <Check className="h-3.5 w-3.5 stroke-[3]" />
+                    Correct
+                  </>
+                ) : (
+                  <>
+                    <X className="h-3.5 w-3.5 stroke-[3]" />
+                    Incorrect
+                  </>
+                )}
+              </span>
+            </div>
+
+            {explanation && (
+              <div className="text-xs text-slate-700 leading-relaxed font-normal pt-1.5 border-t border-slate-200/60">
+                <QuestionMarkdown content={explanation} />
+              </div>
+            )}
+          </motion.div>
+        )}
       </CardWrapper>
     );
   }
@@ -444,38 +617,110 @@ function AskQuestionCard({
 
         <div className="flex flex-col gap-2 pt-1">
           {options.map((opt, i) => {
-            const isSelected = selectedOption === opt;
+            const isSelected = matchOption(opt, i, evaluatedChoice);
+            const isCorrectOption = matchOption(opt, i, correctAnswer);
             const letter = String.fromCharCode(65 + i);
             const badgeClass = optionBadgeColors[i % optionBadgeColors.length];
 
+            let optionClasses = "border-slate-200/90 bg-white text-slate-800 hover:border-slate-300 hover:bg-slate-50/60";
+            let badgeStyle = badgeClass;
+            let statusIcon = null;
+
+            if (evaluatedChoice) {
+              if (isSelected) {
+                if (isUserCorrect) {
+                  optionClasses = "border-emerald-500 bg-emerald-50/90 text-emerald-950 font-bold ring-2 ring-emerald-500/30 scale-[1.005]";
+                  badgeStyle = "bg-emerald-600 text-white font-extrabold";
+                  statusIcon = <Check className="h-4 w-4 text-emerald-600 stroke-[3] shrink-0" />;
+                } else {
+                  optionClasses = "border-rose-500 bg-rose-50/90 text-rose-950 font-bold ring-2 ring-rose-500/30 scale-[0.995]";
+                  badgeStyle = "bg-rose-600 text-white font-extrabold";
+                  statusIcon = <X className="h-4 w-4 text-rose-600 stroke-[3] shrink-0" />;
+                }
+              } else if (!isUserCorrect && isCorrectOption) {
+                optionClasses = "border-emerald-500 bg-emerald-50/70 text-emerald-950 font-bold ring-1.5 ring-emerald-400/50";
+                badgeStyle = "bg-emerald-600 text-white font-extrabold";
+                statusIcon = <Check className="h-4 w-4 text-emerald-600 stroke-[3] shrink-0" />;
+              } else {
+                optionClasses = "opacity-45 border-slate-200 bg-slate-50/50 text-slate-400 pointer-events-none";
+              }
+            }
+
             return (
-              <button
+              <motion.button
                 key={i}
                 type="button"
-                onClick={() => {
-                  setSelectedOption(opt);
-                  handleSubmit(opt);
-                }}
+                whileHover={!evaluatedChoice ? { scale: 1.005 } : {}}
+                whileTap={!evaluatedChoice ? { scale: 0.995 } : {}}
+                onClick={() => handleSelectChoice(opt)}
+                disabled={Boolean(evaluatedChoice)}
                 className={cn(
                   "w-full text-left rounded-[18px] p-3 text-xs font-semibold transition-all border flex items-center gap-3 cursor-pointer shadow-2xs",
-                  isSelected
-                    ? "border-emerald-500 bg-emerald-50/50 text-emerald-900 ring-1 ring-emerald-500"
-                    : "border-slate-200/90 bg-white text-slate-800 hover:border-slate-300 hover:bg-slate-50/60",
+                  optionClasses,
                 )}
               >
                 <span
                   className={cn(
                     "h-6 w-6 rounded-md text-[11px] font-bold flex items-center justify-center shrink-0 shadow-2xs transition-colors",
-                    badgeClass,
+                    badgeStyle,
                   )}
                 >
                   {letter}
                 </span>
                 <span className="flex-1 font-sans leading-relaxed">{opt}</span>
-              </button>
+                {statusIcon}
+              </motion.button>
             );
           })}
         </div>
+
+        {/* Feedback & Explanation Section */}
+        {evaluatedChoice && (
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+            className={cn(
+              "rounded-2xl p-3.5 sm:p-4 border transition-all space-y-2 mt-1",
+              isUserCorrect
+                ? "border-emerald-200/90 bg-emerald-50/40"
+                : "border-rose-200/90 bg-rose-50/40"
+            )}
+          >
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <span
+                className={cn(
+                  "text-xs font-extrabold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1.5",
+                  isUserCorrect ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"
+                )}
+              >
+                {isUserCorrect ? (
+                  <>
+                    <Check className="h-3.5 w-3.5 stroke-[3]" />
+                    Correct
+                  </>
+                ) : (
+                  <>
+                    <X className="h-3.5 w-3.5 stroke-[3]" />
+                    Incorrect
+                  </>
+                )}
+              </span>
+
+              {!isUserCorrect && correctOptDisplay && (
+                <span className="text-[11.5px] font-bold text-emerald-800">
+                  Correct answer: <span className="font-extrabold underline decoration-emerald-400 underline-offset-2">{correctOptDisplay}</span>
+                </span>
+              )}
+            </div>
+
+            {explanation && (
+              <div className="text-xs text-slate-700 leading-relaxed font-normal pt-1.5 border-t border-slate-200/60">
+                <QuestionMarkdown content={explanation} />
+              </div>
+            )}
+          </motion.div>
+        )}
 
         <div className="flex items-center justify-between pt-1">
           <button
@@ -486,7 +731,7 @@ function AskQuestionCard({
           >
             <Volume2 className="h-3.5 w-3.5" />
           </button>
-          {!selectedOption && (
+          {!evaluatedChoice && (
             <ActionButton onClick={onSkip} variant="ghost">
               Skip
             </ActionButton>
@@ -521,15 +766,41 @@ function AskQuestionCard({
           </div>
         )}
 
-        <div className="pt-2">
-          <textarea
-            value={textAnswer}
-            onChange={(e) => setTextAnswer(e.target.value)}
-            placeholder="Type your response here..."
-            rows={3}
-            className="w-full rounded-2xl border border-slate-200 bg-slate-50/60 p-3 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-[#0C60FC] focus:outline-none transition"
-          />
-        </div>
+        {evaluatedChoice ? (
+          <div className="pt-2 space-y-2">
+            <div className="rounded-2xl border border-slate-200 bg-white p-3 text-xs font-semibold text-slate-900 shadow-2xs">
+              <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block mb-1">
+                Your Answer:
+              </span>
+              <p className="leading-relaxed">{evaluatedChoice}</p>
+            </div>
+
+            {(explanation || correctAnswer) && (
+              <div className="rounded-2xl border border-slate-200/90 bg-slate-50/60 p-3 text-xs text-slate-700 space-y-1.5">
+                {correctAnswer && (
+                  <p className="text-[11px] text-emerald-800 font-bold">
+                    Suggested Answer: {correctAnswer}
+                  </p>
+                )}
+                {explanation && (
+                  <div className="text-xs text-slate-600 leading-relaxed pt-1 border-t border-slate-200/60">
+                    <QuestionMarkdown content={explanation} />
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="pt-2">
+            <textarea
+              value={textAnswer}
+              onChange={(e) => setTextAnswer(e.target.value)}
+              placeholder="Type your response here..."
+              rows={3}
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50/60 p-3 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-[#0C60FC] focus:outline-none transition"
+            />
+          </div>
+        )}
       </div>
 
       <div className="flex items-center justify-between pt-1">
@@ -542,19 +813,21 @@ function AskQuestionCard({
           <Volume2 className="h-3.5 w-3.5" />
         </button>
 
-        <div className="flex items-center gap-2">
-          <ActionButton onClick={onSkip} variant="ghost">
-            Skip
-          </ActionButton>
-          <ActionButton
-            onClick={() => handleSubmit()}
-            disabled={!textAnswer.trim()}
-            variant="primary"
-          >
-            <span>Submit</span>
-            <ArrowRight className="h-3.5 w-3.5" />
-          </ActionButton>
-        </div>
+        {!evaluatedChoice && (
+          <div className="flex items-center gap-2">
+            <ActionButton onClick={onSkip} variant="ghost">
+              Skip
+            </ActionButton>
+            <ActionButton
+              onClick={() => handleTextSubmit()}
+              disabled={!textAnswer.trim()}
+              variant="primary"
+            >
+              <span>Submit</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </ActionButton>
+          </div>
+        )}
       </div>
     </CardWrapper>
   );
@@ -1642,6 +1915,19 @@ function ShowExpositionCard({
     }
   }
 
+  // Extract inline bracket citations like [20] if no citations exist yet
+  const bracketMatches = Array.from(markdownText.matchAll(/\[(\d+)\]/g));
+  if (bracketMatches.length > 0 && parsedCitations.length === 0) {
+    const firstMatch = bracketMatches[0] as unknown as RegExpMatchArray;
+    const pageNum = parseInt(firstMatch[1], 10);
+    parsedCitations.push({
+      filename: "Source Material",
+      pageNumber: pageNum,
+    });
+  }
+  // Strip all inline numeric bracket citations from the rendered prose
+  markdownText = markdownText.replace(/\s*\[\d+\]/g, "").trim();
+
   return (
     <CardWrapper
       resolved={resolved}
@@ -1917,69 +2203,36 @@ function PomodoroCard({ payload, resolved, onResume }: PomodoroCardProps) {
   );
 }
 
-// ─── UNKNOWN DIRECTIVE ───────────────────────────────────────────────────────
-
-function UnknownDirectiveCard({
-  type,
-  payload,
-  resolved,
-  onContinue,
-}: {
-  type: string;
-  payload: unknown;
-  resolved: boolean;
-  onContinue: () => void;
-}) {
-  return (
-    <CardWrapper
-      resolved={resolved}
-      icon={<HelpCircle className="h-4 w-4 text-slate-400" />}
-      label={`Action: ${type}`}
-    >
-      <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 overflow-auto max-h-36 text-[11px] font-mono text-slate-600">
-        <pre>{JSON.stringify(payload, null, 2)}</pre>
-      </div>
-
-      {!resolved && (
-        <ActionButton onClick={onContinue} variant="primary">
-          Got it
-        </ActionButton>
-      )}
-    </CardWrapper>
-  );
-}
 
 // ─── Public ArtifactCardCallbacks Interface ──────────────────────────────────
 
 export interface ArtifactCardCallbacks {
-  onSubmitAnswer?: (answers: string[], questions?: string[]) => void;
-  onApprove?: () => void;
-  onContinue?: () => void;
-  onRetry?: () => void;
-  onSkip?: () => void;
-  onExplainDifferently?: (topicTitle: string) => void;
-  onTestMe?: (topicTitle: string) => void;
-  onTryMyself?: (topicTitle: string) => void;
-  onAction?: (actionType: string) => void;
-  onPomodoroResume?: () => void;
+  onSubmitAnswer?: (
+    answers: string[],
+    questions?: string[],
+    artifactId?: string,
+  ) => void;
+  onApprove?: (artifactId?: string) => void;
+  onContinue?: (artifactId?: string) => void;
+  onRetry?: (artifactId?: string) => void;
+  onSkip?: (artifactId?: string) => void;
+  onExplainDifferently?: (topicTitle: string, artifactId?: string) => void;
+  onTestMe?: (topicTitle: string, artifactId?: string) => void;
+  onTryMyself?: (topicTitle: string, artifactId?: string) => void;
+  onAction?: (actionType: string, artifactId?: string) => void;
+  onPomodoroResume?: (artifactId?: string) => void;
   onOpenSource?: (materialId: string, pageNumber?: number) => void;
-  onFeedback?: (type: "too_easy" | "too_hard") => void;
+  onFeedback?: (type: "too_easy" | "too_hard", artifactId?: string) => void;
 }
 
-export type DirectiveCardCallbacks = ArtifactCardCallbacks;
-
 export interface ArtifactCardProps extends ArtifactCardCallbacks {
-  directive?: ZDirective;
   artifact?: any;
   resolved?: boolean;
 }
 
-export type DirectiveCardProps = ArtifactCardProps;
-
 // ─── Main ArtifactCard Dispatcher ────────────────────────────────────────────
 
 export function ArtifactCard({
-  directive,
   artifact,
   resolved = false,
   onSubmitAnswer = () => {},
@@ -1995,13 +2248,39 @@ export function ArtifactCard({
   onOpenSource,
   onFeedback,
 }: ArtifactCardProps) {
+  const currentArtifactId =
+    artifact?.artifactId ||
+    artifact?.id ||
+    (artifact?.content as any)?.artifactId;
+
+  const handleAnswer = (answers: string[], questions?: string[]) => {
+    onSubmitAnswer(answers, questions, currentArtifactId);
+  };
+  const handleApprove = () => onApprove(currentArtifactId);
+  const handleContinue = () => onContinue(currentArtifactId);
+  const handleRetry = () => onRetry(currentArtifactId);
+  const handleSkip = () => onSkip(currentArtifactId);
+  const handleExplainDifferently = (topic: string) =>
+    onExplainDifferently(topic, currentArtifactId);
+  const handleTestMe = (topic: string) => onTestMe(topic, currentArtifactId);
+  const handleTryMyself = (topic: string) =>
+    onTryMyself(topic, currentArtifactId);
+  const handleAction = (act: string) => onAction(act, currentArtifactId);
+  const handlePomodoroResume = () => onPomodoroResume(currentArtifactId);
+  const handleFeedback = (type: "too_easy" | "too_hard") =>
+    onFeedback?.(type, currentArtifactId);
+
   // If artifact is provided, map it to the corresponding card view
   if (artifact) {
     const artType = String(artifact.type || "").toLowerCase();
     const content = artifact.content || {};
 
     // 1. Flashcard Set
-    if (artType === "flashcard_set" || artType === "flashcards" || artType === "flashcard") {
+    if (
+      artType === "flashcard_set" ||
+      artType === "flashcards" ||
+      artType === "flashcard"
+    ) {
       const payload = {
         title: artifact.title || content.title,
         cards: content.cards || (Array.isArray(content) ? content : []),
@@ -2010,7 +2289,7 @@ export function ArtifactCard({
         <FlashcardSetCard
           payload={payload}
           resolved={resolved}
-          onContinue={onContinue}
+          onContinue={handleContinue}
         />
       );
     }
@@ -2044,8 +2323,8 @@ export function ArtifactCard({
         <VerificationCard
           payload={payload}
           resolved={resolved}
-          onSubmitAnswer={onSubmitAnswer}
-          onContinue={onContinue}
+          onSubmitAnswer={handleAnswer}
+          onContinue={handleContinue}
         />
       );
     }
@@ -2070,14 +2349,25 @@ export function ArtifactCard({
           payload={payload}
           resolved={resolved}
           onOpenSource={onOpenSource}
-          onFeedback={onFeedback}
-          onContinue={onContinue}
+          onFeedback={handleFeedback}
+          onContinue={handleContinue}
         />
       );
     }
 
     // 5. Concept Check Question
     if (artType === "question" || artType === "ask_question") {
+      const isCardResolved = Boolean(
+        artifact.resolved ||
+        content.resolved ||
+        content.status === "completed" ||
+        content.userAnswer ||
+        content.submittedAnswer ||
+        content.selectedOption ||
+        (Array.isArray(content.userAnswers) && content.userAnswers.length > 0) ||
+        resolved,
+      );
+
       const payload: any = {
         title: artifact.title || content.title || "Knowledge Check",
         question: content.question || content.text || content.prompt || artifact.title,
@@ -2086,27 +2376,44 @@ export function ArtifactCard({
         explanation: content.explanation,
         hint: content.hint,
         topicTitle: artifact.title || content.topicTitle,
+        userAnswer:
+          content.userAnswer ||
+          content.submittedAnswer ||
+          content.selectedOption ||
+          (Array.isArray(content.userAnswers) && content.userAnswers[0]) ||
+          undefined,
+        userAnswers: content.userAnswers || undefined,
+        selectedOption: content.selectedOption || undefined,
+        submittedAnswer: content.submittedAnswer || undefined,
+        resolved: isCardResolved,
       };
       return (
         <AskQuestionCard
           payload={payload}
-          resolved={resolved}
-          onSubmitAnswer={onSubmitAnswer}
-          onRetry={onRetry}
-          onSkip={onSkip}
+          resolved={isCardResolved}
+          onSubmitAnswer={handleAnswer}
+          onRetry={handleRetry}
+          onSkip={handleSkip}
         />
       );
     }
 
     // 6. Quiz Challenge
     if (artType === "quiz") {
+      const isQuizResolved = Boolean(
+        artifact.resolved ||
+        content.resolved ||
+        content.status === "completed" ||
+        (Array.isArray(content.userAnswers) && content.userAnswers.length > 0) ||
+        resolved,
+      );
       const payload: any = content.questions || content.lectures ? content : { questions: [content] };
       return (
         <ShowQuizCard
           payload={payload}
-          resolved={resolved}
-          onSubmitAnswer={onSubmitAnswer}
-          onSkip={onSkip}
+          resolved={isQuizResolved}
+          onSubmitAnswer={handleAnswer}
+          onSkip={handleSkip}
         />
       );
     }
@@ -2138,118 +2445,12 @@ export function ArtifactCard({
         <ShowPlanCard
           payload={payload}
           resolved={resolved}
-          onApprove={onApprove}
-          onSkip={onSkip}
+          onApprove={handleApprove}
+          onSkip={handleSkip}
         />
       );
     }
   }
 
-  // If directive is provided
-  if (!directive) return null;
-
-  switch (directive.type) {
-    case "ASK_QUESTION":
-    case "ask_question":
-      return (
-        <AskQuestionCard
-          payload={directive.payload}
-          resolved={resolved}
-          onSubmitAnswer={onSubmitAnswer}
-          onRetry={onRetry}
-          onSkip={onSkip}
-        />
-      );
-    case "ASK_QUESTIONS":
-    case "ask_questions":
-      return (
-        <AskQuestionsCard
-          payload={directive.payload}
-          resolved={resolved}
-          onSubmitAnswer={onSubmitAnswer}
-          onSkip={onSkip}
-        />
-      );
-    case "SHOW_EXPOSITION" as any:
-    case "exposition":
-    case "lesson":
-      return (
-        <ShowExpositionCard
-          payload={directive.payload}
-          resolved={resolved}
-          onOpenSource={onOpenSource}
-          onFeedback={onFeedback}
-          onContinue={onContinue}
-        />
-      );
-    case "SHOW_QUIZ":
-    case "show_quiz":
-    case "quiz":
-      return (
-        <ShowQuizCard
-          payload={directive.payload}
-          resolved={resolved}
-          onSubmitAnswer={onSubmitAnswer}
-          onSkip={onSkip}
-        />
-      );
-    case "SHOW_PLAN":
-    case "show_plan":
-    case "study_plan":
-      return (
-        <ShowPlanCard
-          payload={directive.payload}
-          resolved={resolved}
-          onApprove={onApprove}
-          onSkip={onSkip}
-        />
-      );
-    case "UNLOCK_TOPIC":
-    case "unlock_topic":
-      return (
-        <UnlockTopicCard payload={directive.payload} resolved={resolved} />
-      );
-    case "SHOW_RESULT":
-    case "show_result":
-      return <ShowResultCard payload={directive.payload} resolved={resolved} />;
-    case "SHOW_SUGGESTION":
-    case "show_suggestion":
-      return (
-        <ShowSuggestionCard
-          payload={directive.payload}
-          resolved={resolved}
-          onExplainDifferently={onExplainDifferently}
-          onTestMe={onTestMe}
-          onTryMyself={onTryMyself}
-          onAction={onAction}
-        />
-      );
-    case "SHOW_SUMMARY":
-    case "show_summary":
-    case "summary":
-    case "recap":
-      return (
-        <ShowSummaryCard payload={directive.payload} resolved={resolved} />
-      );
-    case "POMODORO":
-    case "pomodoro":
-      return (
-        <PomodoroCard
-          payload={directive.payload}
-          resolved={resolved}
-          onResume={onPomodoroResume}
-        />
-      );
-    default:
-      return (
-        <UnknownDirectiveCard
-          type={directive.type}
-          payload={directive.payload}
-          resolved={resolved}
-          onContinue={onContinue}
-        />
-      );
-  }
+  return null;
 }
-
-export const DirectiveCard = ArtifactCard;

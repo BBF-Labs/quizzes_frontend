@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Save, Copy, Check, Highlighter } from "lucide-react";
+import { Sparkles, StickyNote, Copy, Check, Highlighter, X } from "lucide-react";
 import { useAppLayout } from "@/components/app/layout";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -14,39 +14,41 @@ interface SelectionContextMenuProps {
     rect: DOMRect,
     color: string,
     note?: string,
+    range?: Range,
   ) => void;
 }
+
+const HIGHLIGHT_COLORS = [
+  { id: "yellow", bg: "bg-yellow-400", ring: "ring-yellow-400", label: "Yellow" },
+  { id: "pink", bg: "bg-pink-400", ring: "ring-pink-400", label: "Pink" },
+  { id: "green", bg: "bg-green-400", ring: "ring-green-400", label: "Green" },
+  { id: "blue", bg: "bg-blue-400", ring: "ring-blue-400", label: "Blue" },
+];
 
 export function SelectionContextMenu({
   containerRef,
   onHighlight,
 }: SelectionContextMenuProps) {
-  const [position, setPosition] = useState<{ x: number; y: number } | null>(
-    null,
-  );
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
   const [selectedText, setSelectedText] = useState("");
   const [selectedRect, setSelectedRect] = useState<DOMRect | null>(null);
+  const currentRangeRef = useRef<Range | null>(null);
   const { sendMessage, addNote } = useAppLayout();
   const [copied, setCopied] = useState(false);
   const [note, setNote] = useState("");
-  const [isAddingNote, setIsAddingNote] = useState(false);
+  const [showNoteInput, setShowNoteInput] = useState(false);
+  const [showHighlightColors, setShowHighlightColors] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleMouseUp = (e: MouseEvent) => {
-      // If we clicked inside the menu, don't reset anything
-      if (menuRef.current?.contains(e.target as Node)) {
-        return;
-      }
+      // Don't reset if clicking inside the menu itself
+      if (menuRef.current?.contains(e.target as Node)) return;
 
-      // Small timeout to ensure selection is populated
       setTimeout(() => {
         const selection = window.getSelection();
-        if (!selection || selection.rangeCount === 0) {
-          // Only close if we're not currently adding a note
-          if (!isAddingNote) {
-            setPosition(null);
-          }
+        if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+          if (!showNoteInput) setPosition(null);
           return;
         }
 
@@ -55,208 +57,286 @@ export function SelectionContextMenu({
 
         if (text.length > 0) {
           try {
-            // Get bounding rect relative to the reader container
-            const rect = range.getBoundingClientRect();
-            const containerRect = containerRef.current?.getBoundingClientRect();
+            const container = containerRef.current;
+            if (!container) return;
 
-            if (containerRect && rect.width > 0) {
-              // Position above the selection
+            // Ensure selection is inside the container
+            const containerNode = container as Node;
+            if (!containerNode.contains(range.commonAncestorContainer)) {
+              return;
+            }
+
+            const rect = range.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+
+            if (rect.width > 0) {
               setPosition({
-                x: rect.left - containerRect.left + rect.width / 2,
-                y: rect.top - containerRect.top - 10,
+                x: rect.left - containerRect.left + container.scrollLeft + rect.width / 2,
+                y: rect.top - containerRect.top + container.scrollTop - 8,
               });
               setSelectedText(text);
               setSelectedRect(rect);
+              currentRangeRef.current = range.cloneRange();
+              // Reset panel state on new selection
+              setShowNoteInput(false);
+              setShowHighlightColors(false);
+              setNote("");
             }
-          } catch (e) {
-            console.warn(
-              "[SelectionContextMenu] Failed to get bounding rect",
-              e,
-            );
+          } catch {
             setPosition(null);
             setSelectedRect(null);
+            currentRangeRef.current = null;
           }
         } else {
           setPosition(null);
           setSelectedRect(null);
+          currentRangeRef.current = null;
         }
-      }, 10);
+      }, 20);
     };
 
-    const container = containerRef.current;
-    if (container) {
-      container.addEventListener("mouseup", handleMouseUp);
-    }
-    return () => {
-      if (container) {
-        container.removeEventListener("mouseup", handleMouseUp);
+    const handleMouseDown = (e: MouseEvent) => {
+      if (menuRef.current?.contains(e.target as Node)) return;
+      if (!showNoteInput) {
+        setPosition(null);
+        setShowHighlightColors(false);
       }
     };
-  }, [containerRef, isAddingNote]);
+
+    document.addEventListener("mouseup", handleMouseUp);
+    document.addEventListener("mousedown", handleMouseDown);
+
+    return () => {
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("mousedown", handleMouseDown);
+    };
+  }, [containerRef, showNoteInput]);
+
+  const dismiss = () => {
+    setPosition(null);
+    setShowNoteInput(false);
+    setShowHighlightColors(false);
+    setNote("");
+    currentRangeRef.current = null;
+  };
 
   const handleAskZ = async () => {
     if (!selectedText) return;
-    const prompt = `Can you explain this excerpt from the material: "${selectedText}"?`;
-    setPosition(null);
+    const prompt = `Can you explain this from my material: "${selectedText}"`;
+    dismiss();
     try {
       await sendMessage(prompt);
-      toast.success("Query sent to Z.");
     } catch {
-      toast.error("Failed to send query.");
+      toast.error("Failed to send to Z.");
     }
   };
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(selectedText);
+  const handleCopy = async () => {
+    if (!selectedText) return;
+    await navigator.clipboard.writeText(selectedText);
     setCopied(true);
+    toast.success("Copied to clipboard.");
     setTimeout(() => {
       setCopied(false);
-      setPosition(null);
-    }, 1000);
-    toast.success("Text copied to clipboard.");
+      dismiss();
+    }, 900);
   };
 
   const handleSaveNote = () => {
     if (!selectedText) return;
     addNote("Snippet", selectedText);
-    setPosition(null);
+    toast.success("Saved to notes.");
+    dismiss();
   };
 
-  const handleHighlight = (color: string) => {
+  const handleHighlight = (colorId: string) => {
     if (!selectedText || !selectedRect || !onHighlight) return;
-    onHighlight(selectedText, selectedRect, color, note.trim() || undefined);
-    setPosition(null);
-    setNote("");
-    setIsAddingNote(false);
+    onHighlight(
+      selectedText,
+      selectedRect,
+      colorId,
+      note.trim() || undefined,
+      currentRangeRef.current ?? undefined,
+    );
+    toast.success("Highlight saved.");
+    dismiss();
   };
 
-  const colors = [
-    { id: "yellow", class: "bg-yellow-400" },
-    { id: "pink", class: "bg-pink-400" },
-    { id: "green", class: "bg-green-400" },
-    { id: "blue", class: "bg-blue-400" },
-  ];
+  if (!position) return null;
 
   return (
     <AnimatePresence>
       {position && (
         <motion.div
           ref={menuRef}
-          initial={{ opacity: 0, scale: 0.9, y: 10 }}
+          initial={{ opacity: 0, scale: 0.92, y: 6 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.9, y: 10 }}
+          exit={{ opacity: 0, scale: 0.92, y: 6 }}
+          transition={{ duration: 0.15, ease: "easeOut" }}
           onMouseDown={(e) => e.stopPropagation()}
           onMouseUp={(e) => e.stopPropagation()}
-          className={cn(
-            "absolute z-100 flex flex-col bg-background/95 backdrop-blur-md border border-border/50 shadow-xl overflow-hidden",
-            isAddingNote ? "rounded-2xl w-64" : "rounded-full",
-          )}
+          className="absolute z-100 select-none"
           style={{
             left: `${position.x}px`,
             top: `${position.y}px`,
             transform: "translateX(-50%) translateY(-100%)",
           }}
         >
-          <div className="flex items-center gap-1 p-1">
-            <button
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={handleAskZ}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-semibold text-primary hover:bg-primary/10 rounded-full transition-colors whitespace-nowrap"
-            >
-              <Sparkles className="size-3" />
-              Ask Z
-            </button>
-
-            <div className="w-px h-3 bg-border/50 mx-0.5" />
-
-            <button
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={handleCopy}
-              className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors"
-              title="Copy"
-            >
-              {copied ? (
-                <Check className="size-3 text-green-500" />
-              ) : (
-                <Copy className="size-3" />
-              )}
-            </button>
-
-            <button
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={handleSaveNote}
-              className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors"
-              title="Save Note"
-            >
-              <Save className="size-3" />
-            </button>
-
-            {onHighlight && (
-              <>
-                <div className="w-px h-3 bg-border/50 mx-0.5" />
-                <button
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => setIsAddingNote(!isAddingNote)}
-                  className={cn(
-                    "p-1.5 rounded-full transition-colors",
-                    isAddingNote
-                      ? "text-primary bg-primary/10"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted",
-                  )}
-                  title="Attach Note"
-                >
-                  <Highlighter className="size-3" />
-                </button>
-                {!isAddingNote && (
-                  <div className="flex items-center gap-1.5 px-2">
-                    {colors.map((c) => (
-                      <button
-                        key={c.id}
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => handleHighlight(c.id)}
-                        className={cn(
-                          "size-3 rounded-full hover:scale-125 transition-transform shadow-sm border border-black/10",
-                          c.class,
-                        )}
-                        title={`Highlight ${c.id}`}
-                      />
-                    ))}
-                  </div>
-                )}
-              </>
+          <div
+            className={cn(
+              "bg-white border border-slate-200/90 shadow-xl shadow-slate-200/60 overflow-hidden flex flex-col",
+              showNoteInput ? "rounded-[20px] w-64" : "rounded-full",
             )}
-          </div>
+          >
+            {/* Main action row */}
+            <div className="flex items-center gap-0.5 px-1.5 py-1.5">
+              {/* Ask Z — primary action */}
+              <button
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={handleAskZ}
+                className="flex items-center gap-1.5 rounded-full bg-[#0C60FC] px-3.5 py-1.5 text-[11px] font-extrabold text-white hover:bg-[#0952d8] transition-colors whitespace-nowrap shadow-xs"
+              >
+                <Sparkles className="h-3 w-3" />
+                Ask Z
+              </button>
 
-          {isAddingNote && (
-            <div className="px-3 pb-3 pt-1 border-t border-border/40">
-              <textarea
-                autoFocus
-                placeholder="Type your note here..."
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                className="w-full bg-transparent text-[11px] font-mono placeholder:text-muted-foreground/40 resize-none focus:outline-none min-h-15 leading-relaxed"
-              />
-              <div className="flex items-center justify-between mt-2">
-                <span className="text-[9px] font-mono text-muted-foreground/50 uppercase tracking-widest">
-                  Select color to save
-                </span>
-                <div className="flex items-center gap-1.5">
-                  {colors.map((c) => (
-                    <button
-                      key={c.id}
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => handleHighlight(c.id)}
-                      className={cn(
-                        "size-3 rounded-full hover:scale-125 transition-transform shadow-sm border border-black/10",
-                        c.class,
-                      )}
-                      title={`Save with ${c.id}`}
-                    />
-                  ))}
+              <div className="w-px h-4 bg-slate-200 mx-1" />
+
+              {/* Copy */}
+              <button
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={handleCopy}
+                title="Copy"
+                className={cn(
+                  "flex h-7 w-7 items-center justify-center rounded-full transition-colors",
+                  copied
+                    ? "bg-emerald-50 text-emerald-600"
+                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-900",
+                )}
+              >
+                {copied ? (
+                  <Check className="h-3.5 w-3.5" />
+                ) : (
+                  <Copy className="h-3.5 w-3.5" />
+                )}
+              </button>
+
+              {/* Save Note */}
+              <button
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  setShowHighlightColors(false);
+                  setShowNoteInput((v) => !v);
+                }}
+                title="Save note"
+                className={cn(
+                  "flex h-7 w-7 items-center justify-center rounded-full transition-colors",
+                  showNoteInput
+                    ? "bg-amber-50 text-amber-600"
+                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-900",
+                )}
+              >
+                <StickyNote className="h-3.5 w-3.5" />
+              </button>
+
+              {/* Highlight toggle — only shown when onHighlight is wired */}
+              {onHighlight && (
+                <>
+                  <button
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      setShowNoteInput(false);
+                      setShowHighlightColors((v) => !v);
+                    }}
+                    title="Highlight"
+                    className={cn(
+                      "flex h-7 w-7 items-center justify-center rounded-full transition-colors",
+                      showHighlightColors
+                        ? "bg-blue-50 text-[#0C60FC]"
+                        : "text-slate-500 hover:bg-slate-100 hover:text-slate-900",
+                    )}
+                  >
+                    <Highlighter className="h-3.5 w-3.5" />
+                  </button>
+
+                  {/* Inline colour swatches when not in note mode */}
+                  {showHighlightColors && !showNoteInput && (
+                    <>
+                      <div className="w-px h-4 bg-slate-200 mx-1" />
+                      <div className="flex items-center gap-1.5 pr-1">
+                        {HIGHLIGHT_COLORS.map((c) => (
+                          <button
+                            key={c.id}
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => handleHighlight(c.id)}
+                            title={c.label}
+                            className={cn(
+                              "h-4 w-4 rounded-full border-2 border-white shadow-sm hover:scale-125 transition-transform",
+                              c.bg,
+                            )}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+
+              {/* Dismiss */}
+              <button
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={dismiss}
+                title="Dismiss"
+                className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+
+            {/* Note panel (expands below) */}
+            {showNoteInput && (
+              <div className="px-3.5 pb-3.5 pt-1 border-t border-slate-100">
+                <textarea
+                  autoFocus
+                  placeholder="Add a note to this snippet…"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  className="w-full bg-transparent text-[11.5px] font-medium text-slate-800 placeholder:text-slate-400 resize-none focus:outline-none leading-relaxed"
+                  rows={3}
+                />
+
+                <div className="flex items-center justify-between mt-2">
+                  <button
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={handleSaveNote}
+                    className="rounded-full bg-slate-950 px-3.5 py-1 text-[10.5px] font-extrabold text-white hover:bg-[#0C60FC] transition-colors"
+                  >
+                    Save note
+                  </button>
+
+                  {onHighlight && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mr-0.5">
+                        + highlight
+                      </span>
+                      {HIGHLIGHT_COLORS.map((c) => (
+                        <button
+                          key={c.id}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => handleHighlight(c.id)}
+                          title={`Highlight ${c.label}`}
+                          className={cn(
+                            "h-3.5 w-3.5 rounded-full border-2 border-white shadow-sm hover:scale-125 transition-transform",
+                            c.bg,
+                          )}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </motion.div>
       )}
     </AnimatePresence>

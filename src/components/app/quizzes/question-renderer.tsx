@@ -156,6 +156,13 @@ export function QuestionTypeBadge({ type }: { type: string }) {
   );
 }
 
+function cleanOptionText(text: string): string {
+  if (typeof text !== "string") return String(text ?? "");
+  return text
+    .replace(/^(\(?[A-Za-z0-9][\)\.\:\-\]]|\b[A-Za-z0-9][\)\.\:\-])\s*/, "")
+    .trim();
+}
+
 export function QuizOptionBtn({
   opt,
   index,
@@ -176,6 +183,7 @@ export function QuizOptionBtn({
   onClick: () => void;
 }) {
   const letter = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[index];
+  const cleanedContent = cleanOptionText(opt);
 
   const isWrongSelected = feedbackState === "wrong" && selected;
   const isRevealedCorrect =
@@ -211,7 +219,7 @@ export function QuizOptionBtn({
         {letter}
       </span>
       <span className="leading-snug flex-1">
-        <QuestionMarkdown content={opt} className="prose-p:leading-snug" />
+        <QuestionMarkdown content={cleanedContent} className="prose-p:leading-snug" />
       </span>
       {(isCorrectSelected || isRevealedCorrect) && (
         <CheckCircle2 className="h-4 w-4 text-emerald-600 ml-auto shrink-0" />

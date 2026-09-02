@@ -9,6 +9,7 @@ import {
   useQueryParams,
   usePublicTimetables,
   useTimetableSocket,
+  useDebounce,
 } from "@/hooks";
 import {
   GuestReminderModal,
@@ -61,20 +62,53 @@ export default function TimetablePage() {
   const [selectedPaperForReminder, setSelectedPaperForReminder] =
     useState<GuestReminderPaper | null>(null);
 
+  // Local search state decoupled from URL for smooth typing
+  const [searchInput, setSearchInput] = useState(rawStudentId || rawSearch);
+  const debouncedSearch = useDebounce(searchInput, 350);
+
+  // Sync debounced search to URL query parameters
+  useEffect(() => {
+    const trimmed = debouncedSearch.trim();
+    if (/^\d{7,10}$/.test(trimmed)) {
+      if (rawStudentId !== trimmed) {
+        setQueryParams({ search: null, studentId: trimmed, page: 1 });
+      }
+    } else {
+      if (rawSearch !== trimmed) {
+        setQueryParams({ search: trimmed || null, studentId: null, page: 1 });
+      }
+    }
+  }, [debouncedSearch]);
+
+  // Sync URL changes back to local input if changed externally
+  useEffect(() => {
+    const currentUrlParam = rawStudentId || rawSearch;
+    if (currentUrlParam !== searchInput && (currentUrlParam || searchInput === "")) {
+      setSearchInput(currentUrlParam);
+    }
+  }, [rawSearch, rawStudentId]);
+
+  // Immediate submit handler
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = searchInput.trim();
+    if (/^\d{7,10}$/.test(trimmed)) {
+      setQueryParams({ search: null, studentId: trimmed, page: 1 });
+    } else {
+      setQueryParams({ search: trimmed || null, studentId: null, page: 1 });
+    }
+  };
+
+  const handleChipClick = (tag: string) => {
+    setSearchInput(tag);
+    setQueryParams({ search: tag, studentId: null, page: 1 });
+  };
+
   // Determine if rawSearch is an 8-digit Student ID
   const isDigitsOnly = /^\d{7,10}$/.test(rawSearch.trim());
   const effectiveStudentId =
     rawStudentId || (isDigitsOnly ? rawSearch.trim() : "");
   const effectiveCourseSearch = !isDigitsOnly ? rawSearch : "";
-
-  const setSearchInput = (val: string) => {
-    const trimmed = val.trim();
-    if (/^\d{7,10}$/.test(trimmed)) {
-      setQueryParams({ search: null, studentId: trimmed, page: 1 });
-    } else {
-      setQueryParams({ search: val || null, studentId: null, page: 1 });
-    }
-  };
 
   const setPage = (p: number) => setQueryParams({ page: p > 1 ? p : null });
 
@@ -235,19 +269,15 @@ export default function TimetablePage() {
 
             {/* Universal Search Box */}
             <form
-              onSubmit={(e) => e.preventDefault()}
+              onSubmit={handleSearchSubmit}
               className="mt-10 flex max-w-4xl flex-col gap-2 rounded-[22px] border border-slate-200 bg-white p-2 shadow-[0_18px_60px_rgba(15,23,42,.1)] sm:flex-row"
               style={{ borderRadius: "22px" }}
             >
-              <div className="flex min-w-0 flex-1 items-center gap-3 px-3">
-                {isLoading ? (
-                  <Loader2 className="h-5 w-5 animate-spin text-[#0C60FC]" />
-                ) : (
-                  <Search className="h-5 w-5 text-slate-400" />
-                )}
+              <div className="flex flex-1 items-center gap-3 pl-3">
+                <Search className="h-5 w-5 text-slate-400" />
                 <input
                   type="text"
-                  value={rawStudentId || rawSearch}
+                  value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                   placeholder="Type a course code (e.g. DCIT 205) or 8-digit Student ID"
                   className="min-w-0 flex-1 bg-transparent py-3.5 text-sm font-semibold text-slate-950 outline-none placeholder:text-slate-400"
@@ -269,7 +299,7 @@ export default function TimetablePage() {
                 <button
                   key={tag}
                   type="button"
-                  onClick={() => setSearchInput(tag)}
+                  onClick={() => handleChipClick(tag)}
                   className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-slate-600 transition hover:border-blue-300 hover:text-[#0C60FC]"
                 >
                   {tag}
