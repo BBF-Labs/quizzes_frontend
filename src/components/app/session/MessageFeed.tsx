@@ -62,9 +62,9 @@ export function MessageFeed({
   return (
     <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
       {messages.map((msg) => {
-        if (msg.type === "directive") {
-          // Directive messages without a parsed directive object fall back to a plain bubble
-          if (!msg.directive) {
+        if (msg.type === "directive" || msg.type === "artifact" || Boolean((msg as any).artifact) || Boolean(msg.directive)) {
+          // Directive messages without a parsed directive or artifact object fall back to a plain bubble
+          if (!msg.directive && !(msg as any).artifact) {
             return <MessageBubble key={msg.id} message={msg} />;
           }
 
