@@ -403,7 +403,7 @@ export default function PrivateTimetablePage() {
 
                 <div className="flex flex-wrap items-center gap-2">
                   <Select value={selectedSemester} onValueChange={setSelectedSemester}>
-                    <SelectTrigger className="h-9 rounded-xl border-slate-200 bg-[#F7F9FC] px-3 py-2 text-xs font-bold text-slate-700 shadow-2xs hover:bg-white transition cursor-pointer">
+                    <SelectTrigger className="h-9 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-2xs hover:border-[#0C60FC] hover:bg-slate-50 transition cursor-pointer">
                       <SelectValue placeholder="Select Semester" />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl border-slate-200 bg-white font-sans text-xs shadow-lg">
@@ -416,7 +416,7 @@ export default function PrivateTimetablePage() {
                   </Select>
 
                   <Select value={selectedYear} onValueChange={setSelectedYear}>
-                    <SelectTrigger className="h-9 rounded-xl border-slate-200 bg-[#F7F9FC] px-3 py-2 text-xs font-bold text-slate-700 shadow-2xs hover:bg-white transition cursor-pointer">
+                    <SelectTrigger className="h-9 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-2xs hover:border-[#0C60FC] hover:bg-slate-50 transition cursor-pointer">
                       <SelectValue placeholder="Select Academic Year" />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl border-slate-200 bg-white font-sans text-xs shadow-lg">
