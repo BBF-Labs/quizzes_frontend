@@ -161,9 +161,9 @@ export default function AppHomePage() {
         </section>
 
         {/* Primary Row: Next Best Move Card + Weekly Goal Widget */}
-        <section className="grid gap-4 xl:grid-cols-[1.45fr_.75fr]">
+        <section className="grid gap-4 xl:grid-cols-[1.45fr_.75fr] items-stretch">
           {/* Next Best Move Card */}
-          <div className="relative overflow-hidden rounded-[30px] bg-[#0C60FC] p-6 text-white shadow-xl shadow-blue-200/50 sm:p-8">
+          <div className="relative overflow-hidden rounded-[30px] bg-[#0C60FC] p-6 text-white shadow-xl shadow-blue-200/50 sm:p-8 flex flex-col justify-between h-full">
             <div className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-[#DFFF61]/25 blur-3xl" />
             <div className="relative">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -215,7 +215,7 @@ export default function AppHomePage() {
           </div>
 
           {/* Weekly Goal Widget */}
-          <aside className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6 flex flex-col justify-between">
+          <aside className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6 flex flex-col justify-between h-full">
             <div>
               <div className="flex items-center justify-between">
                 <div>

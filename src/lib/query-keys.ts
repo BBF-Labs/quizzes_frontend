@@ -76,6 +76,11 @@ export const queryKeys = {
   },
   timetable: {
     root: ["timetable"] as const,
+    overview: (params?: {
+      semester?: string;
+      academicYear?: string;
+      date?: string;
+    }) => [...queryKeys.timetable.root, "overview", params] as const,
     mine: (semester: string, academicYear: string) =>
       [...queryKeys.timetable.root, "mine", semester, academicYear] as const,
   },

@@ -11,6 +11,7 @@ import {
 } from "react";
 import { AnimatePresence } from "framer-motion";
 import { Users, Sparkles, Loader2 } from "lucide-react";
+import { Loader } from "@/components/common/loader";
 import { toast } from "sonner";
 import { nanoid } from "nanoid";
 import { api } from "@/lib/api";
@@ -289,12 +290,7 @@ export function AppSessionLayout({ children, sessionId }: AppSessionLayoutProps)
     <AppLayoutContext.Provider value={contextValue}>
       <div className="flex flex-col h-screen bg-[#FAF9F6] text-foreground overflow-hidden">
         {isLoading ? (
-          <div className="flex-1 flex flex-col items-center justify-center p-8 gap-4">
-            <Loader2 className="size-8 animate-spin text-primary/40" />
-            <p className="text-xs font-mono text-muted-foreground animate-pulse">
-              Connecting to study partner session...
-            </p>
-          </div>
+          <Loader message="Connecting to study session..." />
         ) : error &&
           (error as { response?: { status: number } }).response
             ?.status === 403 ? (

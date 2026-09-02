@@ -2,32 +2,35 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { format } from "date-fns";
 import {
-  Calendar as CalendarIcon,
+  format,
+  addDays,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  isSameMonth,
+  isSameDay,
+  isToday,
+  addMonths,
+  subMonths,
+} from "date-fns";
+import {
   Clock,
   MapPin,
-  Plus,
-  ArrowRight,
-  BookOpen,
-  CheckCircle2,
-  AlertCircle,
-  Search,
-  CheckSquare,
-  Square,
   ListTodo,
   Check,
   BarChart3,
   Flame,
   Trash2,
   Loader2,
+  Search,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
-import {
-  useMyTimetable,
-  type IExamSessionEntry,
-} from "@/hooks/app/use-timetable";
+import { useTimetableOverview } from "@/hooks/app/use-timetable-overview";
 import {
   useTasks,
   useCreateTask,
@@ -35,122 +38,71 @@ import {
   useDeleteTask,
 } from "@/hooks/app/use-tasks";
 import type { ITask } from "@/types/task";
-import { useMyCourses } from "@/hooks/app/use-user-courses";
+import type { ITimetableWeekEvent, TimetableEventType } from "@/types/timetable";
 import { useIsMobile } from "@/hooks";
-import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
 import { getCurrentAcademicYear } from "@/lib/academic-year";
 
 type TabView = "week" | "month" | "agenda" | "exams";
 
-const WEEK_DAYS = [
-  { day: "MON", date: "12", isToday: true, dotColor: "bg-[#DFFF61]" },
-  { day: "TUE", date: "13", isToday: false, dotColor: "bg-slate-300" },
-  { day: "WED", date: "14", isToday: false, dotColor: "bg-violet-400" },
-  { day: "THU", date: "15", isToday: false, dotColor: "bg-amber-400" },
-  { day: "FRI", date: "16", isToday: false, dotColor: "bg-emerald-400" },
-  { day: "SAT", date: "17", isToday: false, dotColor: "bg-cyan-400" },
-  { day: "SUN", date: "18", isToday: false, dotColor: "bg-rose-400" },
+const DOT_COLORS = [
+  "bg-[#0C60FC]",
+  "bg-violet-400",
+  "bg-amber-400",
+  "bg-emerald-400",
+  "bg-cyan-400",
+  "bg-slate-300",
+  "bg-rose-400",
 ];
 
-// Events for the week grid. Each event has a day (1-5 = MON-FRI in the grid)
-// plus a row range. The same data drives both the desktop grid and the
-// mobile-friendly list view.
-interface WeekEvent {
-  title: string;
-  meta: string;
-  day: number; // 1=MON, 2=TUE, 3=WED, 4=THU, 5=FRI
-  startRow: number;
-  endRow: number;
-  tone: "blue" | "violet" | "amber" | "cyan" | "slate" | "ink";
+const WORKLOAD_BAR_COLORS = [
+  "bg-[#0C60FC]",
+  "bg-[#0C60FC]",
+  "bg-blue-400",
+  "bg-blue-400",
+  "bg-blue-300",
+];
+
+function getEventStyle(type: TimetableEventType, idx = 0) {
+  switch (type) {
+    case "exam":
+      return { bg: "bg-slate-950", text: "text-white" };
+    case "lab":
+    case "tutorial":
+      return {
+        bg: "bg-violet-50",
+        text: "text-violet-700",
+        ring: "ring-1 ring-violet-200",
+      };
+    case "study_block":
+      return {
+        bg: "bg-emerald-50",
+        text: "text-emerald-700",
+        ring: "ring-1 ring-emerald-200",
+      };
+    case "lecture":
+    default: {
+      const palette = [
+        {
+          bg: "bg-blue-50",
+          text: "text-[#0C60FC]",
+          ring: "ring-1 ring-blue-200",
+        },
+        {
+          bg: "bg-amber-50",
+          text: "text-amber-800",
+          ring: "ring-1 ring-amber-200",
+        },
+        {
+          bg: "bg-cyan-50",
+          text: "text-cyan-800",
+          ring: "ring-1 ring-cyan-200",
+        },
+      ];
+      return palette[idx % palette.length];
+    }
+  }
 }
-
-const WEEK_EVENTS: WeekEvent[] = [
-  {
-    title: "DCIT 205 Lecture",
-    meta: "09:00–11:00 · Great Hall",
-    day: 1,
-    startRow: 2,
-    endRow: 4,
-    tone: "blue",
-  },
-  {
-    title: "UGRC 210 Tutorial",
-    meta: "13:00–14:30 · NNB 4",
-    day: 1,
-    startRow: 6,
-    endRow: 8,
-    tone: "slate",
-  },
-  {
-    title: "DCIT 207 Lecture",
-    meta: "08:00–10:00 · Balme Hall",
-    day: 2,
-    startRow: 1,
-    endRow: 3,
-    tone: "violet",
-  },
-  {
-    title: "MATH 223 Lecture",
-    meta: "11:00–13:00 · Maths 12",
-    day: 2,
-    startRow: 4,
-    endRow: 6,
-    tone: "amber",
-  },
-  {
-    title: "DCIT 201 Lecture",
-    meta: "10:00–12:00 · N Block",
-    day: 3,
-    startRow: 3,
-    endRow: 5,
-    tone: "cyan",
-  },
-  {
-    title: "MATH 223 Tutorial",
-    meta: "09:00–10:30 · Maths 4",
-    day: 4,
-    startRow: 2,
-    endRow: 4,
-    tone: "amber",
-  },
-  {
-    title: "Weekly review with Qz",
-    meta: "15:00–16:00",
-    day: 5,
-    startRow: 8,
-    endRow: 10,
-    tone: "ink",
-  },
-];
-
-const EVENT_TONE_CLS: Record<
-  WeekEvent["tone"],
-  { bg: string; text: string; ring?: string }
-> = {
-  blue: {
-    bg: "bg-blue-50",
-    text: "text-[#0C60FC]",
-    ring: "ring-1 ring-blue-200",
-  },
-  violet: {
-    bg: "bg-violet-50",
-    text: "text-violet-700",
-    ring: "ring-1 ring-violet-200",
-  },
-  amber: {
-    bg: "bg-amber-50",
-    text: "text-amber-800",
-    ring: "ring-1 ring-amber-200",
-  },
-  cyan: {
-    bg: "bg-cyan-50",
-    text: "text-cyan-800",
-    ring: "ring-1 ring-cyan-200",
-  },
-  slate: { bg: "bg-slate-100", text: "text-slate-700" },
-  ink: { bg: "bg-slate-950", text: "text-white" },
-};
 
 const TIME_SLOTS = [
   "08:00",
@@ -165,26 +117,29 @@ const TIME_SLOTS = [
   "17:00",
 ];
 
-const WEEK_DAY_LABELS = ["MON", "TUE", "WED", "THU", "FRI"] as const;
+const WEEK_DAY_LABELS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"] as const;
 
 export default function PrivateTimetablePage() {
-  const router = useRouter();
-  const { user } = useAuth();
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState<TabView>("week");
   const [selectedSemester, setSelectedSemester] = useState("Semester 1");
   const [selectedYear, setSelectedYear] = useState(getCurrentAcademicYear());
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [monthCursor, setMonthCursor] = useState<Date>(new Date());
   const [searchQuery, setSearchQuery] = useState("");
-  const [calendarDate, setCalendarDate] = useState<Date | undefined>(
-    new Date(),
-  );
 
-  // Live Tasks Integration
-  const [taskFilter, setTaskFilter] = useState<"all" | "active" | "completed">(
-    "all",
-  );
+  const selectedDateStr = format(selectedDate, "yyyy-MM-dd");
+
+  // ─── Timetable Aggregated Overview Query ───────────────────────────────────
+  const { data: overview, isLoading: overviewLoading } = useTimetableOverview({
+    semester: selectedSemester,
+    academicYear: selectedYear,
+    date: selectedDateStr,
+  });
+
+  // ─── Live Tasks State & Mutations ──────────────────────────────────────────
+  const [taskFilter, setTaskFilter] = useState<"all" | "active" | "completed">("all");
   const [newTaskTitle, setNewTaskTitle] = useState("");
-  const [newTaskSubject, setNewTaskSubject] = useState("");
 
   const { data: tasksData, isLoading: tasksLoading } = useTasks(
     taskFilter === "all" ? undefined : taskFilter,
@@ -193,36 +148,17 @@ export default function PrivateTimetablePage() {
   const updateTaskMutation = useUpdateTask();
   const deleteTaskMutation = useDeleteTask();
 
-  const { data: timetables = [], isLoading } = useMyTimetable(
-    selectedSemester,
-    selectedYear,
+  const tasks = useMemo(
+    () => tasksData?.tasks || overview?.tasks?.tasks || [],
+    [tasksData, overview?.tasks?.tasks],
   );
+  const taskMetadata = tasksData?.metadata ||
+    overview?.tasks?.metadata || {
+      completed: 0,
+      total: 0,
+      progress: 0,
+    };
 
-  const sortedExams = useMemo(() => {
-    return [...timetables].sort(
-      (a, b) =>
-        new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
-    );
-  }, [timetables]);
-
-  const daysToFirstExam = useMemo(() => {
-    if (sortedExams.length === 0) return 18;
-    const firstMs = new Date(sortedExams[0].scheduledAt).getTime();
-    const diff = Math.max(
-      0,
-      Math.ceil((firstMs - Date.now()) / (1000 * 60 * 60 * 24)),
-    );
-    return diff || 18;
-  }, [sortedExams]);
-
-  const tasks = useMemo(() => tasksData?.tasks || [], [tasksData]);
-  const metadata = tasksData?.metadata || {
-    completed: 0,
-    total: 0,
-    progress: 0,
-  };
-
-  // Task actions
   const toggleTask = async (task: ITask) => {
     const taskId = task.id || task._id;
     if (!taskId) return;
@@ -246,10 +182,8 @@ export default function PrivateTimetablePage() {
     try {
       await createTaskMutation.mutateAsync({
         title: newTaskTitle.trim(),
-        subject: newTaskSubject.trim() || undefined,
       });
       setNewTaskTitle("");
-      setNewTaskSubject("");
       toast.success("Task created!");
     } catch (err: any) {
       toast.error(err?.message || "Failed to create task");
@@ -267,10 +201,82 @@ export default function PrivateTimetablePage() {
     }
   };
 
+  // ─── Header & Event Data from Overview ─────────────────────────────────────
+  const header = overview?.header || {
+    activeDate: new Date().toISOString(),
+    dayName: format(selectedDate, "EEEE"),
+    formattedDate: format(selectedDate, "EEEE, d MMMM"),
+    academicWeek: 9,
+    todayEventsCount: 4,
+    daysToFirstExam: 18,
+    upNext: null,
+    isSynced: true,
+  };
+
+  const weekDays = useMemo(() => {
+    if (overview?.weekDays && overview.weekDays.length > 0) {
+      return overview.weekDays;
+    }
+    const monday = startOfWeek(selectedDate, { weekStartsOn: 1 });
+    return Array.from({ length: 7 }, (_, i) => {
+      const cur = addDays(monday, i);
+      return {
+        date: format(cur, "yyyy-MM-dd"),
+        day: format(cur, "EEE").toUpperCase(),
+        dayNumber: format(cur, "d"),
+        isToday: isToday(cur),
+        isSelected: isSameDay(cur, selectedDate),
+        eventCount: 0,
+        hasExams: false,
+      };
+    });
+  }, [overview?.weekDays, selectedDate]);
+
+  const weekEvents: ITimetableWeekEvent[] = overview?.weekEvents || [];
+  const exams = overview?.exams || [];
+  const agenda = overview?.agenda || [];
+  const workload = overview?.workloadMetrics || {
+    dailyHours: [
+      { day: "Mon", date: selectedDateStr, hrs: 4.5 },
+      { day: "Tue", date: selectedDateStr, hrs: 6.0 },
+      { day: "Wed", date: selectedDateStr, hrs: 4.0 },
+      { day: "Thu", date: selectedDateStr, hrs: 3.5 },
+      { day: "Fri", date: selectedDateStr, hrs: 2.5 },
+    ],
+    weeklyTotalHours: 20.5,
+    streakDays: 8,
+  };
+
+  // ─── Filtered Agenda for Search ────────────────────────────────────────────
+  const filteredAgenda = useMemo(() => {
+    if (!searchQuery.trim()) return agenda;
+    const q = searchQuery.toLowerCase();
+    return agenda
+      .map((grp) => ({
+        ...grp,
+        events: grp.events.filter(
+          (e) =>
+            e.title.toLowerCase().includes(q) ||
+            e.courseCode.toLowerCase().includes(q) ||
+            e.venue.toLowerCase().includes(q),
+        ),
+      }))
+      .filter((grp) => grp.events.length > 0);
+  }, [agenda, searchQuery]);
+
+  // ─── Month View Calendar Matrix ────────────────────────────────────────────
+  const monthDays = useMemo(() => {
+    const monthStart = startOfMonth(monthCursor);
+    const monthEnd = endOfMonth(monthCursor);
+    const startDate = startOfWeek(monthStart, { weekStartsOn: 1 });
+    const endDate = endOfWeek(monthEnd, { weekStartsOn: 1 });
+    return eachDayOfInterval({ start: startDate, end: endDate });
+  }, [monthCursor]);
+
   return (
     <div className="dash-grid min-h-screen px-4 pb-24 pt-6 sm:px-6 lg:px-8 lg:pb-12 text-slate-900 bg-[#F7F9FC]">
       <div className="mx-auto max-w-[1280px] space-y-4">
-        {/* Header Hero Banner */}
+        {/* ── Header Hero Banner ── */}
         <section className="relative overflow-hidden rounded-[28px] bg-[#131B27] p-5 text-white sm:p-7 shadow-xl">
           <div className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full bg-[#0C60FC]/30 blur-3xl" />
           <div className="relative flex flex-col gap-7 xl:flex-row xl:items-end xl:justify-between">
@@ -280,31 +286,40 @@ export default function PrivateTimetablePage() {
                 Synced with UG official timetable
               </div>
               <p className="mt-6 text-[10px] font-extrabold uppercase tracking-[.2em] text-blue-300">
-                Monday, 12 January · Week 9
+                {header.formattedDate} · Week {header.academicWeek}
               </p>
               <h1 className="mt-2 display text-3xl font-bold tracking-tight sm:text-5xl">
                 Your timetable.
               </h1>
               <p className="mt-3 max-w-xl text-sm leading-6 text-slate-400">
-                Up next:{" "}
-                <b className="text-white font-bold">
-                  DCIT 205 Algorithms lecture
-                </b>{" "}
-                at 9:00 AM · Great Hall. Three classes and one study block
-                today.
+                {header.upNext ? (
+                  <>
+                    Up next:{" "}
+                    <b className="text-white font-bold">{header.upNext.title}</b>{" "}
+                    at {header.upNext.time}.
+                  </>
+                ) : (
+                  <>
+                    Up next:{" "}
+                    <b className="text-white font-bold">Planned study block</b>.
+                    Track upcoming exams, lectures, and tasks below.
+                  </>
+                )}
               </p>
             </div>
 
             <div className="flex flex-wrap gap-2 sm:gap-3">
               <div className="min-w-24 rounded-2xl bg-white/7 p-4">
-                <p className="text-3xl font-bold text-white">4</p>
+                <p className="text-3xl font-bold text-white">
+                  {header.todayEventsCount}
+                </p>
                 <p className="mt-1 text-[9px] font-bold uppercase tracking-wider text-slate-400">
                   today
                 </p>
               </div>
               <div className="min-w-24 rounded-2xl bg-white/7 p-4">
                 <p className="text-3xl font-bold text-[#DFFF61]">
-                  {daysToFirstExam}
+                  {header.daysToFirstExam}
                 </p>
                 <p className="mt-1 text-[9px] font-bold uppercase tracking-wider text-slate-400">
                   days to exams
@@ -314,25 +329,25 @@ export default function PrivateTimetablePage() {
                 href="/app"
                 className="flex min-w-32 items-center justify-center rounded-2xl bg-[#0C60FC] px-5 py-4 text-xs font-extrabold text-white hover:bg-blue-700 transition"
               >
-                Start next block →
+                Start study session →
               </Link>
             </div>
           </div>
         </section>
 
-        {/* Main 2-Column Grid: Timetable Board + Calendar & Tasks Sidebar */}
+        {/* ── Main 2-Column Grid with Equal Height Stretching ── */}
         <div className="grid gap-5 xl:grid-cols-[1fr_380px] items-stretch">
-          {/* LEFT MAIN AREA */}
-          <div className="space-y-4">
-            {/* Board & Tab Selector Section */}
+          {/* ── LEFT MAIN BOARD ── */}
+          <div className="flex flex-col space-y-4 h-full">
+            {/* Board Selector & Tabs */}
             <section
               id="board"
-              className="panel p-4 sm:p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm"
+              className="panel p-4 sm:p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm shrink-0"
             >
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <p className="text-[10px] font-extrabold uppercase tracking-[.18em] text-[#0C60FC]">
-                    January 2026 · {selectedSemester}
+                    {format(selectedDate, "MMMM yyyy")} · {selectedSemester}
                   </p>
                   <h2 className="mt-1 text-lg font-bold text-slate-950">
                     Everything on your schedule
@@ -349,6 +364,15 @@ export default function PrivateTimetablePage() {
                     <option value="Semester 2">Semester 2</option>
                   </select>
 
+                  <select
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(e.target.value)}
+                    className="rounded-xl border border-slate-200 bg-[#F7F9FC] px-3 py-2 text-xs font-bold text-slate-700 outline-none cursor-pointer"
+                  >
+                    <option value="2025/2026">2025/2026</option>
+                    <option value="2024/2025">2024/2025</option>
+                  </select>
+
                   <div
                     id="tabs"
                     className="date-rail flex gap-1 overflow-x-auto rounded-xl bg-[#F0F3F8] p-1"
@@ -359,7 +383,7 @@ export default function PrivateTimetablePage() {
                         <button
                           key={tab}
                           onClick={() => setActiveTab(tab)}
-                          className={`shrink-0 rounded-lg px-3.5 py-2 text-[10px] font-extrabold capitalize transition ${
+                          className={`shrink-0 rounded-lg px-3.5 py-2 text-[10px] font-extrabold capitalize transition cursor-pointer ${
                             activeTab === tab
                               ? "bg-white text-slate-950 shadow-xs"
                               : "text-slate-500 hover:text-slate-900"
@@ -372,42 +396,50 @@ export default function PrivateTimetablePage() {
                 </div>
               </div>
 
-              {/* Date Selector Rail */}
+              {/* Dynamic 7-Day Selector Rail */}
               <div className="date-rail mt-5 grid grid-cols-7 gap-2 pb-1">
-                {WEEK_DAYS.map((d, idx) => (
-                  <div
-                    key={idx}
-                    className={`min-w-0 rounded-2xl p-2 sm:p-3 text-center transition ${
-                      d.isToday
-                        ? "bg-[#0C60FC] text-white shadow-md"
-                        : "bg-slate-50 text-slate-900"
+                {weekDays.map((d, i) => (
+                  <button
+                    key={d.date}
+                    type="button"
+                    onClick={() => setSelectedDate(new Date(d.date + "T00:00:00"))}
+                    className={`min-w-0 rounded-2xl p-2 sm:p-3 text-center transition cursor-pointer border ${
+                      d.isSelected
+                        ? "bg-[#0C60FC] text-white shadow-md border-[#0C60FC]"
+                        : d.isToday
+                          ? "bg-blue-50/80 border-blue-200 text-slate-900 font-extrabold"
+                          : "bg-slate-50 border-transparent text-slate-900 hover:bg-slate-100"
                     }`}
                   >
                     <p
-                      className={`text-[9px] font-bold uppercase ${d.isToday ? "text-blue-200" : "text-slate-400"}`}
+                      className={`text-[9px] font-bold uppercase ${
+                        d.isSelected ? "text-blue-200" : "text-slate-400"
+                      }`}
                     >
                       {d.day}
                     </p>
-                    <p className="mt-1 text-xl font-bold">{d.date}</p>
+                    <p className="mt-1 text-xl font-bold">{d.dayNumber}</p>
                     <i
-                      className={`mx-auto mt-2 block h-1.5 w-1.5 rounded-full ${d.dotColor}`}
+                      className={`mx-auto mt-2 block h-1.5 w-1.5 rounded-full ${
+                        d.isSelected ? "bg-white" : DOT_COLORS[i % DOT_COLORS.length]
+                      }`}
                     />
-                  </div>
+                  </button>
                 ))}
               </div>
             </section>
 
-            {/* TAB 1: WEEK VIEW */}
+            {/* ── TAB 1: WEEK VIEW ── */}
             {activeTab === "week" && (
-              <section className="space-y-4">
-                <div className="panel p-4 sm:p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm">
+              <section className="panel p-4 sm:p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm flex-1 flex flex-col justify-between min-h-[520px]">
+                <div>
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <h2 className="text-base font-bold text-slate-950">
-                        Week 9 · 12–16 January
+                        Week {header.academicWeek} · {format(selectedDate, "MMMM yyyy")}
                       </h2>
                       <p className="mt-1 text-[11px] font-semibold text-slate-500">
-                        Lectures, labs, tutorials and your planned study blocks.
+                        Lectures, labs, tutorials and planned study blocks.
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-3 text-[10px] font-bold text-slate-500">
@@ -420,109 +452,47 @@ export default function PrivateTimetablePage() {
                         Lab / tutorial
                       </span>
                       <span className="flex items-center gap-1.5">
-                        <i className="h-2 w-2 rounded-full bg-lime-400" />
-                        Study block
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <i className="h-2 w-2 rounded-full bg-rose-400" />
+                        <i className="h-2 w-2 rounded-full bg-slate-950" />
                         Exam
                       </span>
                     </div>
                   </div>
 
-                  {/* Desktop Timetable Grid */}
+                  {/* Desktop Week Time Grid (08:00 - 18:00) */}
                   <div className="mt-5 hidden lg:block">
-                    <div className="grid grid-cols-[60px_repeat(5,minmax(0,1fr))] gap-1 pb-2 text-center font-bold">
+                    <div className="grid grid-cols-[60px_repeat(7,minmax(0,1fr))] gap-1 pb-2 text-center font-bold">
                       <span />
-                      {WEEK_DAY_LABELS.map((label, idx) => {
-                        const isFirst = idx === 0;
-                        return (
-                          <span
-                            key={label}
-                            className={`rounded-lg py-1.5 text-[10px] ${
-                              isFirst
-                                ? "bg-blue-50 text-[#0C60FC]"
-                                : "text-slate-500"
-                            }`}
-                          >
-                            {label} {WEEK_DAYS[idx]?.date}
-                          </span>
-                        );
-                      })}
+                      {weekDays.map((d) => (
+                        <span
+                          key={d.date}
+                          className={`rounded-lg py-1.5 text-[10px] ${
+                            d.isSelected
+                              ? "bg-blue-50 text-[#0C60FC] font-extrabold"
+                              : "text-slate-500"
+                          }`}
+                        >
+                          {d.day} {d.dayNumber}
+                        </span>
+                      ))}
                     </div>
 
-                    <div className="grid grid-cols-[60px_repeat(5,minmax(0,1fr))] grid-rows-[repeat(10,48px)] gap-1">
+                    <div className="grid grid-cols-[44px_repeat(7,minmax(0,1fr))] grid-rows-[repeat(10,40px)] gap-1">
                       {TIME_SLOTS.map((t, i) => (
                         <span
                           key={t}
-                          className="text-[9px] font-extrabold uppercase text-slate-400"
+                          className="text-[9px] font-extrabold uppercase text-slate-400 pt-1"
                           style={{ gridColumn: 1, gridRow: i + 1 }}
                         >
                           {t}
                         </span>
                       ))}
 
-                      {WEEK_EVENTS.map((event, i) => {
-                        const tone = EVENT_TONE_CLS[event.tone];
+                      {weekEvents.map((event, idx) => {
+                        const style = getEventStyle(event.type, idx);
                         return (
                           <div
-                            key={i}
-                            className={`rounded-xl p-2 ${tone.bg} ${tone.text} ${tone.ring ?? ""}`}
-                            style={{
-                              gridColumn: event.day + 1,
-                              gridRow: `${event.startRow} / ${event.endRow}`,
-                            }}
-                          >
-                            <b className="block text-[11px] font-bold">
-                              {event.title}
-                            </b>
-                            <span className="text-[9px] opacity-80">
-                              {event.meta}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Tablet Timetable Grid (md only) */}
-                  <div className="mt-5 hidden md:block lg:hidden">
-                    <div className="grid grid-cols-[44px_repeat(5,minmax(0,1fr))] gap-1 pb-2 text-center font-bold">
-                      <span />
-                      {WEEK_DAY_LABELS.map((label, idx) => {
-                        const isFirst = idx === 0;
-                        return (
-                          <span
-                            key={label}
-                            className={`rounded-none py-1 text-[10px] ${
-                              isFirst
-                                ? "bg-blue-50 text-[#0C60FC]"
-                                : "text-slate-500"
-                            }`}
-                          >
-                            {label} {WEEK_DAYS[idx]?.date}
-                          </span>
-                        );
-                      })}
-                    </div>
-
-                    <div className="grid grid-cols-[44px_repeat(5,minmax(0,1fr))] grid-rows-[repeat(10,36px)] gap-1">
-                      {TIME_SLOTS.map((t, i) => (
-                        <span
-                          key={t}
-                          className="text-[9px] font-extrabold uppercase text-slate-400"
-                          style={{ gridColumn: 1, gridRow: i + 1 }}
-                        >
-                          {t}
-                        </span>
-                      ))}
-
-                      {WEEK_EVENTS.map((event, i) => {
-                        const tone = EVENT_TONE_CLS[event.tone];
-                        return (
-                          <div
-                            key={i}
-                            className={`rounded-none px-1.5 py-1 ${tone.bg} ${tone.text} ${tone.ring ?? ""}`}
+                            key={event.id}
+                            className={`rounded-xl px-2 py-1.5 transition ${style.bg} ${style.text} ${style.ring ?? ""}`}
                             style={{
                               gridColumn: event.day + 1,
                               gridRow: `${event.startRow} / ${event.endRow}`,
@@ -531,41 +501,44 @@ export default function PrivateTimetablePage() {
                             <b className="block truncate text-[10px] font-bold leading-tight">
                               {event.title}
                             </b>
+                            <span className="block truncate text-[9px] opacity-75 mt-0.5 font-semibold">
+                              {event.meta}
+                            </span>
                           </div>
                         );
                       })}
                     </div>
                   </div>
 
-                  {/* Mobile-friendly list fallback (visible below `md`) */}
-                  <div className="mt-5 space-y-3 md:hidden">
-                    {WEEK_EVENTS.length === 0 ? (
+                  {/* Mobile Schedule List */}
+                  <div className="mt-5 space-y-3 lg:hidden">
+                    {weekEvents.length === 0 ? (
                       <p className="rounded-2xl border border-dashed border-slate-200 p-6 text-center text-xs font-semibold text-slate-400">
-                        No classes scheduled this week.
+                        No events scheduled for this week.
                       </p>
                     ) : (
-                      WEEK_EVENTS.map((event, i) => {
-                        const tone = EVENT_TONE_CLS[event.tone];
-                        const dayLabel = WEEK_DAY_LABELS[event.day - 1];
-                        const dayDate = WEEK_DAYS[event.day - 1]?.date;
+                      weekEvents.map((event, idx) => {
+                        const style = getEventStyle(event.type, idx);
+                        const dayLabel = WEEK_DAY_LABELS[event.day - 1] || "DAY";
+                        const dayCard = weekDays[event.day - 1];
                         return (
                           <div
-                            key={i}
-                            className={`flex items-start gap-3 rounded-2xl p-3 ${tone.bg} ${tone.text} ${tone.ring ?? ""}`}
+                            key={event.id}
+                            className={`flex items-start gap-3 rounded-2xl p-3 ${style.bg} ${style.text} ${style.ring ?? ""}`}
                           >
-                            <span className="flex w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-white/70 px-1 py-1.5 text-center">
+                            <span className="flex w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-white/80 px-1 py-1.5 text-center">
                               <span className="text-[9px] font-extrabold uppercase tracking-wider">
                                 {dayLabel}
                               </span>
                               <span className="text-sm font-extrabold leading-none">
-                                {dayDate}
+                                {dayCard?.dayNumber}
                               </span>
                             </span>
                             <div className="min-w-0 flex-1">
                               <p className="text-xs font-bold leading-snug">
                                 {event.title}
                               </p>
-                              <p className="mt-0.5 text-[10px] opacity-80">
+                              <p className="mt-0.5 text-[10px] opacity-80 font-semibold">
                                 {event.meta}
                               </p>
                             </div>
@@ -578,264 +551,89 @@ export default function PrivateTimetablePage() {
               </section>
             )}
 
-            {/* TAB 2: MONTH VIEW */}
-            {activeTab === "month" && isMobile && (
-              <section className="panel rounded-none border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-                <div className="flex flex-col items-start gap-2">
-                  <h2 className="text-base font-bold text-slate-950">
-                    Month view isn't available on small screens
-                  </h2>
-                  <p className="text-xs font-semibold text-slate-500">
-                    Showing your week instead.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("week")}
-                    className="rounded-none border border-slate-200 bg-[#0C60FC] px-3 py-2 text-[10px] font-extrabold uppercase tracking-wider text-white"
-                  >
-                    Switch to week
-                  </button>
-                </div>
-              </section>
-            )}
-
-            {activeTab === "month" && !isMobile && (
-              <section className="panel p-4 sm:p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <h2 className="text-base font-bold text-slate-950">
-                      January 2026
-                    </h2>
-                    <p className="mt-1 text-[11px] font-semibold text-slate-500">
-                      Classes, study blocks and the exam window in one view.
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <button className="h-9 w-9 rounded-xl border border-slate-200 text-slate-500 font-bold hover:bg-slate-50">
-                      ‹
-                    </button>
-                    <button className="rounded-xl border border-slate-200 px-3 py-2 text-[10px] font-extrabold text-slate-600">
-                      Today
-                    </button>
-                    <button className="h-9 w-9 rounded-xl border border-slate-200 text-slate-500 font-bold hover:bg-slate-50">
-                      ›
-                    </button>
-                  </div>
-                </div>
-
-                <div className="mt-5 overflow-x-auto">
-                  <div className="min-w-[680px]">
-                    <div className="grid grid-cols-7 gap-1.5 pb-2 text-center text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
-                      <span>Mon</span>
-                      <span>Tue</span>
-                      <span>Wed</span>
-                      <span>Thu</span>
-                      <span>Fri</span>
-                      <span>Sat</span>
-                      <span>Sun</span>
+            {/* ── TAB 2: MONTH VIEW ── */}
+            {activeTab === "month" && (
+              <section className="panel p-4 sm:p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm flex-1 flex flex-col justify-between min-h-[520px]">
+                <div>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h2 className="text-base font-bold text-slate-950">
+                        {format(monthCursor, "MMMM yyyy")}
+                      </h2>
+                      <p className="mt-1 text-[11px] font-semibold text-slate-500">
+                        Full month calendar with scheduled classes and exams.
+                      </p>
                     </div>
-                    <div className="grid grid-cols-7 gap-1.5">
-                      {/* Out of month days */}
-                      <div className="min-h-[84px] rounded-2xl border border-dashed border-slate-200 p-2 opacity-45">
-                        <span className="text-[11px] font-bold text-slate-400">
-                          29
-                        </span>
-                      </div>
-                      <div className="min-h-[84px] rounded-2xl border border-dashed border-slate-200 p-2 opacity-45">
-                        <span className="text-[11px] font-bold text-slate-400">
-                          30
-                        </span>
-                      </div>
-                      <div className="min-h-[84px] rounded-2xl border border-dashed border-slate-200 p-2 opacity-45">
-                        <span className="text-[11px] font-bold text-slate-400">
-                          31
-                        </span>
-                      </div>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => setMonthCursor(subMonths(monthCursor, 1))}
+                        className="h-8 w-8 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center justify-center cursor-pointer"
+                      >
+                        <ChevronLeft className="size-4" />
+                      </button>
+                      <button
+                        onClick={() => setMonthCursor(new Date())}
+                        className="rounded-xl border border-slate-200 px-3 py-1.5 text-[10px] font-extrabold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                      >
+                        Current Month
+                      </button>
+                      <button
+                        onClick={() => setMonthCursor(addMonths(monthCursor, 1))}
+                        className="h-8 w-8 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center justify-center cursor-pointer"
+                      >
+                        <ChevronRight className="size-4" />
+                      </button>
+                    </div>
+                  </div>
 
-                      {/* Days 1 to 31 */}
-                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-900">
-                          1
-                        </span>
-                        <p className="mt-2 rounded-md bg-slate-100 px-1.5 py-1 text-[9px] font-bold text-slate-600">
-                          Holiday
-                        </p>
+                  <div className="mt-5 overflow-x-auto">
+                    <div className="min-w-[640px]">
+                      <div className="grid grid-cols-7 gap-1.5 pb-2 text-center text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                        <span>Mon</span>
+                        <span>Tue</span>
+                        <span>Wed</span>
+                        <span>Thu</span>
+                        <span>Fri</span>
+                        <span>Sat</span>
+                        <span>Sun</span>
                       </div>
-                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-900">
-                          2
-                        </span>
-                      </div>
-                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-400">
-                          3
-                        </span>
-                      </div>
-                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-400">
-                          4
-                        </span>
-                      </div>
-
-                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-900">
-                          5
-                        </span>
-                        <p className="mt-2 rounded-md bg-blue-50 px-1.5 py-1 text-[9px] font-bold text-[#0C60FC]">
-                          3 classes
-                        </p>
-                      </div>
-                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-900">
-                          6
-                        </span>
-                        <p className="mt-2 rounded-md bg-violet-50 px-1.5 py-1 text-[9px] font-bold text-violet-700">
-                          3 classes
-                        </p>
-                      </div>
-                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-900">
-                          7
-                        </span>
-                        <p className="mt-2 rounded-md bg-blue-50 px-1.5 py-1 text-[9px] font-bold text-[#0C60FC]">
-                          2 classes
-                        </p>
-                      </div>
-                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-900">
-                          8
-                        </span>
-                        <p className="mt-2 rounded-md bg-blue-50 px-1.5 py-1 text-[9px] font-bold text-[#0C60FC]">
-                          3 classes
-                        </p>
-                      </div>
-                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-900">
-                          9
-                        </span>
-                        <p className="mt-2 rounded-md bg-lime-100 px-1.5 py-1 text-[9px] font-bold text-lime-900">
-                          Review · Qz
-                        </p>
-                      </div>
-                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-400">
-                          10
-                        </span>
-                      </div>
-                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-400">
-                          11
-                        </span>
-                      </div>
-
-                      {/* Today */}
-                      <div className="min-h-[84px] rounded-2xl border border-[#0C60FC] bg-blue-50/60 p-2 ring-2 ring-[#0C60FC]">
-                        <span className="text-[11px] font-extrabold text-[#0C60FC]">
-                          12 · Today
-                        </span>
-                        <p className="mt-2 rounded-md bg-rose-100 px-1.5 py-1 text-[9px] font-bold text-rose-700">
-                          EXAM · DCIT 205
-                        </p>
-                        <p className="mt-1 rounded-md bg-white px-1.5 py-1 text-[9px] font-bold text-slate-600">
-                          +2 classes
-                        </p>
-                      </div>
-
-                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-900">
-                          13
-                        </span>
-                        <p className="mt-2 rounded-md bg-rose-100 px-1.5 py-1 text-[9px] font-bold text-rose-700">
-                          EXAM · UGRC 210
-                        </p>
-                      </div>
-                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-900">
-                          14
-                        </span>
-                        <p className="mt-2 rounded-md bg-rose-100 px-1.5 py-1 text-[9px] font-bold text-rose-700">
-                          EXAM · DCIT 207
-                        </p>
-                        <p className="mt-1 rounded-md bg-violet-50 px-1.5 py-1 text-[9px] font-bold text-violet-700">
-                          OS practical
-                        </p>
-                      </div>
-                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-900">
-                          15
-                        </span>
-                        <p className="mt-2 rounded-md bg-rose-100 px-1.5 py-1 text-[9px] font-bold text-rose-700">
-                          EXAM · MATH 221
-                        </p>
-                      </div>
-                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-900">
-                          16
-                        </span>
-                        <p className="mt-2 rounded-md bg-rose-100 px-1.5 py-1 text-[9px] font-bold text-rose-700">
-                          EXAM · BUSA 301
-                        </p>
-                      </div>
-                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-400">
-                          17
-                        </span>
-                        <p className="mt-2 rounded-md bg-lime-100 px-1.5 py-1 text-[9px] font-bold text-lime-900">
-                          Study block
-                        </p>
-                      </div>
-                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-400">
-                          18
-                        </span>
-                      </div>
-
-                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-900">
-                          19
-                        </span>
-                        <p className="mt-2 rounded-md bg-rose-100 px-1.5 py-1 text-[9px] font-bold text-rose-700">
-                          EXAM · DCIT 201
-                        </p>
-                      </div>
-                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-900">
-                          20
-                        </span>
-                        <p className="mt-2 rounded-md bg-lime-100 px-1.5 py-1 text-[9px] font-bold text-lime-900">
-                          Study block
-                        </p>
-                      </div>
-                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-900">
-                          21
-                        </span>
-                        <p className="mt-2 rounded-md bg-rose-100 px-1.5 py-1 text-[9px] font-bold text-rose-700">
-                          EXAM · DCIT 203
-                        </p>
-                      </div>
-                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-900">
-                          22
-                        </span>
-                        <p className="mt-2 rounded-md bg-lime-100 px-1.5 py-1 text-[9px] font-bold text-lime-900">
-                          Study block
-                        </p>
-                      </div>
-                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-900">
-                          23
-                        </span>
-                      </div>
-                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-400">
-                          24
-                        </span>
-                      </div>
-                      <div className="min-h-[84px] rounded-2xl border border-slate-200 p-2 bg-white">
-                        <span className="text-[11px] font-bold text-slate-400">
-                          25
-                        </span>
+                      <div className="grid grid-cols-7 gap-1.5">
+                        {monthDays.map((d) => {
+                          const dStr = format(d, "yyyy-MM-dd");
+                          const inMonth = isSameMonth(d, monthCursor);
+                          const active = isSameDay(d, selectedDate);
+                          const today = isToday(d);
+                          const eventCount = overview?.monthEventDates?.[dStr] || 0;
+                          return (
+                            <button
+                              key={dStr}
+                              type="button"
+                              onClick={() => setSelectedDate(d)}
+                              className={`min-h-[76px] rounded-2xl p-2 text-left transition border cursor-pointer ${
+                                active
+                                  ? "border-[#0C60FC] bg-blue-50/70 ring-2 ring-[#0C60FC]"
+                                  : today
+                                    ? "border-blue-300 bg-blue-50/30"
+                                    : inMonth
+                                      ? "border-slate-200 bg-white hover:border-blue-300"
+                                      : "border-dashed border-slate-200 bg-slate-50/50 opacity-40"
+                              }`}
+                            >
+                              <span
+                                className={`text-[11px] font-bold ${
+                                  active || today ? "text-[#0C60FC]" : "text-slate-900"
+                                }`}
+                              >
+                                {format(d, "d")}
+                              </span>
+                              {eventCount > 0 && (
+                                <p className="mt-1.5 rounded-md bg-[#0C60FC] px-1.5 py-0.5 text-[9px] font-bold text-white truncate">
+                                  {eventCount} {eventCount === 1 ? "event" : "events"}
+                                </p>
+                              )}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
@@ -843,176 +641,150 @@ export default function PrivateTimetablePage() {
               </section>
             )}
 
-            {/* TAB 3: AGENDA VIEW */}
+            {/* ── TAB 3: AGENDA VIEW ── */}
             {activeTab === "agenda" && (
-              <section className="panel p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm space-y-4">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <h2 className="min-w-0 text-base font-bold text-slate-950">
-                    Upcoming Agenda
-                  </h2>
-                  <div className="relative w-full sm:w-60">
-                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="Search agenda..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2 text-xs font-semibold outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="divide-y divide-slate-100">
-                  {sortedExams.length > 0 ? (
-                    sortedExams.map((entry) => (
-                      <div
-                        key={entry._id}
-                        className="py-3.5 flex items-center gap-4"
-                      >
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#0C60FC] font-extrabold text-xs">
-                          {new Date(entry.scheduledAt).getDate()}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-bold text-slate-950">
-                            {entry.courseCode} · {entry.courseName}
-                          </p>
-                          <p className="text-[10px] text-slate-500 font-semibold">
-                            {entry.examType.toUpperCase()} · {entry.venue}
-                          </p>
-                        </div>
-                        <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-bold text-slate-600">
-                          {entry.durationMinutes} min
-                        </span>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="py-8 text-center text-xs font-semibold text-slate-400">
-                      No upcoming exam events found for this semester.
+              <section className="panel p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm space-y-4 flex-1 flex flex-col justify-between min-h-[520px]">
+                <div>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <h2 className="min-w-0 text-base font-bold text-slate-950">
+                      Agenda Timeline
+                    </h2>
+                    <div className="relative w-full sm:w-60">
+                      <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="Search timeline..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 pl-9 pr-3 py-2 text-xs font-semibold outline-none"
+                      />
                     </div>
-                  )}
+                  </div>
+
+                  <div className="divide-y divide-slate-100 mt-3">
+                    {filteredAgenda.length > 0 ? (
+                      filteredAgenda.map((grp) => (
+                        <div key={grp.date} className="py-4 space-y-2">
+                          <p className="text-xs font-extrabold text-[#0C60FC] uppercase tracking-wider">
+                            {grp.dateLabel}
+                          </p>
+                          <div className="space-y-2">
+                            {grp.events.map((ev) => (
+                              <div
+                                key={ev.id}
+                                className="flex items-center justify-between rounded-xl bg-slate-50 p-3 hover:bg-slate-100/70 transition"
+                              >
+                                <div>
+                                  <p className="text-xs font-bold text-slate-900">
+                                    {ev.title}
+                                  </p>
+                                  <p className="text-[10px] text-slate-500 font-semibold mt-0.5">
+                                    {ev.timeRange} · {ev.venue}
+                                  </p>
+                                </div>
+                                <span className="rounded-full bg-white px-2.5 py-1 text-[9px] font-extrabold text-slate-700 shadow-2xs">
+                                  {ev.type.toUpperCase()}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="py-12 text-center text-xs font-semibold text-slate-400">
+                        No events found matching your filter.
+                      </div>
+                    )}
+                  </div>
                 </div>
               </section>
             )}
 
-            {/* TAB 4: EXAMS VIEW */}
+            {/* ── TAB 4: EXAMS VIEW ── */}
             {activeTab === "exams" && (
-              <section className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {sortedExams.length > 0 ? (
-                    sortedExams.map((entry) => (
-                      <article
-                        key={entry._id}
-                        className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition"
-                      >
-                        <div className="flex items-start justify-between">
-                          <span className="rounded-full bg-rose-50 px-2.5 py-1 text-[9px] font-extrabold text-rose-600">
-                            FINAL EXAM
-                          </span>
-                          <span className="text-xs font-extrabold text-slate-400">
-                            {format(new Date(entry.scheduledAt), "d MMM")}
-                          </span>
-                        </div>
+              <section className="panel p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm flex-1 flex flex-col justify-between min-h-[520px]">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-base font-bold text-slate-950">
+                        Exam Papers &amp; Venues
+                      </h2>
+                      <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                        Official scheduled examination sittings for this semester.
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-rose-50 px-3 py-1 text-[10px] font-extrabold text-rose-700">
+                      {exams.length} {exams.length === 1 ? "Exam" : "Exams"} Total
+                    </span>
+                  </div>
 
-                        <h3 className="mt-4 text-base font-bold text-slate-950">
-                          {entry.courseCode}
-                        </h3>
-                        <p className="text-xs text-slate-500 font-semibold mt-0.5">
-                          {entry.courseName}
-                        </p>
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mt-5">
+                    {exams.length > 0 ? (
+                      exams.map((entry) => (
+                        <article
+                          key={entry.id}
+                          className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-xs hover:shadow-md transition flex flex-col justify-between"
+                        >
+                          <div>
+                            <div className="flex items-start justify-between">
+                              <span className="rounded-full bg-rose-50 px-2.5 py-1 text-[9px] font-extrabold text-rose-600 uppercase">
+                                {entry.daysToExam === 0
+                                  ? "TODAY"
+                                  : `IN ${entry.daysToExam} DAYS`}
+                              </span>
+                              <span className="text-xs font-extrabold text-slate-400">
+                                {format(new Date(entry.scheduledAt), "d MMM")}
+                              </span>
+                            </div>
 
-                        <div className="mt-5 space-y-2 text-xs font-semibold text-slate-600">
-                          <p className="flex items-center gap-2">
-                            <Clock className="h-3.5 w-3.5 text-slate-400" />
-                            {format(new Date(entry.scheduledAt), "HH:mm")}{" "}
-                            · {entry.durationMinutes} mins
-                          </p>
-                          <p className="flex items-center gap-2">
-                            <MapPin className="h-3.5 w-3.5 text-slate-400" />
-                            {entry.venue}
-                          </p>
-                        </div>
+                            <h3 className="mt-3 text-base font-bold text-slate-950">
+                              {entry.courseCode}
+                            </h3>
+                            <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                              {entry.courseName}
+                            </p>
 
-                        <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
-                          <span className="text-[10px] font-extrabold text-emerald-600 uppercase">
-                            ✓ Seat Assigned
-                          </span>
-                          <Link
-                            href="/app"
-                            className="rounded-xl bg-slate-950 px-3.5 py-2 text-[10px] font-extrabold text-white hover:bg-[#0C60FC] transition"
-                          >
-                            Study paper →
-                          </Link>
-                        </div>
-                      </article>
-                    ))
-                  ) : (
-                    <>
-                      <article className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm">
-                        <div className="flex items-start justify-between">
-                          <span className="rounded-full bg-rose-50 px-2.5 py-1 text-[9px] font-extrabold text-rose-600">
-                            IN 18 DAYS
-                          </span>
-                          <span className="text-xs font-extrabold text-slate-400">
-                            12 Jan
-                          </span>
-                        </div>
-                        <h3 className="mt-4 text-base font-bold text-slate-950">
-                          DCIT 205 · Algorithms
-                        </h3>
-                        <p className="text-xs text-slate-500 font-semibold mt-0.5">
-                          Great Hall, Main Campus
-                        </p>
-                        <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
-                          <span className="text-[10px] font-extrabold text-emerald-600 uppercase">
-                            Seat #42 · Main Row
-                          </span>
-                          <Link
-                            href="/app"
-                            className="rounded-xl bg-slate-950 px-3.5 py-2 text-[10px] font-extrabold text-white hover:bg-[#0C60FC] transition"
-                          >
-                            Study paper →
-                          </Link>
-                        </div>
-                      </article>
+                            <div className="mt-4 space-y-1.5 text-xs font-semibold text-slate-600">
+                              <p className="flex items-center gap-2">
+                                <Clock className="h-3.5 w-3.5 text-slate-400" />
+                                {format(new Date(entry.scheduledAt), "HH:mm")} ·{" "}
+                                {entry.durationMinutes} mins
+                              </p>
+                              <p className="flex items-center gap-2">
+                                <MapPin className="h-3.5 w-3.5 text-slate-400" />
+                                {entry.venue}
+                              </p>
+                            </div>
+                          </div>
 
-                      <article className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm">
-                        <div className="flex items-start justify-between">
-                          <span className="rounded-full bg-rose-50 px-2.5 py-1 text-[9px] font-extrabold text-rose-600">
-                            IN 19 DAYS
-                          </span>
-                          <span className="text-xs font-extrabold text-slate-400">
-                            13 Jan
-                          </span>
-                        </div>
-                        <h3 className="mt-4 text-base font-bold text-slate-950">
-                          DCIT 207 · Operating Systems
-                        </h3>
-                        <p className="text-xs text-slate-500 font-semibold mt-0.5">
-                          Balme Hall, Main Campus
-                        </p>
-                        <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
-                          <span className="text-[10px] font-extrabold text-emerald-600 uppercase">
-                            Seat #18 · Upper Wing
-                          </span>
-                          <Link
-                            href="/app"
-                            className="rounded-xl bg-slate-950 px-3.5 py-2 text-[10px] font-extrabold text-white hover:bg-[#0C60FC] transition"
-                          >
-                            Study paper →
-                          </Link>
-                        </div>
-                      </article>
-                    </>
-                  )}
+                          <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between">
+                            <span className="text-[10px] font-extrabold text-emerald-600 uppercase">
+                              {entry.assignedVenue ? "✓ Seat Assigned" : "General Hall"}
+                            </span>
+                            <Link
+                              href="/app"
+                              className="rounded-xl bg-slate-950 px-3 py-1.5 text-[10px] font-extrabold text-white hover:bg-[#0C60FC] transition"
+                            >
+                              Study paper →
+                            </Link>
+                          </div>
+                        </article>
+                      ))
+                    ) : (
+                      <div className="col-span-full py-12 text-center text-xs font-semibold text-slate-400">
+                        No upcoming exam entries recorded for this semester.
+                      </div>
+                    )}
+                  </div>
                 </div>
               </section>
             )}
           </div>
 
-          {/* RIGHT SIDEBAR: Tasks & Goals Widget */}
+          {/* ── RIGHT SIDEBAR: Tasks & Workload Widget (Matched Equal Height) ── */}
           <aside className="flex flex-col gap-4 h-full">
-            {/* Tasks & Goals Widget Card with Strikethrough Completed Tasks */}
-            <div className="panel p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm flex-1 flex flex-col gap-3 min-h-0">
+            {/* 1. Tasks Card */}
+            <div className="panel p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm flex-1 flex flex-col justify-between min-h-[380px]">
               <div className="space-y-3 shrink-0">
                 <div className="flex items-center justify-between">
                   <div>
@@ -1024,7 +796,7 @@ export default function PrivateTimetablePage() {
                     </p>
                   </div>
                   <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-extrabold text-[#0C60FC]">
-                    {metadata.completed} / {metadata.total} DONE
+                    {taskMetadata.completed} / {taskMetadata.total} DONE
                   </span>
                 </div>
 
@@ -1032,12 +804,12 @@ export default function PrivateTimetablePage() {
                 <div className="space-y-1">
                   <div className="flex justify-between text-[10px] font-extrabold text-slate-500">
                     <span>Progress</span>
-                    <span>{metadata.progress}%</span>
+                    <span>{taskMetadata.progress}%</span>
                   </div>
                   <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
                     <div
                       className="h-full rounded-full bg-[#0C60FC] transition-all duration-300"
-                      style={{ width: `${metadata.progress}%` }}
+                      style={{ width: `${taskMetadata.progress}%` }}
                     />
                   </div>
                 </div>
@@ -1060,27 +832,18 @@ export default function PrivateTimetablePage() {
                 </div>
               </div>
 
-              {/* Tasks Checklist — scrollable with delete action */}
-              <div className="h-[340px] overflow-y-auto no-scrollbar">
+              {/* Tasks List */}
+              <div className="my-2 max-h-[220px] overflow-y-auto no-scrollbar flex-1">
                 {tasksLoading ? (
                   <div className="flex flex-col items-center justify-center h-full gap-2 text-slate-400">
                     <Loader2 className="h-5 w-5 animate-spin text-[#0C60FC]" />
                     <span className="text-xs font-semibold">Loading tasks...</span>
                   </div>
                 ) : tasks.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-center px-4 py-8">
-                    <div className="size-10 rounded-2xl bg-blue-50 flex items-center justify-center text-[#0C60FC] mb-2">
-                      <ListTodo className="size-5" />
-                    </div>
-                    <p className="text-xs font-bold text-slate-800">
-                      {taskFilter === "completed"
-                        ? "No completed tasks yet"
-                        : taskFilter === "active"
-                          ? "No active tasks"
-                          : "No tasks yet"}
-                    </p>
-                    <p className="text-[11px] text-slate-400 mt-1 max-w-[200px]">
-                      Add tasks below to keep your study sessions organized.
+                  <div className="flex flex-col items-center justify-center h-full text-center px-4 py-6">
+                    <p className="text-xs font-bold text-slate-700">No tasks yet</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">
+                      Add a task below to plan your study session.
                     </p>
                   </div>
                 ) : (
@@ -1097,10 +860,10 @@ export default function PrivateTimetablePage() {
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95 }}
                             onClick={() => toggleTask(t)}
-                            className={`group cursor-pointer flex items-start gap-2.5 rounded-2xl p-3 transition border relative ${
+                            className={`group cursor-pointer flex items-start gap-2.5 rounded-2xl p-2.5 transition border relative ${
                               isDone
                                 ? "bg-[#F7F9FC] border-slate-100 text-slate-400 line-through"
-                                : "bg-white border-slate-200/90 text-slate-900 shadow-2xs hover:border-[#0C60FC]/40"
+                                : "bg-white border-slate-200 text-slate-900 shadow-2xs hover:border-[#0C60FC]/40"
                             }`}
                           >
                             <button
@@ -1122,17 +885,12 @@ export default function PrivateTimetablePage() {
                               >
                                 {t.title}
                               </p>
-                              {t.subject && (
-                                <span className="mt-0.5 inline-block text-[9px] font-semibold text-slate-400">
-                                  {t.subject}
-                                </span>
-                              )}
                             </div>
 
                             <button
                               type="button"
                               onClick={(e) => handleDeleteTask(e, taskId)}
-                              className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-500 transition absolute right-2 top-2.5 rounded-md hover:bg-rose-50"
+                              className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-500 transition absolute right-2 top-2 rounded-md hover:bg-rose-50"
                               title="Delete task"
                             >
                               <Trash2 className="size-3.5" />
@@ -1146,7 +904,7 @@ export default function PrivateTimetablePage() {
               </div>
 
               {/* Add New Task Form */}
-              <form onSubmit={handleAddTask} className="pt-1 shrink-0 space-y-1.5">
+              <form onSubmit={handleAddTask} className="pt-1 shrink-0">
                 <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-[#F7F9FC] px-3 py-1.5 focus-within:bg-white focus-within:ring-2 focus-within:ring-[#0C60FC]/20 transition">
                   <input
                     type="text"
@@ -1159,7 +917,7 @@ export default function PrivateTimetablePage() {
                   <button
                     type="submit"
                     disabled={createTaskMutation.isPending || !newTaskTitle.trim()}
-                    className="rounded-xl bg-slate-950 px-2.5 py-1.5 text-[10px] font-extrabold text-white hover:bg-[#0C60FC] disabled:opacity-50 transition cursor-pointer flex items-center gap-1"
+                    className="rounded-xl bg-slate-950 px-2.5 py-1.5 text-[10px] font-extrabold text-white hover:bg-[#0C60FC] disabled:opacity-50 transition cursor-pointer"
                   >
                     {createTaskMutation.isPending ? (
                       <Loader2 className="size-3 animate-spin" />
@@ -1171,13 +929,12 @@ export default function PrivateTimetablePage() {
               </form>
             </div>
 
-            {/* Weekly Study Metrics & Workload Analytics Widget Card */}
+            {/* 2. Workload & Metrics Widget */}
             <div className="panel p-4.5 rounded-[28px] border border-slate-200 bg-white shadow-sm space-y-3 shrink-0">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-xs font-extrabold text-slate-950 flex items-center gap-1.5">
-                    <BarChart3 className="h-3.5 w-3.5 text-[#0C60FC]" />{" "}
-                    Workload & Metrics
+                    <BarChart3 className="h-3.5 w-3.5 text-[#0C60FC]" /> Workload &amp; Metrics
                   </h3>
                   <p className="hand text-sm text-[#0C60FC] leading-none mt-0.5">
                     weekly breakdown
@@ -1185,82 +942,39 @@ export default function PrivateTimetablePage() {
                 </div>
                 <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-extrabold text-emerald-600">
                   <Flame className="h-2.5 w-2.5" strokeWidth={2.25} />
-                  8d Streak
+                  {workload.streakDays}d Streak
                 </span>
               </div>
 
-              {/* Weekly Workload Visual Bar Chart */}
+              {/* Weekly Workload Bar Chart */}
               <div className="space-y-1.5 pt-0.5">
                 <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
-                  Daily Study Hours
+                  Daily Study Hours ({workload.weeklyTotalHours} hrs total)
                 </p>
                 <div className="grid grid-cols-5 gap-1.5 items-end pt-1 pb-2.5 border-b border-slate-100">
-                  {[
-                    { day: "Mon", hrs: 4.5, pct: "75%", color: "bg-[#0C60FC]" },
-                    {
-                      day: "Tue",
-                      hrs: 6.0,
-                      pct: "100%",
-                      color: "bg-[#0C60FC]",
-                    },
-                    { day: "Wed", hrs: 4.0, pct: "65%", color: "bg-blue-400" },
-                    { day: "Thu", hrs: 3.5, pct: "55%", color: "bg-blue-400" },
-                    { day: "Fri", hrs: 2.5, pct: "40%", color: "bg-blue-300" },
-                  ].map((bar) => (
-                    <div
-                      key={bar.day}
-                      className="flex flex-col items-center gap-1 justify-end"
-                    >
-                      <span className="text-[9px] font-extrabold text-slate-600">
-                        {bar.hrs}h
-                      </span>
-                      <div className="w-full bg-slate-100 rounded-t-lg h-14 flex items-end overflow-hidden">
-                        <div
-                          className={`w-full rounded-t-lg transition-all duration-500 ${bar.color}`}
-                          style={{ height: bar.pct }}
-                        />
+                  {workload.dailyHours.map((bar, i) => {
+                    const pct = Math.min(100, Math.round((bar.hrs / 6.0) * 100)) + "%";
+                    const color = WORKLOAD_BAR_COLORS[i % WORKLOAD_BAR_COLORS.length];
+                    return (
+                      <div
+                        key={bar.day}
+                        className="flex flex-col items-center gap-1 justify-end"
+                      >
+                        <div className="h-16 w-full flex items-end justify-center rounded-lg bg-slate-50 p-1">
+                          <div
+                            className={`w-full rounded-md transition-all duration-500 ${color}`}
+                            style={{ height: pct }}
+                          />
+                        </div>
+                        <span className="text-[9px] font-extrabold text-slate-500">
+                          {bar.day}
+                        </span>
+                        <span className="text-[8px] font-semibold text-slate-400">
+                          {bar.hrs}h
+                        </span>
                       </div>
-                      <span className="text-[9px] font-extrabold uppercase text-slate-400">
-                        {bar.day}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Time Allocation Segmented Bar */}
-              <div className="space-y-1.5 pt-0.5">
-                <div className="flex justify-between text-[10px] font-extrabold text-slate-700">
-                  <span>Semester Allocation</span>
-                  <span className="text-slate-500">21 hrs / wk</span>
-                </div>
-                <div className="h-2 rounded-full bg-slate-100 flex overflow-hidden p-0.5">
-                  <div
-                    className="h-full w-[55%] rounded-l-full bg-[#0C60FC]"
-                    title="Lectures 55%"
-                  />
-                  <div
-                    className="h-full w-[25%] bg-violet-400"
-                    title="Labs 25%"
-                  />
-                  <div
-                    className="h-full w-[20%] rounded-r-full bg-[#DFFF61]"
-                    title="Study 20%"
-                  />
-                </div>
-                <div className="flex flex-wrap items-center justify-between gap-y-0.5 text-[9px] font-bold text-slate-500 pt-0.5">
-                  <span className="flex items-center gap-1">
-                    <i className="h-1.5 w-1.5 rounded-full bg-[#0C60FC]" /> 55%
-                    Lectures
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <i className="h-1.5 w-1.5 rounded-full bg-violet-400" /> 25%
-                    Labs
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <i className="h-1.5 w-1.5 rounded-full bg-[#DFFF61]" /> 20%
-                    Study
-                  </span>
+                    );
+                  })}
                 </div>
               </div>
             </div>
