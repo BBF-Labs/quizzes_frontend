@@ -42,6 +42,7 @@ import {
   Award,
   BookMarked,
   Sparkle,
+  X,
 } from "lucide-react";
 import {
   QuestionMarkdown,
@@ -182,46 +183,92 @@ interface QAEntryProps {
   answer: string;
   explanation?: string;
   correctAnswer?: string;
+  isCorrect?: boolean;
 }
 
 function QAResolvedCard({ entries }: { entries: QAEntryProps[] }) {
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.2 }}
-      className="w-full max-w-xl mx-auto rounded-2xl border border-slate-200 bg-slate-50/80 p-4 text-xs divide-y divide-slate-200/60 space-y-3"
+      initial={{ opacity: 0, scale: 0.98, y: 6 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.98, y: -6 }}
+      transition={{ duration: 0.25, ease: "easeOut" }}
+      className="w-full max-w-xl mx-auto rounded-[22px] border border-slate-200/90 bg-[#FAFBFD] p-4 sm:p-5 text-xs shadow-2xs space-y-3.5"
     >
-      {entries.map((e, i) => (
-        <div key={i} className="pt-2 first:pt-0 space-y-2">
-          <div className="flex items-start gap-2">
-            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mt-0.5">
-              Q:
-            </span>
-            <div className="text-slate-700 font-medium leading-relaxed">
-              <QuestionMarkdown content={e.question} />
+      {entries.map((e, i) => {
+        const normAns = normalizeOptionText(e.answer).trim().toLowerCase();
+        const normCorrect = e.correctAnswer ? normalizeOptionText(e.correctAnswer).trim().toLowerCase() : "";
+        const isActuallyCorrect = e.isCorrect !== undefined
+          ? e.isCorrect
+          : normCorrect
+          ? normAns === normCorrect || normAns.includes(normCorrect) || normCorrect.includes(normAns)
+          : true;
+
+        return (
+          <div key={i} className="space-y-3">
+            <div className="flex items-start gap-2.5">
+              <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mt-0.5">
+                Q:
+              </span>
+              <div className="text-slate-900 font-bold leading-relaxed text-xs sm:text-[13px] flex-1">
+                <QuestionMarkdown content={e.question} />
+              </div>
+            </div>
+
+            <div
+              className={cn(
+                "rounded-2xl p-3 sm:p-3.5 border transition-all space-y-2",
+                isActuallyCorrect
+                  ? "border-emerald-200/80 bg-white"
+                  : "border-rose-200/80 bg-white",
+              )}
+            >
+              <div className="flex items-start gap-2.5">
+                <span
+                  className={cn(
+                    "text-[10px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded-md mt-0.5 flex items-center gap-1",
+                    isActuallyCorrect
+                      ? "bg-emerald-100 text-emerald-800"
+                      : "bg-rose-100 text-rose-800",
+                  )}
+                >
+                  {isActuallyCorrect ? (
+                    <>
+                      <Check className="h-3 w-3 text-emerald-700 stroke-[3]" />
+                      <span>A:</span>
+                    </>
+                  ) : (
+                    <>
+                      <X className="h-3 w-3 text-rose-700 stroke-[3]" />
+                      <span>A:</span>
+                    </>
+                  )}
+                </span>
+                <div className="flex-1 space-y-1.5">
+                  <p className="text-slate-950 font-bold text-xs sm:text-[13px] leading-snug">
+                    {e.answer || "—"}
+                  </p>
+
+                  {!isActuallyCorrect && e.correctAnswer && e.correctAnswer !== e.answer && (
+                    <p className="text-[11.5px] text-emerald-800 font-semibold flex items-center gap-1.5 pt-0.5">
+                      <span className="text-emerald-600 font-bold">Correct answer:</span>
+                      <span className="underline decoration-emerald-400 underline-offset-2">
+                        {e.correctAnswer}
+                      </span>
+                    </p>
+                  )}
+
+                  {e.explanation && (
+                    <p className="text-[11px] text-slate-600 font-normal leading-relaxed pt-1 border-t border-slate-100">
+                      {e.explanation}
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
-          <div className="flex items-start gap-2 bg-white rounded-xl p-2.5 border border-slate-200/70">
-            <span className="text-[10px] font-extrabold text-emerald-600 uppercase tracking-widest mt-0.5">
-              A:
-            </span>
-            <div className="flex-1 space-y-1">
-              <p className="text-slate-900 font-bold leading-relaxed">{e.answer || "—"}</p>
-              {e.correctAnswer && e.correctAnswer !== e.answer && (
-                <p className="text-[11px] text-emerald-700 font-medium">
-                  Correct answer: <span className="font-bold">{e.correctAnswer}</span>
-                </p>
-              )}
-              {e.explanation && (
-                <p className="text-[11px] text-slate-500 font-normal leading-relaxed pt-0.5">
-                  {e.explanation}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </motion.div>
   );
 }
@@ -302,32 +349,75 @@ function AskQuestionCard({
     persistedAnswer || null,
   );
   const [showHint, setShowHint] = useState(false);
-  const submittedAnswerRef = useRef<string>(persistedAnswer);
+  const [evaluatedChoice, setEvaluatedChoice] = useState<string | null>(
+    persistedAnswer || null,
+  );
+  const [feedbackState, setFeedbackState] = useState<"correct" | "wrong" | null>(null);
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(
+    Boolean(persistedAnswer || resolved),
+  );
+
+  useEffect(() => {
+    if (persistedAnswer || resolved) {
+      setIsCollapsed(true);
+      if (persistedAnswer && !evaluatedChoice) {
+        setEvaluatedChoice(persistedAnswer);
+        setSelectedOption(persistedAnswer);
+      }
+    }
+  }, [persistedAnswer, resolved]);
 
   const isTF = isTrueFalseOptions(options);
 
-  const handleSubmit = (choice?: string) => {
-    const ans = choice ?? (options.length > 0 ? selectedOption : textAnswer.trim());
-    if (ans) {
-      submittedAnswerRef.current = ans;
-      onSubmitAnswer([ans], [rawQuestion]);
-    }
+  const handleSelectChoice = (choice: string) => {
+    if (evaluatedChoice && feedbackState !== null) return;
+
+    setEvaluatedChoice(choice);
+    setSelectedOption(choice);
+
+    const normChoice = normalizeOptionText(choice).trim().toLowerCase();
+    const normCorrect = correctAnswer ? normalizeOptionText(correctAnswer).trim().toLowerCase() : "";
+    const isCorrect = normCorrect
+      ? normChoice === normCorrect ||
+        normChoice.includes(normCorrect) ||
+        normCorrect.includes(normChoice)
+      : true;
+
+    setFeedbackState(isCorrect ? "correct" : "wrong");
+    onSubmitAnswer([choice], [rawQuestion]);
+
+    setTimeout(() => {
+      setIsCollapsed(true);
+    }, 700);
   };
 
-  const isResolved =
-    Boolean(submittedAnswerRef.current) ||
-    Boolean(persistedAnswer) ||
-    (resolved && Boolean(persistedAnswer));
+  const handleTextSubmit = () => {
+    const ans = textAnswer.trim();
+    if (!ans) return;
+    setEvaluatedChoice(ans);
+    onSubmitAnswer([ans], [rawQuestion]);
+    setIsCollapsed(true);
+  };
 
-  if (isResolved) {
+  if (isCollapsed) {
+    const finalAnswer = evaluatedChoice || selectedOption || persistedAnswer || textAnswer.trim() || "—";
+    const normAns = normalizeOptionText(finalAnswer).trim().toLowerCase();
+    const normCorrect = correctAnswer ? normalizeOptionText(correctAnswer).trim().toLowerCase() : "";
+    const isCorrect = feedbackState !== null
+      ? feedbackState === "correct"
+      : normCorrect
+      ? normAns === normCorrect || normAns.includes(normCorrect) || normCorrect.includes(normAns)
+      : true;
+
     return (
       <QAResolvedCard
         entries={[
           {
             question: rawQuestion,
-            answer: submittedAnswerRef.current || persistedAnswer || "—",
-            correctAnswer: typeof correctAnswer === "string" ? correctAnswer : undefined,
+            answer: finalAnswer,
+            correctAnswer: typeof correctAnswer === "string" && correctAnswer.trim().length > 0 ? correctAnswer : undefined,
             explanation,
+            isCorrect,
           },
         ]}
       />
@@ -371,11 +461,15 @@ function AskQuestionCard({
             type="button"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => {
-              setSelectedOption(falseOpt);
-              handleSubmit(falseOpt);
-            }}
-            className="rounded-2xl border border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 p-4 flex items-center justify-center gap-2 text-sm font-bold text-slate-800 shadow-xs transition-all cursor-pointer"
+            onClick={() => handleSelectChoice(falseOpt)}
+            className={cn(
+              "rounded-2xl border p-4 flex items-center justify-center gap-2 text-sm font-bold shadow-xs transition-all cursor-pointer",
+              evaluatedChoice === falseOpt
+                ? feedbackState === "correct"
+                  ? "border-emerald-500 bg-emerald-50 text-emerald-950 ring-2 ring-emerald-500/30"
+                  : "border-rose-500 bg-rose-50 text-rose-950 ring-2 ring-rose-500/30"
+                : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-800",
+            )}
           >
             <span>👎</span>
             <span>{falseOpt}</span>
@@ -385,11 +479,15 @@ function AskQuestionCard({
             type="button"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => {
-              setSelectedOption(trueOpt);
-              handleSubmit(trueOpt);
-            }}
-            className="rounded-2xl border border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 p-4 flex items-center justify-center gap-2 text-sm font-bold text-slate-800 shadow-xs transition-all cursor-pointer"
+            onClick={() => handleSelectChoice(trueOpt)}
+            className={cn(
+              "rounded-2xl border p-4 flex items-center justify-center gap-2 text-sm font-bold shadow-xs transition-all cursor-pointer",
+              evaluatedChoice === trueOpt
+                ? feedbackState === "correct"
+                  ? "border-emerald-500 bg-emerald-50 text-emerald-950 ring-2 ring-emerald-500/30"
+                  : "border-rose-500 bg-rose-50 text-rose-950 ring-2 ring-rose-500/30"
+                : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-800",
+            )}
           >
             <span>👍</span>
             <span>{trueOpt}</span>
@@ -453,20 +551,41 @@ function AskQuestionCard({
             const isSelected = selectedOption === opt;
             const letter = String.fromCharCode(65 + i);
             const badgeClass = optionBadgeColors[i % optionBadgeColors.length];
+            const normOpt = normalizeOptionText(opt).trim().toLowerCase();
+            const normCorrect = correctAnswer ? normalizeOptionText(correctAnswer).trim().toLowerCase() : "";
+            const isThisCorrect = normCorrect ? normOpt === normCorrect || normOpt.includes(normCorrect) || normCorrect.includes(normOpt) : false;
+
+            let optionClasses = "border-slate-200/90 bg-white text-slate-800 hover:border-slate-300 hover:bg-slate-50/60";
+            let statusIcon = null;
+
+            if (evaluatedChoice) {
+              if (isSelected) {
+                if (feedbackState === "correct") {
+                  optionClasses = "border-emerald-500 bg-emerald-50/90 text-emerald-950 ring-2 ring-emerald-500/30 scale-[1.01]";
+                  statusIcon = <Check className="h-4 w-4 text-emerald-600 stroke-[3] shrink-0" />;
+                } else {
+                  optionClasses = "border-rose-500 bg-rose-50/90 text-rose-950 ring-2 ring-rose-500/30 scale-[0.99]";
+                  statusIcon = <X className="h-4 w-4 text-rose-600 stroke-[3] shrink-0" />;
+                }
+              } else if (feedbackState === "wrong" && isThisCorrect) {
+                optionClasses = "border-emerald-400 bg-emerald-50/50 text-emerald-900 border-dashed ring-1 ring-emerald-400/40";
+                statusIcon = <Check className="h-3.5 w-3.5 text-emerald-600 stroke-[3] shrink-0" />;
+              } else {
+                optionClasses = "opacity-40 border-slate-200 bg-slate-50/50 text-slate-400 pointer-events-none";
+              }
+            }
 
             return (
-              <button
+              <motion.button
                 key={i}
                 type="button"
-                onClick={() => {
-                  setSelectedOption(opt);
-                  handleSubmit(opt);
-                }}
+                whileHover={!evaluatedChoice ? { scale: 1.01 } : {}}
+                whileTap={!evaluatedChoice ? { scale: 0.99 } : {}}
+                onClick={() => handleSelectChoice(opt)}
+                disabled={Boolean(evaluatedChoice)}
                 className={cn(
                   "w-full text-left rounded-[18px] p-3 text-xs font-semibold transition-all border flex items-center gap-3 cursor-pointer shadow-2xs",
-                  isSelected
-                    ? "border-emerald-500 bg-emerald-50/50 text-emerald-900 ring-1 ring-emerald-500"
-                    : "border-slate-200/90 bg-white text-slate-800 hover:border-slate-300 hover:bg-slate-50/60",
+                  optionClasses,
                 )}
               >
                 <span
@@ -478,7 +597,8 @@ function AskQuestionCard({
                   {letter}
                 </span>
                 <span className="flex-1 font-sans leading-relaxed">{opt}</span>
-              </button>
+                {statusIcon}
+              </motion.button>
             );
           })}
         </div>
@@ -553,7 +673,7 @@ function AskQuestionCard({
             Skip
           </ActionButton>
           <ActionButton
-            onClick={() => handleSubmit()}
+            onClick={() => handleTextSubmit()}
             disabled={!textAnswer.trim()}
             variant="primary"
           >
@@ -1648,6 +1768,19 @@ function ShowExpositionCard({
     }
   }
 
+  // Extract inline bracket citations like [20] if no citations exist yet
+  const bracketMatches = Array.from(markdownText.matchAll(/\[(\d+)\]/g));
+  if (bracketMatches.length > 0 && parsedCitations.length === 0) {
+    const firstMatch = bracketMatches[0] as unknown as RegExpMatchArray;
+    const pageNum = parseInt(firstMatch[1], 10);
+    parsedCitations.push({
+      filename: "Source Material",
+      pageNumber: pageNum,
+    });
+  }
+  // Strip all inline numeric bracket citations from the rendered prose
+  markdownText = markdownText.replace(/\s*\[\d+\]/g, "").trim();
+
   return (
     <CardWrapper
       resolved={resolved}
@@ -2077,6 +2210,17 @@ export function ArtifactCard({
 
     // 5. Concept Check Question
     if (artType === "question" || artType === "ask_question") {
+      const isCardResolved = Boolean(
+        artifact.resolved ||
+        content.resolved ||
+        content.status === "completed" ||
+        content.userAnswer ||
+        content.submittedAnswer ||
+        content.selectedOption ||
+        (Array.isArray(content.userAnswers) && content.userAnswers.length > 0) ||
+        resolved,
+      );
+
       const payload: any = {
         title: artifact.title || content.title || "Knowledge Check",
         question: content.question || content.text || content.prompt || artifact.title,
@@ -2085,11 +2229,21 @@ export function ArtifactCard({
         explanation: content.explanation,
         hint: content.hint,
         topicTitle: artifact.title || content.topicTitle,
+        userAnswer:
+          content.userAnswer ||
+          content.submittedAnswer ||
+          content.selectedOption ||
+          (Array.isArray(content.userAnswers) && content.userAnswers[0]) ||
+          undefined,
+        userAnswers: content.userAnswers || undefined,
+        selectedOption: content.selectedOption || undefined,
+        submittedAnswer: content.submittedAnswer || undefined,
+        resolved: isCardResolved,
       };
       return (
         <AskQuestionCard
           payload={payload}
-          resolved={resolved}
+          resolved={isCardResolved}
           onSubmitAnswer={handleAnswer}
           onRetry={handleRetry}
           onSkip={handleSkip}
@@ -2099,11 +2253,18 @@ export function ArtifactCard({
 
     // 6. Quiz Challenge
     if (artType === "quiz") {
+      const isQuizResolved = Boolean(
+        artifact.resolved ||
+        content.resolved ||
+        content.status === "completed" ||
+        (Array.isArray(content.userAnswers) && content.userAnswers.length > 0) ||
+        resolved,
+      );
       const payload: any = content.questions || content.lectures ? content : { questions: [content] };
       return (
         <ShowQuizCard
           payload={payload}
-          resolved={resolved}
+          resolved={isQuizResolved}
           onSubmitAnswer={handleAnswer}
           onSkip={handleSkip}
         />
