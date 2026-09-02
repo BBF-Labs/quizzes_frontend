@@ -303,23 +303,32 @@ export default function ChatPage() {
           })
           .catch(console.error);
       }
+      const topicContext = activeTopic?.title ? ` Topic: "${activeTopic.title}".` : "";
+      const sectionDesc = isRecapActive ? "reviewing the recap" : "this section";
+      const continueMsg = `[STUDENT_ACTION: CONTINUE]${topicContext} The student finished ${sectionDesc} and clicked Continue. Proceed to the next pedagogical step.`;
+
       if (sessionStep === 0) {
         setSessionStep(1);
         window.scrollTo({ top: 0, behavior: "smooth" });
       } else if (sessionStep === 1) {
         setSessionStep(2);
         window.scrollTo({ top: 0, behavior: "smooth" });
-        sendMessage(isRecapActive ? "Keep going" : "Continue", undefined, true);
+        sendMessage(continueMsg, undefined, true);
       } else {
-        sendMessage(isRecapActive ? "Keep going" : "Continue", undefined, true);
+        sendMessage(continueMsg, undefined, true);
       }
     },
-    [sessionStep, sendMessage, isRecapActive, activeArtifactMessageId, respondMutation],
+    [sessionStep, sendMessage, isRecapActive, activeArtifactMessageId, activeTopic?.title, respondMutation],
   );
 
   const handleKeepGoing = useCallback(() => {
-    sendMessage("Keep going", undefined, true);
-  }, [sendMessage]);
+    const topicContext = activeTopic?.title ? ` Topic: "${activeTopic.title}".` : "";
+    sendMessage(
+      `[STUDENT_ACTION: KEEP_GOING]${topicContext} The student wants to keep going. Continue with the next part of the lesson.`,
+      undefined,
+      true,
+    );
+  }, [sendMessage, activeTopic?.title]);
 
   const handleFeedback = useCallback(
     (type: "too_easy" | "too_hard", artifactId?: string) => {
@@ -332,16 +341,25 @@ export default function ChatPage() {
           })
           .catch(console.error);
       }
+      const topicContext = activeTopic?.title ? ` Topic: "${activeTopic.title}".` : "";
       if (type === "too_easy") {
         toast.success("Pacing adjusted: Diving straight into deeper mastery!");
         setSessionStep((prev) => Math.min(prev + 1, 4));
-        sendMessage("Too easy", undefined, true);
+        sendMessage(
+          `[STUDENT_ACTION: PACING_FEEDBACK]${topicContext} The student indicated this pace is too easy. Skip elementary explanations and explore deeper conceptual mastery and challenging problems.`,
+          undefined,
+          true,
+        );
       } else {
         toast.info("Pacing adjusted: Providing extra foundational context.");
-        sendMessage("Too hard", undefined, true);
+        sendMessage(
+          `[STUDENT_ACTION: PACING_FEEDBACK]${topicContext} The student indicated this pace is too hard. Slow down, provide foundational intuition, and explain concepts step-by-step with concrete analogies.`,
+          undefined,
+          true,
+        );
       }
     },
-    [sendMessage, activeArtifactMessageId, respondMutation],
+    [sendMessage, activeArtifactMessageId, activeTopic?.title, respondMutation],
   );
 
   // Active topic title based on sessionStep or message history
@@ -525,16 +543,20 @@ export default function ChatPage() {
       }
 
       // 2. Send answer through a system action to Z (NO user chat bubble displayed!)
-      const message =
+      const topicHeader = activeTopic?.title ? ` Topic: "${activeTopic.title}"` : "";
+      const blockInfo = activeBlock?.concept || activeBlock?.title ? ` [Concept: ${activeBlock.concept || activeBlock.title}]` : "";
+      const answerBody =
         questions && questions.length > 0
           ? questions
               .map((q, i) => `Q: ${q}\nA: ${answers[i] ?? ""}`)
               .join("\n\n")
-          : answers.join(", ");
+          : `Submitted answer: ${answers.join(", ")}`;
+
+      const message = `[STUDENT_ACTION: SUBMIT_ANSWER]${topicHeader}${blockInfo}\n${answerBody}\nPlease evaluate my answer, give concise pedagogical feedback, and guide me forward.`;
 
       sendMessage(message, undefined, true);
     },
-    [sessionId, activeArtifactMessageId, respondMutation, sendMessage],
+    [sessionId, activeArtifactMessageId, activeTopic?.title, activeBlock?.concept, activeBlock?.title, respondMutation, sendMessage],
   );
 
   const handleApprove = useCallback(
@@ -567,9 +589,14 @@ export default function ChatPage() {
           })
           .catch(console.error);
       }
-      sendMessage("Retry", undefined, true);
+      const topicContext = activeTopic?.title ? ` for topic "${activeTopic.title}"` : "";
+      sendMessage(
+        `[STUDENT_ACTION: RETRY] The student requested another attempt at this question${topicContext}. Provide a helpful, constructive hint or alternate intuitive angle to guide them, then let them try again.`,
+        undefined,
+        true,
+      );
     },
-    [sendMessage, activeArtifactMessageId, respondMutation],
+    [sendMessage, activeArtifactMessageId, activeTopic?.title, respondMutation],
   );
 
   const handleSkip = useCallback(
@@ -583,9 +610,14 @@ export default function ChatPage() {
           })
           .catch(console.error);
       }
-      sendMessage("Skip", undefined, true);
+      const topicContext = activeTopic?.title ? ` on "${activeTopic.title}"` : "";
+      sendMessage(
+        `[STUDENT_ACTION: SKIP] The student chose to skip this step${topicContext}. Acknowledge briefly and smoothly proceed to the next concept or question.`,
+        undefined,
+        true,
+      );
     },
-    [sendMessage, activeArtifactMessageId, respondMutation],
+    [sendMessage, activeArtifactMessageId, activeTopic?.title, respondMutation],
   );
 
   const handleExplainDifferently = useCallback(
@@ -599,9 +631,14 @@ export default function ChatPage() {
           })
           .catch(console.error);
       }
-      sendMessage("Explain this differently", undefined, true);
+      const topic = topicTitle || activeTopic?.title || "this concept";
+      sendMessage(
+        `[STUDENT_ACTION: EXPLAIN_DIFFERENTLY] The student found the previous explanation of "${topic}" unclear or difficult to grasp. Re-explain the intuition using a fresh, concrete real-world analogy and a simpler breakdown.`,
+        undefined,
+        true,
+      );
     },
-    [sendMessage, activeArtifactMessageId, respondMutation],
+    [sendMessage, activeArtifactMessageId, activeTopic?.title, respondMutation],
   );
 
   const handleTestMe = useCallback(
@@ -615,9 +652,14 @@ export default function ChatPage() {
           })
           .catch(console.error);
       }
-      sendMessage(`Test me on ${topicTitle}`, undefined, true);
+      const topic = topicTitle || activeTopic?.title || "this topic";
+      sendMessage(
+        `[STUDENT_ACTION: TEST_ME] The student feels ready and requested to be tested on "${topic}". Call 'ask_question' to present an insightful question testing their understanding.`,
+        undefined,
+        true,
+      );
     },
-    [sendMessage, activeArtifactMessageId, respondMutation],
+    [sendMessage, activeArtifactMessageId, activeTopic?.title, respondMutation],
   );
 
   const handleTryMyself = useCallback(
@@ -631,9 +673,14 @@ export default function ChatPage() {
           })
           .catch(console.error);
       }
-      sendMessage(`I'll try ${topicTitle} myself`, undefined, true);
+      const topic = topicTitle || activeTopic?.title || "this topic";
+      sendMessage(
+        `[STUDENT_ACTION: TRY_MYSELF] The student wants to work through "${topic}" independently. Encourage them briefly and invite them to share their solution or thoughts when ready.`,
+        undefined,
+        true,
+      );
     },
-    [sendMessage, activeArtifactMessageId, respondMutation],
+    [sendMessage, activeArtifactMessageId, activeTopic?.title, respondMutation],
   );
 
   const handleAction = useCallback(
@@ -647,9 +694,14 @@ export default function ChatPage() {
           })
           .catch(console.error);
       }
-      sendMessage(actionType, undefined, true);
+      const topic = activeTopic?.title ? ` regarding topic "${activeTopic.title}"` : "";
+      sendMessage(
+        `[STUDENT_ACTION: CUSTOM_ACTION] The student selected action "${actionType}"${topic}. Respond accordingly to assist their study journey.`,
+        undefined,
+        true,
+      );
     },
-    [sendMessage, activeArtifactMessageId, respondMutation],
+    [sendMessage, activeArtifactMessageId, activeTopic?.title, respondMutation],
   );
 
   const handlePomodoroResume = useCallback(
@@ -663,9 +715,14 @@ export default function ChatPage() {
           })
           .catch(console.error);
       }
-      sendMessage("Pomodoro done, ready to continue", undefined, true);
+      const topicContext = activeTopic?.title ? ` for "${activeTopic.title}"` : "";
+      sendMessage(
+        `[STUDENT_ACTION: POMODORO_RESUME] The student completed their Pomodoro focus break and is ready to resume studying${topicContext}. Welcome them back warmly and continue the lesson where they left off.`,
+        undefined,
+        true,
+      );
     },
-    [sendMessage, activeArtifactMessageId, respondMutation],
+    [sendMessage, activeArtifactMessageId, activeTopic?.title, respondMutation],
   );
 
   // Guard: invalid session
