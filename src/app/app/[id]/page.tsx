@@ -21,7 +21,11 @@ import {
 } from "lucide-react";
 import { useAppApprove } from "@/hooks";
 import { useApp } from "@/hooks/app/use-app-queries";
-import { useRetryMessage, useRateMessage } from "@/hooks/app/use-app-actions";
+import {
+  useRetryMessage,
+  useRateMessage,
+  useRespondToDirectiveArtifact,
+} from "@/hooks/app/use-app-actions";
 import { useAppLayout } from "@/components/app/layout";
 import { cn } from "@/lib/utils";
 import { MessageFeed } from "@/components/app/center/MessageFeed";
@@ -71,6 +75,7 @@ export default function ChatPage() {
   const approveMutation = useAppApprove();
   const retryMutation = useRetryMessage(sessionId);
   const rateMutation = useRateMessage(sessionId);
+  const respondMutation = useRespondToDirectiveArtifact(sessionId);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -300,25 +305,46 @@ export default function ChatPage() {
   }, [messages]);
 
   // Step advancement handler for Continue / Keep going button
-  const handleContinue = useCallback(() => {
-    if (sessionStep === 0) {
-      setSessionStep(1);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    } else if (sessionStep === 1) {
-      setSessionStep(2);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      sendMessage(isRecapActive ? "Keep going" : "Continue", undefined, true);
-    } else {
-      sendMessage(isRecapActive ? "Keep going" : "Continue", undefined, true);
-    }
-  }, [sessionStep, sendMessage, isRecapActive]);
+  const handleContinue = useCallback(
+    (artifactId?: string) => {
+      const targetId = artifactId || activeDirectiveMessageId;
+      if (targetId) {
+        respondMutation
+          .mutateAsync({
+            artifactId: targetId,
+            response: { continued: true, resolved: true, status: "completed" },
+          })
+          .catch(console.error);
+      }
+      if (sessionStep === 0) {
+        setSessionStep(1);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else if (sessionStep === 1) {
+        setSessionStep(2);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        sendMessage(isRecapActive ? "Keep going" : "Continue", undefined, true);
+      } else {
+        sendMessage(isRecapActive ? "Keep going" : "Continue", undefined, true);
+      }
+    },
+    [sessionStep, sendMessage, isRecapActive, activeDirectiveMessageId, respondMutation],
+  );
 
   const handleKeepGoing = useCallback(() => {
     sendMessage("Keep going", undefined, true);
   }, [sendMessage]);
 
   const handleFeedback = useCallback(
-    (type: "too_easy" | "too_hard") => {
+    (type: "too_easy" | "too_hard", artifactId?: string) => {
+      const targetId = artifactId || activeDirectiveMessageId;
+      if (targetId) {
+        respondMutation
+          .mutateAsync({
+            artifactId: targetId,
+            response: { feedback: type, resolved: true },
+          })
+          .catch(console.error);
+      }
       if (type === "too_easy") {
         toast.success("Pacing adjusted: Diving straight into deeper mastery!");
         setSessionStep((prev) => Math.min(prev + 1, 4));
@@ -328,7 +354,7 @@ export default function ChatPage() {
         sendMessage("Too hard", undefined, true);
       }
     },
-    [sendMessage],
+    [sendMessage, activeDirectiveMessageId, respondMutation],
   );
 
   // Active topic title based on sessionStep or message history
@@ -487,57 +513,172 @@ export default function ChatPage() {
 
   // Directive action helpers
   const handleSubmitAnswer = useCallback(
-    (answers: string[], questions?: string[]) => {
+    (answers: string[], questions?: string[], artifactId?: string) => {
       if (!sessionId) return;
+
+      // 1. Modify that particular artifact directly
+      const targetId = artifactId || activeDirectiveMessageId;
+      if (targetId) {
+        respondMutation
+          .mutateAsync({
+            artifactId: targetId,
+            response: {
+              answers,
+              userAnswers: answers,
+              selectedOption: answers[0],
+              answer: answers[0],
+              submittedAnswer: answers.join(", "),
+              resolved: true,
+              status: "completed",
+            },
+          })
+          .catch((err: unknown) =>
+            console.error("[respondToArtifact] failed", err),
+          );
+      }
+
+      // 2. Send answer through a system action to Z (NO user chat bubble displayed!)
       const message =
         questions && questions.length > 0
           ? questions
               .map((q, i) => `Q: ${q}\nA: ${answers[i] ?? ""}`)
               .join("\n\n")
           : answers.join(", ");
-      messageMutation
-        .mutateAsync({ sessionId, message })
-        .catch((err: unknown) => console.error("[submitAnswer] failed", err));
+
+      sendMessage(message, undefined, true);
     },
-    [sessionId, messageMutation],
+    [sessionId, activeDirectiveMessageId, respondMutation, sendMessage],
   );
 
-  const handleApprove = useCallback(() => {
-    if (!sessionId) return;
-    approveMutation
-      .mutateAsync(sessionId)
-      .catch((err: unknown) => console.error("[approvePlan] failed", err));
-  }, [sessionId, approveMutation]);
+  const handleApprove = useCallback(
+    (artifactId?: string) => {
+      if (!sessionId) return;
+      const targetId = artifactId || activeDirectiveMessageId;
+      if (targetId) {
+        respondMutation
+          .mutateAsync({
+            artifactId: targetId,
+            response: { approved: true, resolved: true, status: "completed" },
+          })
+          .catch(console.error);
+      }
+      approveMutation
+        .mutateAsync(sessionId)
+        .catch((err: unknown) => console.error("[approvePlan] failed", err));
+    },
+    [sessionId, activeDirectiveMessageId, approveMutation, respondMutation],
+  );
 
   const handleRetry = useCallback(
-    () => sendMessage("Retry", undefined, true),
-    [sendMessage],
+    (artifactId?: string) => {
+      const targetId = artifactId || activeDirectiveMessageId;
+      if (targetId) {
+        respondMutation
+          .mutateAsync({
+            artifactId: targetId,
+            response: { retry: true, resolved: false },
+          })
+          .catch(console.error);
+      }
+      sendMessage("Retry", undefined, true);
+    },
+    [sendMessage, activeDirectiveMessageId, respondMutation],
   );
+
   const handleSkip = useCallback(
-    () => sendMessage("Skip", undefined, true),
-    [sendMessage],
+    (artifactId?: string) => {
+      const targetId = artifactId || activeDirectiveMessageId;
+      if (targetId) {
+        respondMutation
+          .mutateAsync({
+            artifactId: targetId,
+            response: { skipped: true, resolved: true },
+          })
+          .catch(console.error);
+      }
+      sendMessage("Skip", undefined, true);
+    },
+    [sendMessage, activeDirectiveMessageId, respondMutation],
   );
+
   const handleExplainDifferently = useCallback(
-    () => sendMessage("Explain this differently", undefined, true),
-    [sendMessage],
+    (topicTitle: string, artifactId?: string) => {
+      const targetId = artifactId || activeDirectiveMessageId;
+      if (targetId) {
+        respondMutation
+          .mutateAsync({
+            artifactId: targetId,
+            response: { explainDifferently: true, topicTitle, resolved: true },
+          })
+          .catch(console.error);
+      }
+      sendMessage("Explain this differently", undefined, true);
+    },
+    [sendMessage, activeDirectiveMessageId, respondMutation],
   );
+
   const handleTestMe = useCallback(
-    (topicTitle: string) =>
-      sendMessage(`Test me on ${topicTitle}`, undefined, true),
-    [sendMessage],
+    (topicTitle: string, artifactId?: string) => {
+      const targetId = artifactId || activeDirectiveMessageId;
+      if (targetId) {
+        respondMutation
+          .mutateAsync({
+            artifactId: targetId,
+            response: { testMe: true, topicTitle, resolved: true },
+          })
+          .catch(console.error);
+      }
+      sendMessage(`Test me on ${topicTitle}`, undefined, true);
+    },
+    [sendMessage, activeDirectiveMessageId, respondMutation],
   );
+
   const handleTryMyself = useCallback(
-    (topicTitle: string) =>
-      sendMessage(`I'll try ${topicTitle} myself`, undefined, true),
-    [sendMessage],
+    (topicTitle: string, artifactId?: string) => {
+      const targetId = artifactId || activeDirectiveMessageId;
+      if (targetId) {
+        respondMutation
+          .mutateAsync({
+            artifactId: targetId,
+            response: { tryMyself: true, topicTitle, resolved: true },
+          })
+          .catch(console.error);
+      }
+      sendMessage(`I'll try ${topicTitle} myself`, undefined, true);
+    },
+    [sendMessage, activeDirectiveMessageId, respondMutation],
   );
+
   const handleAction = useCallback(
-    (actionType: string) => sendMessage(actionType, undefined, true),
-    [sendMessage],
+    (actionType: string, artifactId?: string) => {
+      const targetId = artifactId || activeDirectiveMessageId;
+      if (targetId) {
+        respondMutation
+          .mutateAsync({
+            artifactId: targetId,
+            response: { action: actionType, resolved: true },
+          })
+          .catch(console.error);
+      }
+      sendMessage(actionType, undefined, true);
+    },
+    [sendMessage, activeDirectiveMessageId, respondMutation],
   );
+
   const handlePomodoroResume = useCallback(
-    () => sendMessage("Pomodoro done, ready to continue", undefined, true),
-    [sendMessage],
+    (artifactId?: string) => {
+      const targetId = artifactId || activeDirectiveMessageId;
+      if (targetId) {
+        respondMutation
+          .mutateAsync({
+            artifactId: targetId,
+            response: { pomodoroResume: true, resolved: true },
+          })
+          .catch(console.error);
+      }
+      sendMessage("Pomodoro done, ready to continue", undefined, true);
+    },
+    [sendMessage, activeDirectiveMessageId, respondMutation],
   );
 
   // Guard: invalid session
@@ -764,7 +905,7 @@ export default function ChatPage() {
 
               <button
                 type="button"
-                onClick={handleContinue}
+                onClick={() => handleContinue()}
                 className="rounded-full bg-black hover:bg-slate-800 px-4 py-1.5 text-[11.5px] font-bold text-white shadow-xs hover:scale-102 transition cursor-pointer flex items-center gap-1.5"
               >
                 <span>{isRecapActive ? "Keep going" : "Continue"}</span>

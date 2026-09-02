@@ -1959,18 +1959,22 @@ function UnknownDirectiveCard({
 // ─── Public ArtifactCardCallbacks Interface ──────────────────────────────────
 
 export interface ArtifactCardCallbacks {
-  onSubmitAnswer?: (answers: string[], questions?: string[]) => void;
-  onApprove?: () => void;
-  onContinue?: () => void;
-  onRetry?: () => void;
-  onSkip?: () => void;
-  onExplainDifferently?: (topicTitle: string) => void;
-  onTestMe?: (topicTitle: string) => void;
-  onTryMyself?: (topicTitle: string) => void;
-  onAction?: (actionType: string) => void;
-  onPomodoroResume?: () => void;
+  onSubmitAnswer?: (
+    answers: string[],
+    questions?: string[],
+    artifactId?: string,
+  ) => void;
+  onApprove?: (artifactId?: string) => void;
+  onContinue?: (artifactId?: string) => void;
+  onRetry?: (artifactId?: string) => void;
+  onSkip?: (artifactId?: string) => void;
+  onExplainDifferently?: (topicTitle: string, artifactId?: string) => void;
+  onTestMe?: (topicTitle: string, artifactId?: string) => void;
+  onTryMyself?: (topicTitle: string, artifactId?: string) => void;
+  onAction?: (actionType: string, artifactId?: string) => void;
+  onPomodoroResume?: (artifactId?: string) => void;
   onOpenSource?: (materialId: string, pageNumber?: number) => void;
-  onFeedback?: (type: "too_easy" | "too_hard") => void;
+  onFeedback?: (type: "too_easy" | "too_hard", artifactId?: string) => void;
 }
 
 export type DirectiveCardCallbacks = ArtifactCardCallbacks;
@@ -2002,13 +2006,41 @@ export function ArtifactCard({
   onOpenSource,
   onFeedback,
 }: ArtifactCardProps) {
+  const currentArtifactId =
+    artifact?.artifactId ||
+    artifact?.id ||
+    (directive as any)?.id ||
+    (directive as any)?.artifactId ||
+    (artifact?.content as any)?.artifactId;
+
+  const handleAnswer = (answers: string[], questions?: string[]) => {
+    onSubmitAnswer(answers, questions, currentArtifactId);
+  };
+  const handleApprove = () => onApprove(currentArtifactId);
+  const handleContinue = () => onContinue(currentArtifactId);
+  const handleRetry = () => onRetry(currentArtifactId);
+  const handleSkip = () => onSkip(currentArtifactId);
+  const handleExplainDifferently = (topic: string) =>
+    onExplainDifferently(topic, currentArtifactId);
+  const handleTestMe = (topic: string) => onTestMe(topic, currentArtifactId);
+  const handleTryMyself = (topic: string) =>
+    onTryMyself(topic, currentArtifactId);
+  const handleAction = (act: string) => onAction(act, currentArtifactId);
+  const handlePomodoroResume = () => onPomodoroResume(currentArtifactId);
+  const handleFeedback = (type: "too_easy" | "too_hard") =>
+    onFeedback?.(type, currentArtifactId);
+
   // If artifact is provided, map it to the corresponding card view
   if (artifact) {
     const artType = String(artifact.type || "").toLowerCase();
     const content = artifact.content || {};
 
     // 1. Flashcard Set
-    if (artType === "flashcard_set" || artType === "flashcards" || artType === "flashcard") {
+    if (
+      artType === "flashcard_set" ||
+      artType === "flashcards" ||
+      artType === "flashcard"
+    ) {
       const payload = {
         title: artifact.title || content.title,
         cards: content.cards || (Array.isArray(content) ? content : []),
@@ -2017,7 +2049,7 @@ export function ArtifactCard({
         <FlashcardSetCard
           payload={payload}
           resolved={resolved}
-          onContinue={onContinue}
+          onContinue={handleContinue}
         />
       );
     }
@@ -2051,8 +2083,8 @@ export function ArtifactCard({
         <VerificationCard
           payload={payload}
           resolved={resolved}
-          onSubmitAnswer={onSubmitAnswer}
-          onContinue={onContinue}
+          onSubmitAnswer={handleAnswer}
+          onContinue={handleContinue}
         />
       );
     }
@@ -2077,8 +2109,8 @@ export function ArtifactCard({
           payload={payload}
           resolved={resolved}
           onOpenSource={onOpenSource}
-          onFeedback={onFeedback}
-          onContinue={onContinue}
+          onFeedback={handleFeedback}
+          onContinue={handleContinue}
         />
       );
     }
@@ -2098,9 +2130,9 @@ export function ArtifactCard({
         <AskQuestionCard
           payload={payload}
           resolved={resolved}
-          onSubmitAnswer={onSubmitAnswer}
-          onRetry={onRetry}
-          onSkip={onSkip}
+          onSubmitAnswer={handleAnswer}
+          onRetry={handleRetry}
+          onSkip={handleSkip}
         />
       );
     }
@@ -2112,8 +2144,8 @@ export function ArtifactCard({
         <ShowQuizCard
           payload={payload}
           resolved={resolved}
-          onSubmitAnswer={onSubmitAnswer}
-          onSkip={onSkip}
+          onSubmitAnswer={handleAnswer}
+          onSkip={handleSkip}
         />
       );
     }
@@ -2145,8 +2177,8 @@ export function ArtifactCard({
         <ShowPlanCard
           payload={payload}
           resolved={resolved}
-          onApprove={onApprove}
-          onSkip={onSkip}
+          onApprove={handleApprove}
+          onSkip={handleSkip}
         />
       );
     }
@@ -2162,9 +2194,9 @@ export function ArtifactCard({
         <AskQuestionCard
           payload={directive.payload}
           resolved={resolved}
-          onSubmitAnswer={onSubmitAnswer}
-          onRetry={onRetry}
-          onSkip={onSkip}
+          onSubmitAnswer={handleAnswer}
+          onRetry={handleRetry}
+          onSkip={handleSkip}
         />
       );
     case "ASK_QUESTIONS":
@@ -2173,8 +2205,8 @@ export function ArtifactCard({
         <AskQuestionsCard
           payload={directive.payload}
           resolved={resolved}
-          onSubmitAnswer={onSubmitAnswer}
-          onSkip={onSkip}
+          onSubmitAnswer={handleAnswer}
+          onSkip={handleSkip}
         />
       );
     case "SHOW_EXPOSITION" as any:
@@ -2185,8 +2217,8 @@ export function ArtifactCard({
           payload={directive.payload}
           resolved={resolved}
           onOpenSource={onOpenSource}
-          onFeedback={onFeedback}
-          onContinue={onContinue}
+          onFeedback={handleFeedback}
+          onContinue={handleContinue}
         />
       );
     case "SHOW_QUIZ":
@@ -2196,8 +2228,8 @@ export function ArtifactCard({
         <ShowQuizCard
           payload={directive.payload}
           resolved={resolved}
-          onSubmitAnswer={onSubmitAnswer}
-          onSkip={onSkip}
+          onSubmitAnswer={handleAnswer}
+          onSkip={handleSkip}
         />
       );
     case "SHOW_PLAN":
@@ -2207,8 +2239,8 @@ export function ArtifactCard({
         <ShowPlanCard
           payload={directive.payload}
           resolved={resolved}
-          onApprove={onApprove}
-          onSkip={onSkip}
+          onApprove={handleApprove}
+          onSkip={handleSkip}
         />
       );
     case "UNLOCK_TOPIC":
@@ -2225,10 +2257,10 @@ export function ArtifactCard({
         <ShowSuggestionCard
           payload={directive.payload}
           resolved={resolved}
-          onExplainDifferently={onExplainDifferently}
-          onTestMe={onTestMe}
-          onTryMyself={onTryMyself}
-          onAction={onAction}
+          onExplainDifferently={handleExplainDifferently}
+          onTestMe={handleTestMe}
+          onTryMyself={handleTryMyself}
+          onAction={handleAction}
         />
       );
     case "SHOW_SUMMARY":
@@ -2244,7 +2276,7 @@ export function ArtifactCard({
         <PomodoroCard
           payload={directive.payload}
           resolved={resolved}
-          onResume={onPomodoroResume}
+          onResume={handlePomodoroResume}
         />
       );
     default:
@@ -2253,7 +2285,7 @@ export function ArtifactCard({
           type={directive.type}
           payload={directive.payload}
           resolved={resolved}
-          onContinue={onContinue}
+          onContinue={handleContinue}
         />
       );
   }

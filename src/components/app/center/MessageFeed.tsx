@@ -232,7 +232,7 @@ export function MessageFeed({
           <div className="w-full flex justify-center pt-2">
             <button
               type="button"
-              onClick={onContinue}
+              onClick={() => onContinue?.()}
               className="inline-flex items-center gap-2 rounded-full bg-slate-900 text-white px-6 py-2.5 text-xs font-bold hover:bg-[#0C60FC] transition shadow-sm cursor-pointer"
             >
               <span>Continue to Session</span>
@@ -597,16 +597,20 @@ function ZMessageCanvasNode({
   onRetryMessage?: (id: string, content: string) => void;
   onRetry?: () => void;
   onRate?: (messageId: string, rating: 1 | -1) => void;
-  onSubmitAnswer?: (answers: string[], questions?: string[]) => void;
-  onApprove?: () => void;
-  onContinue?: () => void;
-  onFeedback?: (type: "too_easy" | "too_hard") => void;
-  onSkip?: () => void;
-  onExplainDifferently?: (topicTitle: string) => void;
-  onTestMe?: (topicTitle: string) => void;
-  onTryMyself?: (topicTitle: string) => void;
-  onAction?: (actionType: string) => void;
-  onPomodoroResume?: () => void;
+  onSubmitAnswer?: (
+    answers: string[],
+    questions?: string[],
+    artifactId?: string,
+  ) => void;
+  onApprove?: (artifactId?: string) => void;
+  onContinue?: (artifactId?: string) => void;
+  onFeedback?: (type: "too_easy" | "too_hard", artifactId?: string) => void;
+  onSkip?: (artifactId?: string) => void;
+  onExplainDifferently?: (topicTitle: string, artifactId?: string) => void;
+  onTestMe?: (topicTitle: string, artifactId?: string) => void;
+  onTryMyself?: (topicTitle: string, artifactId?: string) => void;
+  onAction?: (actionType: string, artifactId?: string) => void;
+  onPomodoroResume?: (artifactId?: string) => void;
 }) {
   const isStreaming = !!message.isStreaming;
   const [hovered, setHovered] = useState(false);
