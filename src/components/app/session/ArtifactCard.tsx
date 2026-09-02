@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle2,
   ChevronRight,
+  ChevronLeft,
   ClipboardList,
   Coffee,
   HelpCircle,
@@ -25,6 +26,22 @@ import {
   Volume2,
   Edit3,
   PenTool,
+  Layers,
+  GraduationCap,
+  Target,
+  Compass,
+  AlertCircle,
+  BookOpen,
+  Eye,
+  EyeOff,
+  Shuffle,
+  Send,
+  CheckCircle,
+  XCircle,
+  ListOrdered,
+  Award,
+  BookMarked,
+  Sparkle,
 } from "lucide-react";
 import {
   QuestionMarkdown,
@@ -50,7 +67,7 @@ import type {
 interface ActionButtonProps {
   onClick: () => void;
   children: React.ReactNode;
-  variant?: "primary" | "secondary" | "danger" | "ghost";
+  variant?: "primary" | "secondary" | "danger" | "ghost" | "success";
   className?: string;
   disabled?: boolean;
 }
@@ -75,6 +92,8 @@ function ActionButton({
           "bg-slate-950 text-white hover:bg-[#0C60FC] shadow-slate-900/10",
         variant === "secondary" &&
           "bg-slate-100/90 text-slate-700 hover:bg-slate-200/80 border border-slate-200/60",
+        variant === "success" &&
+          "bg-emerald-600 text-white hover:bg-emerald-700 border border-emerald-600",
         variant === "danger" &&
           "bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200",
         variant === "ghost" &&
@@ -113,7 +132,7 @@ function CardWrapper({
       transition={{ duration: 0.3 }}
       className={cn(
         "w-full max-w-xl mx-auto rounded-[28px] border border-slate-200/80 bg-white p-5 sm:p-7 shadow-lg shadow-slate-200/40 space-y-4 transition-all text-slate-900",
-        resolved && "opacity-60 bg-slate-50/70 shadow-none border-slate-200/60",
+        resolved && "opacity-80 bg-slate-50/70 shadow-none border-slate-200/60",
         className,
       )}
     >
@@ -125,7 +144,7 @@ function CardWrapper({
           </span>
         </div>
         {badge && (
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200/60">
+          <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200/60 truncate max-w-44">
             {badge}
           </span>
         )}
@@ -145,11 +164,25 @@ function CardWrapper({
   );
 }
 
+// ─── Speech Helper ───────────────────────────────────────────────────────────
+
+function handleSpeak(text: string) {
+  if (typeof window !== "undefined" && "speechSynthesis" in window) {
+    window.speechSynthesis.cancel();
+    // Clean markdown syntax before speaking
+    const cleanText = text.replace(/[*#_`~\[\]]/g, "").replace(/\n+/g, " ");
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    window.speechSynthesis.speak(utterance);
+  }
+}
+
 // ─── Q:A Resolved Display ───────────────────────────────────────────────────
 
 interface QAEntryProps {
   question: string;
   answer: string;
+  explanation?: string;
+  correctAnswer?: string;
 }
 
 function QAResolvedCard({ entries }: { entries: QAEntryProps[] }) {
@@ -161,7 +194,7 @@ function QAResolvedCard({ entries }: { entries: QAEntryProps[] }) {
       className="w-full max-w-xl mx-auto rounded-2xl border border-slate-200 bg-slate-50/80 p-4 text-xs divide-y divide-slate-200/60 space-y-3"
     >
       {entries.map((e, i) => (
-        <div key={i} className="pt-2 first:pt-0 space-y-1.5">
+        <div key={i} className="pt-2 first:pt-0 space-y-2">
           <div className="flex items-start gap-2">
             <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mt-0.5">
               Q:
@@ -174,7 +207,19 @@ function QAResolvedCard({ entries }: { entries: QAEntryProps[] }) {
             <span className="text-[10px] font-extrabold text-emerald-600 uppercase tracking-widest mt-0.5">
               A:
             </span>
-            <p className="text-slate-900 font-bold leading-relaxed">{e.answer || "—"}</p>
+            <div className="flex-1 space-y-1">
+              <p className="text-slate-900 font-bold leading-relaxed">{e.answer || "—"}</p>
+              {e.correctAnswer && e.correctAnswer !== e.answer && (
+                <p className="text-[11px] text-emerald-700 font-medium">
+                  Correct answer: <span className="font-bold">{e.correctAnswer}</span>
+                </p>
+              )}
+              {e.explanation && (
+                <p className="text-[11px] text-slate-500 font-normal leading-relaxed pt-0.5">
+                  {e.explanation}
+                </p>
+              )}
+            </div>
           </div>
         </div>
       ))}
@@ -182,54 +227,83 @@ function QAResolvedCard({ entries }: { entries: QAEntryProps[] }) {
   );
 }
 
-// ─── True / False Helper Check ───────────────────────────────────────────────
+// ─── Helper to Normalize Option Strings ───────────────────────────────────────
 
-function isTrueFalseOptions(options?: string[]): boolean {
+function normalizeOptionText(opt: any): string {
+  if (typeof opt === "string") return opt;
+  if (opt && typeof opt === "object") {
+    return opt.text || opt.label || opt.value || opt.id || JSON.stringify(opt);
+  }
+  return String(opt ?? "");
+}
+
+function isTrueFalseOptions(options?: any[]): boolean {
   if (!options || options.length !== 2) return false;
-  const lower = options.map((o) => o.trim().toLowerCase());
+  const lower = options.map((o) => normalizeOptionText(o).trim().toLowerCase());
   return (
-    (lower.includes("true") && lower.includes("false")) ||
-    (lower.includes("yes") && lower.includes("no"))
+    (lower.some((s) => s === "true" || s.startsWith("true") || s === "a) true") &&
+      lower.some((s) => s === "false" || s.startsWith("false") || s === "b) false")) ||
+    (lower.some((s) => s === "yes" || s.startsWith("yes")) &&
+      lower.some((s) => s === "no" || s.startsWith("no")))
   );
 }
 
-// ─── ASK_QUESTION ────────────────────────────────────────────────────────────
+// ─── ASK_QUESTION / QUESTION ARTIFACT ────────────────────────────────────────
 
 interface AskQuestionCardProps {
-  payload: ZAskQuestionPayload;
+  payload: any;
   resolved: boolean;
-  onSubmitAnswer: (answers: string[], questions?: string[]) => void;
-  onRetry: () => void;
-  onSkip: () => void;
+  onSubmitAnswer?: (answers: string[], questions?: string[]) => void;
+  onRetry?: () => void;
+  onSkip?: () => void;
 }
 
 function AskQuestionCard({
   payload,
   resolved,
-  onSubmitAnswer,
-  onRetry,
-  onSkip,
+  onSubmitAnswer = () => {},
+  onRetry = () => {},
+  onSkip = () => {},
 }: AskQuestionCardProps) {
+  const rawQuestion =
+    payload.question ||
+    payload.text ||
+    payload.prompt ||
+    payload.title ||
+    "Knowledge Check";
+
+  const rawOptions: any[] = Array.isArray(payload.options) ? payload.options : [];
+  const options = rawOptions.map(normalizeOptionText);
+
+  const correctAnswer =
+    payload.correctAnswer ||
+    payload.solution ||
+    payload.answer ||
+    "";
+  const explanation = payload.explanation || "";
+  const hint = payload.hint || "";
+
   const persistedAnswer =
-    (payload as any).selectedOption ||
-    (payload as any).submittedAnswer ||
-    (payload as any).userAnswers?.[0] ||
-    (payload as any).answer ||
+    payload.selectedOption ||
+    payload.submittedAnswer ||
+    payload.userAnswers?.[0] ||
+    payload.answer ||
     "";
 
   const [textAnswer, setTextAnswer] = useState(persistedAnswer);
   const [selectedOption, setSelectedOption] = useState<string | null>(
     persistedAnswer || null,
   );
+  const [showHint, setShowHint] = useState(false);
   const submittedAnswerRef = useRef<string>(persistedAnswer);
 
-  const isTF = isTrueFalseOptions(payload.options);
+  const isTF = isTrueFalseOptions(options);
 
   const handleSubmit = (choice?: string) => {
-    const ans = choice ?? (payload.options ? selectedOption : textAnswer.trim());
+    const ans = choice ?? (options.length > 0 ? selectedOption : textAnswer.trim());
     if (ans) {
       submittedAnswerRef.current = ans;
-      onSubmitAnswer([ans], [payload.question]);
+      onSubmitAnswer([ans], [rawQuestion]);
     }
   };
 
@@ -238,8 +312,10 @@ function AskQuestionCard({
       <QAResolvedCard
         entries={[
           {
-            question: payload.question,
+            question: rawQuestion,
             answer: submittedAnswerRef.current || persistedAnswer || "—",
+            correctAnswer: typeof correctAnswer === "string" ? correctAnswer : undefined,
+            explanation,
           },
         ]}
       />
@@ -247,33 +323,46 @@ function AskQuestionCard({
   }
 
   // Specialized True / False Card View
-  if (isTF && payload.options) {
-    const falseOpt = payload.options.find((o) =>
-      ["false", "no"].includes(o.trim().toLowerCase())
-    ) || payload.options[1];
-    const trueOpt = payload.options.find((o) =>
-      ["true", "yes"].includes(o.trim().toLowerCase())
-    ) || payload.options[0];
+  if (isTF && options.length === 2) {
+    const falseOpt =
+      options.find((o) =>
+        ["false", "no", "b) false"].some((k) => o.trim().toLowerCase().includes(k))
+      ) || options[1];
+    const trueOpt =
+      options.find((o) =>
+        ["true", "yes", "a) true"].some((k) => o.trim().toLowerCase().includes(k))
+      ) || options[0];
 
     return (
       <CardWrapper
         resolved={resolved}
         icon={<HelpCircle className="h-4 w-4 text-[#0C60FC]" />}
-        label="True / False"
+        label="True / False Check"
+        badge={payload.topicTitle || payload.title}
       >
         <div className="py-2">
           <QuestionMarkdown
-            content={payload.question}
+            content={rawQuestion}
             className="text-base sm:text-lg font-bold text-slate-900 leading-snug"
           />
         </div>
+
+        {hint && (
+          <div className="text-xs text-amber-700 bg-amber-50/80 p-2.5 rounded-xl border border-amber-200/60">
+            <span className="font-bold">Hint: </span>
+            {hint}
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-3 pt-2">
           <motion.button
             type="button"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => handleSubmit(falseOpt)}
+            onClick={() => {
+              setSelectedOption(falseOpt);
+              handleSubmit(falseOpt);
+            }}
             className="rounded-2xl border border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 p-4 flex items-center justify-center gap-2 text-sm font-bold text-slate-800 shadow-xs transition-all cursor-pointer"
           >
             <span>👎</span>
@@ -284,7 +373,10 @@ function AskQuestionCard({
             type="button"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => handleSubmit(trueOpt)}
+            onClick={() => {
+              setSelectedOption(trueOpt);
+              handleSubmit(trueOpt);
+            }}
             className="rounded-2xl border border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 p-4 flex items-center justify-center gap-2 text-sm font-bold text-slate-800 shadow-xs transition-all cursor-pointer"
           >
             <span>👍</span>
@@ -301,18 +393,11 @@ function AskQuestionCard({
     "bg-[#FEF9C3] text-[#A16207]", // C - yellow
     "bg-[#E0E7FF] text-[#4338CA]", // D - blue
     "bg-[#F3E8FF] text-[#7E22CE]", // E - purple
+    "bg-[#FCE7F3] text-[#BE185D]", // F - pink
   ];
 
-  const handleSpeak = (text: string) => {
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      window.speechSynthesis.speak(utterance);
-    }
-  };
-
-  // Multiple Choice Question (Screenshot 3)
-  if (payload.options && payload.options.length > 0) {
+  // Multiple Choice Question
+  if (options.length > 0) {
     return (
       <CardWrapper
         resolved={resolved}
@@ -321,24 +406,45 @@ function AskQuestionCard({
             <HelpCircle className="h-3 w-3" />
           </span>
         }
-        label="Multiple choice question"
+        label="Concept Check"
+        badge={payload.topicTitle || payload.title}
       >
         <div className="py-1">
           <QuestionMarkdown
-            content={payload.question}
-            className="text-xs sm:text-[13px] font-medium text-slate-900 leading-snug"
+            content={rawQuestion}
+            className="text-xs sm:text-[13.5px] font-semibold text-slate-900 leading-snug"
           />
         </div>
 
+        {hint && (
+          <div className="pt-1">
+            {!showHint ? (
+              <button
+                type="button"
+                onClick={() => setShowHint(true)}
+                className="text-[11px] text-amber-600 hover:underline flex items-center gap-1 font-semibold cursor-pointer"
+              >
+                <Lightbulb className="h-3 w-3" />
+                <span>Show hint</span>
+              </button>
+            ) : (
+              <div className="text-xs text-amber-800 bg-amber-50/80 p-2.5 rounded-xl border border-amber-200/60 leading-relaxed">
+                <span className="font-bold">Hint: </span>
+                {hint}
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="flex flex-col gap-2 pt-1">
-          {payload.options.map((opt, i) => {
+          {options.map((opt, i) => {
             const isSelected = selectedOption === opt;
             const letter = String.fromCharCode(65 + i);
             const badgeClass = optionBadgeColors[i % optionBadgeColors.length];
 
             return (
               <button
-                key={opt}
+                key={i}
                 type="button"
                 onClick={() => {
                   setSelectedOption(opt);
@@ -347,14 +453,14 @@ function AskQuestionCard({
                 className={cn(
                   "w-full text-left rounded-[18px] p-3 text-xs font-semibold transition-all border flex items-center gap-3 cursor-pointer shadow-2xs",
                   isSelected
-                    ? "border-emerald-500 bg-emerald-50/40 text-emerald-900 ring-1 ring-emerald-500"
-                    : "border-slate-200/90 bg-white text-slate-800 hover:border-slate-300"
+                    ? "border-emerald-500 bg-emerald-50/50 text-emerald-900 ring-1 ring-emerald-500"
+                    : "border-slate-200/90 bg-white text-slate-800 hover:border-slate-300 hover:bg-slate-50/60",
                 )}
               >
                 <span
                   className={cn(
                     "h-6 w-6 rounded-md text-[11px] font-bold flex items-center justify-center shrink-0 shadow-2xs transition-colors",
-                    badgeClass
+                    badgeClass,
                   )}
                 >
                   {letter}
@@ -368,7 +474,7 @@ function AskQuestionCard({
         <div className="flex items-center justify-between pt-1">
           <button
             type="button"
-            onClick={() => handleSpeak(payload.question)}
+            onClick={() => handleSpeak(rawQuestion)}
             className="flex h-6 w-6 items-center justify-center rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
             title="Read aloud"
           >
@@ -384,7 +490,7 @@ function AskQuestionCard({
     );
   }
 
-  // Open-Ended Question (Screenshot 2)
+  // Open-Ended Question
   return (
     <CardWrapper
       resolved={resolved}
@@ -393,38 +499,62 @@ function AskQuestionCard({
           <Edit3 className="h-3 w-3" />
         </span>
       }
-      label="Open-ended question"
+      label="Open-ended Question"
+      badge={payload.topicTitle || payload.title}
     >
       <div className="space-y-2 py-1">
         <QuestionMarkdown
-          content={payload.question}
-          className="text-xs sm:text-[13px] font-medium text-slate-900 leading-relaxed font-sans"
+          content={rawQuestion}
+          className="text-xs sm:text-[13.5px] font-semibold text-slate-900 leading-relaxed font-sans"
         />
 
-        <p className="text-[11.5px] text-slate-600 font-sans leading-relaxed">
-          {(payload as any).note || "Type your explanation or response in the message bar below."}
-        </p>
+        {hint && (
+          <div className="text-xs text-amber-800 bg-amber-50/80 p-2.5 rounded-xl border border-amber-200/60 leading-relaxed">
+            <span className="font-bold">Hint: </span>
+            {hint}
+          </div>
+        )}
+
+        <div className="pt-2">
+          <textarea
+            value={textAnswer}
+            onChange={(e) => setTextAnswer(e.target.value)}
+            placeholder="Type your response here..."
+            rows={3}
+            className="w-full rounded-2xl border border-slate-200 bg-slate-50/60 p-3 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-[#0C60FC] focus:outline-none transition"
+          />
+        </div>
       </div>
 
       <div className="flex items-center justify-between pt-1">
         <button
           type="button"
-          onClick={() => handleSpeak(payload.question)}
+          onClick={() => handleSpeak(rawQuestion)}
           className="flex h-6 w-6 items-center justify-center rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
           title="Read aloud"
         >
           <Volume2 className="h-3.5 w-3.5" />
         </button>
 
-        <ActionButton onClick={onSkip} variant="ghost">
-          Skip
-        </ActionButton>
+        <div className="flex items-center gap-2">
+          <ActionButton onClick={onSkip} variant="ghost">
+            Skip
+          </ActionButton>
+          <ActionButton
+            onClick={() => handleSubmit()}
+            disabled={!textAnswer.trim()}
+            variant="primary"
+          >
+            <span>Submit</span>
+            <ArrowRight className="h-3.5 w-3.5" />
+          </ActionButton>
+        </div>
       </div>
     </CardWrapper>
   );
 }
 
-// ─── ASK_QUESTIONS ───────────────────────────────────────────────────────────
+// ─── ASK_QUESTIONS / PRACTICE SET ────────────────────────────────────────────
 
 interface AskQuestionsCardProps {
   payload: ZAskQuestionsPayload;
@@ -442,8 +572,10 @@ function AskQuestionsCard({
   const persistedAnswers =
     (payload as any).userAnswers || (payload as any).answers || [];
 
+  const rawQuestions = payload.questions || [];
+
   const [answers, setAnswers] = useState<string[]>(
-    payload.questions.map((_, i) => persistedAnswers[i] || ""),
+    rawQuestions.map((_, i) => persistedAnswers[i] || ""),
   );
   const submittedRef = useRef<string[]>(persistedAnswers);
 
@@ -463,22 +595,26 @@ function AskQuestionsCard({
     });
   };
 
-  const allAnswered = answers.every((a) => a.trim().length > 0);
+  const allAnswered = answers.every((a) => a && a.trim().length > 0);
 
   const handleSubmit = () => {
     if (!allAnswered) return;
     submittedRef.current = [...answers];
     onSubmitAnswer(
       answers,
-      payload.questions.map((q) => q.question),
+      rawQuestions.map((q) => q.question || (q as any).text || ""),
     );
   };
 
-  if (resolved || (persistedAnswers.length > 0 && persistedAnswers.some((a: string) => a.trim().length > 0))) {
+  if (
+    resolved ||
+    (persistedAnswers.length > 0 &&
+      persistedAnswers.some((a: string) => a && a.trim().length > 0))
+  ) {
     return (
       <QAResolvedCard
-        entries={payload.questions.map((q, i) => ({
-          question: q.question,
+        entries={rawQuestions.map((q, i) => ({
+          question: q.question || (q as any).text || "",
           answer: submittedRef.current[i] || persistedAnswers[i] || "—",
         }))}
       />
@@ -490,64 +626,69 @@ function AskQuestionsCard({
       resolved={resolved}
       icon={<ClipboardList className="h-4 w-4 text-[#0C60FC]" />}
       label="Practice Set"
-      badge={`${payload.questions.length} Questions`}
+      badge={`${rawQuestions.length} Questions`}
     >
       <div className="space-y-5 divide-y divide-slate-100">
-        {payload.questions.map((q, idx) => (
-          <div key={idx} className="pt-4 first:pt-0 space-y-2.5">
-            <div className="flex items-baseline gap-2">
-              <span className="text-xs font-extrabold text-[#0C60FC]">
-                #{idx + 1}
-              </span>
-              <QuestionMarkdown
-                content={q.question}
-                className="text-xs sm:text-sm font-bold text-slate-900 leading-snug"
-              />
-            </div>
+        {rawQuestions.map((q, idx) => {
+          const qText = q.question || (q as any).text || `Question ${idx + 1}`;
+          const qOpts: string[] = (q.options || []).map(normalizeOptionText);
 
-            {q.options ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {q.options.map((opt, optIdx) => {
-                  const isSelected = answers[idx] === opt;
-                  const letter = String.fromCharCode(65 + optIdx);
-                  return (
-                    <button
-                      key={opt}
-                      type="button"
-                      onClick={() => handleOptionSelect(idx, opt)}
-                      className={cn(
-                        "text-left rounded-xl p-3 text-xs font-semibold transition-all border flex items-center gap-2.5 cursor-pointer",
-                        isSelected
-                          ? "border-[#0C60FC] bg-blue-50 text-[#0C60FC]"
-                          : "border-slate-200 bg-slate-50/50 text-slate-700 hover:bg-white"
-                      )}
-                    >
-                      <span
+          return (
+            <div key={idx} className="pt-4 first:pt-0 space-y-2.5">
+              <div className="flex items-baseline gap-2">
+                <span className="text-xs font-extrabold text-[#0C60FC]">
+                  #{idx + 1}
+                </span>
+                <QuestionMarkdown
+                  content={qText}
+                  className="text-xs sm:text-sm font-bold text-slate-900 leading-snug"
+                />
+              </div>
+
+              {qOpts.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {qOpts.map((opt, optIdx) => {
+                    const isSelected = answers[idx] === opt;
+                    const letter = String.fromCharCode(65 + optIdx);
+                    return (
+                      <button
+                        key={optIdx}
+                        type="button"
+                        onClick={() => handleOptionSelect(idx, opt)}
                         className={cn(
-                          "h-5 w-5 rounded-md text-[10px] font-bold flex items-center justify-center shrink-0",
+                          "text-left rounded-xl p-3 text-xs font-semibold transition-all border flex items-center gap-2.5 cursor-pointer",
                           isSelected
-                            ? "bg-[#0C60FC] text-white"
-                            : "bg-white text-slate-500 border border-slate-200"
+                            ? "border-[#0C60FC] bg-blue-50 text-[#0C60FC]"
+                            : "border-slate-200 bg-slate-50/50 text-slate-700 hover:bg-white",
                         )}
                       >
-                        {letter}
-                      </span>
-                      <span className="truncate">{opt}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            ) : (
-              <input
-                type="text"
-                value={answers[idx] || ""}
-                onChange={(e) => handleTextChange(idx, e.target.value)}
-                placeholder="Type your response…"
-                className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2.5 text-xs font-medium text-slate-900 outline-none focus:bg-white focus:border-[#0C60FC]"
-              />
-            )}
-          </div>
-        ))}
+                        <span
+                          className={cn(
+                            "h-5 w-5 rounded-md text-[10px] font-bold flex items-center justify-center shrink-0",
+                            isSelected
+                              ? "bg-[#0C60FC] text-white"
+                              : "bg-white text-slate-500 border border-slate-200",
+                          )}
+                        >
+                          {letter}
+                        </span>
+                        <span className="truncate">{opt}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <input
+                  type="text"
+                  value={answers[idx] || ""}
+                  onChange={(e) => handleTextChange(idx, e.target.value)}
+                  placeholder="Type your response…"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2.5 text-xs font-medium text-slate-900 outline-none focus:bg-white focus:border-[#0C60FC]"
+                />
+              )}
+            </div>
+          );
+        })}
       </div>
 
       <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
@@ -567,13 +708,512 @@ function AskQuestionsCard({
   );
 }
 
-// ─── SHOW_QUIZ ───────────────────────────────────────────────────────────────
+// ─── FLASHCARD SET ARTIFACT ──────────────────────────────────────────────────
+
+interface FlashcardItem {
+  cardId?: string;
+  front: string;
+  back: string;
+  tags?: string[];
+}
+
+interface FlashcardSetCardProps {
+  payload: {
+    title?: string;
+    cards: FlashcardItem[];
+  };
+  resolved: boolean;
+  onContinue?: () => void;
+}
+
+function FlashcardSetCard({ payload, resolved }: FlashcardSetCardProps) {
+  const cards = payload.cards || [];
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isFlipped, setIsFlipped] = useState(false);
+
+  if (cards.length === 0) return null;
+
+  const currentCard = cards[currentIndex] || cards[0];
+  const tags = currentCard.tags || [];
+
+  const handleNext = () => {
+    setIsFlipped(false);
+    setCurrentIndex((prev) => (prev + 1) % cards.length);
+  };
+
+  const handlePrev = () => {
+    setIsFlipped(false);
+    setCurrentIndex((prev) => (prev - 1 + cards.length) % cards.length);
+  };
+
+  return (
+    <CardWrapper
+      resolved={resolved}
+      icon={<Layers className="h-4 w-4 text-indigo-600" />}
+      label="Flashcard Set"
+      badge={`${currentIndex + 1} of ${cards.length}`}
+    >
+      <div className="space-y-4">
+        {payload.title && (
+          <h4 className="text-sm sm:text-base font-extrabold text-slate-900">
+            {payload.title}
+          </h4>
+        )}
+
+        {/* Interactive Flip Card Container */}
+        <div
+          onClick={() => setIsFlipped((f) => !f)}
+          className="relative w-full min-h-48 sm:min-h-56 rounded-2xl bg-linear-to-br from-indigo-50/60 via-white to-slate-50 border border-indigo-100/90 p-6 flex flex-col justify-between cursor-pointer shadow-sm hover:shadow-md transition-all group"
+        >
+          {/* Card Top Pill */}
+          <div className="flex items-center justify-between text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+            <span className="flex items-center gap-1.5 text-indigo-600">
+              <Sparkles className="h-3 w-3" />
+              <span>{isFlipped ? "Answer / Definition" : "Prompt / Question"}</span>
+            </span>
+            <span className="text-slate-400 group-hover:text-slate-700 flex items-center gap-1">
+              {isFlipped ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+              <span>Click to flip</span>
+            </span>
+          </div>
+
+          {/* Card Content with Animation */}
+          <div className="py-4 my-auto">
+            <AnimatePresence mode="wait">
+              {!isFlipped ? (
+                <motion.div
+                  key="front"
+                  initial={{ opacity: 0, rotateX: -20 }}
+                  animate={{ opacity: 1, rotateX: 0 }}
+                  exit={{ opacity: 0, rotateX: 20 }}
+                  transition={{ duration: 0.2 }}
+                  className="text-slate-900 text-sm sm:text-base font-bold text-center leading-relaxed"
+                >
+                  <QuestionMarkdown content={currentCard.front} />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="back"
+                  initial={{ opacity: 0, rotateX: 20 }}
+                  animate={{ opacity: 1, rotateX: 0 }}
+                  exit={{ opacity: 0, rotateX: -20 }}
+                  transition={{ duration: 0.2 }}
+                  className="text-slate-800 text-xs sm:text-sm font-medium text-center leading-relaxed font-sans"
+                >
+                  <QuestionMarkdown content={currentCard.back} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Tags & Audio */}
+          <div className="flex items-center justify-between pt-2 border-t border-indigo-50/80">
+            <div className="flex flex-wrap gap-1">
+              {tags.map((t, idx) => (
+                <span
+                  key={idx}
+                  className="text-[10px] font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md"
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSpeak(isFlipped ? currentCard.back : currentCard.front);
+              }}
+              className="h-6 w-6 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+              title="Read card"
+            >
+              <Volume2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Carousel Navigation Footer */}
+        <div className="flex items-center justify-between pt-1">
+          <button
+            type="button"
+            onClick={handlePrev}
+            disabled={cards.length <= 1}
+            className="flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-slate-950 px-3 py-1.5 rounded-xl hover:bg-slate-100 transition disabled:opacity-30 cursor-pointer"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            <span>Prev</span>
+          </button>
+
+          {/* Card Indicator Dots */}
+          <div className="flex items-center gap-1.5">
+            {cards.slice(0, 10).map((_, i) => (
+              <span
+                key={i}
+                className={cn(
+                  "h-1.5 rounded-full transition-all",
+                  i === currentIndex
+                    ? "w-4 bg-indigo-600"
+                    : "w-1.5 bg-slate-200",
+                )}
+              />
+            ))}
+            {cards.length > 10 && (
+              <span className="text-[10px] text-slate-400">+{cards.length - 10}</span>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={handleNext}
+            disabled={cards.length <= 1}
+            className="flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-slate-950 px-3 py-1.5 rounded-xl hover:bg-slate-100 transition disabled:opacity-30 cursor-pointer"
+          >
+            <span>Next</span>
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    </CardWrapper>
+  );
+}
+
+// ─── WALKTHROUGH ARTIFACT ────────────────────────────────────────────────────
+
+interface WalkthroughCardProps {
+  payload: {
+    title?: string;
+    type?: "full" | "mini" | string;
+    goalTitle?: string;
+    sessionSummary?: string;
+    mastered?: string[];
+    gaps?: string[];
+    recommendations?: string[];
+    nextSteps?: string[];
+  };
+  resolved: boolean;
+}
+
+function WalkthroughCard({ payload, resolved }: WalkthroughCardProps) {
+  const {
+    title = "Session Walkthrough",
+    type = "full",
+    sessionSummary,
+    mastered = [],
+    gaps = [],
+    recommendations = [],
+    nextSteps = [],
+  } = payload;
+
+  const [activeTab, setActiveTab] = useState<"summary" | "mastered" | "gaps" | "next">("summary");
+
+  return (
+    <CardWrapper
+      resolved={resolved}
+      icon={<Award className="h-4 w-4 text-emerald-600" />}
+      label="Session Walkthrough"
+      badge={type === "full" ? "Comprehensive Signoff" : "Milestone Review"}
+      className="bg-linear-to-b from-white via-white to-emerald-50/20 border-emerald-100/90"
+    >
+      <div className="space-y-4">
+        <div>
+          <h3 className="text-base sm:text-lg font-black text-slate-950">
+            {title}
+          </h3>
+          {payload.goalTitle && (
+            <p className="text-xs font-semibold text-emerald-700 mt-0.5">
+              Goal: {payload.goalTitle}
+            </p>
+          )}
+        </div>
+
+        {/* Tab Pills */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-slate-100 text-xs font-bold">
+          <button
+            type="button"
+            onClick={() => setActiveTab("summary")}
+            className={cn(
+              "px-3 py-1.5 rounded-xl transition cursor-pointer shrink-0",
+              activeTab === "summary"
+                ? "bg-slate-900 text-white"
+                : "text-slate-600 hover:bg-slate-100",
+            )}
+          >
+            Summary
+          </button>
+          {mastered.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setActiveTab("mastered")}
+              className={cn(
+                "px-3 py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1 shrink-0",
+                activeTab === "mastered"
+                  ? "bg-emerald-600 text-white"
+                  : "text-emerald-700 hover:bg-emerald-50",
+              )}
+            >
+              <span>Mastered</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20">
+                {mastered.length}
+              </span>
+            </button>
+          )}
+          {gaps.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setActiveTab("gaps")}
+              className={cn(
+                "px-3 py-1.5 rounded-xl transition cursor-pointer flex items-center gap-1 shrink-0",
+                activeTab === "gaps"
+                  ? "bg-amber-600 text-white"
+                  : "text-amber-700 hover:bg-amber-50",
+              )}
+            >
+              <span>Knowledge Gaps</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20">
+                {gaps.length}
+              </span>
+            </button>
+          )}
+          {nextSteps.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setActiveTab("next")}
+              className={cn(
+                "px-3 py-1.5 rounded-xl transition cursor-pointer shrink-0",
+                activeTab === "next"
+                  ? "bg-indigo-600 text-white"
+                  : "text-indigo-700 hover:bg-indigo-50",
+              )}
+            >
+              Next Steps
+            </button>
+          )}
+        </div>
+
+        {/* Tab Contents */}
+        <div className="pt-1 text-xs leading-relaxed text-slate-700">
+          {activeTab === "summary" && sessionSummary && (
+            <div className="space-y-3">
+              <p className="font-serif sm:text-[13px] leading-relaxed text-slate-800 bg-slate-50/80 p-4 rounded-2xl border border-slate-200/60">
+                {sessionSummary}
+              </p>
+              {recommendations.length > 0 && (
+                <div className="space-y-1.5 pt-2">
+                  <span className="font-extrabold text-[11px] uppercase tracking-wider text-slate-500">
+                    Recommendations
+                  </span>
+                  <ul className="space-y-1.5">
+                    {recommendations.map((r, i) => (
+                      <li key={i} className="flex items-start gap-2 text-slate-700">
+                        <Lightbulb className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" />
+                        <span>{r}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "mastered" && (
+            <ul className="space-y-2">
+              {mastered.map((m, i) => (
+                <li
+                  key={i}
+                  className="flex items-start gap-2.5 p-2.5 rounded-xl bg-emerald-50/50 border border-emerald-100"
+                >
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <span className="font-medium text-emerald-950">{m}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {activeTab === "gaps" && (
+            <ul className="space-y-2">
+              {gaps.map((g, i) => (
+                <li
+                  key={i}
+                  className="flex items-start gap-2.5 p-2.5 rounded-xl bg-amber-50/50 border border-amber-100"
+                >
+                  <Target className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                  <span className="font-medium text-amber-950">{g}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {activeTab === "next" && (
+            <ul className="space-y-2">
+              {nextSteps.map((n, i) => (
+                <li
+                  key={i}
+                  className="flex items-start gap-2.5 p-2.5 rounded-xl bg-indigo-50/50 border border-indigo-100"
+                >
+                  <ArrowRight className="h-4 w-4 text-indigo-600 shrink-0 mt-0.5" />
+                  <span className="font-medium text-indigo-950">{n}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </CardWrapper>
+  );
+}
+
+// ─── VERIFICATION ARTIFACT ───────────────────────────────────────────────────
+
+interface VerificationCardProps {
+  payload: {
+    method?: "quiz" | "teachback" | "both" | string;
+    teachbackPrompt?: string;
+    studentResponse?: string;
+    passed?: boolean;
+    feedback?: string;
+    score?: number;
+  };
+  resolved: boolean;
+  onSubmitAnswer?: (answers: string[], questions?: string[]) => void;
+  onContinue?: () => void;
+}
+
+function VerificationCard({
+  payload,
+  resolved,
+  onSubmitAnswer = () => {},
+  onContinue = () => {},
+}: VerificationCardProps) {
+  const {
+    method = "teachback",
+    teachbackPrompt = "Explain what you've learned in your own words.",
+    studentResponse = "",
+    passed = false,
+    feedback = "",
+    score,
+  } = payload;
+
+  const [response, setResponse] = useState(studentResponse);
+  const [submitted, setSubmitted] = useState(Boolean(studentResponse || resolved));
+
+  const handleTeachbackSubmit = () => {
+    if (!response.trim()) return;
+    setSubmitted(true);
+    onSubmitAnswer([response.trim()], [teachbackPrompt]);
+  };
+
+  return (
+    <CardWrapper
+      resolved={resolved}
+      icon={<GraduationCap className="h-4 w-4 text-[#0C60FC]" />}
+      label="Concept Mastery Verification"
+      badge={passed ? "Passed" : submitted ? "Pending Review" : "Active Check"}
+      className={cn(
+        passed && "border-emerald-200 bg-emerald-50/30",
+        !passed && submitted && "border-blue-200 bg-blue-50/20",
+      )}
+    >
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h4 className="text-sm sm:text-base font-extrabold text-slate-900">
+            {method === "both"
+              ? "Comprehensive Teachback & Knowledge Verification"
+              : method === "quiz"
+              ? "Verification Quiz Challenge"
+              : "Teachback Mastery Check"}
+          </h4>
+          {typeof score === "number" && (
+            <span className="text-xs font-black px-2.5 py-1 rounded-full bg-slate-100 border border-slate-200">
+              Score: {score}%
+            </span>
+          )}
+        </div>
+
+        {teachbackPrompt && (
+          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs sm:text-sm font-medium text-slate-800 leading-relaxed">
+            <span className="font-bold text-slate-900 block mb-1">
+              Verification Prompt:
+            </span>
+            <QuestionMarkdown content={teachbackPrompt} />
+          </div>
+        )}
+
+        {submitted ? (
+          <div className="space-y-2 pt-1">
+            {response && (
+              <div className="p-3 rounded-xl bg-white border border-slate-200 text-xs text-slate-700">
+                <span className="font-bold text-slate-500 text-[10px] uppercase block mb-1">
+                  Your Teachback Response:
+                </span>
+                <p className="leading-relaxed font-sans">{response}</p>
+              </div>
+            )}
+            {feedback && (
+              <div
+                className={cn(
+                  "p-3.5 rounded-xl border text-xs leading-relaxed",
+                  passed
+                    ? "bg-emerald-50 border-emerald-200 text-emerald-900"
+                    : "bg-blue-50 border-blue-200 text-blue-900",
+                )}
+              >
+                <span className="font-bold block mb-0.5">Evaluation Feedback:</span>
+                <p>{feedback}</p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-3 pt-1">
+            <textarea
+              value={response}
+              onChange={(e) => setResponse(e.target.value)}
+              placeholder="Explain the concepts clearly in your own words to prove your understanding..."
+              rows={4}
+              className="w-full rounded-2xl border border-slate-200 bg-white p-3 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:border-[#0C60FC] focus:outline-none transition shadow-2xs"
+            />
+            <div className="flex justify-end gap-2">
+              <ActionButton
+                onClick={handleTeachbackSubmit}
+                disabled={!response.trim()}
+                variant="primary"
+              >
+                <span>Submit Teachback</span>
+                <Send className="h-3.5 w-3.5" />
+              </ActionButton>
+            </div>
+          </div>
+        )}
+      </div>
+    </CardWrapper>
+  );
+}
+
+// ─── SHOW_QUIZ / QUIZ ARTIFACT ───────────────────────────────────────────────
 
 interface ShowQuizCardProps {
-  payload: ZShowQuizPayload;
+  payload: any;
   resolved: boolean;
   onSubmitAnswer: (answers: string[], questions?: string[]) => void;
   onSkip: () => void;
+}
+
+function extractAllQuizQuestions(payload: any): any[] {
+  if (Array.isArray(payload.questions) && payload.questions.length > 0) {
+    return payload.questions;
+  }
+  if (Array.isArray(payload.lectures)) {
+    const extracted: any[] = [];
+    payload.lectures.forEach((lec: any) => {
+      (lec.topics || []).forEach((top: any) => {
+        (top.questions || []).forEach((q: any) => {
+          extracted.push(q);
+        });
+      });
+    });
+    if (extracted.length > 0) return extracted;
+  }
+  return [];
 }
 
 function ShowQuizCard({
@@ -582,9 +1222,9 @@ function ShowQuizCard({
   onSubmitAnswer,
   onSkip,
 }: ShowQuizCardProps) {
-  const { questions } = payload;
+  const questions = extractAllQuizQuestions(payload);
   const persistedAnswers =
-    (payload as any).userAnswers || (payload as any).answers || [];
+    payload.userAnswers || payload.answers || [];
 
   const [answers, setAnswers] = useState<string[]>(
     questions.map((_, i) => persistedAnswers[i] || ""),
@@ -599,81 +1239,120 @@ function ShowQuizCard({
     });
   };
 
-  const allAnswered = answers.every((a) => a.trim().length > 0);
+  const handleTextChange = (qIdx: number, val: string) => {
+    setAnswers((prev) => {
+      const next = [...prev];
+      next[qIdx] = val;
+      return next;
+    });
+  };
+
+  const allAnswered =
+    answers.length > 0 && answers.every((a) => a && a.trim().length > 0);
 
   const handleSubmit = () => {
     if (!allAnswered) return;
     submittedRef.current = [...answers];
     onSubmitAnswer(
       answers,
-      questions.map((q) => q.question),
+      questions.map((q) => q.question || q.text || ""),
     );
   };
 
-  if (resolved || (persistedAnswers.length > 0 && persistedAnswers.some((a: string) => a.trim().length > 0))) {
+  if (
+    resolved ||
+    (persistedAnswers.length > 0 &&
+      persistedAnswers.some((a: string) => a && a.trim().length > 0))
+  ) {
     return (
       <QAResolvedCard
         entries={questions.map((q, i) => ({
-          question: q.question,
+          question: q.question || q.text || "",
           answer: submittedRef.current[i] || persistedAnswers[i] || "—",
+          correctAnswer: q.correctAnswer,
+          explanation: q.explanation,
         }))}
       />
     );
   }
+
+  if (questions.length === 0) return null;
 
   return (
     <CardWrapper
       resolved={resolved}
       icon={<Sparkles className="h-4 w-4 text-[#0C60FC]" />}
       label="Quiz Challenge"
-      badge={`${questions.length} Questions`}
+      badge={`${questions.length} Question${questions.length > 1 ? "s" : ""}`}
     >
       <div className="space-y-5 divide-y divide-slate-100">
-        {questions.map((q, qIdx) => (
-          <div key={qIdx} className="pt-4 first:pt-0 space-y-3">
-            <div className="flex items-baseline gap-2">
-              <span className="text-xs font-extrabold text-[#0C60FC]">
-                Question {qIdx + 1}
-              </span>
-              <QuestionMarkdown
-                content={q.question}
-                className="text-xs sm:text-sm font-bold text-slate-900 leading-snug"
-              />
-            </div>
+        {questions.map((q, qIdx) => {
+          const qText = q.question || q.text || `Question ${qIdx + 1}`;
+          const rawOpts: any[] = Array.isArray(q.options) ? q.options : [];
+          const opts = rawOpts.map(normalizeOptionText);
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {q.options.map((opt, oIdx) => {
-                const isSelected = answers[qIdx] === opt;
-                const letter = String.fromCharCode(65 + oIdx);
-                return (
-                  <button
-                    key={opt}
-                    type="button"
-                    onClick={() => handleOptionSelect(qIdx, opt)}
-                    className={cn(
-                      "text-left rounded-xl p-3 text-xs font-semibold transition-all border flex items-center gap-2.5 cursor-pointer",
-                      isSelected
-                        ? "border-[#0C60FC] bg-blue-50 text-[#0C60FC] ring-2 ring-blue-500/20"
-                        : "border-slate-200 bg-slate-50/50 text-slate-700 hover:bg-white"
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "h-5 w-5 rounded-md text-[10px] font-bold flex items-center justify-center shrink-0",
-                        isSelected
-                          ? "bg-[#0C60FC] text-white"
-                          : "bg-white text-slate-500 border border-slate-200"
-                      )}
-                    >
-                      {letter}
-                    </span>
-                    <span className="truncate">{opt}</span>
-                  </button>
-                );
-              })}
+          return (
+            <div key={qIdx} className="pt-4 first:pt-0 space-y-3">
+              <div className="flex items-baseline gap-2">
+                <span className="text-xs font-extrabold text-[#0C60FC]">
+                  Question {qIdx + 1}
+                </span>
+                <QuestionMarkdown
+                  content={qText}
+                  className="text-xs sm:text-sm font-bold text-slate-900 leading-snug"
+                />
+              </div>
+
+              {opts.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {opts.map((opt, oIdx) => {
+                    const isSelected = answers[qIdx] === opt;
+                    const letter = String.fromCharCode(65 + oIdx);
+                    return (
+                      <button
+                        key={oIdx}
+                        type="button"
+                        onClick={() => handleOptionSelect(qIdx, opt)}
+                        className={cn(
+                          "text-left rounded-xl p-3 text-xs font-semibold transition-all border flex items-center gap-2.5 cursor-pointer",
+                          isSelected
+                            ? "border-[#0C60FC] bg-blue-50 text-[#0C60FC] ring-2 ring-blue-500/20"
+                            : "border-slate-200 bg-slate-50/50 text-slate-700 hover:bg-white",
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "h-5 w-5 rounded-md text-[10px] font-bold flex items-center justify-center shrink-0",
+                            isSelected
+                              ? "bg-[#0C60FC] text-white"
+                              : "bg-white text-slate-500 border border-slate-200",
+                          )}
+                        >
+                          {letter}
+                        </span>
+                        <span className="truncate">{opt}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <input
+                  type="text"
+                  value={answers[qIdx] || ""}
+                  onChange={(e) => handleTextChange(qIdx, e.target.value)}
+                  placeholder="Type your response here..."
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2.5 text-xs font-medium text-slate-900 outline-none focus:bg-white focus:border-[#0C60FC]"
+                />
+              )}
+
+              {q.hint && (
+                <p className="text-[11px] text-amber-700 italic">
+                  💡 Hint: {q.hint}
+                </p>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
@@ -693,10 +1372,10 @@ function ShowQuizCard({
   );
 }
 
-// ─── SHOW_PLAN ───────────────────────────────────────────────────────────────
+// ─── SHOW_PLAN / STUDY PLAN ARTIFACT ─────────────────────────────────────────
 
 interface ShowPlanCardProps {
-  payload: ZShowPlanPayload;
+  payload: any;
   resolved: boolean;
   onApprove: () => void;
   onSkip: () => void;
@@ -708,18 +1387,19 @@ function ShowPlanCard({
   onApprove,
   onSkip,
 }: ShowPlanCardProps) {
-  const { title = "Structured Study Plan", steps = [] } = payload;
+  const title = payload.title || payload.goal || "Structured Study Plan";
+  const rawSteps = payload.steps || payload.chapters?.[0]?.steps || [];
 
-  const pathwayItems: KnowledgeBlockItem[] = steps.map((step, idx) => ({
-    id: step.id || String(idx),
+  const pathwayItems: KnowledgeBlockItem[] = rawSteps.map((step: any, idx: number) => ({
+    id: step.stepId || step.id || String(idx),
     title: step.title,
     status:
-      step.status === "completed"
+      step.status === "completed" || step.isCompleted
         ? "completed"
         : step.status === "active" || idx === 0
         ? "current"
         : "upcoming",
-    description: step.description,
+    description: step.description || step.coreIdea,
   }));
 
   return (
@@ -727,7 +1407,7 @@ function ShowPlanCard({
       resolved={resolved}
       icon={<ClipboardList className="h-4 w-4 text-emerald-600" />}
       label="Structured Study Plan"
-      badge={`${steps.length} Steps`}
+      badge={`${pathwayItems.length} Topics`}
     >
       <div className="space-y-2">
         <h3 className="text-base sm:text-lg font-black text-slate-950">
@@ -781,9 +1461,7 @@ function UnlockTopicCard({ payload, resolved }: UnlockTopicCardProps) {
             {topicTitle}
           </h4>
           {description && (
-            <p className="text-xs text-slate-500 mt-0.5">
-              {description}
-            </p>
+            <p className="text-xs text-slate-500 mt-0.5">{description}</p>
           )}
         </div>
       </div>
@@ -816,7 +1494,7 @@ function ShowResultCard({ payload, resolved }: ShowResultCardProps) {
             "h-16 w-16 rounded-2xl flex flex-col items-center justify-center shrink-0 shadow-sm border",
             passed
               ? "bg-emerald-50 border-emerald-200 text-emerald-700"
-              : "bg-rose-50 border-rose-200 text-rose-700"
+              : "bg-rose-50 border-rose-200 text-rose-700",
           )}
         >
           <span className="text-xl font-black">{pct}%</span>
@@ -904,14 +1582,14 @@ function ShowSuggestionCard({
   );
 }
 
-// ─── SHOW_EXPOSITION ─────────────────────────────────────────────────────────
+// ─── SHOW_EXPOSITION / LESSON ARTIFACT ───────────────────────────────────────
 
 interface ShowExpositionCardProps {
   payload: any;
   resolved: boolean;
   onOpenSource?: (materialId: string, pageNumber?: number) => void;
   onFeedback?: (type: "too_easy" | "too_hard") => void;
-  onContinue: () => void;
+  onContinue?: () => void;
 }
 
 function ShowExpositionCard({
@@ -919,55 +1597,87 @@ function ShowExpositionCard({
   resolved,
   onOpenSource,
   onFeedback,
-  onContinue,
+  onContinue = () => {},
 }: ShowExpositionCardProps) {
-  const content = payload?.content || payload?.text || payload?.summary || "";
-  const citation = payload?.citation || payload?.source;
-  const rawFilename = citation?.filename || citation?.title || "Chapter8_MoreNumberTheory";
-  const displayFilename = rawFilename.replace(/\.pdf$/i, "");
-  const pageNumber = citation?.pageNumber || citation?.page || 17;
-  const materialId = citation?.materialId || citation?.id || "chapter-8";
+  // Extract text content from various backend formats
+  const markdownText =
+    payload.markdown ||
+    payload.body ||
+    payload.content ||
+    payload.text ||
+    payload.explanation ||
+    (Array.isArray(payload.sections)
+      ? payload.sections.map((s: any) => s.content || s.body || "").join("\n\n")
+      : "") ||
+    "";
 
-  const handleSpeak = (text: string) => {
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      window.speechSynthesis.speak(utterance);
-    }
-  };
+  const title = payload.topicTitle || payload.title || "Concept Exposition";
+  const citations = Array.isArray(payload.citations)
+    ? payload.citations
+    : payload.citation
+    ? [payload.citation]
+    : [];
 
   return (
     <CardWrapper
       resolved={resolved}
-      icon={<AlignLeft className="h-3.5 w-3.5 text-slate-400" />}
-      label="Exposition"
+      icon={<AlignLeft className="h-3.5 w-3.5 text-[#0C60FC]" />}
+      label="Concept Exposition"
+      badge={title}
     >
-      <div className="text-xs sm:text-[12.5px] leading-relaxed space-y-2.5 font-serif text-slate-900">
-        <QuestionMarkdown content={content} />
-      </div>
+      <div className="space-y-3">
+        {title && title !== "Concept Exposition" && (
+          <h3 className="text-sm sm:text-base font-extrabold text-slate-950">
+            {title}
+          </h3>
+        )}
 
-      {/* Bottom Citation & Actions matching screenshot 1 */}
-      <div className="pt-2 flex flex-col gap-2.5 border-t border-slate-100">
-        <div className="flex items-center justify-between">
+        <div className="text-xs sm:text-[13px] leading-relaxed space-y-2.5 font-serif text-slate-900 prose prose-slate max-w-none">
+          <QuestionMarkdown content={markdownText} />
+        </div>
+
+        {/* Citations list */}
+        {citations.length > 0 && (
+          <div className="pt-2 flex flex-wrap gap-2 border-t border-slate-100">
+            {citations.map((c: any, i: number) => {
+              const filename = c.filename || "Study Material";
+              const pageNumber = c.pageNumber || c.page;
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => onOpenSource?.(c.materialId, pageNumber)}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-white hover:bg-slate-50 border border-slate-200/90 px-3 py-1 text-[11px] font-semibold text-slate-700 transition cursor-pointer shadow-2xs"
+                >
+                  <FileText className="h-3 w-3 text-slate-400 shrink-0" />
+                  <span className="truncate max-w-36">
+                    {filename.replace(/\.pdf$/i, "")}
+                  </span>
+                  {pageNumber && (
+                    <span className="text-slate-400 font-normal">Page {pageNumber}</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Bottom Audio & Action */}
+        <div className="pt-1 flex items-center justify-between border-t border-slate-100">
           <button
             type="button"
-            onClick={() => handleSpeak(content)}
+            onClick={() => handleSpeak(markdownText)}
             className="flex h-6.5 w-6.5 items-center justify-center rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
             title="Read aloud"
           >
             <Volume2 className="h-3.5 w-3.5" />
           </button>
 
-          {citation && (
-            <button
-              type="button"
-              onClick={() => onOpenSource?.(materialId, pageNumber)}
-              className="inline-flex items-center gap-1.5 rounded-full bg-white hover:bg-slate-50 border border-slate-200/90 px-3 py-1 text-[11.5px] font-semibold text-slate-700 transition cursor-pointer shadow-2xs"
-            >
-              <FileText className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-              <span className="truncate max-w-36">{displayFilename}</span>
-              <span className="text-slate-400 font-normal">Page {pageNumber}</span>
-            </button>
+          {!resolved && (
+            <ActionButton onClick={onContinue} variant="primary">
+              <span>Got it, continue</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </ActionButton>
           )}
         </div>
       </div>
@@ -975,27 +1685,21 @@ function ShowExpositionCard({
   );
 }
 
-// ─── SHOW_SUMMARY ────────────────────────────────────────────────────────────
+// ─── SHOW_SUMMARY / RECAP ARTIFACT ───────────────────────────────────────────
 
 interface ShowSummaryCardProps {
   payload: ZShowSummaryPayload;
   resolved: boolean;
-  onOpenSource?: (materialId: string, pageNumber?: number) => void;
-  onFeedback?: (type: "too_easy" | "too_hard") => void;
-  onContinue?: () => void;
 }
 
-function ShowSummaryCard({
-  payload,
-  resolved,
-}: ShowSummaryCardProps) {
+function ShowSummaryCard({ payload, resolved }: ShowSummaryCardProps) {
   const { topicTitle = "Session Summary", content, keyPoints } = payload;
 
   return (
     <CardWrapper
       resolved={resolved}
       icon={<Lightbulb className="h-4 w-4 text-amber-500" />}
-      label="Session Recap"
+      label="Concept Recap"
       badge={topicTitle}
     >
       <div className="space-y-3">
@@ -1024,6 +1728,41 @@ function ShowSummaryCard({
   );
 }
 
+// ─── NOTES ARTIFACT ──────────────────────────────────────────────────────────
+
+function NotesArtifactCard({ payload, resolved }: { payload: any; resolved: boolean }) {
+  const sections = Array.isArray(payload.sections) ? payload.sections : [];
+
+  return (
+    <CardWrapper
+      resolved={resolved}
+      icon={<BookMarked className="h-4 w-4 text-purple-600" />}
+      label="Study Notes"
+      badge={`${sections.length} Section${sections.length > 1 ? "s" : ""}`}
+    >
+      <div className="space-y-4">
+        {payload.title && (
+          <h3 className="text-sm sm:text-base font-extrabold text-slate-900">
+            {payload.title}
+          </h3>
+        )}
+        <div className="space-y-3 divide-y divide-slate-100">
+          {sections.map((sec: any, i: number) => (
+            <div key={i} className="pt-3 first:pt-0 space-y-1.5">
+              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wide">
+                {sec.title}
+              </h4>
+              <div className="text-xs text-slate-700 leading-relaxed font-sans">
+                <QuestionMarkdown content={sec.body || sec.content || ""} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </CardWrapper>
+  );
+}
+
 // ─── POMODORO ────────────────────────────────────────────────────────────────
 
 type PomodoroPhase = "work" | "short_break" | "long_break" | "done";
@@ -1037,10 +1776,10 @@ interface PomodoroCardProps {
 function PomodoroCard({ payload, resolved, onResume }: PomodoroCardProps) {
   const {
     topicTitle,
-    workMinutes,
-    shortBreakMinutes,
-    longBreakMinutes,
-    intervalsBeforeLongBreak,
+    workMinutes = 25,
+    shortBreakMinutes = 5,
+    longBreakMinutes = 15,
+    intervalsBeforeLongBreak = 4,
     note,
   } = payload;
 
@@ -1123,7 +1862,7 @@ function PomodoroCard({ payload, resolved, onResume }: PomodoroCardProps) {
         <span
           className={cn(
             "text-[10px] font-extrabold uppercase tracking-widest px-3 py-1 rounded-full border",
-            phaseColor
+            phaseColor,
           )}
         >
           {phaseLabel}
@@ -1237,12 +1976,70 @@ export function ArtifactCard({
     const artType = String(artifact.type || "").toLowerCase();
     const content = artifact.content || {};
 
+    // 1. Flashcard Set
+    if (artType === "flashcard_set" || artType === "flashcards" || artType === "flashcard") {
+      const payload = {
+        title: artifact.title || content.title,
+        cards: content.cards || (Array.isArray(content) ? content : []),
+      };
+      return (
+        <FlashcardSetCard
+          payload={payload}
+          resolved={resolved}
+          onContinue={onContinue}
+        />
+      );
+    }
+
+    // 2. Walkthrough
+    if (artType === "walkthrough" || artType === "mini_walkthrough") {
+      const payload = {
+        title: artifact.title || "Session Walkthrough",
+        type: content.type || (artType === "mini_walkthrough" ? "mini" : "full"),
+        goalTitle: content.goalTitle,
+        sessionSummary: content.sessionSummary,
+        mastered: content.mastered || [],
+        gaps: content.gaps || [],
+        recommendations: content.recommendations || [],
+        nextSteps: content.nextSteps || [],
+      };
+      return <WalkthroughCard payload={payload} resolved={resolved} />;
+    }
+
+    // 3. Verification
+    if (artType === "verification") {
+      const payload = {
+        method: content.method || "teachback",
+        teachbackPrompt: content.teachbackPrompt,
+        studentResponse: content.studentResponse,
+        passed: Boolean(content.passed),
+        feedback: content.feedback,
+        score: content.score,
+      };
+      return (
+        <VerificationCard
+          payload={payload}
+          resolved={resolved}
+          onSubmitAnswer={onSubmitAnswer}
+          onContinue={onContinue}
+        />
+      );
+    }
+
+    // 4. Exposition / Lesson
     if (artType === "exposition" || artType === "lesson") {
       const payload: any = {
-        topicTitle: artifact.title || content.topicTitle || "Concept Exposition",
-        explanation: content.body || content.explanation || content.sections?.[0]?.body || (typeof content === "string" ? content : ""),
-        materialId: content.materialId,
-        pageNumber: content.pageNumber,
+        title: artifact.title || content.title || content.topicTitle || "Concept Exposition",
+        markdown:
+          content.markdown ||
+          content.body ||
+          content.explanation ||
+          (content.sections && Array.isArray(content.sections)
+            ? content.sections.map((s: any) => s.content || s.body || "").join("\n\n")
+            : "") ||
+          (typeof content === "string" ? content : ""),
+        citations: content.citations || (content.citation ? [content.citation] : []),
+        topicTitle: artifact.title || content.topicTitle,
       };
       return (
         <ShowExpositionCard
@@ -1255,14 +2052,16 @@ export function ArtifactCard({
       );
     }
 
-    if (artType === "question") {
+    // 5. Concept Check Question
+    if (artType === "question" || artType === "ask_question") {
       const payload: any = {
-        topicTitle: artifact.title || content.topicTitle || "Knowledge Check",
-        text: content.text || content.question || artifact.title,
+        title: artifact.title || content.title || "Knowledge Check",
+        question: content.question || content.text || content.prompt || artifact.title,
         options: content.options || [],
-        correctAnswer: content.correctAnswer,
+        correctAnswer: content.correctAnswer || content.solution || content.answer,
         explanation: content.explanation,
         hint: content.hint,
+        topicTitle: artifact.title || content.topicTitle,
       };
       return (
         <AskQuestionCard
@@ -1275,8 +2074,9 @@ export function ArtifactCard({
       );
     }
 
+    // 6. Quiz Challenge
     if (artType === "quiz") {
-      const payload: any = content.questions ? content : { questions: [content] };
+      const payload: any = content.questions || content.lectures ? content : { questions: [content] };
       return (
         <ShowQuizCard
           payload={payload}
@@ -1287,6 +2087,17 @@ export function ArtifactCard({
       );
     }
 
+    // 7. Study Notes
+    if (artType === "notes") {
+      return (
+        <NotesArtifactCard
+          payload={{ title: artifact.title, sections: content.sections || [] }}
+          resolved={resolved}
+        />
+      );
+    }
+
+    // 8. Recap / Summary
     if (artType === "summary" || artType === "recap") {
       const payload: any = {
         topicTitle: artifact.title || content.topicTitle || "Concept Recap",
@@ -1296,6 +2107,7 @@ export function ArtifactCard({
       return <ShowSummaryCard payload={payload} resolved={resolved} />;
     }
 
+    // 9. Study Plan
     if (artType === "study_plan") {
       const payload: any = content.chapters ? content : { steps: content.steps || [] };
       return (
@@ -1309,10 +2121,12 @@ export function ArtifactCard({
     }
   }
 
+  // If directive is provided
   if (!directive) return null;
 
   switch (directive.type) {
     case "ASK_QUESTION":
+    case "ask_question":
       return (
         <AskQuestionCard
           payload={directive.payload}
@@ -1323,6 +2137,7 @@ export function ArtifactCard({
         />
       );
     case "ASK_QUESTIONS":
+    case "ask_questions":
       return (
         <AskQuestionsCard
           payload={directive.payload}
@@ -1332,6 +2147,8 @@ export function ArtifactCard({
         />
       );
     case "SHOW_EXPOSITION" as any:
+    case "exposition":
+    case "lesson":
       return (
         <ShowExpositionCard
           payload={directive.payload}
@@ -1342,6 +2159,8 @@ export function ArtifactCard({
         />
       );
     case "SHOW_QUIZ":
+    case "show_quiz":
+    case "quiz":
       return (
         <ShowQuizCard
           payload={directive.payload}
@@ -1351,6 +2170,8 @@ export function ArtifactCard({
         />
       );
     case "SHOW_PLAN":
+    case "show_plan":
+    case "study_plan":
       return (
         <ShowPlanCard
           payload={directive.payload}
@@ -1360,12 +2181,15 @@ export function ArtifactCard({
         />
       );
     case "UNLOCK_TOPIC":
+    case "unlock_topic":
       return (
         <UnlockTopicCard payload={directive.payload} resolved={resolved} />
       );
     case "SHOW_RESULT":
+    case "show_result":
       return <ShowResultCard payload={directive.payload} resolved={resolved} />;
     case "SHOW_SUGGESTION":
+    case "show_suggestion":
       return (
         <ShowSuggestionCard
           payload={directive.payload}
@@ -1377,10 +2201,14 @@ export function ArtifactCard({
         />
       );
     case "SHOW_SUMMARY":
+    case "show_summary":
+    case "summary":
+    case "recap":
       return (
         <ShowSummaryCard payload={directive.payload} resolved={resolved} />
       );
     case "POMODORO":
+    case "pomodoro":
       return (
         <PomodoroCard
           payload={directive.payload}
