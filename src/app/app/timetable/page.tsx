@@ -322,7 +322,7 @@ export default function PrivateTimetablePage() {
 
   return (
     <div className="dash-grid min-h-screen px-4 pb-24 pt-6 sm:px-6 lg:px-8 lg:pb-12 text-slate-900 bg-[#F7F9FC]">
-      <div className="mx-auto max-w-[1280px] space-y-4">
+      <div className="mx-auto max-w-7xl space-y-4">
         {/* ── Header Hero Banner ── */}
         <section className="relative overflow-hidden rounded-[28px] bg-[#131B27] p-5 text-white sm:p-7 shadow-xl">
           <div className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full bg-[#0C60FC]/30 blur-3xl" />
@@ -486,7 +486,7 @@ export default function PrivateTimetablePage() {
 
             {/* ── TAB 1: WEEK VIEW ── */}
             {activeTab === "week" && (
-              <section className="panel p-4 sm:p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm flex-1 flex flex-col justify-between min-h-[520px]">
+              <section className="panel p-4 sm:p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm flex-1 flex flex-col justify-between min-h-130">
                 <div>
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
@@ -608,7 +608,7 @@ export default function PrivateTimetablePage() {
 
             {/* ── TAB 2: MONTH VIEW ── */}
             {activeTab === "month" && (
-              <section className="panel p-4 sm:p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm flex-1 flex flex-col justify-between min-h-[520px]">
+              <section className="panel p-4 sm:p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm flex-1 flex flex-col justify-between min-h-130">
                 <div>
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
@@ -642,7 +642,7 @@ export default function PrivateTimetablePage() {
                   </div>
 
                   <div className="mt-5 overflow-x-auto">
-                    <div className="min-w-[640px]">
+                    <div className="min-w-160">
                       <div className="grid grid-cols-7 gap-1.5 pb-2 text-center text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
                         <span>Mon</span>
                         <span>Tue</span>
@@ -664,7 +664,7 @@ export default function PrivateTimetablePage() {
                               key={dStr}
                               type="button"
                               onClick={() => setSelectedDate(d)}
-                              className={`min-h-[76px] rounded-2xl p-2 text-left transition border cursor-pointer ${
+                              className={`min-h-19 rounded-2xl p-2 text-left transition border cursor-pointer ${
                                 active
                                   ? "border-[#0C60FC] bg-blue-50/70 ring-2 ring-[#0C60FC]"
                                   : today
@@ -698,7 +698,7 @@ export default function PrivateTimetablePage() {
 
             {/* ── TAB 3: AGENDA VIEW ── */}
             {activeTab === "agenda" && (
-              <section className="panel p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm space-y-4 flex-1 flex flex-col justify-between min-h-[520px]">
+              <section className="panel p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm space-y-4 flex-1 flex flex-col justify-between min-h-130">
                 <div>
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <h2 className="min-w-0 text-base font-bold text-slate-950">
@@ -757,7 +757,7 @@ export default function PrivateTimetablePage() {
 
             {/* ── TAB 4: EXAMS VIEW ── */}
             {activeTab === "exams" && (
-              <section className="panel p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm flex-1 flex flex-col justify-between min-h-[520px]">
+              <section className="panel p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm flex-1 flex flex-col justify-between min-h-130">
                 <div>
                   <div className="flex items-center justify-between">
                     <div>
@@ -864,7 +864,7 @@ export default function PrivateTimetablePage() {
           {/* ── RIGHT SIDEBAR: Tasks & Workload Widget (Matched Equal Height) ── */}
           <aside className="flex flex-col gap-4 h-full">
             {/* 1. Tasks Card */}
-            <div className="panel p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm flex-1 flex flex-col justify-between min-h-[380px]">
+            <div className="panel p-5 rounded-[28px] border border-slate-200 bg-white shadow-sm flex-1 flex flex-col justify-between min-h-95">
               <div className="space-y-3 shrink-0">
                 <div className="flex items-center justify-between">
                   <div>
@@ -913,7 +913,7 @@ export default function PrivateTimetablePage() {
               </div>
 
               {/* Tasks List */}
-              <div className="my-2 max-h-[220px] overflow-y-auto no-scrollbar flex-1">
+              <div className="my-2 max-h-55 overflow-y-auto no-scrollbar flex-1">
                 {tasksLoading ? (
                   <div className="flex flex-col items-center justify-center h-full gap-2 text-slate-400">
                     <Loader2 className="h-5 w-5 animate-spin text-[#0C60FC]" />
@@ -954,7 +954,7 @@ export default function PrivateTimetablePage() {
                                   : "border-slate-300 bg-white group-hover:border-[#0C60FC]"
                               }`}
                             >
-                              {isDone && <Check className="h-3 w-3 stroke-[3]" />}
+                              {isDone && <Check className="h-3 w-3 stroke-3" />}
                             </button>
 
                             <div className="min-w-0 flex-1 pr-6">
