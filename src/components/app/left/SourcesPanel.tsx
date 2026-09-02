@@ -11,7 +11,8 @@ import { useAppMaterials } from "@/hooks/app/use-app-actions";
 import { queryKeys } from "@/lib/query-keys";
 import type { IAppMaterial } from "@/types/session";
 import { MaterialCard } from "@/components/app/left/MaterialCard";
-import { MaterialSelectorDialog } from "@/components/app/center/MaterialSelectorDialog";
+import { MaterialPickerDialog } from "@/components/common/MaterialPickerDialog";
+import { useAddAppMaterial } from "@/hooks/app/use-app-actions";
 import { getAccessToken } from "@/lib/session";
 
 // ─── Accepted MIME types ──────────────────────────────────────────────────────
@@ -72,6 +73,7 @@ export function SourcesPanel({
   const queryClient = useQueryClient();
 
   const { data: materials = [], isLoading: loading } = useAppMaterials(sessionId);
+  const { mutate: addMaterial } = useAddAppMaterial(sessionId);
   const [uploading, setUploading] = useState<UploadRow[]>([]);
   const [query, setQuery] = useState("");
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
@@ -376,11 +378,19 @@ export function SourcesPanel({
         </motion.div>
       )}
 
-      <MaterialSelectorDialog 
+      <MaterialPickerDialog
         isOpen={isLibraryOpen}
         onOpenChange={setIsLibraryOpen}
-        sessionId={sessionId}
-        alreadyAddedIds={materials.map(m => m.id)}
+        onSelect={(materialId) => {
+          addMaterial(materialId, {
+            onSuccess: () => setIsLibraryOpen(false),
+          });
+        }}
+        allowUpload={false}
+        excludeIds={materials.map((m) => m.id)}
+        title="Add from Library"
+        description="Select a material to add to this session."
+        confirmLabel="Add to Session"
       />
     </div>
   );

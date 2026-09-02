@@ -9,7 +9,7 @@ import {
   useDeleteLibraryQuiz,
   useGenerateQuiz,
 } from "@/hooks/app/use-app-library";
-import { GenerationDialog } from "@/components/app/library/generation-dialog";
+import { MaterialPickerDialog } from "@/components/common/MaterialPickerDialog";
 
 import { QuizCard } from "@/components/app/quizzes/quiz-card";
 import { useQueryParams } from "@/hooks";
@@ -68,7 +68,16 @@ export default function QuizzesPage() {
     materialId: string,
     settings?: Record<string, unknown>,
   ) => {
-    await generateQuizMutation.mutateAsync({ materialId, settings });
+    try {
+      await generateQuizMutation.mutateAsync({ materialId, settings });
+      toast.success("Quiz generation started!");
+    } catch (err: any) {
+      if (err?.response?.status === 402) {
+        toast.error("Daily quiz limit reached. Upgrade your plan or use credits.");
+      } else {
+        toast.error("Failed to start generation. Please try again.");
+      }
+    }
   };
 
   const totalCount = quizzes.length;
@@ -270,13 +279,14 @@ export default function QuizzesPage() {
         </p>
       )}
 
-      <GenerationDialog
+      <MaterialPickerDialog
         isOpen={isGenerationDialogOpen}
         onOpenChange={setIsGenerationDialogOpen}
         title="Generate Quiz"
         description="Select a material from your library or upload a new one to generate an AI quiz."
-        type="quiz"
-        onGenerate={handleGenerate}
+        allowUpload
+        confirmLabel="Generate Quiz"
+        onSelect={(materialId) => handleGenerate(materialId)}
       />
     </div>
   );

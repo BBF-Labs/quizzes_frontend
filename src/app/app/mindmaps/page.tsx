@@ -18,7 +18,7 @@ import {
   useDeleteLibraryMindMap,
   useGenerateMindMap,
 } from "@/hooks/app/use-app-library";
-import { GenerationDialog } from "@/components/app/library/generation-dialog";
+import { MaterialPickerDialog } from "@/components/common/MaterialPickerDialog";
 import { useQueryParams } from "@/hooks";
 import { format } from "date-fns";
 
@@ -82,7 +82,16 @@ export default function MindMapsPage() {
   };
 
   const handleGenerate = async (materialId: string) => {
-    await generateMindMapMutation.mutateAsync({ materialId });
+    try {
+      await generateMindMapMutation.mutateAsync({ materialId });
+      toast.success("Mind map generation started!");
+    } catch (err: any) {
+      if (err?.response?.status === 402) {
+        toast.error("Daily mind map limit reached. Upgrade your plan or use credits.");
+      } else {
+        toast.error("Failed to start generation. Please try again.");
+      }
+    }
   };
 
   return (
@@ -329,13 +338,14 @@ export default function MindMapsPage() {
         </div>
       </section>
 
-      <GenerationDialog
+      <MaterialPickerDialog
         isOpen={isGenerationDialogOpen}
         onOpenChange={setIsGenerationDialogOpen}
         title="Generate Mind Map"
         description="Select a material to synthesize into an interactive hierarchical mind map."
-        type="mindmap"
-        onGenerate={handleGenerate}
+        allowUpload
+        confirmLabel="Generate Mind Map"
+        onSelect={handleGenerate}
       />
     </div>
   );
