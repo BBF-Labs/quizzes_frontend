@@ -44,8 +44,25 @@ export function DocumentReader({
 
   const [numPages, setNumPages] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(referencePage || 1);
-  const [scale, setScale] = useState<number>(1.0);
+  const [scale, setScale] = useState<number>(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      return 0.7;
+    }
+    return 1.0;
+  });
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
+
+  // Responsive scale: on mobile (< 768px, e.g. Galaxy S9), default to 70% scale to fit page view
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setScale((prev) => (prev === 1.0 ? 0.7 : prev));
+      }
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
