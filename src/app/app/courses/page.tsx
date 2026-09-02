@@ -30,18 +30,34 @@ import {
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useTimetableOverview } from "@/hooks/app/use-timetable-overview";
 
 const SEMESTERS = ["Semester 1", "Semester 2"];
 const ACADEMIC_YEARS = getAcademicYearOptions();
 
 export default function MyCoursesPage() {
   const { getParam, setQueryParams } = useQueryParams();
-  const selectedSemester = getParam("semester", "Semester 2");
-  const selectedYear = getParam("year", getCurrentAcademicYear());
+  const { data: overview } = useTimetableOverview();
+
+  const activeSemesterFromTimetable = overview?.activeSemester || "Semester 2";
+  const activeYearFromTimetable = overview?.activeAcademicYear || getCurrentAcademicYear();
+
+  const selectedSemester = getParam("semester") || activeSemesterFromTimetable;
+  const selectedYear = getParam("year") || getParam("academicYear") || activeYearFromTimetable;
   const viewMode = getParam("view", "term"); // "term" | "all"
 
+  const availableSemesters = overview?.availableSemesters || SEMESTERS;
+  const availableAcademicYears = overview?.availableAcademicYears || ACADEMIC_YEARS;
+
   const setSelectedSemester = (s: string) => setQueryParams({ semester: s });
-  const setSelectedYear = (y: string) => setQueryParams({ year: y });
+  const setSelectedYear = (y: string) => setQueryParams({ year: y, academicYear: y });
   const setViewMode = (v: string) => setQueryParams({ view: v });
 
   const { data: enrollments = [], isLoading: isEnrollmentsLoading } =
@@ -151,47 +167,32 @@ export default function MyCoursesPage() {
 
         {/* Term picker + Add Course row */}
         <div className="mx-auto mt-6 flex max-w-7xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 w-20 shrink-0">
-                Semester
-              </span>
-              {SEMESTERS.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => setSelectedSemester(s)}
-                  className={cn(
-                    "rounded-full px-4 py-2 text-xs font-bold transition cursor-pointer",
-                    selectedSemester === s
-                      ? "bg-slate-950 text-white shadow-sm"
-                      : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50",
-                  )}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 w-20 shrink-0">
-                Year
-              </span>
-              {ACADEMIC_YEARS.map((y) => (
-                <button
-                  key={y}
-                  type="button"
-                  onClick={() => setSelectedYear(y)}
-                  className={cn(
-                    "rounded-full px-4 py-2 text-xs font-bold transition cursor-pointer",
-                    selectedYear === y
-                      ? "bg-slate-950 text-white shadow-sm"
-                      : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50",
-                  )}
-                >
-                  {y}
-                </button>
-              ))}
-            </div>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <Select value={selectedSemester} onValueChange={setSelectedSemester}>
+              <SelectTrigger className="h-9 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-2xs hover:border-[#0C60FC] hover:bg-slate-50 transition cursor-pointer">
+                <SelectValue placeholder="Select Semester" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border-slate-200 bg-white font-sans text-xs shadow-lg">
+                {availableSemesters.map((s) => (
+                  <SelectItem key={s} value={s} className="text-xs font-bold text-slate-700 cursor-pointer">
+                    {s}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={selectedYear} onValueChange={setSelectedYear}>
+              <SelectTrigger className="h-9 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-2xs hover:border-[#0C60FC] hover:bg-slate-50 transition cursor-pointer">
+                <SelectValue placeholder="Select Academic Year" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border-slate-200 bg-white font-sans text-xs shadow-lg">
+                {availableAcademicYears.map((y) => (
+                  <SelectItem key={y} value={y} className="text-xs font-bold text-slate-700 cursor-pointer">
+                    {y}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <button
