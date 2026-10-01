@@ -11,9 +11,9 @@ export interface ProviderProbeResult {
   status: "operational" | "degraded" | "down" | "not_configured";
   latencyMs: number | null;
   message: string;
-  keyMasked: string | null;
   activeModel?: string;
   modelsCount?: number;
+  availableModels?: string[];
 }
 
 export interface InferenceRuntimeStatus {
