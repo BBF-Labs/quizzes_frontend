@@ -4,3 +4,4 @@ export * from "./use-migrations";
 export * from "./use-admin-library";
 export * from "./use-public-generation";
 export * from "./use-feature-flags";
+export * from "./use-ai-inference";
