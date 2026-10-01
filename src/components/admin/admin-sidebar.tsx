@@ -18,6 +18,7 @@ import {
   Library,
   Zap,
   Flag,
+  Cpu,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import {
@@ -132,6 +133,11 @@ const navigation = [
   {
     title: "System",
     items: [
+      {
+        title: "AI Inference",
+        url: "/admin/system/ai-inference",
+        icon: Cpu,
+      },
       {
         title: "Feature Flags",
         url: "/admin/system/features",
