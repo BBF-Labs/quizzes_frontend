@@ -7,27 +7,25 @@ import {
   Cpu,
   RefreshCcw,
   Zap,
-  CheckCircle2,
-  AlertTriangle,
-  XCircle,
-  HelpCircle,
   Play,
   Save,
   Clock,
-  Layers,
-  ArrowRight,
   ShieldAlert,
+  SlidersHorizontal,
+  PenTool,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -44,33 +42,69 @@ import {
 
 const PROVIDER_METADATA: Record<
   ProviderName,
-  { name: string; endpoint: string; defaultModel: string; badgeColor: string }
+  { name: string; endpoint: string; defaultModel: string; fallbackModel: string; badgeColor: string }
 > = {
   openai: {
     name: "OpenAI",
     endpoint: "api.openai.com",
     defaultModel: "openai/gpt-4o-mini",
+    fallbackModel: "openai/gpt-4o",
     badgeColor: "text-emerald-400 border-emerald-500/30 bg-emerald-500/10",
   },
   openrouter: {
     name: "OpenRouter",
     endpoint: "openrouter.ai/api",
     defaultModel: "openai/openrouter/free",
+    fallbackModel: "openai/openrouter/auto",
     badgeColor: "text-indigo-400 border-indigo-500/30 bg-indigo-500/10",
   },
   google: {
     name: "Google Gemini",
     endpoint: "generativelanguage.googleapis.com",
     defaultModel: "googleai/gemini-3.5-flash-lite",
+    fallbackModel: "googleai/gemini-3-flash-preview",
     badgeColor: "text-blue-400 border-blue-500/30 bg-blue-500/10",
   },
   groq: {
     name: "Groq LPU",
     endpoint: "api.groq.com",
     defaultModel: "groq/openai/gpt-oss-20b",
+    fallbackModel: "groq/openai/gpt-oss-120b",
     badgeColor: "text-amber-400 border-amber-500/30 bg-amber-500/10",
   },
 };
+
+interface ModelOption {
+  id: string;
+  name: string;
+  tag: string;
+}
+
+const PROVIDER_MODELS: Record<ProviderName, ModelOption[]> = {
+  openai: [
+    { id: "openai/gpt-4o-mini", name: "GPT-4o mini", tag: "Primary • Fast & Low Cost" },
+    { id: "openai/gpt-4o", name: "GPT-4o", tag: "Flagship • Reasoning" },
+  ],
+  openrouter: [
+    { id: "openai/openrouter/free", name: "OpenRouter Free", tag: "Auto-routed free models" },
+    { id: "openai/openrouter/auto", name: "OpenRouter Auto", tag: "Best available router" },
+    { id: "openai/gpt-4o-mini", name: "GPT-4o mini (via OR)", tag: "OpenRouter proxy" },
+    { id: "openai/gpt-4o", name: "GPT-4o (via OR)", tag: "OpenRouter proxy" },
+    { id: "openai/cohere/north-mini-code:free", name: "Cohere North Mini Code", tag: "Code free tier" },
+  ],
+  google: [
+    { id: "googleai/gemini-3.5-flash-lite", name: "Gemini 3.5 Flash Lite", tag: "Ultra-low latency" },
+    { id: "googleai/gemini-3-flash-preview", name: "Gemini 3 Flash Preview", tag: "Next-gen preview" },
+    { id: "googleai/gemini-3.6-flash", name: "Gemini 3.6 Flash", tag: "High capability" },
+  ],
+  groq: [
+    { id: "groq/openai/gpt-oss-20b", name: "Groq GPT-OSS 20B", tag: "Ultra-fast LPU" },
+    { id: "groq/openai/gpt-oss-120b", name: "Groq GPT-OSS 120B", tag: "High throughput" },
+    { id: "groq/qwen/qwen3.8-27b", name: "Groq Qwen 3.8 27B", tag: "Multilingual OSS" },
+  ],
+};
+
+const ALL_MODELS = Object.values(PROVIDER_MODELS).flat();
 
 export default function AIInferencePage() {
   const { user } = useAuth();
@@ -93,7 +127,11 @@ export default function AIInferencePage() {
   // Form state
   const [selectedProvider, setSelectedProvider] = React.useState<ProviderName>("openai");
   const [defaultModel, setDefaultModel] = React.useState("openai/gpt-4o-mini");
+  const [isCustomDefault, setIsCustomDefault] = React.useState(false);
+
   const [fallbackModel, setFallbackModel] = React.useState("openai/gpt-4o");
+  const [isCustomFallback, setIsCustomFallback] = React.useState(false);
+
   const [timeoutMs, setTimeoutMs] = React.useState(25000);
   const [tierOverride, setTierOverride] = React.useState<"auto" | "free" | "paid">("auto");
   const [allowFreeUserPaid, setAllowFreeUserPaid] = React.useState(false);
@@ -102,7 +140,8 @@ export default function AIInferencePage() {
   const [testPrompt, setTestPrompt] = React.useState(
     "Explain binary search in one clear, concise sentence.",
   );
-  const [testModelOverride, setTestModelOverride] = React.useState("");
+  const [playgroundModelChoice, setPlaygroundModelChoice] = React.useState("active_default");
+  const [customPlaygroundModel, setCustomPlaygroundModel] = React.useState("");
   const [testResult, setTestResult] = React.useState<{
     success: boolean;
     text?: string;
@@ -116,7 +155,12 @@ export default function AIInferencePage() {
     if (status) {
       setSelectedProvider(status.activeProvider);
       setDefaultModel(status.defaultModel);
-      if (status.fallbackModel) setFallbackModel(status.fallbackModel);
+      setIsCustomDefault(!ALL_MODELS.some((m) => m.id === status.defaultModel));
+
+      if (status.fallbackModel) {
+        setFallbackModel(status.fallbackModel);
+        setIsCustomFallback(!ALL_MODELS.some((m) => m.id === status.fallbackModel));
+      }
       setTimeoutMs(status.timeoutMs || 25000);
       setTierOverride(status.tierOverride || "auto");
       setAllowFreeUserPaid(Boolean(status.allowFreeUserPaid));
@@ -154,20 +198,36 @@ export default function AIInferencePage() {
     const meta = PROVIDER_METADATA[provider];
     setSelectedProvider(provider);
     setDefaultModel(meta.defaultModel);
+    setIsCustomDefault(false);
+    setFallbackModel(meta.fallbackModel);
+    setIsCustomFallback(false);
+
     switchMutation.mutate({
       provider,
       defaultModel: meta.defaultModel,
+      fallbackModel: meta.fallbackModel,
       reason: `Quick activated ${meta.name} from admin UI`,
     });
+  };
+
+  // Handle active provider change in form
+  const handleProviderSelectChange = (newProvider: ProviderName) => {
+    setSelectedProvider(newProvider);
+    const meta = PROVIDER_METADATA[newProvider];
+    setDefaultModel(meta.defaultModel);
+    setIsCustomDefault(false);
+    setFallbackModel(meta.fallbackModel);
+    setIsCustomFallback(false);
   };
 
   // Save full configuration
   const handleSaveConfig = (e: React.FormEvent) => {
     e.preventDefault();
+    const finalFallback = fallbackModel === "none" ? undefined : fallbackModel.trim() || undefined;
     switchMutation.mutate({
       provider: selectedProvider,
       defaultModel: defaultModel.trim(),
-      fallbackModel: fallbackModel.trim() || undefined,
+      fallbackModel: finalFallback,
       timeoutMs,
       tierOverride,
       allowFreeUserPaid,
@@ -177,10 +237,17 @@ export default function AIInferencePage() {
 
   // Test inference
   const handleRunTest = async () => {
+    const modelToUse =
+      playgroundModelChoice === "active_default"
+        ? defaultModel.trim()
+        : playgroundModelChoice === "__custom__"
+          ? customPlaygroundModel.trim() || defaultModel.trim()
+          : playgroundModelChoice;
+
     try {
       const res = await testMutation.mutateAsync({
         prompt: testPrompt,
-        model: testModelOverride.trim() || defaultModel.trim(),
+        model: modelToUse,
         timeoutMs,
       });
       setTestResult(res);
@@ -211,6 +278,85 @@ export default function AIInferencePage() {
   }
 
   const providersList: ProviderName[] = ["openai", "openrouter", "google", "groq"];
+
+  // Combine static presets with models discovered dynamically from endpoint probe & status
+  const getModelsForProvider = React.useCallback(
+    (provider: ProviderName): ModelOption[] => {
+      const staticModels = PROVIDER_MODELS[provider] || [];
+      const fromProbe = probeResults[provider]?.availableModels || [];
+      const fromStatus = status?.availableModels?.[provider] || [];
+
+      const dynamicIds = Array.from(new Set([...fromProbe, ...fromStatus]));
+      const dynamicModels: ModelOption[] = dynamicIds
+        .filter((id) => !staticModels.some((sm) => sm.id === id))
+        .map((id) => ({
+          id,
+          name: id.replace(/^(openai|googleai|groq)\//, ""),
+          tag: "Endpoint Discovered",
+        }));
+
+      return [...staticModels, ...dynamicModels];
+    },
+    [probeResults, status],
+  );
+
+  // Helper to render model select groups
+  const renderModelOptions = (includeNone = false) => {
+    const activeProviderModels = getModelsForProvider(selectedProvider);
+    const otherProviders = providersList.filter((p) => p !== selectedProvider);
+
+    return (
+      <>
+        {includeNone && (
+          <>
+            <SelectItem value="none" className="font-mono text-xs text-muted-foreground">
+              None (Disable Fallback Model)
+            </SelectItem>
+            <SelectSeparator />
+          </>
+        )}
+
+        <SelectGroup>
+          <SelectLabel className="font-mono text-[10px] uppercase tracking-wider text-primary font-bold">
+            ★ Available for {PROVIDER_METADATA[selectedProvider].name} ({activeProviderModels.length} models)
+          </SelectLabel>
+          {activeProviderModels.map((m) => (
+            <SelectItem key={m.id} value={m.id} className="font-mono text-xs">
+              <div className="flex items-center justify-between w-full gap-3">
+                <span className="font-bold">{m.name}</span>
+                <span className="text-[10px] text-muted-foreground">{m.id}</span>
+              </div>
+            </SelectItem>
+          ))}
+        </SelectGroup>
+
+        {otherProviders.map((p) => {
+          const pModels = getModelsForProvider(p);
+          return (
+            <SelectGroup key={p}>
+              <SelectSeparator />
+              <SelectLabel className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                {PROVIDER_METADATA[p].name} Models ({pModels.length})
+              </SelectLabel>
+              {pModels.map((m) => (
+                <SelectItem key={m.id} value={m.id} className="font-mono text-xs">
+                  <div className="flex items-center justify-between w-full gap-3">
+                    <span>{m.name}</span>
+                    <span className="text-[10px] text-muted-foreground">{m.id}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          );
+        })}
+
+        <SelectSeparator />
+        <SelectItem value="__custom__" className="font-mono text-xs text-amber-400 font-bold">
+          ✎ Custom Model Target…
+        </SelectItem>
+      </>
+    );
+  };
 
   return (
     <div className="space-y-8">
@@ -349,7 +495,7 @@ export default function AIInferencePage() {
                           isConfigured ? "text-emerald-400" : "text-rose-400 font-bold",
                         )}
                       >
-                        {isConfigured ? (probe?.keyMasked || "Configured") : "Missing Key"}
+                        {isConfigured ? (probe?.keyMasked || "Configured (Masked)") : "Missing Key"}
                       </span>
                     </div>
                   </div>
@@ -398,18 +544,16 @@ export default function AIInferencePage() {
 
           <CardContent className="p-6">
             <form onSubmit={handleSaveConfig} className="space-y-5">
+              {/* Active Provider Select */}
               <div className="space-y-1.5">
                 <label className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground block">
-                  Active Provider
+                  Active AI Provider
                 </label>
                 <Select
                   value={selectedProvider}
-                  onValueChange={(val: ProviderName) => {
-                    setSelectedProvider(val);
-                    setDefaultModel(PROVIDER_METADATA[val].defaultModel);
-                  }}
+                  onValueChange={(val: ProviderName) => handleProviderSelectChange(val)}
                 >
-                  <SelectTrigger className="rounded-none font-mono text-xs">
+                  <SelectTrigger className="rounded-none font-mono text-xs w-full">
                     <SelectValue placeholder="Select provider" />
                   </SelectTrigger>
                   <SelectContent className="rounded-none font-mono text-xs">
@@ -424,43 +568,132 @@ export default function AIInferencePage() {
                 </p>
               </div>
 
+              {/* Default Model Target Select */}
               <div className="space-y-1.5">
-                <label className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground block">
-                  Default Model Target
-                </label>
-                <Input
-                  value={defaultModel}
-                  onChange={(e) => setDefaultModel(e.target.value)}
-                  className="rounded-none font-mono text-xs"
-                  placeholder="e.g. openai/gpt-4o-mini"
-                  required
-                />
-                <div className="flex gap-1.5 flex-wrap pt-1">
-                  {Object.entries(PROVIDER_METADATA).map(([key, val]) => (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => setDefaultModel(val.defaultModel)}
-                      className="px-2 py-0.5 border border-border/50 bg-background/50 hover:border-primary/60 font-mono text-[9px] text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {val.defaultModel}
-                    </button>
-                  ))}
+                <div className="flex justify-between items-center">
+                  <label className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground block">
+                    Default Model Target
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomDefault(!isCustomDefault)}
+                    className="font-mono text-[9px] uppercase tracking-wider text-primary hover:underline flex items-center gap-1"
+                  >
+                    {isCustomDefault ? (
+                      <>
+                        <SlidersHorizontal className="size-2.5" /> Use Preset List
+                      </>
+                    ) : (
+                      <>
+                        <PenTool className="size-2.5" /> Type Custom String
+                      </>
+                    )}
+                  </button>
                 </div>
+
+                {!isCustomDefault ? (
+                  <Select
+                    value={ALL_MODELS.some((m) => m.id === defaultModel) ? defaultModel : "__custom__"}
+                    onValueChange={(val) => {
+                      if (val === "__custom__") {
+                        setIsCustomDefault(true);
+                      } else {
+                        setDefaultModel(val);
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="rounded-none font-mono text-xs w-full">
+                      <SelectValue placeholder="Select default model" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-none font-mono text-xs max-h-72">
+                      {renderModelOptions(false)}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <div className="space-y-1">
+                    <Input
+                      value={defaultModel}
+                      onChange={(e) => setDefaultModel(e.target.value)}
+                      className="rounded-none font-mono text-xs"
+                      placeholder="e.g. openai/gpt-4o-mini"
+                      required
+                    />
+                    <p className="text-[9px] font-mono text-amber-400">
+                      ✎ Custom model identifier mode active.
+                    </p>
+                  </div>
+                )}
+                <p className="text-[10px] font-mono text-muted-foreground/60">
+                  Primary model invoked for users on this provider.
+                </p>
               </div>
 
+              {/* Fallback Model Target Select */}
               <div className="space-y-1.5">
-                <label className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground block">
-                  Fallback Model Target
-                </label>
-                <Input
-                  value={fallbackModel}
-                  onChange={(e) => setFallbackModel(e.target.value)}
-                  className="rounded-none font-mono text-xs"
-                  placeholder="e.g. openai/gpt-4o"
-                />
+                <div className="flex justify-between items-center">
+                  <label className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground block">
+                    Fallback Model Target
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomFallback(!isCustomFallback)}
+                    className="font-mono text-[9px] uppercase tracking-wider text-primary hover:underline flex items-center gap-1"
+                  >
+                    {isCustomFallback ? (
+                      <>
+                        <SlidersHorizontal className="size-2.5" /> Use Preset List
+                      </>
+                    ) : (
+                      <>
+                        <PenTool className="size-2.5" /> Type Custom String
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {!isCustomFallback ? (
+                  <Select
+                    value={
+                      fallbackModel === "none"
+                        ? "none"
+                        : ALL_MODELS.some((m) => m.id === fallbackModel)
+                          ? fallbackModel
+                          : "__custom__"
+                    }
+                    onValueChange={(val) => {
+                      if (val === "__custom__") {
+                        setIsCustomFallback(true);
+                      } else {
+                        setFallbackModel(val);
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="rounded-none font-mono text-xs w-full">
+                      <SelectValue placeholder="Select fallback model" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-none font-mono text-xs max-h-72">
+                      {renderModelOptions(true)}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <div className="space-y-1">
+                    <Input
+                      value={fallbackModel}
+                      onChange={(e) => setFallbackModel(e.target.value)}
+                      className="rounded-none font-mono text-xs"
+                      placeholder="e.g. openai/gpt-4o"
+                    />
+                    <p className="text-[9px] font-mono text-amber-400">
+                      ✎ Custom fallback model identifier mode active.
+                    </p>
+                  </div>
+                )}
+                <p className="text-[10px] font-mono text-muted-foreground/60">
+                  Invoked automatically if primary model rate-limits or times out.
+                </p>
               </div>
 
+              {/* Timeout Slider */}
               <div className="space-y-2 pt-2 border-t border-border/30">
                 <div className="flex justify-between items-center">
                   <label className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
@@ -484,6 +717,7 @@ export default function AIInferencePage() {
                 </p>
               </div>
 
+              {/* Tier Override */}
               <div className="space-y-1.5 pt-2 border-t border-border/30">
                 <label className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground block">
                   Tier Override
@@ -492,7 +726,7 @@ export default function AIInferencePage() {
                   value={tierOverride}
                   onValueChange={(val: "auto" | "free" | "paid") => setTierOverride(val)}
                 >
-                  <SelectTrigger className="rounded-none font-mono text-xs">
+                  <SelectTrigger className="rounded-none font-mono text-xs w-full">
                     <SelectValue placeholder="Select tier override" />
                   </SelectTrigger>
                   <SelectContent className="rounded-none font-mono text-xs">
@@ -542,16 +776,35 @@ export default function AIInferencePage() {
                 />
               </div>
 
+              {/* Model Target Select for Playground */}
               <div className="space-y-1.5">
                 <label className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground block">
-                  Model Override (Optional)
+                  Model Target for Test
                 </label>
-                <Input
-                  value={testModelOverride}
-                  onChange={(e) => setTestModelOverride(e.target.value)}
-                  className="rounded-none font-mono text-xs"
-                  placeholder={`Leave blank to test active model (${defaultModel})`}
-                />
+                <Select
+                  value={playgroundModelChoice}
+                  onValueChange={(val) => setPlaygroundModelChoice(val)}
+                >
+                  <SelectTrigger className="rounded-none font-mono text-xs w-full">
+                    <SelectValue placeholder="Select target model" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-none font-mono text-xs max-h-72">
+                    <SelectItem value="active_default" className="font-mono text-xs font-bold text-primary">
+                      ⚡ Active Default Model ({defaultModel})
+                    </SelectItem>
+                    <SelectSeparator />
+                    {renderModelOptions(false)}
+                  </SelectContent>
+                </Select>
+
+                {playgroundModelChoice === "__custom__" && (
+                  <Input
+                    value={customPlaygroundModel}
+                    onChange={(e) => setCustomPlaygroundModel(e.target.value)}
+                    className="rounded-none font-mono text-xs mt-1.5"
+                    placeholder="Enter custom model string (e.g. openai/gpt-4o-mini)"
+                  />
+                )}
               </div>
 
               <Button
