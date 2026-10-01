@@ -492,10 +492,12 @@ export default function AIInferencePage() {
                       <span
                         className={cn(
                           "text-[10px] font-mono",
-                          isConfigured ? "text-emerald-400" : "text-rose-400 font-bold",
+                          isConfigured ? "text-emerald-400 font-bold" : "text-rose-400 font-bold",
                         )}
                       >
-                        {isConfigured ? (probe?.keyMasked || "Configured (Masked)") : "Missing Key"}
+                        {isConfigured
+                          ? probe?.keyMasked || status?.maskedKeys?.[p] || "Configured"
+                          : "Missing Key"}
                       </span>
                     </div>
                   </div>

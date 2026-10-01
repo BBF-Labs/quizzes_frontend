@@ -25,6 +25,7 @@ export interface InferenceRuntimeStatus {
   allowFreeUserPaid: boolean;
   providerPriority: string[];
   configuredProviders: Record<ProviderName, boolean>;
+  maskedKeys?: Record<ProviderName, string | null>;
   availableModels: Record<ProviderName, string[]>;
 }
 
