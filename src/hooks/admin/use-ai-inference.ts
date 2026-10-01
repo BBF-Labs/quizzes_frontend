@@ -11,9 +11,9 @@ export interface ProviderProbeResult {
   status: "operational" | "degraded" | "down" | "not_configured";
   latencyMs: number | null;
   message: string;
-  keyMasked: string | null;
   activeModel?: string;
   modelsCount?: number;
+  availableModels?: string[];
 }
 
 export interface InferenceRuntimeStatus {
@@ -25,7 +25,6 @@ export interface InferenceRuntimeStatus {
   allowFreeUserPaid: boolean;
   providerPriority: string[];
   configuredProviders: Record<ProviderName, boolean>;
-  maskedKeys?: Record<ProviderName, string | null>;
   availableModels: Record<ProviderName, string[]>;
 }
 

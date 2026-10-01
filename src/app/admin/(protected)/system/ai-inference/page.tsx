@@ -495,9 +495,7 @@ export default function AIInferencePage() {
                           isConfigured ? "text-emerald-400 font-bold" : "text-rose-400 font-bold",
                         )}
                       >
-                        {isConfigured
-                          ? probe?.keyMasked || status?.maskedKeys?.[p] || "Configured"
-                          : "Missing Key"}
+                        {isConfigured ? "Configured" : "Missing Key"}
                       </span>
                     </div>
                   </div>
