@@ -487,16 +487,6 @@ html[data-ui-customized="true"] .toaster {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   white-space: nowrap;
 }
-.campus-logo span {
-  display: flex;
-  height: 1.75rem;
-  width: 1.75rem;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0.5rem;
-  font-size: 0.65rem;
-  font-weight: 800;
-}
 .campus-logo b {
   font-size: 0.75rem;
   font-weight: 700;

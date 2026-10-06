@@ -7,6 +7,16 @@ import { OrganizationJsonLd, WebAppJsonLd } from "@/components/common";
 import { LandingHeader, LandingFooter, MobileNav, NewsletterSection, DonationSection } from "@/components/landing";
 import { LOGO_SRC, QUBI_WAVE_SRC, QUBI_PEEK_SRC } from "@/lib/constants";
 
+// showName is false for logos that already include the university's name.
+const UNIVERSITIES = [
+  { name: "University of Ghana", logo: "/images/universities/ug.svg", showName: false },
+  { name: "KNUST", logo: "/images/universities/knust.png", showName: false },
+  { name: "University of Cape Coast", logo: "/images/universities/ucc.png", showName: true },
+  { name: "Ashesi University", logo: "/images/universities/ashesi.png", showName: false },
+  { name: "GIMPA", logo: "/images/universities/gimpa.png", showName: true },
+  { name: "UPSA", logo: "/images/universities/upsa.png", showName: false },
+];
+
 export default function Home() {
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [newsletterSubmitted, setNewsletterSubmitted] = useState(false);
@@ -220,22 +230,22 @@ export default function Home() {
           <div className="mx-auto max-w-7xl">
             <div className="campus-marquee overflow-hidden">
               <div className="campus-track flex w-max items-center gap-3 px-3">
-                <div className="campus-set flex items-center gap-3" aria-label="Featured universities">
-                  <div className="campus-logo"><span className="bg-[#7A0019] text-white">UG</span><b>University of Ghana</b></div>
-                  <div className="campus-logo"><span className="bg-[#F4C300] text-slate-950">K</span><b>KNUST</b></div>
-                  <div className="campus-logo"><span className="bg-[#17365D] text-white">UC</span><b>University of Cape Coast</b></div>
-                  <div className="campus-logo"><span className="bg-[#A6192E] text-white">A</span><b>Ashesi University</b></div>
-                  <div className="campus-logo"><span className="bg-[#145DA0] text-white">GI</span><b>GIMPA</b></div>
-                  <div className="campus-logo"><span className="bg-[#0C60FC] text-white">UP</span><b>UPSA</b></div>
-                </div>
-                <div className="campus-set flex items-center gap-3" aria-hidden="true">
-                  <div className="campus-logo"><span className="bg-[#7A0019] text-white">UG</span><b>University of Ghana</b></div>
-                  <div className="campus-logo"><span className="bg-[#F4C300] text-slate-950">K</span><b>KNUST</b></div>
-                  <div className="campus-logo"><span className="bg-[#17365D] text-white">UC</span><b>University of Cape Coast</b></div>
-                  <div className="campus-logo"><span className="bg-[#A6192E] text-white">A</span><b>Ashesi University</b></div>
-                  <div className="campus-logo"><span className="bg-[#145DA0] text-white">GI</span><b>GIMPA</b></div>
-                  <div className="campus-logo"><span className="bg-[#0C60FC] text-white">UP</span><b>UPSA</b></div>
-                </div>
+                {[false, true].map((isCopy) => (
+                  <div
+                    key={isCopy ? "copy" : "main"}
+                    className="campus-set flex items-center gap-3"
+                    aria-label={isCopy ? undefined : "Featured universities"}
+                    aria-hidden={isCopy || undefined}
+                  >
+                    {UNIVERSITIES.map((uni) => (
+                      <div key={uni.name} className="campus-logo">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={uni.logo} alt={isCopy ? "" : `${uni.name} logo`} className="h-9 w-auto max-w-[13rem] object-contain" />
+                        {uni.showName && <b>{uni.name}</b>}
+                      </div>
+                    ))}
+                  </div>
+                ))}
               </div>
             </div>
           </div>
