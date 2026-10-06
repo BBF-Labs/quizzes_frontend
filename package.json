@@ -30,7 +30,7 @@
     "input-otp": "^1.4.2",
     "katex": "^0.18.4",
     "lucide-react": "^1.33.0",
-    "md-editor-rt": "^6.5.6",
+    "md-editor-rt": "^7.1.0",
     "next": "16.3.5",
     "next-themes": "^0.4.6",
     "pdfjs-dist": "^6.2.108",
