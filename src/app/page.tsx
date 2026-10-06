@@ -67,8 +67,8 @@ export default function Home() {
                   <span className="h-2 w-2 animate-pulse rounded-full bg-[#0C60FC]" /> Built around your actual university syllabus
                 </div>
                 <h1 className="display text-balance text-5xl font-bold leading-[1.04] tracking-[-.045em] text-slate-950 sm:text-6xl lg:text-7xl">
-                  Know what to study.<br />
-                  <span className="text-[#0C60FC]">Master it.</span> Move on.
+                  Know what to study<br />
+                  <span className="text-[#0C60FC]">Master it</span> Move on
                 </h1>
                 <p className="hand mx-auto mt-3 max-w-xl -rotate-1 text-2xl text-[#0C60FC] lg:mx-0">
                   finally, studying that makes sense ↓
